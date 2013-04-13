@@ -1,0 +1,44 @@
+
+R version 2.12.0 (2010-10-15)
+Copyright (C) 2010 The R Foundation for Statistical Computing
+ISBN 3-900051-07-0
+Platform: x86_64-apple-darwin9.8.0/x86_64 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> library(xts)
+Loading required package: zoo
+
+Attaching package: 'zoo'
+
+The following object(s) are masked from 'package:base':
+
+    as.Date
+
+Warning messages:
+1: package 'xts' was built under R version 2.12.2 
+2: package 'zoo' was built under R version 2.12.2 
+> eurusd <- read.table("~/Desktop/trading/EURUSD_day.csv", header = T, sep="\t")
+> trans <- read.table("~/Desktop/trading/2012_mars_exact_trans.tsv", header = F, sep="\t")
+> eurusd$val <- c(NA, diff(eurusd$Open,1))
+> eurusd$Date <- as.Date(as.character(eurusd$Date), format="%Y%m%d")
+> trans$Date <- as.Date(trans$V1, format="%Y-%m-%d")
+> eurusd.merged = merge(eurusd, trans, by = "Date")
+> eurusd.merged.simple = eurusd.merged[,c(1, 7, 10, 11, 12, 13)]
+> eurusd.xts <- xts(eurusd[,-1], order.by=eurusd[,1])
+> 
+> proc.time()
+   user  system elapsed 
+  0.643   0.031   0.816 
