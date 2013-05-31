@@ -5,6 +5,7 @@ library(ggplot2)
 library(msProcess)
 library(plyr)
 library(data.table)
+library(fields)
 `%ni%` <- Negate(`%in%`)
 # no scientific notation
 options(scipen=100)
@@ -244,11 +245,15 @@ predictTransTable <- function(trans, trans_hist, file_name) {
   # ddply(trans, .(Date), summarize, Name=S2[which(S2 > max(S2)-3)])
   aspects_effect <- predictAspectsTable(trans_hist)
   selected <- ddply(trans, .(Date), summarize, idx=idx[which(S2 >= maxn(S2, 2))])
+  #selected <- ddply(trans, .(Date), summarize, idx=idx[which.max(S2)])
   aspect_dates_predict <- merge(selected, aspects_effect, by='idx')
   aspect_dates_predict <- merge(aspect_dates_predict, trans, by=c('Date', 'idx'))
+  # get the aspects correlation table
+  aspect_dates_cor <- historyAspectsCorrelation(trans, trans_hist)
+  aspect_dates_predict <- merge(aspect_dates_predict, aspect_dates_cor, by=c('Date', 'idx'))
   # sort by date
   aspect_dates_predict <- arrange(aspect_dates_predict, desc(Date))
-  col_names = c('Date', 'idx', 'down', 'up', 'count', 'endEffect', 'S2', 'PC', 'SUR', 'SURD', 'MOR', 'MORD', 'MER', 'MERD', 'VER', 'VERD', 'MAR', 'MARD', 'JUR', 'JURD', 'SAR', 'SARD', 'URR', 'URRD', 'NER', 'NERD', 'PLR', 'PLRD')
+  col_names = c('Date', 'idx', 'down', 'up', 'count', 'ucor', 'dcor', 'endEffect', 'S2', 'PC', 'SUR', 'SURD', 'MOR', 'MORD', 'MER', 'MERD', 'VER', 'VERD', 'MAR', 'MARD', 'JUR', 'JURD', 'SAR', 'SARD', 'URR', 'URRD', 'NER', 'NERD', 'PLR', 'PLRD')
   #col_names = c('Date', 'idx', 'down', 'up', 'count', 'endEffect', 'JUR', 'SAR', 'URR', 'NER', 'PLR')
   write.csv(aspect_dates_predict[col_names], file=paste("~/trading/", file_name, sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
   aspect_dates_predict[col_names]
@@ -289,7 +294,7 @@ dsAspectsCount <- function(ds_hist, ds_check) {
   print(cor(t2, down, method = "spearman"))
 }
 
-historyAspectsCount <- function(ds_hist, ds_trans) {
+historyAspectsCorrelation <- function(ds_trans, ds_hist) {
   keys <- c("MA", "JU", "SA", "UR", "NE", "PL", "MAR", "JUR", "SAR", "URR", "NER", "PLR");
   #keys <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "SUR", "MOR", "MER", "VER", "MAR", "JUR", "SAR", "URR", "NER", "PLR");
   dsasp <- reshape(ds_hist, varying = keys, v.names = "aspect", times = keys,  direction = "long")
@@ -304,8 +309,12 @@ historyAspectsCount <- function(ds_hist, ds_trans) {
 
   tmerged <- merge(trans_table, tup, by = "idx")
   tmerged <- merge(tmerged, tdown, by = "idx")
-  tmerged$ucor <- apply(ds[,-1:-2], 1,function(x) cor(x[1:11], x[12:22], method='spearman'))
-  tmerged$dcor <- apply(ds[,-1:-2], 1,function(x) cor(x[1:11], x[23:33], method='spearman'))
+  tmerged <- as.data.frame(tmerged)
+  tmerged[,3:35] <- apply(tmerged[,3:35], 2, function(x) ifelse(x > 0, 1, x))
+  tmerged$ucor <- apply(tmerged[,-1:-2], 1, function(x) cor(x[1:11], x[12:22], method='pearson'))
+  tmerged$dcor <- apply(tmerged[,-1:-2], 1, function(x) cor(x[1:11], x[23:33], method='pearson'))
+  tmerged$udis <- apply(tmerged[,-1:-2], 1, function(x) rdist(x[1:11], x[12:22]))
+  tmerged$ddis <- apply(tmerged[,-1:-2], 1, function(x) rdist(x[1:11], x[23:33]))
 
   tmerged
 }
@@ -325,6 +334,7 @@ eurusd <- openCurrency2("~/daily EURUSD.txt")
 usdcad <- openCurrency("~/trading/USDCAD_day.csv")
 # transits USD chart
 trans.usa = openTrans("~/trading/USA_1997-2014_trans_20130507.tsv")
+trans.usa2 = openTrans("~/trading/USA_coinage_1997-2014_trans_20130530.tsv")
 # transits EUR chart
 trans.eur <- openTrans("~/trading/EUR_1997-2014_trans_20130508.tsv")
 # transits CAD chart
@@ -333,6 +343,7 @@ trans.cad <- openTransXts("~/trading/1990-2015_trans_CAD.tsv")
 trans.test <- openTransXts("~/trading/trans_test.tsv")
 # currency - transits EURUSD
 trans.eurusd.usa  <- mergeTrans("~/trading/USA_1997-2014_trans_20130507.tsv", eurusd)
+trans.eurusd.usa2  <- mergeTrans("~/trading/USA_coinage_1997-2014_trans_20130530.tsv", eurusd)
 trans.eurusd.eur  <- mergeTrans("~/trading/EUR_1997-2014_trans_20130508.tsv", eurusd)
 # currency - transits USDCAD
 trans.usdcad.usa  <- mergeTrans("~/trading/2001-2014_trans_USA.tsv", usdcad)
