@@ -153,7 +153,8 @@ openCurrency  <- function(currency_file) {
   currency <- read.table(currency_file, header = T, sep=",")
   names(currency) <- c('Ticker', 'Date', 'Time', 'Open', 'Low', 'High', 'Close')
   currency <- currency[,-1]
-  currency$Mid <- (currency$High + currency$Low + currency$Close) / 3
+  #currency$Mid <- (currency$High + currency$Low + currency$Close) / 3
+  currency$Mid <- (currency$High + currency$Low + currency$Close + currency$Open) / 4
   currency$val <- currency$Mid - currency$Open
   currency$Eff = cut(currency$val, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE)
   currency$Date <- as.Date(as.character(currency$Date), format="%Y%m%d")
@@ -238,7 +239,7 @@ predictTrend <- function(search_date) {
   chartSeries(eurusd.hour.xts, subset=chart_dates, major.ticks='hours', show.grid=TRUE, theme='white.mono')
 }
 
-predictTransTable <- function(trans, trans_hist, file_name) {
+predictTransTable <- function(trans, trans_hist, cor_method, file_name) {
   # get the maximum S2 transit by day
   #ddply(testMatrix, .(GroupID), summarize, Name=Name[which.max(Value)])
   # get the maximun and the ones that are in a max(S2)-5 threshold
@@ -249,13 +250,13 @@ predictTransTable <- function(trans, trans_hist, file_name) {
   aspect_dates_predict <- merge(selected, aspects_effect, by='idx')
   aspect_dates_predict <- merge(aspect_dates_predict, trans, by=c('Date', 'idx'))
   # get the aspects correlation table
-  aspect_dates_cor <- historyAspectsCorrelation(trans, trans_hist)
+  aspect_dates_cor <- historyAspectsCorrelation(trans, trans_hist, cor_method)
   aspect_dates_predict <- merge(aspect_dates_predict, aspect_dates_cor, by=c('Date', 'idx'))
   # sort by date
   aspect_dates_predict <- arrange(aspect_dates_predict, desc(Date))
-  col_names = c('Date', 'idx', 'down', 'up', 'count', 'ucor', 'dcor', 'endEffect', 'S2', 'PC', 'SUR', 'SURD', 'MOR', 'MORD', 'MER', 'MERD', 'VER', 'VERD', 'MAR', 'MARD', 'JUR', 'JURD', 'SAR', 'SARD', 'URR', 'URRD', 'NER', 'NERD', 'PLR', 'PLRD')
+  col_names = c('Date', 'idx', 'down', 'up', 'count', 'ucor', 'dcor', 'udis', 'ddis', 'endEffect', 'S2', 'PC', 'SUR', 'SURD', 'MOR', 'MORD', 'MER', 'MERD', 'VER', 'VERD', 'MAR', 'MARD', 'JUR', 'JURD', 'SAR', 'SARD', 'URR', 'URRD', 'NER', 'NERD', 'PLR', 'PLRD')
   #col_names = c('Date', 'idx', 'down', 'up', 'count', 'endEffect', 'JUR', 'SAR', 'URR', 'NER', 'PLR')
-  write.csv(aspect_dates_predict[col_names], file=paste("~/trading/", file_name, sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
+  #write.csv(aspect_dates_predict[col_names], file=paste("~/trading/predict/", file_name, sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
   aspect_dates_predict[col_names]
 }
 
@@ -273,7 +274,7 @@ predictSingleTransTable <- function(ds, ds_hist, file_name) {
   # sort by date
   aspect_dates_predict <- arrange(aspect_dates_predict, desc(Date))
   # round the val mean
-  write.csv(aspect_dates_predict[c(2, 12:14, 3:11, 1)], file=paste("~/trading/", file_name, sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
+  write.csv(aspect_dates_predict[c(2, 12:14, 3:11, 1)], file=paste("~/trading/predict/", file_name, sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
 }
 
 predictAspectsTable <- function(ds_hist) {
@@ -281,22 +282,14 @@ predictAspectsTable <- function(ds_hist) {
   predict_table
 }
 
-dsAspectsCount <- function(ds_hist, ds_check) {
-  keys <- c("MA", "JU", "SA", "UR", "NE", "PL", "MAR", "JUR", "SAR", "URR", "NER", "PLR");
-  #keys <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "SUR", "MOR", "MER", "VER", "MAR", "JUR", "SAR", "URR", "NER", "PLR");
-  dsasp <- reshape(ds_hist, varying = keys, v.names = "aspect", times = keys,  direction = "long")
-  t <- table(dsasp$Eff, dsasp$aspect)
-  down <- t[c('down'),]
-  up <- t[c('up'),]
-  dsasp2 <- reshape(ds_check, varying = keys, v.names = "aspect", times = keys,  direction = "long")
-  t2 <- table(dsasp2$aspect)
-  print(cor(t2, up, method = "spearman"))
-  print(cor(t2, down, method = "spearman"))
+commonAspects <- function(X) {
+  X[X == X[which.max(X)]] <- 1;
+  X
 }
 
-historyAspectsCorrelation <- function(ds_trans, ds_hist) {
-  keys <- c("MA", "JU", "SA", "UR", "NE", "PL", "MAR", "JUR", "SAR", "URR", "NER", "PLR");
-  #keys <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "SUR", "MOR", "MER", "VER", "MAR", "JUR", "SAR", "URR", "NER", "PLR");
+historyAspectsCorrelation <- function(ds_trans, ds_hist, cor_method) {
+  #keys <- c("MA", "JU", "SA", "UR", "NE", "PL", "MAR", "JUR", "SAR", "URR", "NER", "PLR");
+  keys <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "SUR", "MOR", "MER", "VER", "MAR", "JUR", "SAR", "URR", "NER", "PLR");
   dsasp <- reshape(ds_hist, varying = keys, v.names = "aspect", times = keys,  direction = "long")
   ds_up <- data.table(subset(dsasp, Eff=='up'))
   ds_down <- data.table(subset(dsasp, Eff=='down'))
@@ -310,13 +303,27 @@ historyAspectsCorrelation <- function(ds_trans, ds_hist) {
   tmerged <- merge(trans_table, tup, by = "idx")
   tmerged <- merge(tmerged, tdown, by = "idx")
   tmerged <- as.data.frame(tmerged)
-  tmerged[,3:35] <- apply(tmerged[,3:35], 2, function(x) ifelse(x > 0, 1, x))
+  # set active aspects to 1 so correlation fits better
+  tmerged[,3:13] <- apply(tmerged[,3:13], 2, function(x) ifelse(x > 0, 1, x))
+  # activate the bits of all the aspects that are most common
+  tmerged[,14:24] <- t(apply(tmerged[,14:24], 1, function(x) ifelse(x >= x[which.max(x)]/2, 1, 0)))
+  tmerged[,25:35] <- t(apply(tmerged[,25:35], 1, function(x) ifelse(x >= x[which.max(x)]/2, 1, 0)))
   tmerged$ucor <- apply(tmerged[,-1:-2], 1, function(x) cor(x[1:11], x[12:22], method='pearson'))
   tmerged$dcor <- apply(tmerged[,-1:-2], 1, function(x) cor(x[1:11], x[23:33], method='pearson'))
-  tmerged$udis <- apply(tmerged[,-1:-2], 1, function(x) rdist(x[1:11], x[12:22]))
-  tmerged$ddis <- apply(tmerged[,-1:-2], 1, function(x) rdist(x[1:11], x[23:33]))
+  tmerged$udis <- apply(tmerged[,-1:-2], 1, function(x) dist(rbind(x[1:11], x[12:22]), method=cor_method))
+  tmerged$ddis <- apply(tmerged[,-1:-2], 1, function(x) dist(rbind(x[1:11], x[23:33]), method=cor_method))
 
   tmerged
+}
+
+predictTransTableTest <- function(predict_table, currency_hist) {
+  ds <- predict_table[,-10:-33]
+  ds <- merge(ds, currency_hist, by=c('Date'))
+  ds$corEff <- apply(ds[,8:9], 1, function(x) ifelse(x[1] < x[2], 'up', 'down'))
+  ds$corEff <- apply(ds[,c(8,9,18)], 1, function(x) ifelse(x[1] == x[2], NA, x[3]))
+  ds$test <- apply(ds, 1, function(x) ifelse(is.na(x[17]) | is.na(x[18]), NA, x[17]==x[18]))
+  print(prop.table(table(ds$test)))
+  print(table(ds$test))
 }
 
 # hourly rate history
@@ -329,14 +336,14 @@ eurusd.hour.xts <- xts(eurusd.hour[,-1:-2], order.by=eurusd.hour[,1])
 
 # euro usd currency daily
 eurusd_2001 <- openCurrency("~/trading/EURUSD_day.csv")
-eurusd <- openCurrency2("~/daily EURUSD.txt")
+eurusd <- openCurrency2("~/trading/")
 # usd cad currency daily
 usdcad <- openCurrency("~/trading/USDCAD_day.csv")
 # transits USD chart
 trans.usa = openTrans("~/trading/USA_1997-2014_trans_20130507.tsv")
 trans.usa2 = openTrans("~/trading/USA_coinage_1997-2014_trans_20130530.tsv")
 # transits EUR chart
-trans.eur <- openTrans("~/trading/EUR_1997-2014_trans_20130508.tsv")
+trans.eur <- openTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb1.tsv")
 # transits CAD chart
 trans.cad <- openTransXts("~/trading/1990-2015_trans_CAD.tsv")
 # test trans
@@ -344,7 +351,7 @@ trans.test <- openTransXts("~/trading/trans_test.tsv")
 # currency - transits EURUSD
 trans.eurusd.usa  <- mergeTrans("~/trading/USA_1997-2014_trans_20130507.tsv", eurusd)
 trans.eurusd.usa2  <- mergeTrans("~/trading/USA_coinage_1997-2014_trans_20130530.tsv", eurusd)
-trans.eurusd.eur  <- mergeTrans("~/trading/EUR_1997-2014_trans_20130508.tsv", eurusd)
+trans.eurusd.eur  <- mergeTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb1.tsv", eurusd)
 # currency - transits USDCAD
 trans.usdcad.usa  <- mergeTrans("~/trading/2001-2014_trans_USA.tsv", usdcad)
 
