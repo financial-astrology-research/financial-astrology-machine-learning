@@ -239,7 +239,7 @@ predictTrend <- function(search_date) {
   chartSeries(eurusd.hour.xts, subset=chart_dates, major.ticks='hours', show.grid=TRUE, theme='white.mono')
 }
 
-predictTransTable <- function(trans, trans_hist, cor_method, file_name) {
+predictTransTable <- function(trans, trans_hist, cor_method, plamode, file_name) {
   # get the maximum S2 transit by day
   #ddply(testMatrix, .(GroupID), summarize, Name=Name[which.max(Value)])
   # get the maximun and the ones that are in a max(S2)-5 threshold
@@ -250,7 +250,7 @@ predictTransTable <- function(trans, trans_hist, cor_method, file_name) {
   aspect_dates_predict <- merge(selected, aspects_effect, by='idx')
   aspect_dates_predict <- merge(aspect_dates_predict, trans, by=c('Date', 'idx'))
   # get the aspects correlation table
-  aspect_dates_cor <- historyAspectsCorrelation(trans, trans_hist, cor_method)
+  aspect_dates_cor <- historyAspectsCorrelation(trans, trans_hist, cor_method, plamode)
   aspect_dates_predict <- merge(aspect_dates_predict, aspect_dates_cor, by=c('Date', 'idx'))
   # sort by date
   aspect_dates_predict <- arrange(aspect_dates_predict, desc(Date))
@@ -287,9 +287,9 @@ commonAspects <- function(X) {
   X
 }
 
-historyAspectsCorrelation <- function(ds_trans, ds_hist, cor_method) {
-  #keys <- c("MA", "JU", "SA", "UR", "NE", "PL", "MAR", "JUR", "SAR", "URR", "NER", "PLR");
-  keys <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "SUR", "MOR", "MER", "VER", "MAR", "JUR", "SAR", "URR", "NER", "PLR");
+historyAspectsCorrelation <- function(ds_trans, ds_hist, cor_method, plamode = 1) {
+  keys <- c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", "MAR", "JU", "JUR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR");
+  keys <- keys[plamode:length(keys)]
   dsasp <- reshape(ds_hist, varying = keys, v.names = "aspect", times = keys,  direction = "long")
   ds_up <- data.table(subset(dsasp, Eff=='up'))
   ds_down <- data.table(subset(dsasp, Eff=='down'))
@@ -321,9 +321,34 @@ predictTransTableTest <- function(predict_table, currency_hist) {
   ds <- merge(ds, currency_hist, by=c('Date'))
   ds$corEff <- apply(ds[,8:9], 1, function(x) ifelse(x[1] < x[2], 'up', 'down'))
   ds$corEff <- apply(ds[,c(8,9,18)], 1, function(x) ifelse(x[1] == x[2], NA, x[3]))
-  ds$test <- apply(ds, 1, function(x) ifelse(is.na(x[17]) | is.na(x[18]), NA, x[17]==x[18]))
+  ds$test <- apply(ds, 1, function(x) ifelse(is.na(x[17]) | is.na(x[18]), 'none', x[17]==x[18]))
   print(prop.table(table(ds$test)))
   print(table(ds$test))
+  cat("\n")
+}
+
+testCorrelations <- function() {
+  for (j in 1:3) {
+    #cat("iteration = ", iter <- iter + 1, "\n")
+    writeLines(strwrap(paste(j, " Orb Transits File")))
+    writeLines("\n")
+    eurusd <- openCurrency("~/trading/EURUSD_day.csv")
+    file_name <- paste("~/trading/transits_eur/EUR_1997-2014_trans_orb", j, ".tsv", sep='')
+    trans.eur <- openTrans(file_name)
+    trans.eurusd.eur  <- mergeTrans(file_name, eurusd)
+    for(plamode in seq(1, 1, by=1)) {
+      writeLines(paste("\tPlanets KEYS mode #", plamode, sep=''))
+      cat("\n")
+      writeLines("\t\tCanberra Distance")
+      cat("\n")
+      predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, "canberra", plamode, "test_corr_pred.csv")
+      predictTransTableTest(predictTrans, eurusd)
+      writeLines("\t\tEuclidian Distance")
+      cat("\n")
+      predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, "euclidian", plamode, "test_corr_pred.csv")
+      predictTransTableTest(predictTrans, eurusd)
+    }
+  }
 }
 
 # hourly rate history
@@ -335,8 +360,8 @@ eurusd.hour$Date <- timeDate(paste(eurusd.hour$Date, eurusd.hour$Time), format =
 eurusd.hour.xts <- xts(eurusd.hour[,-1:-2], order.by=eurusd.hour[,1])
 
 # euro usd currency daily
-eurusd_2001 <- openCurrency("~/trading/EURUSD_day.csv")
-eurusd <- openCurrency2("~/trading/")
+eurusd <- openCurrency("~/trading/EURUSD_day.csv")
+#eurusd <- openCurrency2("~/trading/")
 # usd cad currency daily
 usdcad <- openCurrency("~/trading/USDCAD_day.csv")
 # transits USD chart
@@ -347,7 +372,7 @@ trans.eur <- openTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb1.tsv")
 # transits CAD chart
 trans.cad <- openTransXts("~/trading/1990-2015_trans_CAD.tsv")
 # test trans
-trans.test <- openTransXts("~/trading/trans_test.tsv")
+trans.test <- openTransXts("~/trading/transits_eur/test_trans.tsv")
 # currency - transits EURUSD
 trans.eurusd.usa  <- mergeTrans("~/trading/USA_1997-2014_trans_20130507.tsv", eurusd)
 trans.eurusd.usa2  <- mergeTrans("~/trading/USA_coinage_1997-2014_trans_20130530.tsv", eurusd)
