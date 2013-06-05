@@ -93,6 +93,31 @@ dsPlanetsSpeed <- function(fds) {
 }
 
 dsPlanetsReport <- function(ds, data_name) {
+  keys <- c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", "MAR", "JU", "JUR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR");
+  keys <- keys[plamode:length(keys)]
+  dsasp <- reshape(ds, varying = keys, v.names = "aspect", times = keys,  direction = "long")
+  ds_up <- data.table(subset(dsasp, Eff=='up'))
+  ds_down <- data.table(subset(dsasp, Eff=='down'))
+  tup <- as.data.frame(ds_up[, as.list(table(aspect)), by = c('idx')])
+  tdown <- as.data.frame(ds_down[, as.list(table(aspect)), by = c('idx')])
+  tablediff <- abs(tup[,-1]-tdown[,-1])
+  diffcols <- colnames(tablediff[,tablediff >= quantile(as.matrix(tablediff))[4]])
+  tup[!colnames(tup) %in% diffcols] <- 0
+  tdown[!colnames(tup) %in% diffcols] <- 0
+  tupdown <- t(rbind(tup, tdown))[-1,]
+  colnames(tupdown) <- c('tup', 'tdown')
+  tup <- apply(tupdown, 1, function(x) ifelse(x[1] > x[2], 1, 0))
+  tdown <- apply(tupdown, 1, function(x) ifelse(x[2] > x[1], 1, 0))
+  tupdown <- t(tupdown)
+  tupdown2 <- rbind(tup, tdown)
+  print(tupdown2)
+  print(asptable)
+  #dis1 <- dist(rbind(tupdown2[1,], asptable), method="canberra")
+  #dis2 <- dist(rbind(tupdown2[2,], asptable), method="canberra")
+  #effect <- ifelse(dis1 < dis2, ifelse(dis1 != dis2, 'up', 'none'), 'down')
+  #writeLines("UP aspects table")
+  #writeLines("DOWN aspects table")
+
   fds <- dsPlanetsData(ds)
   pdf("~/plots.pdf", width = 11, height = 8, family='Helvetica', pointsize=12)
   plot(0:10, type = "n", xaxt="n", yaxt="n", bty="n", xlab = "", ylab = "")
@@ -108,11 +133,17 @@ dsPlanetsReport <- function(ds, data_name) {
     }
   }
   p1 <- qplot(data=fds, x=val, binwidth=0.0025) + scale_x_continuous(breaks=seq(from=-0.05, to=0.05, by=0.0025))
-  print(p1)
   dsPlanetsLon(fds)
   dsPlanetsLat(fds)
   dsPlanetsSpeed(fds)
   dev.off()
+}
+
+dsAspectTable <- function(ds, plamode=1) {
+  keys <- c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", "MAR", "JU", "JUR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR");
+  keys <- keys[plamode:length(keys)]
+  dsasp <- reshape(ds, varying = keys, v.names = "aspect", times = keys,  direction = "long")
+  print(table(dsasp$aspect))
 }
 
 decToDeg <- function(num) {
@@ -162,13 +193,14 @@ openCurrency  <- function(currency_file) {
 }
 
 openCurrency2 <- function(currency_file) {
-  currency <- read.table(currency_file, header = T, sep=",")
-  currency <- currency[,-7:-8]
+  currency <- read.table(currency_file, header = F, sep=",")
+  names(currency) <- c('Date', 'Time', 'Open', 'High', 'Low', 'Close', 'Volume')
+  currency <- currency[,-7]
   currency$Mid <- (currency$High + currency$Low + currency$Close + currency$Open) / 4
   currency$val <- currency$Mid - currency$Open
   #currency$val <- currency$Close - currency$Mid
   currency$Eff = cut(currency$val, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE)
-  currency$Date <- as.Date(as.character(currency$Date), format="%m/%d/%Y")
+  currency$Date <- as.Date(as.character(currency$Date), format="%Y.%m.%d")
   currency
 }
 
@@ -254,9 +286,9 @@ predictTransTable <- function(trans, trans_hist, cor_method, plamode, file_name)
   aspect_dates_predict <- merge(aspect_dates_predict, aspect_dates_cor, by=c('Date', 'idx'))
   # sort by date
   aspect_dates_predict <- arrange(aspect_dates_predict, desc(Date))
-  col_names = c('Date', 'idx', 'down', 'up', 'count', 'endEffect', 'S2', 'PC', 'SUR', 'SURD', 'MOR', 'MORD', 'MER', 'MERD', 'VER', 'VERD', 'MAR', 'MARD', 'JUR', 'JURD', 'SAR', 'SARD', 'URR', 'URRD', 'NER', 'NERD', 'PLR', 'PLRD', 'udis', 'ddis', 'corEff')
+  col_names = c('Date', 'idx', 'down', 'up', 'count', 'endEffect', 'S2', 'PC', 'SUR', 'SURD', 'MOR', 'MORD', 'MER', 'MERD', 'VER', 'VERD', 'MAR', 'MARD', 'JUR', 'JURD', 'SAR', 'SARD', 'URR', 'URRD', 'NER', 'NERD', 'PLR', 'PLRD', 'udis', 'ddis', 'corEff', 'ucor', 'dcor')
   #col_names = c('Date', 'idx', 'down', 'up', 'count', 'endEffect', 'JUR', 'SAR', 'URR', 'NER', 'PLR')
-  write.csv(aspect_dates_predict[col_names], file=paste("~/trading/predict/", file_name, sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
+  #write.csv(aspect_dates_predict[col_names], file=paste("~/trading/predict/", file_name, sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
   aspect_dates_predict[col_names]
 }
 
@@ -282,8 +314,29 @@ predictAspectsTable <- function(ds_hist) {
   predict_table
 }
 
-commonAspects <- function(X) {
-  X[X == X[which.max(X)]] <- 1;
+filterLessSignificant <- function(X) {
+  init1 <- 1
+  end1 <- length(X)/2
+  init2 <- end1+1
+  end2 <- length(X)
+  diffs <- {}
+  qtile <- quantile(abs(X[1:end1]-X[init2:end2]))[4]
+
+  for (n in seq(1, end1)) {
+    # if the aspect pass the significance
+    if (abs(X[n]-X[n+end1]) >= qtile) {
+      if (X[n] > X[n+end1]) {
+        X[n+end1] <- 0
+      }
+      else {
+        X[n] <- 0
+      }
+    }
+    else {
+      X[n] <- 0
+      X[n+end1] <- 0
+    }
+  }
   X
 }
 
@@ -291,12 +344,12 @@ historyAspectsCorrelation <- function(ds_trans, ds_hist, cor_method, plamode = 1
   keys <- c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", "MAR", "JU", "JUR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR");
   keys <- keys[plamode:length(keys)]
   dsasp <- reshape(ds_hist, varying = keys, v.names = "aspect", times = keys,  direction = "long")
-  ds_up <- data.table(subset(dsasp, Eff=='up'))
-  ds_down <- data.table(subset(dsasp, Eff=='down'))
-  tup <- ds_up[, as.list(table(aspect)), by = c('idx')]
-  tdown <- ds_down[, as.list(table(aspect)), by = c('idx')]
+  dsup <- data.table(subset(dsasp, Eff=='up'))
+  dsdown <- data.table(subset(dsasp, Eff=='down'))
+  dsup <- as.data.frame(dsup[, as.list(table(aspect)), by = c('idx')])
+  dsdown <- as.data.frame(dsdown[, as.list(table(aspect)), by = c('idx')])
   # number of aspects
-  naspects <- length(tup)-1
+  naspects <- length(dsup)-1
   # the first two cols are date and indx
   initcol <- 3
 
@@ -304,24 +357,28 @@ historyAspectsCorrelation <- function(ds_trans, ds_hist, cor_method, plamode = 1
   trans_long <- data.table(trans_long)
   trans_table <- trans_long[, as.list(table(aspect)), by = c('Date','idx')]
 
-  tmerged <- merge(trans_table, tup, by = "idx")
-  tmerged <- merge(tmerged, tdown, by = "idx")
-  tmerged <- as.data.frame(tmerged)
+  tmerged <- merge(trans_table, dsup, by = "idx")
+  tmerged <- merge(tmerged, dsdown, by = "idx")
   # selected cols
   cols1 <- seq(initcol, naspects+initcol-1)
   cols2 <- cols1 + naspects
   cols3 <- cols2 + naspects
+  # calculate differences
+  tmerged <- as.data.frame(tmerged)
+  # filter the side when less significant was the aspect
+  tmerged[,c(cols2, cols3)] <- apply(tmerged[,c(cols2, cols3)], 1, filterLessSignificant)
+
   # set active aspects to 1 so correlation fits better
-  tmerged[,cols1] <- apply(tmerged[,cols1], 2, function(x) ifelse(x > 0, 1, x))
+  #tmerged[,cols1] <- apply(tmerged[,cols1], 2, function(x) ifelse(x > 0, 1, x))
   # activate the bits of all the aspects that are most common
   # TODO: test others division parameters
-  tmerged[,cols2] <- t(apply(tmerged[,cols2], 1, function(x) ifelse(x >= x[which.max(x)]/2, 1, 0)))
-  tmerged[,cols3] <- t(apply(tmerged[,cols3], 1, function(x) ifelse(x >= x[which.max(x)]/2, 1, 0)))
-  #tmerged$ucor <- apply(tmerged, 1, function(x) cor(x[cols1], x[cols2], method='pearson'))
-  #tmerged$dcor <- apply(tmerged, 1, function(x) cor(x[cols1], x[cols3], method='pearson'))
+  #tmerged[,cols2] <- t(apply(tmerged[,cols2], 1, function(x) ifelse(x >= x[which.max(x)]/3, 1, 0)))
+  #tmerged[,cols3] <- t(apply(tmerged[,cols3], 1, function(x) ifelse(x >= x[which.max(x)]/3, 1, 0)))
   tmerged$udis <- apply(tmerged, 1, function(x) dist(rbind(x[cols1], x[cols2]), method=cor_method))
   tmerged$ddis <- apply(tmerged, 1, function(x) dist(rbind(x[cols1], x[cols3]), method=cor_method))
   tmerged$corEff <- apply(tmerged[,c('udis','ddis')], 1, function(x) ifelse(x[1] != x[2], ifelse(x[1] < x[2], 'up', 'down'), NA))
+  tmerged$ucor <- round(apply(tmerged[,c(cols1, cols2, cols3)], 1, function(x) cor(x[cols1-2], x[cols2-2], method='pearson')), digits=2)
+  tmerged$dcor <- round(apply(tmerged[,c(cols1, cols2, cols3)], 1, function(x) cor(x[cols1-2], x[cols3-2], method='pearson')), digits=2)
 
   tmerged
 }
@@ -329,33 +386,36 @@ historyAspectsCorrelation <- function(ds_trans, ds_hist, cor_method, plamode = 1
 predictTransTableTest <- function(predict_table, currency_hist) {
   ds <- predict_table[,-6:-28]
   ds <- merge(ds, currency_hist, by=c('Date'))
-  ds$test1 <- apply(ds[,c(8,16)], 1, function(x) ifelse(is.na(x[1]) | is.na(x[2]), 'none', x[1]==x[2]))
+  ds$test1 <- apply(ds[,c('corEff','Eff')], 1, function(x) ifelse(is.na(x[1]) | is.na(x[2]), 'none', x[1]==x[2]))
   print(prop.table(table(ds$test1)))
   print(addmargins(table(ds$test1)))
   cat("\n")
   #ds$couEff <- apply(ds[,3:5], 1, function(x) ifelse(x[1] != x[2], ifelse(x[1] > x[2], 'down', 'up'), NA))
-  #ds$test2 <- apply(ds, 1, function(x) ifelse(is.na(x[17]) | is.na(x[20]), 'none', x[17]==x[20]))
+  #ds$test2 <- apply(ds[,c('Eff','couEff')], 1, function(x) ifelse(is.na(x[1]) | is.na(x[2]), 'none', x[1]==x[2]))
   #print(prop.table(table(ds$test2)))
   #print(addmargins(table(ds$test2)))
   #cat("\n")
+  ds[,!names(ds) %in% c('Time', 'Mid')]
 }
 
 testCorrelations <- function() {
-  for (j in array(c(2, seq(12, 13, by=1), 20))) {
+  for (j in array(c(seq(1, 24, by=1)))) {
     #cat("iteration = ", iter <- iter + 1, "\n")
     writeLines(strwrap(paste(j, " Transits File")))
     writeLines("\n")
-    eurusd <- openCurrency("~/trading/EURUSD_day.csv")
+    eurusd_full <- openCurrency2("~/trading/EURUSD_day_fxpro.csv")
+    eurusd <- subset(eurusd_full, Date > as.Date("1998-01-01") & Date < as.Date("2012-01-01"))
+    eurusd_test <- subset(eurusd_full, Date > as.Date("2012-01-01"))
     file_name <- paste("~/trading/transits_eur/EUR_1997-2014_trans_orb", j, ".tsv", sep='')
     trans.eur <- openTrans(file_name)
     trans.eurusd.eur  <- mergeTrans(file_name, eurusd)
-    for(plamode in seq(1, 1, by=1)) {
-      #writeLines(paste("\tPlanets KEYS mode #", plamode, sep=''))
-      #cat("\n")
+    for(plamode in seq(1, 13, by=2)) {
+      writeLines(paste("\tPlanets KEYS mode #", plamode, sep=''))
+      cat("\n")
       writeLines("\t\tCanberra Distance")
       cat("\n")
       predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, "canberra", plamode, "test_corr_pred.csv")
-      predictTransTableTest(predictTrans, eurusd)
+      predictTransTest <- predictTransTableTest(predictTrans, eurusd_test)
     }
   }
 }
@@ -369,7 +429,10 @@ eurusd.hour$Date <- timeDate(paste(eurusd.hour$Date, eurusd.hour$Time), format =
 eurusd.hour.xts <- xts(eurusd.hour[,-1:-2], order.by=eurusd.hour[,1])
 
 # euro usd currency daily
-eurusd <- openCurrency("~/trading/EURUSD_day.csv")
+eurusd_full <- openCurrency("~/trading/EURUSD_day.csv")
+eurusd_full <- openCurrency2("~/trading/EURUSD_day_fxpro.csv")
+eurusd <- subset(eurusd_full, Date < as.Date("2012-01-01"))
+eurusd_test <- subset(eurusd_full, Date > as.Date("2012-01-01"))
 #eurusd <- openCurrency2("~/trading/")
 # usd cad currency daily
 usdcad <- openCurrency("~/trading/USDCAD_day.csv")
@@ -377,7 +440,7 @@ usdcad <- openCurrency("~/trading/USDCAD_day.csv")
 trans.usa = openTrans("~/trading/transits_usa/USA_1997-2014_trans_orb1.tsv")
 trans.usa2 = openTrans("~/trading/transits_usa/USA_coinage_1997-2014_trans_orb1.tsv")
 # transits EUR chart
-trans.eur <- openTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb20.tsv")
+trans.eur <- openTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb24.tsv")
 # transits CAD chart
 trans.cad <- openTransXts("~/trading/1990-2015_trans_CAD.tsv")
 # test trans
@@ -385,7 +448,7 @@ trans.test <- openTransXts("~/trading/transits_eur/test.tsv")
 # currency - transits EURUSD
 trans.eurusd.usa  <- mergeTrans("~/trading/transits_usa/USA_1997-2014_trans_orb1.tsv", eurusd)
 trans.eurusd.usa2  <- mergeTrans("~/trading/transits_usa/USA_coinage_1997-2014_trans_orb1.tsv", eurusd)
-trans.eurusd.eur  <- mergeTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb20.tsv", eurusd)
+trans.eurusd.eur  <- mergeTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb24.tsv", eurusd)
 # currency - transits USDCAD
 trans.usdcad.usa  <- mergeTrans("~/trading/2001-2014_trans_USA.tsv", usdcad)
 
