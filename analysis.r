@@ -6,6 +6,7 @@ library(msProcess)
 library(plyr)
 library(data.table)
 library(fields)
+library(reshape)
 `%ni%` <- Negate(`%in%`)
 # no scientific notation
 options(scipen=100)
@@ -110,8 +111,8 @@ dsPlanetsReport <- function(ds, data_name) {
   tdown <- apply(tupdown, 1, function(x) ifelse(x[2] > x[1], 1, 0))
   tupdown <- t(tupdown)
   tupdown2 <- rbind(tup, tdown)
+  print(tupdown)
   print(tupdown2)
-  print(asptable)
   #dis1 <- dist(rbind(tupdown2[1,], asptable), method="canberra")
   #dis2 <- dist(rbind(tupdown2[2,], asptable), method="canberra")
   #effect <- ifelse(dis1 < dis2, ifelse(dis1 != dis2, 'up', 'none'), 'down')
@@ -143,7 +144,7 @@ dsAspectTable <- function(ds, plamode=1) {
   keys <- c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", "MAR", "JU", "JUR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR");
   keys <- keys[plamode:length(keys)]
   dsasp <- reshape(ds, varying = keys, v.names = "aspect", times = keys,  direction = "long")
-  print(table(dsasp$aspect))
+  sapply(table(dsasp$aspect), function(x) ifelse(x > 0, 1, x))
 }
 
 decToDeg <- function(num) {
@@ -215,27 +216,17 @@ openTrans <- function(trans_file) {
   trans <- read.table(trans_file, header = T, sep="\t", na.strings = "")
   trans$Date <- as.Date(trans$Date, format="%Y-%m-%d")
   trans$S2 <- with(trans, {S+SUS+MOS+MES+VES+JUS+SAS+URS+NES+PLS})
-  trans$endEffect <- timeDate(paste(trans$Date, trans$Hour), format = "%Y-%m-%d %H:%M:%S", zone = "CET", FinCenter = "CET")
+  trans$endEffect <- timeDate(paste(trans$Date, trans$Hour), format = "%Y-%m-%d %H:%M:%S", zone = "UTC", FinCenter = "CET")
   trans$WD <- format(trans$endEffect, "%w");
-
+  trans$H <- as.numeric(format(trans$endEffect, "%H"));
+  trans$Date <- as.double(strptime(trans$Date, "%Y-%m-%d"))
   # substract one day to the aspects tha are early in the day
   # the effect should be produced the previous day
-  hours <- as.numeric(format(trans$endEffect, "%H"));
-  aspect_dates <- strsplit(as.character(trans$endEffect), " ");
-  dates <- trans$Date;
-  for (j in 1:length(hours)) {
-    if ( hours[j] < 4 ) {
-      dates[j] <- dates[j]-1;
-    }
-  }
+  trans$Date <- as.Date(as.POSIXlt(ifelse(trans$H < 4, trans$Date-86400, trans$Date), origin="1970-01-01"), format="%Y-%m-%d")
 
   # Convert the riseset times to correct timezone for Cyprus
   #tzcorrect <- format(as.POSIXlt(paste(trans$Date, trans$ASC1), format = "%Y-%m-%d %H:%M") + 3600 * 2.5, "%H:%M")
   #trans$ASC1 <- tzcorrect
-
-  # override dates
-  trans$Date <- dates;
-  trans$H <- hours;
   trans$PC <- trans$PT
   trans$PC <- factor(trans$PC, levels = c('SU', 'MO', 'ME', 'VE', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL'), labels = c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9))
   trans <- subset(trans, PT %ni% c('MO', 'JU', 'SA', 'UR', 'NE', 'PL') & PR %ni% c('Asc', 'MC'));
@@ -314,34 +305,38 @@ predictAspectsTable <- function(ds_hist) {
   predict_table
 }
 
-filterLessSignificant <- function(X) {
+filterLessSignificant <- function(X, qpos) {
   init1 <- 1
   end1 <- length(X)/2
   init2 <- end1+1
   end2 <- length(X)
-  diffs <- {}
-  qtile <- quantile(abs(X[1:end1]-X[init2:end2]))[4]
-
-  for (n in seq(1, end1)) {
-    # if the aspect pass the significance
-    if (abs(X[n]-X[n+end1]) >= qtile) {
-      if (X[n] > X[n+end1]) {
-        X[n+end1] <- 0
-      }
-      else {
-        X[n] <- 0
-      }
-    }
-    else {
-      X[n] <- 0
-      X[n+end1] <- 0
-    }
-  }
+  Y <- X[1:end1]
+  Z <- X[init2:end2]
+  diffs <- abs(Y-Z)
+  qtile <- quantile(diffs)[qpos]
+  Y <- ifelse(diffs >= qtile, ifelse(Y > Z, Y, 0), 0)
+  Z <- ifelse(diffs >= qtile, ifelse(Z > Y, Z, 0), 0)
+  X <- cbind(Y, Z)
   X
+}
+
+filterZeroAspects <- function(X) {
+  init1 <- 1
+  end1 <- length(X)/3
+  init2 <- end1+1
+  end2 <- end1*2
+  init3 <- end2+1
+  end3 <- end1*3
+  X1 <- X[init1:end1]
+  X2 <- X[init2:end2]
+  X3 <- X[init3:end3]
+  X1 <- ifelse(X2 == 0 & X3 == 0, 0, X1)
 }
 
 historyAspectsCorrelation <- function(ds_trans, ds_hist, cor_method, plamode = 1) {
   keys <- c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", "MAR", "JU", "JUR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR");
+  #keys <- c("SUR", "MOR", "MER", "VER", "MAR", "JUR", "SAR", "URR", "NER", "PLR");
+  #keys <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "PLR");
   keys <- keys[plamode:length(keys)]
   dsasp <- reshape(ds_hist, varying = keys, v.names = "aspect", times = keys,  direction = "long")
   dsup <- data.table(subset(dsasp, Eff=='up'))
@@ -353,6 +348,9 @@ historyAspectsCorrelation <- function(ds_trans, ds_hist, cor_method, plamode = 1
   # the first two cols are date and indx
   initcol <- 3
 
+  # merge_recurse(apply(ds_trans[,keys], 2, function(x) count(x)))
+  # by(trans.eur[,keys], trans.eur$idx, function(x) { table(apply(x, 1, function(x) x)) })
+  # table(apply(ds_trans[,keys], 1, function(x) x))
   trans_long <- reshape(ds_trans, varying = keys, v.names = "aspect", times = keys,  direction = "long")
   trans_long <- data.table(trans_long)
   trans_table <- trans_long[, as.list(table(aspect)), by = c('Date','idx')]
@@ -366,12 +364,12 @@ historyAspectsCorrelation <- function(ds_trans, ds_hist, cor_method, plamode = 1
   # calculate differences
   tmerged <- as.data.frame(tmerged)
   # filter the side when less significant was the aspect
-  tmerged[,c(cols2, cols3)] <- apply(tmerged[,c(cols2, cols3)], 1, filterLessSignificant)
-
+  tmerged[,c(cols2, cols3)] <- t(apply(tmerged[,c(cols2, cols3)], 1, filterLessSignificant, qpos=4))
+  tmerged[,cols1] <- t(apply(tmerged[,c(cols1,cols2,cols3)], 1, filterZeroAspects))
   # set active aspects to 1 so correlation fits better
-  #tmerged[,cols1] <- apply(tmerged[,cols1], 2, function(x) ifelse(x > 0, 1, x))
-  # activate the bits of all the aspects that are most common
-  # TODO: test others division parameters
+  tmerged[,cols1] <- apply(tmerged[,cols1], 2, function(x) ifelse(x > 0, 1, x))
+  # TODO: when up/down table has a col with 0 vals then set to 0 the transit row col
+
   #tmerged[,cols2] <- t(apply(tmerged[,cols2], 1, function(x) ifelse(x >= x[which.max(x)]/3, 1, 0)))
   #tmerged[,cols3] <- t(apply(tmerged[,cols3], 1, function(x) ifelse(x >= x[which.max(x)]/3, 1, 0)))
   tmerged$udis <- apply(tmerged, 1, function(x) dist(rbind(x[cols1], x[cols2]), method=cor_method))
@@ -387,9 +385,20 @@ predictTransTableTest <- function(predict_table, currency_hist) {
   ds <- predict_table[,-6:-28]
   ds <- merge(ds, currency_hist, by=c('Date'))
   ds$test1 <- apply(ds[,c('corEff','Eff')], 1, function(x) ifelse(is.na(x[1]) | is.na(x[2]), 'none', x[1]==x[2]))
-  print(prop.table(table(ds$test1)))
-  print(addmargins(table(ds$test1)))
-  cat("\n")
+  t1 <- prop.table(table(ds$test1))
+  t2 <- addmargins(table(ds$test1))
+
+  # if the difference is significant
+  if (abs(t1['TRUE']-t1[['FALSE']]) >= 0.10) {
+    cat("===============================\n")
+    print(t1)
+    print(t2)
+    cat("\n")
+  }
+  else {
+    writeLines("\t\t\tInsignificant")
+  }
+
   #ds$couEff <- apply(ds[,3:5], 1, function(x) ifelse(x[1] != x[2], ifelse(x[1] > x[2], 'down', 'up'), NA))
   #ds$test2 <- apply(ds[,c('Eff','couEff')], 1, function(x) ifelse(is.na(x[1]) | is.na(x[2]), 'none', x[1]==x[2]))
   #print(prop.table(table(ds$test2)))
@@ -399,7 +408,7 @@ predictTransTableTest <- function(predict_table, currency_hist) {
 }
 
 testCorrelations <- function() {
-  for (j in array(c(seq(1, 24, by=1)))) {
+  for (j in array(c(seq(23, 28, by=1)))) {
     #cat("iteration = ", iter <- iter + 1, "\n")
     writeLines(strwrap(paste(j, " Transits File")))
     writeLines("\n")
@@ -409,307 +418,304 @@ testCorrelations <- function() {
     file_name <- paste("~/trading/transits_eur/EUR_1997-2014_trans_orb", j, ".tsv", sep='')
     trans.eur <- openTrans(file_name)
     trans.eurusd.eur  <- mergeTrans(file_name, eurusd)
+    # generate keys combinations
+    # combn(keys, 2, simplify=FALSE)
     for(plamode in seq(1, 13, by=2)) {
+      writeLines(file_name)
       writeLines(paste("\tPlanets KEYS mode #", plamode, sep=''))
       cat("\n")
+
       writeLines("\t\tCanberra Distance")
-      cat("\n")
       predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, "canberra", plamode, "test_corr_pred.csv")
+      predictTransTest <- predictTransTableTest(predictTrans, eurusd_test)
+
+      writeLines("\t\tEuclidian Distance")
+      predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, "euclidian", plamode, "test_corr_pred.csv")
+      predictTransTest <- predictTransTableTest(predictTrans, eurusd_test)
+
+      writeLines("\t\tBinary Distance")
+      predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, "euclidian", plamode, "test_corr_pred.csv")
       predictTransTest <- predictTransTableTest(predictTrans, eurusd_test)
     }
   }
 }
 
-# hourly rate history
-eurusd.hour <- read.table("~/trading/EURUSD_hour.csv", header = T, sep=",")
-names(eurusd.hour) <- c('Ticker', 'Date', 'Time', 'Open', 'Low', 'High', 'Close')
-eurusd.hour <- eurusd.hour[,-1]
-eurusd.hour$val <- eurusd.hour$Close - eurusd.hour$Open
-eurusd.hour$Date <- timeDate(paste(eurusd.hour$Date, eurusd.hour$Time), format = "%Y%m%d %H:%M:%S", zone = "CET", FinCenter = "CET")
-eurusd.hour.xts <- xts(eurusd.hour[,-1:-2], order.by=eurusd.hour[,1])
+funtionizethis  <- function() {
+  # hourly rate history
+  eurusd.hour <- read.table("~/trading/EURUSD_hour.csv", header = T, sep=",")
+  names(eurusd.hour) <- c('Ticker', 'Date', 'Time', 'Open', 'Low', 'High', 'Close')
+  eurusd.hour <- eurusd.hour[,-1]
+  eurusd.hour$val <- eurusd.hour$Close - eurusd.hour$Open
+  eurusd.hour$Date <- timeDate(paste(eurusd.hour$Date, eurusd.hour$Time), format = "%Y%m%d %H:%M:%S", zone = "CET", FinCenter = "CET")
+  eurusd.hour.xts <- xts(eurusd.hour[,-1:-2], order.by=eurusd.hour[,1])
 
-# euro usd currency daily
-eurusd_full <- openCurrency("~/trading/EURUSD_day.csv")
-eurusd_full <- openCurrency2("~/trading/EURUSD_day_fxpro.csv")
-eurusd <- subset(eurusd_full, Date < as.Date("2012-01-01"))
-eurusd_test <- subset(eurusd_full, Date > as.Date("2012-01-01"))
-#eurusd <- openCurrency2("~/trading/")
-# usd cad currency daily
-usdcad <- openCurrency("~/trading/USDCAD_day.csv")
-# transits USD chart
-trans.usa = openTrans("~/trading/transits_usa/USA_1997-2014_trans_orb1.tsv")
-trans.usa2 = openTrans("~/trading/transits_usa/USA_coinage_1997-2014_trans_orb1.tsv")
-# transits EUR chart
-trans.eur <- openTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb24.tsv")
-# transits CAD chart
-trans.cad <- openTransXts("~/trading/1990-2015_trans_CAD.tsv")
-# test trans
-trans.test <- openTransXts("~/trading/transits_eur/test.tsv")
-# currency - transits EURUSD
-trans.eurusd.usa  <- mergeTrans("~/trading/transits_usa/USA_1997-2014_trans_orb1.tsv", eurusd)
-trans.eurusd.usa2  <- mergeTrans("~/trading/transits_usa/USA_coinage_1997-2014_trans_orb1.tsv", eurusd)
-trans.eurusd.eur  <- mergeTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb24.tsv", eurusd)
-# currency - transits USDCAD
-trans.usdcad.usa  <- mergeTrans("~/trading/2001-2014_trans_USA.tsv", usdcad)
+  # euro usd currency daily
+  eurusd_full <- openCurrency("~/trading/EURUSD_day.csv")
+  #eurusd <- openCurrency2("~/trading/")
+  # usd cad currency daily
+  usdcad <- openCurrency("~/trading/USDCAD_day.csv")
+  # transits USD chart
+  trans.usa = openTrans("~/trading/transits_usa/USA_1997-2014_trans_orb1.tsv")
+  trans.usa2 = openTrans("~/trading/transits_usa/USA_coinage_1997-2014_trans_orb1.tsv")
+  # transits EUR chart
+  trans.eur <- openTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb24.tsv")
+  # transits CAD chart
+  trans.cad <- openTransXts("~/trading/1990-2015_trans_CAD.tsv")
+  # test trans
+  trans.test <- openTransXts("~/trading/transits_eur/test.tsv")
+  # currency - transits EURUSD
+  trans.eurusd.usa  <- mergeTrans("~/trading/transits_usa/USA_1997-2014_trans_orb1.tsv", eurusd)
+  trans.eurusd.usa2  <- mergeTrans("~/trading/transits_usa/USA_coinage_1997-2014_trans_orb1.tsv", eurusd)
+  trans.eurusd.eur  <- mergeTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb24.tsv", eurusd)
+  # currency - transits USDCAD
+  trans.usdcad.usa  <- mergeTrans("~/trading/2001-2014_trans_USA.tsv", usdcad)
 
-planets.eur <- read.table("~/trading/EUR_2000-2014_planets_20130518.tsv", header = T, sep="\t")
-planets.eur$Date <- as.Date(planets.eur$Date, format="%Y-%m-%d")
-write.csv(planets.eur, file=paste("~/mt4/planets1.csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
+  planets.eur <- read.table("~/trading/EUR_2000-2014_planets_20130518.tsv", header = T, sep="\t")
+  planets.eur$Date <- as.Date(planets.eur$Date, format="%Y-%m-%d")
+  write.csv(planets.eur, file=paste("~/mt4/planets1.csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
 
 
-planets.usa <- read.table("~/trading/USA_2012_2014_planets_20130503.tsv", header = T, sep="\t")
-planets.usa$Date <- as.Date(planets.usa$Date, format="%Y-%m-%d")
-write.csv(planets.usa, file=paste("~/mt4/planets2.csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
+  planets.usa <- read.table("~/trading/USA_2012_2014_planets_20130503.tsv", header = T, sep="\t")
+  planets.usa$Date <- as.Date(planets.usa$Date, format="%Y-%m-%d")
+  write.csv(planets.usa, file=paste("~/mt4/planets2.csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
 
 
-# analysis of mars & jupiter aspects
-mars.jupiter <- subset(trans.price.eur, Ptran == 'Mars' & Prad == 'Jupiter')
-tapply(mars.jupiter$val, mars.jupiter$Aspect, mean)
+  # analysis of mars & jupiter aspects
+  mars.jupiter <- subset(trans.price.eur, Ptran == 'Mars' & Prad == 'Jupiter')
+  tapply(mars.jupiter$val, mars.jupiter$Aspect, mean)
 
-mars.neptune <- subset(trans.price.eur, Ptran == 'Mars' & Prad == 'Neptune')
-tapply(mars.neptune$val, mars.neptune$Aspect, mean)
+  mars.neptune <- subset(trans.price.eur, Ptran == 'Mars' & Prad == 'Neptune')
+  tapply(mars.neptune$val, mars.neptune$Aspect, mean)
 
-# count the up/down observations
-table(cut(mars.jupiter$val, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE))
-# order the dataset by val
-#mars.jupiter[order(venus.jupiter$val)]
-eurusd.aggregated = aggregate(trans.price.eur$val, list(Ptran = trans.price.eur$Ptran, Aspect = trans.price.eur$Aspect, Prad = trans.price.eur$Prad, Sign = trans.price.eur$Sign), mean)
-# round the difference to 5 decimals
-eurusd.aggregated$x = round(eurusd.aggregated$x, digits=5)
-eurusd.aggregated = eurusd.aggregated[order(eurusd.aggregated$Ptran, eurusd.aggregated$Prad),]
+  # count the up/down observations
+  table(cut(mars.jupiter$val, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE))
+  # order the dataset by val
+  #mars.jupiter[order(venus.jupiter$val)]
+  eurusd.aggregated = aggregate(trans.price.eur$val, list(Ptran = trans.price.eur$Ptran, Aspect = trans.price.eur$Aspect, Prad = trans.price.eur$Prad, Sign = trans.price.eur$Sign), mean)
+  # round the difference to 5 decimals
+  eurusd.aggregated$x = round(eurusd.aggregated$x, digits=5)
+  eurusd.aggregated = eurusd.aggregated[order(eurusd.aggregated$Ptran, eurusd.aggregated$Prad),]
 
-# mercury & mc
-mercury.mc <- subset(trans.price.eur, Ptran == 'Mercury' & Prad == 'MC')
-tapply(mercury.mc$val, mercury.mc$Aspect, mean)
-
-
-# mercury & neptune
-mercury.neptune <- subset(trans.price.eur, Ptran == 'Mercury' & Prad == 'Neptune')
-tapply(mercury.neptune$val, mercury.neptune$Aspect, mean)
+  # mercury & mc
+  mercury.mc <- subset(trans.price.eur, Ptran == 'Mercury' & Prad == 'MC')
+  tapply(mercury.mc$val, mercury.mc$Aspect, mean)
 
 
-# mercury & venus
-mercury.venus <- subset(trans.price.eur, Ptran == 'Mercury' & Prad == 'Venus')
-tapply(mercury.venus$val, mercury.venus$Aspect, mean)
-
-# analysis of venus & mars aspects
-venus.mars <- subset(trans.price.eur, Ptran == 'Venus' & Prad == 'Mars')
-tapply(venus.mars$val, venus.mars$Aspect, mean)
-
-# analysis of Venus & Mercury aspects
-venus.mercury = subset(trans.price.eur, Ptran=='Venus' & Prad=='Mercury')
-tapply(venus.mercury$val, venus.mercury$Aspect, mean)
-#         conj          oppo          quad           sex          trig
-# -0.0033500000 -0.0003250000 -0.0001730769  0.0019593750 -0.0012050000
-
-# analysis of Venus & Jupiter aspects
-venus.jupiter = subset(trans.price.eur, Ptran=='Venus' & Prad=='Jupiter')
-tapply(venus.jupiter$val, venus.jupiter$Aspect, mean)
-
-# venus & neptune
-venus.neptune = subset(trans.price.eur, Ptran=='Venus' & Prad=='Neptune')
-tapply(venus.neptune$val, venus.neptune$Aspect, mean)
-
-# venus & pluto
-venus.pluto = subset(trans.price.eur, Ptran=='Venus' & Prad=='Pluto')
-tapply(venus.pluto$val, venus.pluto$Aspect, mean)
+  # mercury & neptune
+  mercury.neptune <- subset(trans.price.eur, Ptran == 'Mercury' & Prad == 'Neptune')
+  tapply(mercury.neptune$val, mercury.neptune$Aspect, mean)
 
 
-# analysis of venus & venus aspects
-venus.venus <- subset(trans.price.eur, Ptran == 'Venus' & Prad == 'Venus')
-tapply(venus.venus$val, venus.venus$Aspect, mean)
-# sextil - performs a negative effect but from pisces do less damage than from scorpio
-#        conj         oppo         quad          sex         trig
-# 0.000518750 -0.000318750 -0.000893750 -0.001541667 -0.000950000
+  # mercury & venus
+  mercury.venus <- subset(trans.price.eur, Ptran == 'Mercury' & Prad == 'Venus')
+  tapply(mercury.venus$val, mercury.venus$Aspect, mean)
 
-# analysis of jupiter & mars aspects
-jupiter.mars <- subset(trans.price.eur, Ptran == 'Jupiter' & Prad == 'Mars')
-tapply(jupiter.mars$val, jupiter.mars$Aspect, mean)
-#         conj          oppo          quad           sex          trig
-# -0.0034500000  0.0109500000 -0.0010666667 -0.0005000000  0.0008166667
+  # analysis of venus & mars aspects
+  venus.mars <- subset(trans.price.eur, Ptran == 'Venus' & Prad == 'Mars')
+  tapply(venus.mars$val, venus.mars$Aspect, mean)
 
-# analysis of sun & neptune aspects
-sun.neptune <- subset(trans.price.eur, Ptran == 'Sun' & Prad == 'Neptune')
-tapply(sun.neptune$val, sun.neptune$Aspect, mean)
-#       conj         oppo         quad          sex         trig
-# 0.000743750 -0.003466667 -0.000700000 -0.002375000  0.001317647
+  # analysis of Venus & Mercury aspects
+  venus.mercury = subset(trans.price.eur, Ptran=='Venus' & Prad=='Mercury')
+  tapply(venus.mercury$val, venus.mercury$Aspect, mean)
+  #         conj          oppo          quad           sex          trig
+  # -0.0033500000 -0.0003250000 -0.0001730769  0.0019593750 -0.0012050000
 
-sun.pluto <- subset(trans.price.eur, Ptran == 'Sun' & Prad == 'Pluto')
-tapply(sun.pluto$val, sun.pluto$Aspect, mean)
+  # analysis of Venus & Jupiter aspects
+  venus.jupiter = subset(trans.price.eur, Ptran=='Venus' & Prad=='Jupiter')
+  tapply(venus.jupiter$val, venus.jupiter$Aspect, mean)
 
-# sun & venus
-sun.venus <- subset(trans.price.eur, Ptran == 'Sun' & Prad == 'Venus')
-tapply(sun.venus$val, sun.venus$Aspect, mean)
+  # venus & neptune
+  venus.neptune = subset(trans.price.eur, Ptran=='Venus' & Prad=='Neptune')
+  tapply(venus.neptune$val, venus.neptune$Aspect, mean)
 
-# sun & mercury
-sun.mercury <- subset(trans.price.eur, Ptran == 'Sun' & Prad == 'Mercury')
-tapply(sun.mercury$val, sun.mercury$Aspect, mean)
-
-# sun & saturn
-sun.saturn <- subset(trans.price.eur, Ptran == 'Sun' & Prad == 'Saturn')
-tapply(sun.saturn$val, sun.saturn$Aspect, mean)
-
-# sun & sun
-sun.sun <- subset(trans.price.eur, Ptran == 'Sun' & Prad == 'Sun')
-tapply(sun.sun$val, sun.sun$Aspect, mean)
-
-# neptune & saturn
-neptune.saturn <- subset(trans.price.eur, Ptran == 'Neptune' & Prad == 'Saturn')
-tapply(neptune.saturn$val, neptune.saturn$Aspect, mean)
+  # venus & pluto
+  venus.pluto = subset(trans.price.eur, Ptran=='Venus' & Prad=='Pluto')
+  tapply(venus.pluto$val, venus.pluto$Aspect, mean)
 
 
-# analysis of sun & neptune aspects
-sun.neptune <- subset(trans.price.eur, Ptran == 'Sun' & Prad == 'Neptune')
-# simplify the way to access the columns
-with(sun.neptune, tapply(val, Aspect, mean))
-attach(sun.neptune)
-tapply(val, Aspect, mean)
-detach(sun.neptune)
-# rename sex by sextil
-Aspect = gsub('sex', 'sextil', Aspect)
-# split string
-# strsplit(Aspect, 'x')
+  # analysis of venus & venus aspects
+  venus.venus <- subset(trans.price.eur, Ptran == 'Venus' & Prad == 'Venus')
+  tapply(venus.venus$val, venus.venus$Aspect, mean)
+  # sextil - performs a negative effect but from pisces do less damage than from scorpio
+  #        conj         oppo         quad          sex         trig
+  # 0.000518750 -0.000318750 -0.000893750 -0.001541667 -0.000950000
 
-# remove rows with missing variables
-# na.omit(sun.neptune)
+  # analysis of jupiter & mars aspects
+  jupiter.mars <- subset(trans.price.eur, Ptran == 'Jupiter' & Prad == 'Mars')
+  tapply(jupiter.mars$val, jupiter.mars$Aspect, mean)
+  #         conj          oppo          quad           sex          trig
+  # -0.0034500000  0.0109500000 -0.0010666667 -0.0005000000  0.0008166667
 
-# system time
-nowDate = Sys.time()
-# exctract individual components of date
-wkday = weekdays(nowDate)
-month = months(nowDate)
-year = substr(as.POSIXct(nowDate), 1, 4)
-quarter = quarters(nowDate)
+  # analysis of sun & neptune aspects
+  sun.neptune <- subset(trans.price.eur, Ptran == 'Sun' & Prad == 'Neptune')
+  tapply(sun.neptune$val, sun.neptune$Aspect, mean)
+  #       conj         oppo         quad          sex         trig
+  # 0.000743750 -0.003466667 -0.000700000 -0.002375000  0.001317647
 
-moon.asc <- subset(trans.price.eur, Ptran == 'Moon' & Prad == 'Asc')
-tapply(moon.asc$val, moon.asc$Aspect, mean)
-# generate histogram faceted by Aspect type and with density layer
-# ggplot(ds, aes(x=val)) + geom_histogram(binwidth=.002, colour="black", fill="white", aes(y=..density..)) + facet_grid(AS ~ .) + scale_x_continuous(limits=c(-.005,.005)) + geom_density(alpha=.2, fill="#FF6666")
+  sun.pluto <- subset(trans.price.eur, Ptran == 'Sun' & Prad == 'Pluto')
+  tapply(sun.pluto$val, sun.pluto$Aspect, mean)
+
+  # sun & venus
+  sun.venus <- subset(trans.price.eur, Ptran == 'Sun' & Prad == 'Venus')
+  tapply(sun.venus$val, sun.venus$Aspect, mean)
+
+  # sun & mercury
+  sun.mercury <- subset(trans.price.eur, Ptran == 'Sun' & Prad == 'Mercury')
+  tapply(sun.mercury$val, sun.mercury$Aspect, mean)
+
+  # sun & saturn
+  sun.saturn <- subset(trans.price.eur, Ptran == 'Sun' & Prad == 'Saturn')
+  tapply(sun.saturn$val, sun.saturn$Aspect, mean)
+
+  # sun & sun
+  sun.sun <- subset(trans.price.eur, Ptran == 'Sun' & Prad == 'Sun')
+  tapply(sun.sun$val, sun.sun$Aspect, mean)
+
+  # neptune & saturn
+  neptune.saturn <- subset(trans.price.eur, Ptran == 'Neptune' & Prad == 'Saturn')
+  tapply(neptune.saturn$val, neptune.saturn$Aspect, mean)
 
 
-# Some data with peaks and throughs 
-plot(values, t="l")
+  # analysis of sun & neptune aspects
+  sun.neptune <- subset(trans.price.eur, Ptran == 'Sun' & Prad == 'Neptune')
+  # simplify the way to access the columns
+  with(sun.neptune, tapply(val, Aspect, mean))
+  attach(sun.neptune)
+  tapply(val, Aspect, mean)
+  detach(sun.neptune)
+  # rename sex by sextil
+  Aspect = gsub('sex', 'sextil', Aspect)
+  # split string
+  # strsplit(Aspect, 'x')
 
-# Calculate the moving average with a window of 10 points 
-mov.avg <- ma(values, 1, 10, FALSE)
+  # remove rows with missing variables
+  # na.omit(sun.neptune)
 
-numSwaps <- 1000    
-mov.avg.swp <- matrix(0, nrow=numSwaps, ncol=length(mov.avg))
+  # system time
+  nowDate = Sys.time()
+  # exctract individual components of date
+  wkday = weekdays(nowDate)
+  month = months(nowDate)
+  year = substr(as.POSIXct(nowDate), 1, 4)
+  quarter = quarters(nowDate)
 
-# The swapping may take a while, so we display a progress bar 
-prog <- txtProgressBar(0, numSwaps, style=3)
+  moon.asc <- subset(trans.price.eur, Ptran == 'Moon' & Prad == 'Asc')
+  tapply(moon.asc$val, moon.asc$Aspect, mean)
+  # generate histogram faceted by Aspect type and with density layer
+  # ggplot(ds, aes(x=val)) + geom_histogram(binwidth=.002, colour="black", fill="white", aes(y=..density..)) + facet_grid(AS ~ .) + scale_x_continuous(limits=c(-.005,.005)) + geom_density(alpha=.2, fill="#FF6666")
 
-for (i in 1:numSwaps)
-{
-# Swap the data
-val.swp <- sample(values)
-# Calculate the moving average
-mov.avg.swp[i,] <- ma(val.swp, 1, 10, FALSE)
-setTxtProgressBar(prog, i)
-}
 
-# Now find the 1% and 5% quantiles for each column
-limits.1 <- apply(mov.avg.swp, 2, quantile, 0.01, na.rm=T)
-limits.5 <- apply(mov.avg.swp, 2, quantile, 0.05, na.rm=T)
+  # Some data with peaks and throughs 
+  plot(values, t="l")
 
-# Plot the limits
-points(limits.5, t="l", col="orange", lwd=2)
-points(limits.1, t="l", col="red", lwd=2)
+  # Calculate the moving average with a window of 10 points 
+  mov.avg <- ma(values, 1, 10, FALSE)
 
-currency.planets = merge(usdcad, planets, by = "Date")
+  numSwaps <- 1000    
+  mov.avg.swp <- matrix(0, nrow=numSwaps, ncol=length(mov.avg))
 
-## create a synthetic sequence
-a <- currency.planets$Open
-## detect local maxima and minima
-maxmin <- msExtrema(a, 50)
-## visualize the result
-par(mfrow=c(1,1))
-plot(a, type="l")
-points((1:length(a))[maxmin$index.max],
-    a[maxmin$index.max], col=2, pch=1)
-points((1:length(a))[maxmin$index.min],
-    a[maxmin$index.min], col=3, pch=2)
-if (!is.R()){
+  # The swapping may take a while, so we display a progress bar 
+  prog <- txtProgressBar(0, numSwaps, style=3)
+
+  for (i in 1:numSwaps)
+  {
+    # Swap the data
+    val.swp <- sample(values)
+    # Calculate the moving average
+    mov.avg.swp[i,] <- ma(val.swp, 1, 10, FALSE)
+    setTxtProgressBar(prog, i)
+  }
+
+  # Now find the 1% and 5% quantiles for each column
+  limits.1 <- apply(mov.avg.swp, 2, quantile, 0.01, na.rm=T)
+  limits.5 <- apply(mov.avg.swp, 2, quantile, 0.05, na.rm=T)
+
+  # Plot the limits
+  points(limits.5, t="l", col="orange", lwd=2)
+  points(limits.1, t="l", col="red", lwd=2)
+
+  currency.planets = merge(usdcad, planets, by = "Date")
+
+  ## create a synthetic sequence
+  a <- currency.planets$Open
+  ## detect local maxima and minima
+  maxmin <- msExtrema(a, 50)
+  ## visualize the result
+  par(mfrow=c(1,1))
+  plot(a, type="l")
+  points((1:length(a))[maxmin$index.max],
+         a[maxmin$index.max], col=2, pch=1)
+  points((1:length(a))[maxmin$index.min],
+         a[maxmin$index.min], col=3, pch=2)
+  if (!is.R()){
     legend(x=18, y=3, col=2:3, marks=1:2, legend=c("maxima", "minima"))
-} else {
+  } else {
     legend(x=18, y=3, col=2:3, pch=1:2, legend=c("maxima", "minima"))
+  }
+
+  currency.max <- currency.planets[maxmin$index.max,]
+  currency.min <- currency.planets[maxmin$index.min,]
+
+  # max reshape by longitude
+  l.max <- reshape(currency.max, varying = c("SULON", "MOLON", "MELON", "VELON", "MALON", "JULON", "SALON"), v.names = "lon", times = c("SULON", "MOLON", "MELON", "VELON", "MALON", "JULON", "SALON"),  direction = "long")
+  #p2 <- ggplot(l.max, aes(x=lon, y=10, colour=time, shape=time)) + scale_x_continuous(breaks=seq(from=0, to=360, by=5)) + coord_polar(start = 1.57, direction=1) + scale_shape_manual("",values=c(1,2,3,4,5,6,7,8,9,10)) +  geom_jitter(position = position_jitter(height = .5))
+  p2 <- qplot(y=l.max$lon, colour=l.max$time, shape=l.max$time) + scale_y_continuous(breaks=seq(from=1, to=360, by=10)) + scale_shape_manual("",values=c(1,2,3,4,5,6,7,8,9,10))
+
+  # max reshape by latitude
+  l.max.lat <- reshape(currency.max, varying = c("SULAT", "MOLAT", "MELAT", "VELAT", "MALAT", "JULAT", "SALAT", "URLAT", "NELAT", "PLLAT"), v.names = "lat", times = c("SULAT", "MOLAT", "MELAT", "VELAT", "MALAT", "JULAT", "SALAT", "URLAT", "NELAT", "PLLAT"),  direction = "long")
+  p2 <- qplot(y=l.max.lat$lat, colour=time, shape=time, data=l.max.lat) + scale_y_continuous(breaks=seq(from=-10, to=10, by=2)) + scale_shape_manual("",values=c(1,2,3,4,5,6,7,8,9,10))
+
+  # max reshape by speed
+  l.max.sp <- reshape(currency.max, varying = c("SUSP", "MOSP", "MESP", "VESP", "MASP", "JUSP", "SASP", "URSP", "NESP", "PLSP"), v.names = "speed", times = c("SUSP", "MOSP", "MESP", "VESP", "MASP", "JUSP", "SASP", "URSP", "NESP", "PLSP"),  direction = "long")
+  p2 <- qplot(y=l.max.sp$speed, colour=time, shape=time, data=l.max.sp) + scale_y_continuous(breaks=seq(from=-1, to=1.3, by=0.05), limits=c(-1,1.5)) + scale_shape_manual("",values=c(1,2,3,4,5,6,7,8,9,10))
+
+  # min reshape by longitude
+  l.min <- reshape(currency.min, varying = c("SULON", "MOLON", "MELON", "VELON", "MALON", "JULON", "SALON"), v.names = "lon", times = c("SULON", "MOLON", "MELON", "VELON", "MALON", "JULON", "SALON"),  direction = "long")
+  p1 <- qplot(y=l.min$lon, colour=l.min$time, shape=l.min$time) + scale_y_continuous(breaks=seq(from=1, to=360, by=10)) + scale_shape_manual("",values=c(1,2,3,4,5,6,7,8,9,10))
+
+  # min reshape by longitude
+  l.min.lat <- reshape(currency.min, varying = c("SULAT", "MOLAT", "MELAT", "VELAT", "MALAT", "JULAT", "SALAT", "URLAT", "NELAT", "PLLAT"), v.names = "lat", times = c("SULAT", "MOLAT", "MELAT", "VELAT", "MALAT", "JULAT", "SALAT", "URLAT", "NELAT", "PLLAT"),  direction = "long")
+  p1 <- qplot(y=l.min.lat$lat, colour=l.min.lat$time, shape=l.min.lat$time) + scale_y_continuous(breaks=seq(from=-10, to=10, by=2)) + scale_shape_manual("",values=c(1,2,3,4,5,6,7,8,9,10))
+
+  # min reshape by speed
+  l.min.sp <- reshape(currency.min, varying = c("SUSP", "MOSP", "MESP", "VESP", "MASP", "JUSP", "SASP", "URSP", "NESP", "PLSP"), v.names = "speed", times = c("SUSP", "MOSP", "MESP", "VESP", "MASP", "JUSP", "SASP", "URSP", "NESP", "PLSP"),  direction = "long")
+  p1 <- qplot(y=l.min.sp$speed, colour=l.min.sp$time, shape=l.min.sp$time) + scale_y_continuous(breaks=seq(from=-1, to=1.3, by=0.05), limits=c(-1,1.5)) + scale_shape_manual("",values=c(1,2,3,4,5,6,7,8,9,10))
+
+
+
+  # density plot
+  p1 <- ggplot(l.min, aes(x = l.min$lon)) + scale_x_continuous(breaks=seq(from=0, to=360, by=5), limits=c(0,360)) + geom_density(adjust=1/12) + coord_polar(start = 1.57, direction=-1) + theme_update(axis.text.x = theme_text(angle = -30, size = 6))
+  p2 <- ggplot(l.max, aes(x = l.max$lon)) + scale_x_continuous(breaks=seq(from=0, to=360, by=5), limits=c(0,360)) + geom_density(adjust=1/12) + coord_polar(start = 1.57, direction=-1) + theme_update(axis.text.x = theme_text(angle = -30, size = 6))
+
+  vplayout <- function(x, y) viewport(layout.pos.row = x, layout.pos.col = y)
+  grid.newpage()
+  pushViewport(viewport(layout = grid.layout(1, 2)))
+  print(p1, vp = vplayout(1, 1))
+  print(p2, vp = vplayout(1, 2))
+
+  d <- ggplot(l, aes(x = lon))
+  d + geom_density(adjust=5)
+
+  d + geom_density2d()
+  d + scale_colour_hue("clarity")
+  d + scale_colour_hue(expression(clarity[beta]))
+
+  # Adjust luminosity and chroma
+  d + scale_colour_hue(l=40, c=30)
+  d + scale_colour_hue(l=70, c=30)
+  d + scale_colour_hue(l=70, c=150)
+  d + scale_colour_hue(l=80, c=150)
+
+  # Change range of hues used
+  d + scale_colour_hue(h=c(0, 360, l=100, c=200))
+
+  ggplot(filld, aes(xmin = start, xmax = end, ymin = 4, ymax = 5, fill = label)) + geom_rect() + geom_segment(aes(x = 4, y = 0, xend = 4, yend = 5, colour = label), size = 2, show_guide = FALSE) + geom_text(aes(x = p, y = 4.5, label = label), colour = "white", size = 10) + coord_polar() + scale_y_continuous(limits = c(0, 5))
 }
 
-currency.max <- currency.planets[maxmin$index.max,]
-currency.min <- currency.planets[maxmin$index.min,]
+initEuroPredict <- function() {
+  eurusd_full <- openCurrency2("~/trading/EURUSD_day_fxpro.csv")
+  eurusd <- subset(eurusd_full, Date < as.Date("2012-01-01"))
+  eurusd_test <- subset(eurusd_full, Date > as.Date("2012-01-01"))
+}
 
-# max reshape by longitude
-l.max <- reshape(currency.max, varying = c("SULON", "MOLON", "MELON", "VELON", "MALON", "JULON", "SALON"), v.names = "lon", times = c("SULON", "MOLON", "MELON", "VELON", "MALON", "JULON", "SALON"),  direction = "long")
-#p2 <- ggplot(l.max, aes(x=lon, y=10, colour=time, shape=time)) + scale_x_continuous(breaks=seq(from=0, to=360, by=5)) + coord_polar(start = 1.57, direction=1) + scale_shape_manual("",values=c(1,2,3,4,5,6,7,8,9,10)) +  geom_jitter(position = position_jitter(height = .5))
-p2 <- qplot(y=l.max$lon, colour=l.max$time, shape=l.max$time) + scale_y_continuous(breaks=seq(from=1, to=360, by=10)) + scale_shape_manual("",values=c(1,2,3,4,5,6,7,8,9,10))
-
-# max reshape by latitude
-l.max.lat <- reshape(currency.max, varying = c("SULAT", "MOLAT", "MELAT", "VELAT", "MALAT", "JULAT", "SALAT", "URLAT", "NELAT", "PLLAT"), v.names = "lat", times = c("SULAT", "MOLAT", "MELAT", "VELAT", "MALAT", "JULAT", "SALAT", "URLAT", "NELAT", "PLLAT"),  direction = "long")
-p2 <- qplot(y=l.max.lat$lat, colour=time, shape=time, data=l.max.lat) + scale_y_continuous(breaks=seq(from=-10, to=10, by=2)) + scale_shape_manual("",values=c(1,2,3,4,5,6,7,8,9,10))
-
-# max reshape by speed
-l.max.sp <- reshape(currency.max, varying = c("SUSP", "MOSP", "MESP", "VESP", "MASP", "JUSP", "SASP", "URSP", "NESP", "PLSP"), v.names = "speed", times = c("SUSP", "MOSP", "MESP", "VESP", "MASP", "JUSP", "SASP", "URSP", "NESP", "PLSP"),  direction = "long")
-p2 <- qplot(y=l.max.sp$speed, colour=time, shape=time, data=l.max.sp) + scale_y_continuous(breaks=seq(from=-1, to=1.3, by=0.05), limits=c(-1,1.5)) + scale_shape_manual("",values=c(1,2,3,4,5,6,7,8,9,10))
-
-# min reshape by longitude
-l.min <- reshape(currency.min, varying = c("SULON", "MOLON", "MELON", "VELON", "MALON", "JULON", "SALON"), v.names = "lon", times = c("SULON", "MOLON", "MELON", "VELON", "MALON", "JULON", "SALON"),  direction = "long")
-p1 <- qplot(y=l.min$lon, colour=l.min$time, shape=l.min$time) + scale_y_continuous(breaks=seq(from=1, to=360, by=10)) + scale_shape_manual("",values=c(1,2,3,4,5,6,7,8,9,10))
-
-# min reshape by longitude
-l.min.lat <- reshape(currency.min, varying = c("SULAT", "MOLAT", "MELAT", "VELAT", "MALAT", "JULAT", "SALAT", "URLAT", "NELAT", "PLLAT"), v.names = "lat", times = c("SULAT", "MOLAT", "MELAT", "VELAT", "MALAT", "JULAT", "SALAT", "URLAT", "NELAT", "PLLAT"),  direction = "long")
-p1 <- qplot(y=l.min.lat$lat, colour=l.min.lat$time, shape=l.min.lat$time) + scale_y_continuous(breaks=seq(from=-10, to=10, by=2)) + scale_shape_manual("",values=c(1,2,3,4,5,6,7,8,9,10))
-
-# min reshape by speed
-l.min.sp <- reshape(currency.min, varying = c("SUSP", "MOSP", "MESP", "VESP", "MASP", "JUSP", "SASP", "URSP", "NESP", "PLSP"), v.names = "speed", times = c("SUSP", "MOSP", "MESP", "VESP", "MASP", "JUSP", "SASP", "URSP", "NESP", "PLSP"),  direction = "long")
-p1 <- qplot(y=l.min.sp$speed, colour=l.min.sp$time, shape=l.min.sp$time) + scale_y_continuous(breaks=seq(from=-1, to=1.3, by=0.05), limits=c(-1,1.5)) + scale_shape_manual("",values=c(1,2,3,4,5,6,7,8,9,10))
-
-
-
-# density plot
-p1 <- ggplot(l.min, aes(x = l.min$lon)) + scale_x_continuous(breaks=seq(from=0, to=360, by=5), limits=c(0,360)) + geom_density(adjust=1/12) + coord_polar(start = 1.57, direction=-1) + theme_update(axis.text.x = theme_text(angle = -30, size = 6))
-p2 <- ggplot(l.max, aes(x = l.max$lon)) + scale_x_continuous(breaks=seq(from=0, to=360, by=5), limits=c(0,360)) + geom_density(adjust=1/12) + coord_polar(start = 1.57, direction=-1) + theme_update(axis.text.x = theme_text(angle = -30, size = 6))
-
-vplayout <- function(x, y) viewport(layout.pos.row = x, layout.pos.col = y)
-grid.newpage()
-pushViewport(viewport(layout = grid.layout(1, 2)))
-print(p1, vp = vplayout(1, 1))
-print(p2, vp = vplayout(1, 2))
-
-d <- ggplot(l, aes(x = lon))
-d + geom_density(adjust=5)
-
-d + geom_density2d()
-d + scale_colour_hue("clarity")
-d + scale_colour_hue(expression(clarity[beta]))
-
-# Adjust luminosity and chroma
-d + scale_colour_hue(l=40, c=30)
-d + scale_colour_hue(l=70, c=30)
-d + scale_colour_hue(l=70, c=150)
-d + scale_colour_hue(l=80, c=150)
-
-# Change range of hues used
-d + scale_colour_hue(h=c(0, 360, l=100, c=200))
-
-
-    Date   High
-2001-09-21 0.9274
-2003-06-16 1.1928
-2004-01-12 1.2895
-2004-12-31 1.3659
-2006-05-15 1.2970
-2008-04-23 1.5995
-2009-11-26 1.5139
-2010-11-05 1.4245
-2011-05-05 1.4897
-
-    Date   High
-2001-07-06 0.8475
-2002-02-01 0.8638
-2004-04-26 1.1882
-2005-11-17 1.1760
-2006-10-16 1.2535
-2008-11-21 1.2635
-2010-06-08 1.2006
-
-ggplot(filld, aes(xmin = start, xmax = end, ymin = 4, ymax = 5, fill = label)) + geom_rect() + geom_segment(aes(x = 4, y = 0, xend = 4, yend = 5, colour = label), size = 2, show_guide = FALSE) + geom_text(aes(x = p, y = 4.5, label = label), colour = "white", size = 10) + coord_polar() + scale_y_continuous(limits = c(0, 5))
+initEuroPredict()
