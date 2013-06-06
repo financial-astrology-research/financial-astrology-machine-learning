@@ -367,7 +367,7 @@ historyAspectsCorrelation <- function(ds_trans, ds_hist, cor_method, plamode = 1
   tmerged[,c(cols2, cols3)] <- t(apply(tmerged[,c(cols2, cols3)], 1, filterLessSignificant, qpos=4))
   tmerged[,cols1] <- t(apply(tmerged[,c(cols1,cols2,cols3)], 1, filterZeroAspects))
   # set active aspects to 1 so correlation fits better
-  tmerged[,cols1] <- apply(tmerged[,cols1], 2, function(x) ifelse(x > 0, 1, x))
+  tmerged[,c(cols1,cols2,cols3)] <- apply(tmerged[,c(cols1,cols2,cols3)], 2, function(x) ifelse(x > 0, 1, x))
   # TODO: when up/down table has a col with 0 vals then set to 0 the transit row col
 
   #tmerged[,cols2] <- t(apply(tmerged[,cols2], 1, function(x) ifelse(x >= x[which.max(x)]/3, 1, 0)))
