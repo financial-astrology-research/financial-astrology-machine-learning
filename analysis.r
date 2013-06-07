@@ -233,7 +233,7 @@ openCurrencyXts <- function(currency_file) {
 }
 
 # Open a Transits table and merge with a currency table
-openTrans <- function(trans_file) {
+openTrans <- function(trans_file, effcorrection = TRUE, asptypes='all') {
   # transits
   trans <- read.table(trans_file, header = T, sep="\t", na.strings = "")
   trans$Date <- as.Date(trans$Date, format="%Y-%m-%d")
@@ -241,10 +241,32 @@ openTrans <- function(trans_file) {
   trans$endEffect <- timeDate(paste(trans$Date, trans$Hour), format = "%Y-%m-%d %H:%M:%S", zone = "UTC", FinCenter = "CET")
   trans$WD <- format(trans$endEffect, "%w");
   trans$H <- as.numeric(format(trans$endEffect, "%H"));
-  trans$Date <- as.double(strptime(trans$Date, "%Y-%m-%d"))
-  # substract one day to the aspects tha are early in the day
-  # the effect should be produced the previous day
-  trans$Date <- as.Date(as.POSIXlt(ifelse(trans$H < 4, trans$Date-86400, trans$Date), origin="1970-01-01"), format="%Y-%m-%d")
+
+  if (effcorrection) {
+    # substract one day to the aspects tha are early in the day
+    # the effect should be produced the previous day
+    trans$Date <- as.double(strptime(trans$Date, "%Y-%m-%d"))
+    trans$Date <- as.Date(as.POSIXlt(ifelse(trans$H < 4, trans$Date-86400, trans$Date), origin="1970-01-01"), format="%Y-%m-%d")
+  }
+
+  if (asptypes == 'all') {
+    aspectsNams <- c('a0', 'a30', 'a45', 'a60', 'a72', 'a90', 'a120', 'a135', 'a144', 'a150', 'a180', 'a18', 'a33', 'a36', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160')
+  }
+  else if ( asptypes == 'majors' ) {
+    aspectsNams <- c('a0', 'a45', 'a60', 'a90', 'a120', 'a150', 'a180')
+  }
+  else if ( asptypes == 'grminors' ) {
+    aspectsNams <- c('a0', 'a30', 'a45', 'a60', 'a90', 'a120', 'a135', 'a150', 'a180')
+  }
+  else if ( asptypes == 'leminors' ) {
+    aspectsNams <- c('a30', 'a45', 'a72', 'a135', 'a144', 'a51', 'a103')
+  }
+  else if ( asptypes == 'allminors' ) {
+    aspectsNams <- c('a30', 'a45', 'a72', 'a135', 'a144', 'a18', 'a33', 'a36', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160')
+  }
+  else {
+    stop("No valid asptype value was provided.")
+  }
 
   # Convert the riseset times to correct timezone for Cyprus
   #tzcorrect <- format(as.POSIXlt(paste(trans$Date, trans$ASC1), format = "%Y-%m-%d %H:%M") + 3600 * 2.5, "%H:%M")
@@ -268,9 +290,8 @@ openTransXts <- function(trans_file) {
 }
 
 # build merged table for currency and transits
-mergeTrans <- function(trans_file, currency_table) {
-  trans_table <- openTrans(trans_file)
-  trans.price = merge(currency_table, trans_table, by = "Date")
+mergeTrans <- function(ds_trans, currency_table) {
+  trans.price = merge(currency_table, ds_trans, by = "Date")
   trans.price[, !(names(trans.price) %in% c("Time", "Hour"))]
 }
 
@@ -284,25 +305,30 @@ predictTrend <- function(search_date) {
   chartSeries(eurusd.hour.xts, subset=chart_dates, major.ticks='hours', show.grid=TRUE, theme='white.mono')
 }
 
-predictTransTable <- function(trans, trans_hist, cor_method, keys, file_name) {
+predColNames = c('Date', 'idx', 'down', 'up', 'count', 'endEffect', 'S2', 'PC', 'SUR', 'SURD', 'MOR', 'MORD', 'MER', 'MERD', 'VER', 'VERD', 'MAR', 'MARD', 'JUR', 'JURD', 'SAR', 'SARD', 'URR', 'URRD', 'NER', 'NERD', 'PLR', 'PLRD', 'udis', 'ddis', 'corEff', 'ucor', 'dcor')
+
+predictTransTable <- function(trans, trans_hist, cor_method, keys, file_name, binarize=TRUE, rmzeroaspects=TRUE, qpos=4, maxasp=2) {
   # get the maximum S2 transit by day
   #ddply(testMatrix, .(GroupID), summarize, Name=Name[which.max(Value)])
   # get the maximun and the ones that are in a max(S2)-5 threshold
   # ddply(trans, .(Date), summarize, Name=S2[which(S2 > max(S2)-3)])
   aspects_effect <- predictAspectsTable(trans_hist)
-  selected <- ddply(trans, .(Date), summarize, idx=idx[which(S2 >= maxn(S2, 2))])
+  selected <- ddply(trans, .(Date), summarize, idx=idx[which(S2 >= maxn(S2, maxasp))])
   #selected <- ddply(trans, .(Date), summarize, idx=idx[which.max(S2)])
   aspect_dates_predict <- merge(selected, aspects_effect, by='idx')
   aspect_dates_predict <- merge(aspect_dates_predict, trans, by=c('Date', 'idx'))
   # get the aspects correlation table
-  aspect_dates_cor <- historyAspectsCorrelation(trans, trans_hist, cor_method, keys)
+  aspect_dates_cor <- historyAspectsCorrelation(trans, trans_hist, cor_method, keys, binarize, rmzeroaspects, qpos)
   aspect_dates_predict <- merge(aspect_dates_predict, aspect_dates_cor, by=c('Date', 'idx'))
   # sort by date
   aspect_dates_predict <- arrange(aspect_dates_predict, desc(Date))
-  col_names = c('Date', 'idx', 'down', 'up', 'count', 'endEffect', 'S2', 'PC', 'SUR', 'SURD', 'MOR', 'MORD', 'MER', 'MERD', 'VER', 'VERD', 'MAR', 'MARD', 'JUR', 'JURD', 'SAR', 'SARD', 'URR', 'URRD', 'NER', 'NERD', 'PLR', 'PLRD', 'udis', 'ddis', 'corEff', 'ucor', 'dcor')
   #col_names = c('Date', 'idx', 'down', 'up', 'count', 'endEffect', 'JUR', 'SAR', 'URR', 'NER', 'PLR')
-  #write.csv(aspect_dates_predict[col_names], file=paste("~/trading/predict/", file_name, sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
-  aspect_dates_predict[col_names]
+  aspect_dates_predict[predColNames]
+}
+
+predictTransTableWrite <- function(trans, trans_hist, cor_method, keys, binarize, rmzeroaspects, qpos, filename) {
+  aspect_dates_predict <- predictTransTable(trans, trans_hist, cor_method, keys, binarize, rmzeroaspects, qpos)
+  write.csv(aspect_dates_predict[predColNames], file=paste("~/trading/predict/", file_name, sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
 }
 
 predictSingleTransTable <- function(ds, ds_hist, file_name) {
@@ -355,7 +381,7 @@ filterZeroAspects <- function(X) {
   X1 <- ifelse(X2 == 0 & X3 == 0, 0, X1)
 }
 
-historyAspectsCorrelation <- function(ds_trans, ds_hist, cor_method, keys) {
+historyAspectsCorrelation <- function(ds_trans, ds_hist, cor_method, keys, binarize=TRUE, rmzeroaspects=TRUE, qpos=4) {
   #keys <- keys[plamode:length(keys)]
   dsasp <- reshape(ds_hist, varying = keys, v.names = "aspect", times = keys,  direction = "long")
   dsup <- data.table(subset(dsasp, Eff=='up'))
@@ -383,11 +409,16 @@ historyAspectsCorrelation <- function(ds_trans, ds_hist, cor_method, keys) {
   # calculate differences
   tmerged <- as.data.frame(tmerged)
   # filter the side when less significant was the aspect
-  tmerged[,c(cols2, cols3)] <- t(apply(tmerged[,c(cols2, cols3)], 1, filterLessSignificant, qpos=4))
-  tmerged[,cols1] <- t(apply(tmerged[,c(cols1,cols2,cols3)], 1, filterZeroAspects))
-  # set active aspects to 1 so correlation fits better
-  tmerged[,c(cols1,cols2,cols3)] <- apply(tmerged[,c(cols1,cols2,cols3)], 2, function(x) ifelse(x > 0, 1, x))
-  # TODO: when up/down table has a col with 0 vals then set to 0 the transit row col
+  tmerged[,c(cols2, cols3)] <- t(apply(tmerged[,c(cols2, cols3)], 1, filterLessSignificant, qpos=qpos))
+
+  if (rmzeroaspects) {
+    tmerged[,cols1] <- t(apply(tmerged[,c(cols1,cols2,cols3)], 1, filterZeroAspects))
+  }
+
+  if (binarize) {
+    # set active aspects to 1 so correlation fits better
+    tmerged[,c(cols1,cols2,cols3)] <- apply(tmerged[,c(cols1,cols2,cols3)], 2, function(x) ifelse(x > 0, 1, x))
+  }
 
   #tmerged[,cols2] <- t(apply(tmerged[,cols2], 1, function(x) ifelse(x >= x[which.max(x)]/3, 1, 0)))
   #tmerged[,cols3] <- t(apply(tmerged[,cols3], 1, function(x) ifelse(x >= x[which.max(x)]/3, 1, 0)))
@@ -437,7 +468,7 @@ testCorrelations <- function() {
     eurusd_test <- subset(eurusd_full, Date > as.Date("2012-01-01"))
     file_name <- paste("~/trading/transits_eur/EUR_1997-2014_trans_orb", j, ".tsv", sep='')
     trans.eur <- openTrans(file_name)
-    trans.eurusd.eur  <- mergeTrans(file_name, eurusd)
+    trans.eurusd.eur  <- mergeTrans(trans.eur, eurusd)
     # generate keys combinations
     # combn(keys, 2, simplify=FALSE)
     for (n in seq(1, length(planetsList))) {
@@ -487,10 +518,10 @@ funtionizethis  <- function() {
   # test trans
   trans.test <- openTransXts("~/trading/transits_eur/test.tsv")
   # currency - transits EURUSD
-  trans.eurusd.usa  <- mergeTrans("~/trading/transits_usa/USA_1997-2014_trans_orb1.tsv", eurusd)
-  trans.eurusd.usa2  <- mergeTrans("~/trading/transits_usa/USA_coinage_1997-2014_trans_orb1.tsv", eurusd)
+  trans.eurusd.usa  <- mergeTrans(trans.usa, eurusd)
+  trans.eurusd.usa2  <- mergeTrans(trans.usa2, eurusd)
   # currency - transits USDCAD
-  trans.usdcad.usa  <- mergeTrans("~/trading/2001-2014_trans_USA.tsv", usdcad)
+  trans.usdcad.usa  <- mergeTrans(trans.usa, usdcad)
 
   planets.eur <- read.table("~/trading/EUR_2000-2014_planets_20130518.tsv", header = T, sep="\t")
   planets.eur$Date <- as.Date(planets.eur$Date, format="%Y-%m-%d")
@@ -739,7 +770,7 @@ initEuroPredict <- function() {
   eurusd <- subset(eurusd_full, Date < as.Date("2012-01-01"))
   eurusd_test <- subset(eurusd_full, Date > as.Date("2012-01-01"))
   trans.eur <- openTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb25.tsv")
-  trans.eurusd.eur  <- mergeTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb25.tsv", eurusd)
+  trans.eurusd.eur  <- mergeTrans(trans.eur, eurusd)
   predcor <- historyAspectsCorrelation(trans.eur, trans.eurusd.eur, "canberra", keys[[1]])
   planets.eur <- read.table("~/trading/EUR_2000-2014_planets_20130518.tsv", header = T, sep="\t")
   planets.eur$Date <- as.Date(planets.eur$Date, format="%Y-%m-%d")
