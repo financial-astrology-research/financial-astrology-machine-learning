@@ -16,19 +16,30 @@ planetsList <- list(c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", 
              c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", "MAR"),
              # combined slow planets
              c("JU", "JUR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"),
-             # combined slow without JU
+             # trans jupiter
              c("SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"),
+             # trans saturn
+             c("UR", "URR", "NE", "NER", "PL", "PLR"),
              # all to radical
              c("SUR", "MOR", "MER", "VER", "MAR", "JUR", "SAR", "URR", "NER", "PLR"),
              # fast planets to radical
              c("SUR", "MOR", "MER", "VER", "MAR"),
              # slow planets to radical
              c("JUR", "SAR", "URR", "NER", "PLR"),
+             # trans jupiter
              c("SAR", "URR", "NER", "PLR"),
+             # trans saturn
+             c("URR", "NER", "PLR"),
+             # all planets to transit
              c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL"),
+             # fast planets
              c("SU", "MO", "ME", "VE", "MA"),
+             # slow planets
              c("JU", "SA", "UR", "NE", "PL"),
-             c("SA", "UR", "NE", "PL"))
+             # trans jupiter
+             c("SA", "UR", "NE", "PL"),
+             # trans saturn
+             c("UR", "NE", "PL"))
 
 # a function that returns the position of n-th largest
 maxn <- function(x, n) {
@@ -37,10 +48,6 @@ maxn <- function(x, n) {
     n = length(order_x)
   }
   x[order_x[n]]
-}
-
-testApply <- function(x) {
-  print(x)
 }
 
 dsPlanetsData <- function(ds) {
@@ -435,7 +442,7 @@ testCorrelations <- function() {
     # combn(keys, 2, simplify=FALSE)
     for (n in seq(1, length(planetsList))) {
       writeLines(file_name)
-      writeLines(cat("\tPlanets KEYS mode:", planetsList[[n]]))
+      cat("\tPlanets KEYS mode:", planetsList[[n]])
       cat("\n")
 
       writeLines("\t\tCanberra Distance")
@@ -739,4 +746,3 @@ initEuroPredict <- function() {
 
 }
 
-initEuroPredict()
