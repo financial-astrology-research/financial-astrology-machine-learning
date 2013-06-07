@@ -11,6 +11,25 @@ library(reshape)
 # no scientific notation
 options(scipen=100)
 
+planetsList <- list(c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", "MAR", "JU", "JUR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"),
+             # combined fast planets
+             c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", "MAR"),
+             # combined slow planets
+             c("JU", "JUR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"),
+             # combined slow without JU
+             c("SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"),
+             # all to radical
+             c("SUR", "MOR", "MER", "VER", "MAR", "JUR", "SAR", "URR", "NER", "PLR"),
+             # fast planets to radical
+             c("SUR", "MOR", "MER", "VER", "MAR"),
+             # slow planets to radical
+             c("JUR", "SAR", "URR", "NER", "PLR"),
+             c("SAR", "URR", "NER", "PLR"),
+             c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL"),
+             c("SU", "MO", "ME", "VE", "MA"),
+             c("JU", "SA", "UR", "NE", "PL"),
+             c("SA", "UR", "NE", "PL"))
+
 # a function that returns the position of n-th largest
 maxn <- function(x, n) {
   order_x <- order(x, decreasing = TRUE)
@@ -93,9 +112,7 @@ dsPlanetsSpeed <- function(fds) {
   print(p3)
 }
 
-dsPlanetsReport <- function(ds, data_name) {
-  keys <- c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", "MAR", "JU", "JUR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR");
-  keys <- keys[plamode:length(keys)]
+dsPlanetsReport <- function(ds, data_name, keys) {
   dsasp <- reshape(ds, varying = keys, v.names = "aspect", times = keys,  direction = "long")
   ds_up <- data.table(subset(dsasp, Eff=='up'))
   ds_down <- data.table(subset(dsasp, Eff=='down'))
@@ -140,9 +157,7 @@ dsPlanetsReport <- function(ds, data_name) {
   dev.off()
 }
 
-dsAspectTable <- function(ds, plamode=1) {
-  keys <- c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", "MAR", "JU", "JUR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR");
-  keys <- keys[plamode:length(keys)]
+dsAspectTable <- function(ds, keys) {
   dsasp <- reshape(ds, varying = keys, v.names = "aspect", times = keys,  direction = "long")
   sapply(table(dsasp$aspect), function(x) ifelse(x > 0, 1, x))
 }
@@ -262,7 +277,7 @@ predictTrend <- function(search_date) {
   chartSeries(eurusd.hour.xts, subset=chart_dates, major.ticks='hours', show.grid=TRUE, theme='white.mono')
 }
 
-predictTransTable <- function(trans, trans_hist, cor_method, plamode, file_name) {
+predictTransTable <- function(trans, trans_hist, cor_method, keys, file_name) {
   # get the maximum S2 transit by day
   #ddply(testMatrix, .(GroupID), summarize, Name=Name[which.max(Value)])
   # get the maximun and the ones that are in a max(S2)-5 threshold
@@ -273,7 +288,7 @@ predictTransTable <- function(trans, trans_hist, cor_method, plamode, file_name)
   aspect_dates_predict <- merge(selected, aspects_effect, by='idx')
   aspect_dates_predict <- merge(aspect_dates_predict, trans, by=c('Date', 'idx'))
   # get the aspects correlation table
-  aspect_dates_cor <- historyAspectsCorrelation(trans, trans_hist, cor_method, plamode)
+  aspect_dates_cor <- historyAspectsCorrelation(trans, trans_hist, cor_method, keys)
   aspect_dates_predict <- merge(aspect_dates_predict, aspect_dates_cor, by=c('Date', 'idx'))
   # sort by date
   aspect_dates_predict <- arrange(aspect_dates_predict, desc(Date))
@@ -333,11 +348,8 @@ filterZeroAspects <- function(X) {
   X1 <- ifelse(X2 == 0 & X3 == 0, 0, X1)
 }
 
-historyAspectsCorrelation <- function(ds_trans, ds_hist, cor_method, plamode = 1) {
-  keys <- c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", "MAR", "JU", "JUR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR");
-  #keys <- c("SUR", "MOR", "MER", "VER", "MAR", "JUR", "SAR", "URR", "NER", "PLR");
-  #keys <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "PLR");
-  keys <- keys[plamode:length(keys)]
+historyAspectsCorrelation <- function(ds_trans, ds_hist, cor_method, keys) {
+  #keys <- keys[plamode:length(keys)]
   dsasp <- reshape(ds_hist, varying = keys, v.names = "aspect", times = keys,  direction = "long")
   dsup <- data.table(subset(dsasp, Eff=='up'))
   dsdown <- data.table(subset(dsasp, Eff=='down'))
@@ -382,33 +394,34 @@ historyAspectsCorrelation <- function(ds_trans, ds_hist, cor_method, plamode = 1
 }
 
 predictTransTableTest <- function(predict_table, currency_hist) {
-  ds <- predict_table[,-6:-28]
-  ds <- merge(ds, currency_hist, by=c('Date'))
-  ds$test1 <- apply(ds[,c('corEff','Eff')], 1, function(x) ifelse(is.na(x[1]) | is.na(x[2]), 'none', x[1]==x[2]))
-  t1 <- prop.table(table(ds$test1))
-  t2 <- addmargins(table(ds$test1))
+  predict_table <- merge(predict_table, currency_hist, by=c('Date'))
+  predict_table$test1 <- apply(predict_table[,c('corEff','Eff')], 1, function(x) ifelse(is.na(x[1]) | is.na(x[2]), 'none', x[1]==x[2]))
+  t1 <- prop.table(table(predict_table$test1))
+  t2 <- addmargins(table(predict_table$test1))
+  tdiff <- round(abs(t1['TRUE']-t1[['FALSE']])*100, digits=2)
 
   # if the difference is significant
-  if (abs(t1['TRUE']-t1[['FALSE']]) >= 0.10) {
-    cat("===============================\n")
+  if (tdiff >= 5) {
+    cat("=====================", tdiff, "=====================\n")
     print(t1)
     print(t2)
     cat("\n")
   }
   else {
     writeLines("\t\t\tInsignificant")
+    cat("\n")
   }
 
-  #ds$couEff <- apply(ds[,3:5], 1, function(x) ifelse(x[1] != x[2], ifelse(x[1] > x[2], 'down', 'up'), NA))
-  #ds$test2 <- apply(ds[,c('Eff','couEff')], 1, function(x) ifelse(is.na(x[1]) | is.na(x[2]), 'none', x[1]==x[2]))
-  #print(prop.table(table(ds$test2)))
-  #print(addmargins(table(ds$test2)))
+  #predict_table$couEff <- apply(predict_table[,3:5], 1, function(x) ifelse(x[1] != x[2], ifelse(x[1] > x[2], 'down', 'up'), NA))
+  #predict_table$test2 <- apply(predict_table[,c('Eff','couEff')], 1, function(x) ifelse(is.na(x[1]) | is.na(x[2]), 'none', x[1]==x[2]))
+  #print(prop.table(table(predict_table$test2)))
+  #print(addmargins(table(predict_table$test2)))
   #cat("\n")
-  ds[,!names(ds) %in% c('Time', 'Mid')]
+  predict_table[,!names(predict_table) %in% c('Time', 'Mid')]
 }
 
 testCorrelations <- function() {
-  for (j in array(c(seq(23, 28, by=1)))) {
+  for (j in array(c(seq(1, 28, by=1)))) {
     #cat("iteration = ", iter <- iter + 1, "\n")
     writeLines(strwrap(paste(j, " Transits File")))
     writeLines("\n")
@@ -420,21 +433,25 @@ testCorrelations <- function() {
     trans.eurusd.eur  <- mergeTrans(file_name, eurusd)
     # generate keys combinations
     # combn(keys, 2, simplify=FALSE)
-    for(plamode in seq(1, 13, by=2)) {
+    for (n in seq(1, length(planetsList))) {
       writeLines(file_name)
-      writeLines(paste("\tPlanets KEYS mode #", plamode, sep=''))
+      writeLines(cat("\tPlanets KEYS mode:", planetsList[[n]]))
       cat("\n")
 
       writeLines("\t\tCanberra Distance")
-      predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, "canberra", plamode, "test_corr_pred.csv")
+      predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, "canberra", planetsList[[n]], "test_corr_pred.csv")
       predictTransTest <- predictTransTableTest(predictTrans, eurusd_test)
 
       writeLines("\t\tEuclidian Distance")
-      predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, "euclidian", plamode, "test_corr_pred.csv")
+      predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, "euclidian", planetsList[[n]], "test_corr_pred.csv")
       predictTransTest <- predictTransTableTest(predictTrans, eurusd_test)
 
       writeLines("\t\tBinary Distance")
-      predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, "euclidian", plamode, "test_corr_pred.csv")
+      predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, "binary", planetsList[[n]], "test_corr_pred.csv")
+      predictTransTest <- predictTransTableTest(predictTrans, eurusd_test)
+
+      writeLines("\t\tManhattan Distance")
+      predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, "manhattan", planetsList[[n]], "test_corr_pred.csv")
       predictTransTest <- predictTransTableTest(predictTrans, eurusd_test)
     }
   }
@@ -458,7 +475,6 @@ funtionizethis  <- function() {
   trans.usa = openTrans("~/trading/transits_usa/USA_1997-2014_trans_orb1.tsv")
   trans.usa2 = openTrans("~/trading/transits_usa/USA_coinage_1997-2014_trans_orb1.tsv")
   # transits EUR chart
-  trans.eur <- openTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb24.tsv")
   # transits CAD chart
   trans.cad <- openTransXts("~/trading/1990-2015_trans_CAD.tsv")
   # test trans
@@ -466,7 +482,6 @@ funtionizethis  <- function() {
   # currency - transits EURUSD
   trans.eurusd.usa  <- mergeTrans("~/trading/transits_usa/USA_1997-2014_trans_orb1.tsv", eurusd)
   trans.eurusd.usa2  <- mergeTrans("~/trading/transits_usa/USA_coinage_1997-2014_trans_orb1.tsv", eurusd)
-  trans.eurusd.eur  <- mergeTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb24.tsv", eurusd)
   # currency - transits USDCAD
   trans.usdcad.usa  <- mergeTrans("~/trading/2001-2014_trans_USA.tsv", usdcad)
 
@@ -716,6 +731,12 @@ initEuroPredict <- function() {
   eurusd_full <- openCurrency2("~/trading/EURUSD_day_fxpro.csv")
   eurusd <- subset(eurusd_full, Date < as.Date("2012-01-01"))
   eurusd_test <- subset(eurusd_full, Date > as.Date("2012-01-01"))
+  trans.eur <- openTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb25.tsv")
+  trans.eurusd.eur  <- mergeTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb25.tsv", eurusd)
+  predcor <- historyAspectsCorrelation(trans.eur, trans.eurusd.eur, "canberra", keys[[1]])
+  planets.eur <- read.table("~/trading/EUR_2000-2014_planets_20130518.tsv", header = T, sep="\t")
+  planets.eur$Date <- as.Date(planets.eur$Date, format="%Y-%m-%d")
+
 }
 
 initEuroPredict()
