@@ -41,6 +41,8 @@ planetsList <- list(c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", 
              # trans saturn
              c("UR", "NE", "PL"))
 
+aspectTypesCols <- c('SUT', 'MOT', 'MET', 'VET', 'MAT', 'JUT', 'SAT', 'URT', 'NET', 'PLT')
+
 # a function that returns the position of n-th largest
 maxn <- function(x, n) {
   order_x <- order(x, decreasing = TRUE)
@@ -232,8 +234,48 @@ openCurrencyXts <- function(currency_file) {
   xts(currency[,-1:-2], order.by=currency[,1])
 }
 
+removeAspectsOutType <- function(X, asptype) {
+  Y <- X[1:20]
+  v <- X[21:30] %in% asptype
+  # double the validation vector intercalating elements
+  v <- c(matrix(c(v,v), 2, byrow=T))
+  Y <- ifelse(v, Y, NA);
+  Y
+}
+
 # Open a Transits table and merge with a currency table
-openTrans <- function(trans_file, effcorrection = TRUE, asptypes='all') {
+openTrans <- function(trans_file, effcorrection=1, aspmode=1, asptype='all') {
+  if (aspmode == 1) {
+    aspectsNames <- c('a0', 'a30', 'a45', 'a60', 'a72', 'a90', 'a120', 'a135', 'a144', 'a150', 'a180', 'a18', 'a33', 'a36', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160')
+  }
+  else if (aspmode == 2) {
+    aspectsNames <- c('a0', 'a45', 'a60', 'a90', 'a120', 'a150', 'a180')
+  }
+  else if (aspmode == 3) {
+    aspectsNames <- c('a0', 'a30', 'a45', 'a60', 'a90', 'a120', 'a135', 'a150', 'a180')
+  }
+  else if (aspmode == 4) {
+    aspectsNames <- c('a30', 'a45', 'a72', 'a135', 'a144', 'a51', 'a103')
+  }
+  else if (aspmode == 5) {
+    aspectsNames <- c('a30', 'a45', 'a72', 'a135', 'a144', 'a18', 'a33', 'a36', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160')
+  }
+  else {
+    stop("No valid asptype value was provided.")
+  }
+
+  #TODO: the minor aspects that are very near are overlapping due orbs
+
+  switch(asptype,
+         all = types <- c('A', 'AE', 'SE', 'S'),
+         apsepexact = types <- c('A', 'AE', 'SE'),
+         exact = types <-  c('AE', 'SE'),
+         apexact = types <- c('A', 'AE'))
+
+  if (!exists('types')) {
+    stop("The provided asptype is not valid.")
+  }
+
   # transits
   trans <- read.table(trans_file, header = T, sep="\t", na.strings = "")
   trans$Date <- as.Date(trans$Date, format="%Y-%m-%d")
@@ -249,23 +291,9 @@ openTrans <- function(trans_file, effcorrection = TRUE, asptypes='all') {
     trans$Date <- as.Date(as.POSIXlt(ifelse(trans$H < 4, trans$Date-86400, trans$Date), origin="1970-01-01"), format="%Y-%m-%d")
   }
 
-  if (asptypes == 'all') {
-    aspectsNams <- c('a0', 'a30', 'a45', 'a60', 'a72', 'a90', 'a120', 'a135', 'a144', 'a150', 'a180', 'a18', 'a33', 'a36', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160')
-  }
-  else if ( asptypes == 'majors' ) {
-    aspectsNams <- c('a0', 'a45', 'a60', 'a90', 'a120', 'a150', 'a180')
-  }
-  else if ( asptypes == 'grminors' ) {
-    aspectsNams <- c('a0', 'a30', 'a45', 'a60', 'a90', 'a120', 'a135', 'a150', 'a180')
-  }
-  else if ( asptypes == 'leminors' ) {
-    aspectsNams <- c('a30', 'a45', 'a72', 'a135', 'a144', 'a51', 'a103')
-  }
-  else if ( asptypes == 'allminors' ) {
-    aspectsNams <- c('a30', 'a45', 'a72', 'a135', 'a144', 'a18', 'a33', 'a36', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160')
-  }
-  else {
-    stop("No valid asptype value was provided.")
+  # reset the aspects that are not of the required types
+  if (asptype != 'all') {
+    trans[,planetsList[[1]]] <- t(apply(trans[,c(planetsList[[1]],aspectTypesCols)], 1, removeAspectsOutType, asptype=types))
   }
 
   # Convert the riseset times to correct timezone for Cyprus
@@ -273,7 +301,7 @@ openTrans <- function(trans_file, effcorrection = TRUE, asptypes='all') {
   #trans$ASC1 <- tzcorrect
   trans$PC <- trans$PT
   trans$PC <- factor(trans$PC, levels = c('SU', 'MO', 'ME', 'VE', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL'), labels = c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9))
-  trans <- subset(trans, PT %ni% c('MO', 'JU', 'SA', 'UR', 'NE', 'PL') & PR %ni% c('Asc', 'MC'));
+  trans <- subset(trans, PT %ni% c('MO', 'JU', 'SA', 'UR', 'NE', 'PL') & PR %ni% c('Asc', 'MC') & AS %in% aspectsNames);
   # give each transit type an index
   trans$idx <- with(trans, paste(PT, AS, PR, SI, sep=''))
   trans
@@ -307,7 +335,7 @@ predictTrend <- function(search_date) {
 
 predColNames = c('Date', 'idx', 'down', 'up', 'count', 'endEffect', 'S2', 'PC', 'SUR', 'SURD', 'MOR', 'MORD', 'MER', 'MERD', 'VER', 'VERD', 'MAR', 'MARD', 'JUR', 'JURD', 'SAR', 'SARD', 'URR', 'URRD', 'NER', 'NERD', 'PLR', 'PLRD', 'udis', 'ddis', 'corEff', 'ucor', 'dcor')
 
-predictTransTable <- function(trans, trans_hist, cor_method, keys, file_name, binarize=TRUE, rmzeroaspects=TRUE, qpos=4, maxasp=2) {
+predictTransTable <- function(trans, trans_hist, cor_method, keys, binarize=1, rmzeroaspects=1, qpos=4, maxasp=2) {
   # get the maximum S2 transit by day
   #ddply(testMatrix, .(GroupID), summarize, Name=Name[which.max(Value)])
   # get the maximun and the ones that are in a max(S2)-5 threshold
@@ -459,7 +487,7 @@ predictTransTableTest <- function(predict_table, currency_hist) {
 }
 
 testCorrelations <- function() {
-  for (j in array(c(seq(1, 28, by=1)))) {
+  for (j in array(c(seq(14, 28, by=1)))) {
     #cat("iteration = ", iter <- iter + 1, "\n")
     writeLines(strwrap(paste(j, " Transits File")))
     writeLines("\n")
@@ -467,7 +495,7 @@ testCorrelations <- function() {
     eurusd <- subset(eurusd_full, Date > as.Date("1998-01-01") & Date < as.Date("2012-01-01"))
     eurusd_test <- subset(eurusd_full, Date > as.Date("2012-01-01"))
     file_name <- paste("~/trading/transits_eur/EUR_1997-2014_trans_orb", j, ".tsv", sep='')
-    trans.eur <- openTrans(file_name)
+    trans.eur <- openTrans(file_name, 1, 1, 'all')
     trans.eurusd.eur  <- mergeTrans(trans.eur, eurusd)
     # generate keys combinations
     # combn(keys, 2, simplify=FALSE)
@@ -477,19 +505,15 @@ testCorrelations <- function() {
       cat("\n")
 
       writeLines("\t\tCanberra Distance")
-      predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, "canberra", planetsList[[n]], "test_corr_pred.csv")
+      predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, "canberra", planetsList[[n]], 1, 1, 4, 2)
       predictTransTest <- predictTransTableTest(predictTrans, eurusd_test)
 
       writeLines("\t\tEuclidian Distance")
-      predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, "euclidian", planetsList[[n]], "test_corr_pred.csv")
+      predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, "euclidian", planetsList[[n]], 1, 1, 4, 2)
       predictTransTest <- predictTransTableTest(predictTrans, eurusd_test)
 
       writeLines("\t\tBinary Distance")
-      predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, "binary", planetsList[[n]], "test_corr_pred.csv")
-      predictTransTest <- predictTransTableTest(predictTrans, eurusd_test)
-
-      writeLines("\t\tManhattan Distance")
-      predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, "manhattan", planetsList[[n]], "test_corr_pred.csv")
+      predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, "binary", planetsList[[n]], 1, 1, 4, 2)
       predictTransTest <- predictTransTableTest(predictTrans, eurusd_test)
     }
   }
@@ -769,7 +793,7 @@ initEuroPredict <- function() {
   eurusd_full <- openCurrency2("~/trading/EURUSD_day_fxpro.csv")
   eurusd <- subset(eurusd_full, Date < as.Date("2012-01-01"))
   eurusd_test <- subset(eurusd_full, Date > as.Date("2012-01-01"))
-  trans.eur <- openTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb25.tsv")
+  trans.eur <- openTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb25.tsv", 1, 2, 'none')
   trans.eurusd.eur  <- mergeTrans(trans.eur, eurusd)
   predcor <- historyAspectsCorrelation(trans.eur, trans.eurusd.eur, "canberra", keys[[1]])
   planets.eur <- read.table("~/trading/EUR_2000-2014_planets_20130518.tsv", header = T, sep="\t")
