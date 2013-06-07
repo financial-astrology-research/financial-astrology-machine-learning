@@ -276,7 +276,7 @@ openTrans <- function(trans_file, effcorrection=1, aspmode='all', asptype='all')
   trans$WD <- format(trans$endEffect, "%w");
   trans$H <- as.numeric(format(trans$endEffect, "%H"));
   # remove the slow planets and other points that complicate prediction
-  trans <- subset(trans, PT %ni% c('MO', 'JU', 'SA', 'UR', 'NE', 'PL') & PR %ni% c('Asc', 'MC') & AS %in% aspectsNames);
+  trans <- subset(trans, PT %ni% c('MO', 'JU', 'SA', 'UR', 'NE', 'PL') & PR %ni% c('Asc', 'MC'));
 
   if (effcorrection) {
     # substract one day to the aspects tha are early in the day
@@ -487,34 +487,46 @@ predictTransTableTest <- function(predict_table, currency_hist) {
 }
 
 testCorrelations <- function() {
+  # correlation methods to test
+  corMethods <- c('canberra', 'euclidian', 'binary')
+  # aspects modes
+  aspModes <- c('all', 'majors', 'minmajors', 'mymajors', 'minors')
+  # aspects types
+  aspTypes <- c('all', 'apsepexact', 'exact', 'apexact')
+  # all transit options
+  transOpts <- expand.grid(aspModes, aspTypes)
+
   for (j in array(c(seq(14, 28, by=1)))) {
     #cat("iteration = ", iter <- iter + 1, "\n")
-    writeLines(strwrap(paste(j, " Transits File")))
-    writeLines("\n")
-    eurusd_full <- openCurrency2("~/trading/EURUSD_day_fxpro.csv")
-    eurusd <- subset(eurusd_full, Date > as.Date("1998-01-01") & Date < as.Date("2012-01-01"))
-    eurusd_test <- subset(eurusd_full, Date > as.Date("2012-01-01"))
-    file_name <- paste("~/trading/transits_eur/EUR_1997-2014_trans_orb", j, ".tsv", sep='')
-    trans.eur <- openTrans(file_name, 1, 1, 'all')
-    trans.eurusd.eur  <- mergeTrans(trans.eur, eurusd)
-    # generate keys combinations
-    # combn(keys, 2, simplify=FALSE)
-    for (n in seq(1, length(planetsList))) {
-      writeLines(file_name)
-      cat("\tPlanets KEYS mode:", planetsList[[n]])
-      cat("\n")
+    for (opn in 1:nrow(transOpts)) {
+      aspmode <- transOpts[opn,1]
+      asptype <- transOpts[opn,2]
+      cat("Transits File #", j, "opts aspmode =", as.character(aspmode), "asptype =", as.character(asptype), "\n")
 
-      writeLines("\t\tCanberra Distance")
-      predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, "canberra", planetsList[[n]], 1, 1, 4, 2)
-      predictTransTest <- predictTransTableTest(predictTrans, eurusd_test)
+      eurusd_full <- openCurrency2("~/trading/EURUSD_day_fxpro.csv")
+      eurusd <- subset(eurusd_full, Date > as.Date("1998-01-01") & Date < as.Date("2012-01-01"))
+      eurusd_test <- subset(eurusd_full, Date > as.Date("2012-01-01"))
+      file_name <- paste("~/trading/transits_eur/EUR_1997-2014_trans_orb", j, ".tsv", sep='')
+      trans.eur <- openTrans(file_name, 1, aspmode, asptype)
+      trans.eurusd.eur  <- mergeTrans(trans.eur, eurusd)
+      # found aspects in the transit data frame
+      foundasp <- unique(trans.eur$AS)
+      cat("\tFound aspects:", as.character(foundasp), "\n\n")
 
-      writeLines("\t\tEuclidian Distance")
-      predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, "euclidian", planetsList[[n]], 1, 1, 4, 2)
-      predictTransTest <- predictTransTableTest(predictTrans, eurusd_test)
+      # generate keys combinations
+      # combn(keys, 2, simplify=FALSE)
+      # test different planets aspects combinations
+      for (n in seq(1, length(planetsList))) {
+        cat(file_name, "\n\n")
+        cat("\tPlanets KEYS mode:", planetsList[[n]], "\n\n")
 
-      writeLines("\t\tBinary Distance")
-      predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, "binary", planetsList[[n]], 1, 1, 4, 2)
-      predictTransTest <- predictTransTableTest(predictTrans, eurusd_test)
+        # test different correlation methods
+        for (cormethod in corMethods) {
+          cat("\t\t", cormethod, "Method\n")
+          predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, cormethod, planetsList[[n]], 1, 1, 4, 2)
+          predictTransTest <- predictTransTableTest(predictTrans, eurusd_test)
+        }
+      }
     }
   }
 }
