@@ -244,23 +244,15 @@ removeAspectsOutType <- function(X, asptype) {
 }
 
 # Open a Transits table and merge with a currency table
-openTrans <- function(trans_file, effcorrection=1, aspmode=1, asptype='all') {
-  if (aspmode == 1) {
-    aspectsNames <- c('a0', 'a30', 'a45', 'a60', 'a72', 'a90', 'a120', 'a135', 'a144', 'a150', 'a180', 'a18', 'a33', 'a36', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160')
-  }
-  else if (aspmode == 2) {
-    aspectsNames <- c('a0', 'a45', 'a60', 'a90', 'a120', 'a150', 'a180')
-  }
-  else if (aspmode == 3) {
-    aspectsNames <- c('a0', 'a30', 'a45', 'a60', 'a90', 'a120', 'a135', 'a150', 'a180')
-  }
-  else if (aspmode == 4) {
-    aspectsNames <- c('a30', 'a45', 'a72', 'a135', 'a144', 'a51', 'a103')
-  }
-  else if (aspmode == 5) {
-    aspectsNames <- c('a30', 'a45', 'a72', 'a135', 'a144', 'a18', 'a33', 'a36', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160')
-  }
-  else {
+openTrans <- function(trans_file, effcorrection=1, aspmode='all', asptype='all') {
+  switch(aspmode,
+    all = aspectsNames <- c('a0', 'a30', 'a45', 'a60', 'a72', 'a90', 'a120', 'a135', 'a144', 'a150', 'a180', 'a18', 'a33', 'a36', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160'),
+    majors = aspectsNames <- c('a0', 'a45', 'a60', 'a90', 'a120', 'a150', 'a180'),
+    minmajors = aspectsNames <- c('a0', 'a30', 'a45', 'a60', 'a90', 'a120', 'a135', 'a150', 'a180'),
+    mymajors = aspectsNames <- c('a30', 'a45', 'a72', 'a135', 'a144', 'a51', 'a103'),
+    minors <- c('a30', 'a45', 'a72', 'a135', 'a144', 'a18', 'a33', 'a36', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160'))
+
+  if (!exists('aspectsNames')) {
     stop("No valid asptype value was provided.")
   }
 
@@ -283,6 +275,8 @@ openTrans <- function(trans_file, effcorrection=1, aspmode=1, asptype='all') {
   trans$endEffect <- timeDate(paste(trans$Date, trans$Hour), format = "%Y-%m-%d %H:%M:%S", zone = "UTC", FinCenter = "CET")
   trans$WD <- format(trans$endEffect, "%w");
   trans$H <- as.numeric(format(trans$endEffect, "%H"));
+  # remove the slow planets and other points that complicate prediction
+  trans <- subset(trans, PT %ni% c('MO', 'JU', 'SA', 'UR', 'NE', 'PL') & PR %ni% c('Asc', 'MC') & AS %in% aspectsNames);
 
   if (effcorrection) {
     # substract one day to the aspects tha are early in the day
@@ -296,12 +290,16 @@ openTrans <- function(trans_file, effcorrection=1, aspmode=1, asptype='all') {
     trans[,planetsList[[1]]] <- t(apply(trans[,c(planetsList[[1]],aspectTypesCols)], 1, removeAspectsOutType, asptype=types))
   }
 
+  # select only the specified aspects
+  if (aspmode != 'all') {
+    trans <- subset(trans, AS %in% aspectsNames);
+  }
+
   # Convert the riseset times to correct timezone for Cyprus
   #tzcorrect <- format(as.POSIXlt(paste(trans$Date, trans$ASC1), format = "%Y-%m-%d %H:%M") + 3600 * 2.5, "%H:%M")
   #trans$ASC1 <- tzcorrect
   trans$PC <- trans$PT
   trans$PC <- factor(trans$PC, levels = c('SU', 'MO', 'ME', 'VE', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL'), labels = c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9))
-  trans <- subset(trans, PT %ni% c('MO', 'JU', 'SA', 'UR', 'NE', 'PL') & PR %ni% c('Asc', 'MC') & AS %in% aspectsNames);
   # give each transit type an index
   trans$idx <- with(trans, paste(PT, AS, PR, SI, sep=''))
   trans
@@ -341,6 +339,8 @@ predictTransTable <- function(trans, trans_hist, cor_method, keys, binarize=1, r
   # get the maximun and the ones that are in a max(S2)-5 threshold
   # ddply(trans, .(Date), summarize, Name=S2[which(S2 > max(S2)-3)])
   aspects_effect <- predictAspectsTable(trans_hist)
+  # needed to allow ddply recognize the local
+  maxasp <- maxasp
   selected <- ddply(trans, .(Date), summarize, idx=idx[which(S2 >= maxn(S2, maxasp))])
   #selected <- ddply(trans, .(Date), summarize, idx=idx[which.max(S2)])
   aspect_dates_predict <- merge(selected, aspects_effect, by='idx')
