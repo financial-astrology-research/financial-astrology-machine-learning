@@ -248,9 +248,10 @@ openTrans <- function(trans_file, effcorrection=1, aspmode='all', asptype='all')
   switch(aspmode,
     all = aspectsNames <- c('a0', 'a30', 'a45', 'a60', 'a72', 'a90', 'a120', 'a135', 'a144', 'a150', 'a180', 'a18', 'a33', 'a36', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160'),
     majors = aspectsNames <- c('a0', 'a45', 'a60', 'a90', 'a120', 'a150', 'a180'),
+    traditional = aspectsNames <- c('a0', 'a60', 'a90', 'a120', 'a180'),
     minmajors = aspectsNames <- c('a0', 'a30', 'a45', 'a60', 'a90', 'a120', 'a135', 'a150', 'a180'),
-    mymajors = aspectsNames <- c('a30', 'a45', 'a72', 'a135', 'a144', 'a51', 'a103'),
-    minors <- c('a30', 'a45', 'a72', 'a135', 'a144', 'a18', 'a33', 'a36', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160'))
+    myminors = aspectsNames <- c('a30', 'a45', 'a72', 'a135', 'a144', 'a51', 'a103'),
+    minors <- aspectsNames <- c('a30', 'a45', 'a72', 'a135', 'a144', 'a18', 'a33', 'a36', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160'))
 
   if (!exists('aspectsNames')) {
     stop("No valid asptype value was provided.")
@@ -261,7 +262,7 @@ openTrans <- function(trans_file, effcorrection=1, aspmode='all', asptype='all')
   switch(asptype,
          all = types <- c('A', 'AE', 'SE', 'S'),
          apsepexact = types <- c('A', 'AE', 'SE'),
-         exact = types <-  c('AE', 'SE'),
+         exact = types <- c('AE', 'SE'),
          apexact = types <- c('A', 'AE'))
 
   if (!exists('types')) {
@@ -292,6 +293,7 @@ openTrans <- function(trans_file, effcorrection=1, aspmode='all', asptype='all')
 
   # select only the specified aspects
   if (aspmode != 'all') {
+    cat("\tFiltering by:", aspectsNames)
     trans <- subset(trans, AS %in% aspectsNames);
   }
 
@@ -494,7 +496,7 @@ testCorrelations <- function() {
   # correlation methods to test
   corMethods <- c('canberra', 'euclidian', 'binary')
   # aspects modes
-  aspModes <- c('all', 'majors', 'minmajors', 'mymajors', 'minors')
+  aspModes <- c('all', 'majors', 'traditional', 'minmajors', 'myminors', 'minors')
   # aspects types
   aspTypes <- c('all', 'apsepexact', 'exact', 'apexact')
   # all transit options
@@ -507,8 +509,9 @@ testCorrelations <- function() {
   for (j in array(c(seq(24, 28, by=1)))) {
     #cat("iteration = ", iter <- iter + 1, "\n")
     for (opn in 1:nrow(transOpts)) {
-      aspmode <- transOpts[opn,1]
-      asptype <- transOpts[opn,2]
+      aspmode <- as.character(transOpts[opn,1])
+      asptype <- as.character(transOpts[opn,2])
+      cat("#######################################################\n")
       cat("Transits File #", j, "opts aspmode =", as.character(aspmode), "asptype =", as.character(asptype), "\n")
 
       file_name <- paste("~/trading/transits_eur/EUR_1997-2014_trans_orb", j, ".tsv", sep='')
