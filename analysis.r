@@ -409,11 +409,15 @@ filterZeroAspects <- function(X) {
   X1 <- ifelse(X2 == 0 & X3 == 0, 0, X1)
 }
 
-historyAspectsCorrelation <- function(ds_trans, ds_hist, cor_method, keys, binarize=TRUE, rmzeroaspects=TRUE, qpos=4) {
-  #keys <- keys[plamode:length(keys)]
-  dsasp <- reshape(ds_hist, varying = keys, v.names = "aspect", times = keys,  direction = "long")
+historyAspectsCorrelation <- function(ds_trans, ds_hist, cor_method, kplanets, binarize=1, rmzeroaspects=1, qpos=4) {
+  #remove no needed cols to save memory
+  ds_trans <- ds_trans[,c('Date', 'idx', kplanets)]
+  ds_hist <- ds_hist[,c('Date', 'idx', 'Eff', kplanets)]
+  #kplanets <- kplanets[plamode:length(kplanets)]
+  dsasp <- reshape(ds_hist, varying = kplanets, v.names = "aspect", times = kplanets,  direction = "long")
   dsup <- data.table(subset(dsasp, Eff=='up'))
   dsdown <- data.table(subset(dsasp, Eff=='down'))
+  # TODO: implement kaspects to correlate only by determined list of aspects
   dsup <- as.data.frame(dsup[, as.list(table(aspect)), by = c('idx')])
   dsdown <- as.data.frame(dsdown[, as.list(table(aspect)), by = c('idx')])
   # number of aspects
@@ -421,10 +425,10 @@ historyAspectsCorrelation <- function(ds_trans, ds_hist, cor_method, keys, binar
   # the first two cols are date and indx
   initcol <- 3
 
-  # merge_recurse(apply(ds_trans[,keys], 2, function(x) count(x)))
-  # by(trans.eur[,keys], trans.eur$idx, function(x) { table(apply(x, 1, function(x) x)) })
-  # table(apply(ds_trans[,keys], 1, function(x) x))
-  trans_long <- reshape(ds_trans, varying = keys, v.names = "aspect", times = keys,  direction = "long")
+  # merge_recurse(apply(ds_trans[,kplanets], 2, function(x) count(x)))
+  # by(trans.eur[,kplanets], trans.eur$idx, function(x) { table(apply(x, 1, function(x) x)) })
+  # table(apply(ds_trans[,kplanets], 1, function(x) x))
+  trans_long <- reshape(ds_trans, varying = kplanets, v.names = "aspect", times = kplanets,  direction = "long")
   trans_long <- data.table(trans_long)
   trans_table <- trans_long[, as.list(table(aspect)), by = c('Date','idx')]
 
@@ -495,17 +499,18 @@ testCorrelations <- function() {
   aspTypes <- c('all', 'apsepexact', 'exact', 'apexact')
   # all transit options
   transOpts <- expand.grid(aspModes, aspTypes)
+  # currency data
+  eurusd_full <- openCurrency2("~/trading/EURUSD_day_fxpro.csv")
+  eurusd <- subset(eurusd_full, Date > as.Date("1998-01-01") & Date < as.Date("2012-01-01"))
+  eurusd_test <- subset(eurusd_full, Date > as.Date("2012-01-01"))
 
-  for (j in array(c(seq(14, 28, by=1)))) {
+  for (j in array(c(seq(24, 28, by=1)))) {
     #cat("iteration = ", iter <- iter + 1, "\n")
     for (opn in 1:nrow(transOpts)) {
       aspmode <- transOpts[opn,1]
       asptype <- transOpts[opn,2]
       cat("Transits File #", j, "opts aspmode =", as.character(aspmode), "asptype =", as.character(asptype), "\n")
 
-      eurusd_full <- openCurrency2("~/trading/EURUSD_day_fxpro.csv")
-      eurusd <- subset(eurusd_full, Date > as.Date("1998-01-01") & Date < as.Date("2012-01-01"))
-      eurusd_test <- subset(eurusd_full, Date > as.Date("2012-01-01"))
       file_name <- paste("~/trading/transits_eur/EUR_1997-2014_trans_orb", j, ".tsv", sep='')
       trans.eur <- openTrans(file_name, 1, aspmode, asptype)
       trans.eurusd.eur  <- mergeTrans(trans.eur, eurusd)
@@ -563,120 +568,16 @@ funtionizethis  <- function() {
   planets.eur$Date <- as.Date(planets.eur$Date, format="%Y-%m-%d")
   write.csv(planets.eur, file=paste("~/mt4/planets1.csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
 
-
   planets.usa <- read.table("~/trading/USA_2012_2014_planets_20130503.tsv", header = T, sep="\t")
   planets.usa$Date <- as.Date(planets.usa$Date, format="%Y-%m-%d")
   write.csv(planets.usa, file=paste("~/mt4/planets2.csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
 
-
-  # analysis of mars & jupiter aspects
-  mars.jupiter <- subset(trans.price.eur, Ptran == 'Mars' & Prad == 'Jupiter')
-  tapply(mars.jupiter$val, mars.jupiter$Aspect, mean)
-
-  mars.neptune <- subset(trans.price.eur, Ptran == 'Mars' & Prad == 'Neptune')
-  tapply(mars.neptune$val, mars.neptune$Aspect, mean)
-
-  # count the up/down observations
-  table(cut(mars.jupiter$val, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE))
-  # order the dataset by val
   #mars.jupiter[order(venus.jupiter$val)]
   eurusd.aggregated = aggregate(trans.price.eur$val, list(Ptran = trans.price.eur$Ptran, Aspect = trans.price.eur$Aspect, Prad = trans.price.eur$Prad, Sign = trans.price.eur$Sign), mean)
-  # round the difference to 5 decimals
-  eurusd.aggregated$x = round(eurusd.aggregated$x, digits=5)
-  eurusd.aggregated = eurusd.aggregated[order(eurusd.aggregated$Ptran, eurusd.aggregated$Prad),]
-
-  # mercury & mc
-  mercury.mc <- subset(trans.price.eur, Ptran == 'Mercury' & Prad == 'MC')
-  tapply(mercury.mc$val, mercury.mc$Aspect, mean)
-
-
-  # mercury & neptune
-  mercury.neptune <- subset(trans.price.eur, Ptran == 'Mercury' & Prad == 'Neptune')
-  tapply(mercury.neptune$val, mercury.neptune$Aspect, mean)
-
-
-  # mercury & venus
-  mercury.venus <- subset(trans.price.eur, Ptran == 'Mercury' & Prad == 'Venus')
-  tapply(mercury.venus$val, mercury.venus$Aspect, mean)
-
-  # analysis of venus & mars aspects
-  venus.mars <- subset(trans.price.eur, Ptran == 'Venus' & Prad == 'Mars')
-  tapply(venus.mars$val, venus.mars$Aspect, mean)
-
-  # analysis of Venus & Mercury aspects
-  venus.mercury = subset(trans.price.eur, Ptran=='Venus' & Prad=='Mercury')
-  tapply(venus.mercury$val, venus.mercury$Aspect, mean)
-  #         conj          oppo          quad           sex          trig
-  # -0.0033500000 -0.0003250000 -0.0001730769  0.0019593750 -0.0012050000
-
-  # analysis of Venus & Jupiter aspects
-  venus.jupiter = subset(trans.price.eur, Ptran=='Venus' & Prad=='Jupiter')
-  tapply(venus.jupiter$val, venus.jupiter$Aspect, mean)
-
-  # venus & neptune
-  venus.neptune = subset(trans.price.eur, Ptran=='Venus' & Prad=='Neptune')
-  tapply(venus.neptune$val, venus.neptune$Aspect, mean)
-
-  # venus & pluto
-  venus.pluto = subset(trans.price.eur, Ptran=='Venus' & Prad=='Pluto')
-  tapply(venus.pluto$val, venus.pluto$Aspect, mean)
-
-
-  # analysis of venus & venus aspects
-  venus.venus <- subset(trans.price.eur, Ptran == 'Venus' & Prad == 'Venus')
-  tapply(venus.venus$val, venus.venus$Aspect, mean)
-  # sextil - performs a negative effect but from pisces do less damage than from scorpio
-  #        conj         oppo         quad          sex         trig
-  # 0.000518750 -0.000318750 -0.000893750 -0.001541667 -0.000950000
-
-  # analysis of jupiter & mars aspects
-  jupiter.mars <- subset(trans.price.eur, Ptran == 'Jupiter' & Prad == 'Mars')
-  tapply(jupiter.mars$val, jupiter.mars$Aspect, mean)
-  #         conj          oppo          quad           sex          trig
-  # -0.0034500000  0.0109500000 -0.0010666667 -0.0005000000  0.0008166667
-
-  # analysis of sun & neptune aspects
-  sun.neptune <- subset(trans.price.eur, Ptran == 'Sun' & Prad == 'Neptune')
-  tapply(sun.neptune$val, sun.neptune$Aspect, mean)
-  #       conj         oppo         quad          sex         trig
-  # 0.000743750 -0.003466667 -0.000700000 -0.002375000  0.001317647
-
-  sun.pluto <- subset(trans.price.eur, Ptran == 'Sun' & Prad == 'Pluto')
-  tapply(sun.pluto$val, sun.pluto$Aspect, mean)
-
-  # sun & venus
-  sun.venus <- subset(trans.price.eur, Ptran == 'Sun' & Prad == 'Venus')
-  tapply(sun.venus$val, sun.venus$Aspect, mean)
-
-  # sun & mercury
-  sun.mercury <- subset(trans.price.eur, Ptran == 'Sun' & Prad == 'Mercury')
-  tapply(sun.mercury$val, sun.mercury$Aspect, mean)
-
-  # sun & saturn
-  sun.saturn <- subset(trans.price.eur, Ptran == 'Sun' & Prad == 'Saturn')
-  tapply(sun.saturn$val, sun.saturn$Aspect, mean)
-
-  # sun & sun
-  sun.sun <- subset(trans.price.eur, Ptran == 'Sun' & Prad == 'Sun')
-  tapply(sun.sun$val, sun.sun$Aspect, mean)
-
-  # neptune & saturn
-  neptune.saturn <- subset(trans.price.eur, Ptran == 'Neptune' & Prad == 'Saturn')
-  tapply(neptune.saturn$val, neptune.saturn$Aspect, mean)
-
-
-  # analysis of sun & neptune aspects
-  sun.neptune <- subset(trans.price.eur, Ptran == 'Sun' & Prad == 'Neptune')
-  # simplify the way to access the columns
-  with(sun.neptune, tapply(val, Aspect, mean))
-  attach(sun.neptune)
-  tapply(val, Aspect, mean)
-  detach(sun.neptune)
   # rename sex by sextil
   Aspect = gsub('sex', 'sextil', Aspect)
   # split string
   # strsplit(Aspect, 'x')
-
   # remove rows with missing variables
   # na.omit(sun.neptune)
 
@@ -685,47 +586,14 @@ funtionizethis  <- function() {
   # exctract individual components of date
   wkday = weekdays(nowDate)
   month = months(nowDate)
-  year = substr(as.POSIXct(nowDate), 1, 4)
   quarter = quarters(nowDate)
-
-  moon.asc <- subset(trans.price.eur, Ptran == 'Moon' & Prad == 'Asc')
-  tapply(moon.asc$val, moon.asc$Aspect, mean)
-  # generate histogram faceted by Aspect type and with density layer
-  # ggplot(ds, aes(x=val)) + geom_histogram(binwidth=.002, colour="black", fill="white", aes(y=..density..)) + facet_grid(AS ~ .) + scale_x_continuous(limits=c(-.005,.005)) + geom_density(alpha=.2, fill="#FF6666")
-
-
-  # Some data with peaks and throughs 
-  plot(values, t="l")
 
   # Calculate the moving average with a window of 10 points 
   mov.avg <- ma(values, 1, 10, FALSE)
 
-  numSwaps <- 1000    
-  mov.avg.swp <- matrix(0, nrow=numSwaps, ncol=length(mov.avg))
 
-  # The swapping may take a while, so we display a progress bar 
-  prog <- txtProgressBar(0, numSwaps, style=3)
-
-  for (i in 1:numSwaps)
-  {
-    # Swap the data
-    val.swp <- sample(values)
-    # Calculate the moving average
-    mov.avg.swp[i,] <- ma(val.swp, 1, 10, FALSE)
-    setTxtProgressBar(prog, i)
-  }
-
-  # Now find the 1% and 5% quantiles for each column
-  limits.1 <- apply(mov.avg.swp, 2, quantile, 0.01, na.rm=T)
-  limits.5 <- apply(mov.avg.swp, 2, quantile, 0.05, na.rm=T)
-
-  # Plot the limits
-  points(limits.5, t="l", col="orange", lwd=2)
-  points(limits.1, t="l", col="red", lwd=2)
-
+  ## calculate peaks and valleys
   currency.planets = merge(usdcad, planets, by = "Date")
-
-  ## create a synthetic sequence
   a <- currency.planets$Open
   ## detect local maxima and minima
   maxmin <- msExtrema(a, 50)
@@ -770,8 +638,6 @@ funtionizethis  <- function() {
   l.min.sp <- reshape(currency.min, varying = c("SUSP", "MOSP", "MESP", "VESP", "MASP", "JUSP", "SASP", "URSP", "NESP", "PLSP"), v.names = "speed", times = c("SUSP", "MOSP", "MESP", "VESP", "MASP", "JUSP", "SASP", "URSP", "NESP", "PLSP"),  direction = "long")
   p1 <- qplot(y=l.min.sp$speed, colour=l.min.sp$time, shape=l.min.sp$time) + scale_y_continuous(breaks=seq(from=-1, to=1.3, by=0.05), limits=c(-1,1.5)) + scale_shape_manual("",values=c(1,2,3,4,5,6,7,8,9,10))
 
-
-
   # density plot
   p1 <- ggplot(l.min, aes(x = l.min$lon)) + scale_x_continuous(breaks=seq(from=0, to=360, by=5), limits=c(0,360)) + geom_density(adjust=1/12) + coord_polar(start = 1.57, direction=-1) + theme_update(axis.text.x = theme_text(angle = -30, size = 6))
   p2 <- ggplot(l.max, aes(x = l.max$lon)) + scale_x_continuous(breaks=seq(from=0, to=360, by=5), limits=c(0,360)) + geom_density(adjust=1/12) + coord_polar(start = 1.57, direction=-1) + theme_update(axis.text.x = theme_text(angle = -30, size = 6))
@@ -805,11 +671,10 @@ initEuroPredict <- function() {
   eurusd_full <- openCurrency2("~/trading/EURUSD_day_fxpro.csv")
   eurusd <- subset(eurusd_full, Date < as.Date("2012-01-01"))
   eurusd_test <- subset(eurusd_full, Date > as.Date("2012-01-01"))
-  trans.eur <- openTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb25.tsv", 1, 2, 'none')
+  trans.eur <- openTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb25.tsv", 1, 'all', 'all')
   trans.eurusd.eur  <- mergeTrans(trans.eur, eurusd)
   predcor <- historyAspectsCorrelation(trans.eur, trans.eurusd.eur, "canberra", keys[[1]])
   planets.eur <- read.table("~/trading/EUR_2000-2014_planets_20130518.tsv", header = T, sep="\t")
   planets.eur$Date <- as.Date(planets.eur$Date, format="%Y-%m-%d")
 
 }
-
