@@ -12,34 +12,41 @@ library(reshape)
 options(scipen=100)
 
 planetsList <- list(c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", "MAR", "JU", "JUR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"),
-             # combined fast planets
-             c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", "MAR"),
-             # combined slow planets
-             c("JU", "JUR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"),
-             # trans jupiter
-             c("SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"),
-             # trans saturn
-             c("UR", "URR", "NE", "NER", "PL", "PLR"),
-             # all to radical
-             c("SUR", "MOR", "MER", "VER", "MAR", "JUR", "SAR", "URR", "NER", "PLR"),
-             # fast planets to radical
-             c("SUR", "MOR", "MER", "VER", "MAR"),
-             # slow planets to radical
-             c("JUR", "SAR", "URR", "NER", "PLR"),
-             # trans jupiter
-             c("SAR", "URR", "NER", "PLR"),
-             # trans saturn
-             c("URR", "NER", "PLR"),
-             # all planets to transit
-             c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL"),
-             # fast planets
-             c("SU", "MO", "ME", "VE", "MA"),
-             # slow planets
-             c("JU", "SA", "UR", "NE", "PL"),
-             # trans jupiter
-             c("SA", "UR", "NE", "PL"),
-             # trans saturn
-             c("UR", "NE", "PL"))
+                    # combined fast planets
+                    c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", "MAR"),
+                    # combined slow planets
+                    c("JU", "JUR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"),
+                    # trans jupiter
+                    c("SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"),
+                    # trans saturn
+                    c("UR", "URR", "NE", "NER", "PL", "PLR"),
+                    # all to radical
+                    c("SUR", "MOR", "MER", "VER", "MAR", "JUR", "SAR", "URR", "NER", "PLR"),
+                    # fast planets to radical
+                    c("SUR", "MOR", "MER", "VER", "MAR"),
+                    # slow planets to radical
+                    c("JUR", "SAR", "URR", "NER", "PLR"),
+                    # trans jupiter
+                    c("SAR", "URR", "NER", "PLR"),
+                    # trans saturn
+                    c("URR", "NER", "PLR"),
+                    # all planets to transit
+                    c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL"),
+                    # fast planets
+                    c("SU", "MO", "ME", "VE", "MA"),
+                    # slow planets
+                    c("JU", "SA", "UR", "NE", "PL"),
+                    # trans jupiter
+                    c("SA", "UR", "NE", "PL"),
+                    # trans saturn
+                    c("UR", "NE", "PL"))
+
+aspectsList <- list(c('a0', 'a30', 'a45', 'a60', 'a72', 'a90', 'a120', 'a135', 'a144', 'a150', 'a180', 'a18', 'a33', 'a36', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160'),
+                    c('a0', 'a45', 'a60', 'a90', 'a120', 'a150', 'a180'),
+                    c('a0', 'a60', 'a90', 'a120', 'a180'),
+                    c('a0', 'a30', 'a45', 'a60', 'a90', 'a120', 'a135', 'a150', 'a180'),
+                    c('a30', 'a45', 'a72', 'a135', 'a144', 'a51', 'a103'),
+                    c('a30', 'a45', 'a72', 'a135', 'a144', 'a18', 'a33', 'a36', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160'))
 
 aspectTypesCols <- c('SUT', 'MOT', 'MET', 'VET', 'MAT', 'JUT', 'SAT', 'URT', 'NET', 'PLT')
 
@@ -335,29 +342,37 @@ predictTrend <- function(search_date) {
 
 predColNames = c('Date', 'idx', 'down', 'up', 'count', 'endEffect', 'S2', 'PC', 'SUR', 'SURD', 'MOR', 'MORD', 'MER', 'MERD', 'VER', 'VERD', 'MAR', 'MARD', 'JUR', 'JURD', 'SAR', 'SARD', 'URR', 'URRD', 'NER', 'NERD', 'PLR', 'PLRD', 'udis', 'ddis', 'corEff', 'ucor', 'dcor')
 
-predictTransTable <- function(trans, trans_hist, cor_method, keys, binarize=1, rmzeroaspects=1, qpos=4, maxasp=2) {
+predictTransTable <- function(trans, trans_hist, cor_method, kplanets, kaspects, binarize=1, rmzeroaspects=1, qpos=4, maxasp=2) {
+  # convert to data table
+  trans_hist <- data.table(trans_hist)
   # get the maximum S2 transit by day
   #ddply(testMatrix, .(GroupID), summarize, Name=Name[which.max(Value)])
   # get the maximun and the ones that are in a max(S2)-5 threshold
   # ddply(trans, .(Date), summarize, Name=S2[which(S2 > max(S2)-3)])
-  aspects_effect <- predictAspectsTable(trans_hist)
-  # needed to allow ddply recognize the local
-  maxasp <- maxasp
-  selected <- ddply(trans, .(Date), summarize, idx=idx[which(S2 >= maxn(S2, maxasp))])
-  #selected <- ddply(trans, .(Date), summarize, idx=idx[which.max(S2)])
-  aspect_dates_predict <- merge(selected, aspects_effect, by='idx')
-  aspect_dates_predict <- merge(aspect_dates_predict, trans, by=c('Date', 'idx'))
+  #selected <- ddply(trans, .(Date), summarize, idx=idx[which(S2 >= maxn(S2, maxasp))])
+  predict_table <- predictAspectsTable(trans_hist)
+  # to allow data table setkey
+  trans$endEffect <- as.character(trans$endEffect)
+  # create data table
+  trans <- data.table(trans)
+  setkey(trans, 'Date')
+  selected <- trans[, idx[which(S2 >= maxn(S2, maxasp))], by=c('Date')]
+  names(selected) <- c('Date', 'idx')
   # get the aspects correlation table
-  aspect_dates_cor <- historyAspectsCorrelation(trans, trans_hist, cor_method, keys, binarize, rmzeroaspects, qpos)
+  aspect_dates_cor <- historyAspectsCorrelation(trans, trans_hist, cor_method, kplanets, kaspects, binarize, rmzeroaspects, qpos)
+  # merge
+  aspect_dates_predict <- merge(selected, predict_table, by='idx')
+  aspect_dates_predict <- merge(aspect_dates_predict, trans, by=c('Date', 'idx'))
   aspect_dates_predict <- merge(aspect_dates_predict, aspect_dates_cor, by=c('Date', 'idx'))
   # sort by date
   aspect_dates_predict <- arrange(aspect_dates_predict, desc(Date))
   #col_names = c('Date', 'idx', 'down', 'up', 'count', 'endEffect', 'JUR', 'SAR', 'URR', 'NER', 'PLR')
+  aspect_dates_predict <- as.data.frame(aspect_dates_predict)
   aspect_dates_predict[predColNames]
 }
 
-predictTransTableWrite <- function(trans, trans_hist, cor_method, keys, binarize, rmzeroaspects, qpos, filename) {
-  aspect_dates_predict <- predictTransTable(trans, trans_hist, cor_method, keys, binarize, rmzeroaspects, qpos)
+predictTransTableWrite <- function(trans, trans_hist, cor_method, kplanets, kaspects, binarize, rmzeroaspects, qpos, filename) {
+  aspect_dates_predict <- predictTransTable(trans, trans_hist, cor_method, kplanets, kaspects, binarize, rmzeroaspects, qpos, 2)
   write.csv(aspect_dates_predict[predColNames], file=paste("~/trading/predict/", file_name, sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
 }
 
@@ -379,7 +394,11 @@ predictSingleTransTable <- function(ds, ds_hist, file_name) {
 }
 
 predictAspectsTable <- function(ds_hist) {
-  predict_table <- ddply(ds_hist, .(idx), summarize, down=table(Eff)[['down']], up=table(Eff)[['up']], count=length(Eff))
+  ds_hist <- ds_hist[,c('idx', 'Eff'), with=FALSE]
+  setkey(ds_hist, 'idx')
+  #predict_table <- ddply(ds_hist, .(idx), summarize, down=table(Eff)[['down']], up=table(Eff)[['up']], count=length(Eff))
+  predict_table <- ds_hist[,as.list(table(Eff)), by=c('idx')]
+  predict_table <- predict_table[,count:=down+up]
   predict_table
 }
 
@@ -411,39 +430,54 @@ filterZeroAspects <- function(X) {
   X1 <- ifelse(X2 == 0 & X3 == 0, 0, X1)
 }
 
-historyAspectsCorrelation <- function(ds_trans, ds_hist, cor_method, kplanets, binarize=1, rmzeroaspects=1, qpos=4) {
+completeAspectList <- function(X, kaspects) {
+  missidx <- kaspects[kaspects %ni% names(X)]
+  X[missidx] <- 0
+  X
+}
+
+historyAspectsCorrelation <- function(trans, trans_hist, cor_method, kplanets, kaspects, binarize=1, rmzeroaspects=1, qpos=4) {
   #remove no needed cols to save memory
-  ds_trans <- ds_trans[,c('Date', 'idx', kplanets)]
-  ds_hist <- ds_hist[,c('Date', 'idx', 'Eff', kplanets)]
+  trans <- trans[,c('Date', 'idx', kplanets), with=FALSE]
+  trans_hist <- trans_hist[,c('Date', 'idx', 'Eff', kplanets), with=FALSE]
   #kplanets <- kplanets[plamode:length(kplanets)]
-  dsasp <- reshape(ds_hist, varying = kplanets, v.names = "aspect", times = kplanets,  direction = "long")
-  dsup <- data.table(subset(dsasp, Eff=='up'))
-  dsdown <- data.table(subset(dsasp, Eff=='down'))
+  dsasp <- reshape(trans_hist, varying = kplanets, v.names = "aspect", times = kplanets,  direction = "long")
+  # select only the aspects to consider
+  dsasp <- subset(dsasp, aspect %in% kaspects)
+  dsup <- subset(dsasp, Eff=='up')
+  setkey(dsup, 'idx', 'aspect')
+  dsdown <- subset(dsasp, Eff=='down')
+  setkey(dsdown, 'idx', 'aspect')
   # TODO: implement kaspects to correlate only by determined list of aspects
-  dsup <- as.data.frame(dsup[, as.list(table(aspect)), by = c('idx')])
-  dsdown <- as.data.frame(dsdown[, as.list(table(aspect)), by = c('idx')])
+  dsup <- dsup[, as.list(completeAspectList((table(aspect)), kaspects=kaspects)), by = c('idx')]
+  dsdown <- dsdown[, as.list(completeAspectList((table(aspect)), kaspects=kaspects)), by = c('idx')]
+  #dsup <- as.data.frame(dsup[, as.list(table(aspect)), by = c('idx')])
+  #dsdown <- as.data.frame(dsdown[, as.list(table(aspect)), by = c('idx')])
   # number of aspects
   naspects <- length(dsup)-1
   # the first two cols are date and indx
   initcol <- 3
 
-  # merge_recurse(apply(ds_trans[,kplanets], 2, function(x) count(x)))
+  # merge_recurse(apply(trans[,kplanets], 2, function(x) count(x)))
   # by(trans.eur[,kplanets], trans.eur$idx, function(x) { table(apply(x, 1, function(x) x)) })
-  # table(apply(ds_trans[,kplanets], 1, function(x) x))
-  trans_long <- reshape(ds_trans, varying = kplanets, v.names = "aspect", times = kplanets,  direction = "long")
-  trans_long <- data.table(trans_long)
-  trans_table <- trans_long[, as.list(table(aspect)), by = c('Date','idx')]
+  # table(apply(trans[,kplanets], 1, function(x) x))
+  dscurrent <- reshape(trans, varying = kplanets, v.names = "aspect", times = kplanets,  direction = "long")
+  setkey(dscurrent, 'Date', 'idx', 'aspect')
+  dscurrent <- dscurrent[, as.list(completeAspectList((table(aspect)), kaspects=kaspects)), by = c('Date','idx')]
 
-  tmerged <- merge(trans_table, dsup, by = "idx")
-  tmerged <- merge(tmerged, dsdown, by = "idx")
+  # merge
+  tmerged <- merge(dscurrent, dsup, by='idx')
+  tmerged <- merge(tmerged, dsdown, by='idx')
+  #tmerged <- Reduce('merge', list(dscurrent, dsup, dsdown))
+
   # selected cols
   cols1 <- seq(initcol, naspects+initcol-1)
   cols2 <- cols1 + naspects
   cols3 <- cols2 + naspects
-  # calculate differences
+  # convert to data frame
   tmerged <- as.data.frame(tmerged)
   # filter the side when less significant was the aspect
-  tmerged[,c(cols2, cols3)] <- t(apply(tmerged[,c(cols2, cols3)], 1, filterLessSignificant, qpos=qpos))
+  tmerged[,c(cols2,cols3)] <- t(apply(tmerged[,c(cols2,cols3)], 1, filterLessSignificant, qpos=qpos))
 
   if (rmzeroaspects) {
     tmerged[,cols1] <- t(apply(tmerged[,c(cols1,cols2,cols3)], 1, filterZeroAspects))
@@ -462,7 +496,7 @@ historyAspectsCorrelation <- function(ds_trans, ds_hist, cor_method, kplanets, b
   tmerged$ucor <- round(apply(tmerged[,c(cols1, cols2, cols3)], 1, function(x) cor(x[cols1-2], x[cols2-2], method='pearson')), digits=2)
   tmerged$dcor <- round(apply(tmerged[,c(cols1, cols2, cols3)], 1, function(x) cor(x[cols1-2], x[cols3-2], method='pearson')), digits=2)
 
-  tmerged
+  data.table(tmerged)
 }
 
 predictTransTableTest <- function(predict_table, currency_hist) {
@@ -473,7 +507,7 @@ predictTransTableTest <- function(predict_table, currency_hist) {
   tdiff <- round(abs(t1['TRUE']-t1[['FALSE']])*100, digits=2)
 
   # if the difference is significant
-  if (tdiff >= 5) {
+  if (tdiff >= 1) {
     cat("=====================", tdiff, "=====================\n")
     print(t1)
     print(t2)
@@ -506,13 +540,13 @@ testCorrelations <- function() {
   eurusd <- subset(eurusd_full, Date > as.Date("1998-01-01") & Date < as.Date("2012-01-01"))
   eurusd_test <- subset(eurusd_full, Date > as.Date("2012-01-01"))
 
-  for (j in array(c(seq(24, 28, by=1)))) {
+  for (j in array(c(seq(27, 29, by=1)))) {
     #cat("iteration = ", iter <- iter + 1, "\n")
-    for (opn in 1:nrow(transOpts)) {
-      aspmode <- as.character(transOpts[opn,1])
-      asptype <- as.character(transOpts[opn,2])
-      cat("#######################################################\n")
-      cat("Transits File #", j, "opts aspmode =", as.character(aspmode), "asptype =", as.character(asptype), "\n")
+    for (n1 in 1:nrow(transOpts)) {
+      aspmode <- as.character(transOpts[n1,1])
+      asptype <- as.character(transOpts[n1,2])
+      cat("####################################################\n")
+      cat("Transits File #", j, "transOpts aspmode =", aspmode, "asptype =", as.character(asptype), "\n")
 
       file_name <- paste("~/trading/transits_eur/EUR_1997-2014_trans_orb", j, ".tsv", sep='')
       trans.eur <- openTrans(file_name, 1, aspmode, asptype)
@@ -523,15 +557,21 @@ testCorrelations <- function() {
 
       # generate keys combinations
       # combn(keys, 2, simplify=FALSE)
-      # test different planets aspects combinations
-      for (n in seq(1, length(planetsList))) {
+      # generate the planets & aspects options combinations
+      predOpts <- expand.grid(planetsList, aspectsList)
+
+      for (n2 in 1:nrow(predOpts)) {
+        kplanets <- predOpts[[n2,1]]
+        kaspects <- predOpts[[n2,2]]
+
         cat(file_name, "\n\n")
-        cat("\tPlanets KEYS mode:", planetsList[[n]], "\n\n")
+        cat("\tAspecting Planets mode:", as.character(kplanets), "\n")
+        cat("\tAspecting Aspects mode:", as.character(kaspects), "\n\n")
 
         # test different correlation methods
         for (cormethod in corMethods) {
           cat("\t\t", cormethod, "Method\n")
-          predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, cormethod, planetsList[[n]], 1, 1, 4, 2)
+          predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, cormethod, kplanets, kaspects, 1, 1, 4, maxasp=2)
           predictTransTest <- predictTransTableTest(predictTrans, eurusd_test)
         }
       }
@@ -674,9 +714,11 @@ initEuroPredict <- function() {
   eurusd_full <- openCurrency2("~/trading/EURUSD_day_fxpro.csv")
   eurusd <- subset(eurusd_full, Date < as.Date("2012-01-01"))
   eurusd_test <- subset(eurusd_full, Date > as.Date("2012-01-01"))
-  trans.eur <- openTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb25.tsv", 1, 'all', 'all')
+
+  trans.eur <- openTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb25.tsv", 1, 'all', 'apsepexact')
   trans.eurusd.eur  <- mergeTrans(trans.eur, eurusd)
-  predcor <- historyAspectsCorrelation(trans.eur, trans.eurusd.eur, "canberra", keys[[1]])
+  predcor <- historyAspectsCorrelation(trans.eur, trans.eurusd.eur, "canberra", planetsList[[1]], aspectsList[[1]])
+
   planets.eur <- read.table("~/trading/EUR_2000-2014_planets_20130518.tsv", header = T, sep="\t")
   planets.eur$Date <- as.Date(planets.eur$Date, format="%Y-%m-%d")
 
