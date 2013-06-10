@@ -342,7 +342,7 @@ predictTrend <- function(search_date) {
 
 predColNames = c('Date', 'idx', 'down', 'up', 'count', 'endEffect', 'S2', 'PC', 'SUR', 'SURD', 'MOR', 'MORD', 'MER', 'MERD', 'VER', 'VERD', 'MAR', 'MARD', 'JUR', 'JURD', 'SAR', 'SARD', 'URR', 'URRD', 'NER', 'NERD', 'PLR', 'PLRD', 'udis', 'ddis', 'corEff', 'ucor', 'dcor')
 
-predictTransTable <- function(trans, trans_hist, cor_method, kplanets, kaspects, binarize=1, rmzeroaspects=1, qpos=4, maxasp=2) {
+predictTransTable <- function(trans, trans_hist, cor_method, kplanets, kaspects, binarize=1, rmzeroaspects=1, qinmode=4, maxasp=2) {
   # convert to data table
   trans_hist <- data.table(trans_hist)
   # get the maximum S2 transit by day
@@ -359,7 +359,7 @@ predictTransTable <- function(trans, trans_hist, cor_method, kplanets, kaspects,
   selected <- trans[, idx[which(S2 >= maxn(S2, maxasp))], by=c('Date')]
   names(selected) <- c('Date', 'idx')
   # get the aspects correlation table
-  aspect_dates_cor <- historyAspectsCorrelation(trans, trans_hist, cor_method, kplanets, kaspects, binarize, rmzeroaspects, qpos)
+  aspect_dates_cor <- historyAspectsCorrelation(trans, trans_hist, cor_method, kplanets, kaspects, binarize, rmzeroaspects, qinmode)
   # merge
   aspect_dates_predict <- merge(selected, predict_table, by='idx')
   aspect_dates_predict <- merge(aspect_dates_predict, trans, by=c('Date', 'idx'))
@@ -371,8 +371,8 @@ predictTransTable <- function(trans, trans_hist, cor_method, kplanets, kaspects,
   aspect_dates_predict[predColNames]
 }
 
-predictTransTableWrite <- function(trans, trans_hist, cor_method, kplanets, kaspects, binarize, rmzeroaspects, qpos, filename) {
-  aspect_dates_predict <- predictTransTable(trans, trans_hist, cor_method, kplanets, kaspects, binarize, rmzeroaspects, qpos, 2)
+predictTransTableWrite <- function(trans, trans_hist, cor_method, kplanets, kaspects, binarize, rmzeroaspects, qinmode, filename) {
+  aspect_dates_predict <- predictTransTable(trans, trans_hist, cor_method, kplanets, kaspects, binarize, rmzeroaspects, qinmode, 2)
   write.csv(aspect_dates_predict[predColNames], file=paste("~/trading/predict/", file_name, sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
 }
 
@@ -402,7 +402,7 @@ predictAspectsTable <- function(ds_hist) {
   predict_table
 }
 
-filterLessSignificant <- function(X, qpos) {
+filterLessSignificant <- function(X, qinmode) {
   init1 <- 1
   end1 <- length(X)/2
   init2 <- end1+1
@@ -410,7 +410,7 @@ filterLessSignificant <- function(X, qpos) {
   Y <- X[1:end1]
   Z <- X[init2:end2]
   diffs <- abs(Y-Z)
-  qtile <- quantile(diffs)[qpos]
+  qtile <- quantile(diffs)[qinmode]
   Y <- ifelse(diffs >= qtile, ifelse(Y > Z, Y, 0), 0)
   Z <- ifelse(diffs >= qtile, ifelse(Z > Y, Z, 0), 0)
   X <- cbind(Y, Z)
@@ -436,7 +436,7 @@ completeAspectList <- function(X, kaspects) {
   X
 }
 
-historyAspectsCorrelation <- function(trans, trans_hist, cor_method, kplanets, kaspects, binarize=1, rmzeroaspects=1, qpos=4) {
+historyAspectsCorrelation <- function(trans, trans_hist, cor_method, kplanets, kaspects, binarize=1, rmzeroaspects=1, qinmode=4) {
   #remove no needed cols to save memory
   trans <- trans[,c('Date', 'idx', kplanets), with=FALSE]
   trans_hist <- trans_hist[,c('Date', 'idx', 'Eff', kplanets), with=FALSE]
@@ -477,7 +477,7 @@ historyAspectsCorrelation <- function(trans, trans_hist, cor_method, kplanets, k
   # convert to data frame
   tmerged <- as.data.frame(tmerged)
   # filter the side when less significant was the aspect
-  tmerged[,c(cols2,cols3)] <- t(apply(tmerged[,c(cols2,cols3)], 1, filterLessSignificant, qpos=qpos))
+  tmerged[,c(cols2,cols3)] <- t(apply(tmerged[,c(cols2,cols3)], 1, filterLessSignificant, qinmode=qinmode))
 
   if (rmzeroaspects) {
     tmerged[,cols1] <- t(apply(tmerged[,c(cols1,cols2,cols3)], 1, filterZeroAspects))
@@ -507,7 +507,7 @@ predictTransTableTest <- function(predict_table, currency_hist) {
   tdiff <- round(abs(t1['TRUE']-t1[['FALSE']])*100, digits=2)
 
   # if the difference is significant
-  if (tdiff >= 1) {
+  if (tdiff >= 10) {
     cat("=====================", tdiff, "=====================\n")
     print(t1)
     print(t2)
@@ -527,22 +527,33 @@ predictTransTableTest <- function(predict_table, currency_hist) {
 }
 
 testCorrelations <- function() {
+  # Start the clock!
+  ptm <- proc.time()
   # correlation methods to test
   corMethods <- c('canberra', 'euclidian', 'binary')
   # aspects modes
   aspModes <- c('all', 'majors', 'traditional', 'minmajors', 'myminors', 'minors')
   # aspects types
   aspTypes <- c('all', 'apsepexact', 'exact', 'apexact')
-  # all transit options
-  transOpts <- expand.grid(aspModes, aspTypes)
+  # binarize
+  binModes <- c(0, 1)
+  # remove zero aspects
+  zeroaspectsModes <- c(0, 1)
+  # quitile modes
+  qinModes <- c(3, 4)
+  # max aspects modes
+  maxaspModes <- c(1, 2)
   # currency data
   eurusd_full <- openCurrency2("~/trading/EURUSD_day_fxpro.csv")
   eurusd <- subset(eurusd_full, Date > as.Date("1998-01-01") & Date < as.Date("2012-01-01"))
   eurusd_test <- subset(eurusd_full, Date > as.Date("2012-01-01"))
+  # all transit options
+  transOpts <- expand.grid(aspModes, aspTypes)
+  totTransOpts <- nrow(transOpts)
 
-  for (j in array(c(seq(27, 29, by=1)))) {
+  for (j in array(c(seq(25, 29, by=1)))) {
     #cat("iteration = ", iter <- iter + 1, "\n")
-    for (n1 in 1:nrow(transOpts)) {
+    for (n1 in 1:totTransOpts) {
       aspmode <- as.character(transOpts[n1,1])
       asptype <- as.character(transOpts[n1,2])
       cat("####################################################\n")
@@ -553,27 +564,40 @@ testCorrelations <- function() {
       trans.eurusd.eur  <- mergeTrans(trans.eur, eurusd)
       # found aspects in the transit data frame
       foundasp <- unique(trans.eur$AS)
-      cat("\tFound aspects:", as.character(foundasp), "\n\n")
+      cat("\tFound aspects:", as.character(foundasp), "\n")
+      cat("Transits execution time: ", proc.time()-ptm, "\n\n")
+      cat(proc.time() - ptm, "\n\n")
 
       # generate keys combinations
       # combn(keys, 2, simplify=FALSE)
       # generate the planets & aspects options combinations
-      predOpts <- expand.grid(planetsList, aspectsList)
+      #predOpts <- expand.grid(corMethods, planetsList, aspectsList)
+      predOpts <- expand.grid(corMethods, binModes, zeroaspectsModes, qinModes, maxaspModes, planetsList, aspectsList)
+      totPredOpts <- nrow(predOpts)
+      # Init time for fisrt loop
+      looptm <- proc.time()
 
-      for (n2 in 1:nrow(predOpts)) {
-        kplanets <- predOpts[[n2,1]]
-        kaspects <- predOpts[[n2,2]]
+      for (n2 in 1:totPredOpts) {
+        cormethod <- as.character(predOpts[n2,1])
+        binarize <- predOpts[[n2,2]]
+        rmzeroaspects <- predOpts[[n2,3]]
+        qinmode <- predOpts[[n2,4]]
+        maxasp <- predOpts[[n2,5]]
+        kplanets <- predOpts[[n2,6]]
+        kaspects <- predOpts[[n2,7]]
 
-        cat(file_name, "\n\n")
-        cat("\tAspecting Planets mode:", as.character(kplanets), "\n")
-        cat("\tAspecting Aspects mode:", as.character(kaspects), "\n\n")
+        cat("Trans Opts #", n1, " of ", totTransOpts, " -- Pred Opts #", n2, " of ", totPredOpts, "\n")
+        cat("Transits File #", j, "transOpts aspmode=", aspmode, "asptype=", as.character(asptype), "\n")
+        cat("\tPredict Opts cormethod=", cormethod, 'binarize=', binarize, 'rmzeroaspects=', rmzeroaspects, 'qinmode=', qinmode, 'maxasp=', maxasp, "\n")
+        cat("\tPlanets mode:", as.character(kplanets), "\n")
+        cat("\tAspects mode:", as.character(kaspects), "\n\n")
 
-        # test different correlation methods
-        for (cormethod in corMethods) {
-          cat("\t\t", cormethod, "Method\n")
-          predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, cormethod, kplanets, kaspects, 1, 1, 4, maxasp=2)
-          predictTransTest <- predictTransTableTest(predictTrans, eurusd_test)
-        }
+        predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode, maxasp)
+        predictTransTest <- predictTransTableTest(predictTrans, eurusd_test)
+
+        cat("Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n\n")
+
+        looptm <- proc.time()
       }
     }
   }
