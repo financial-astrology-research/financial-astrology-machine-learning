@@ -537,11 +537,11 @@ testCorrelations <- function(start1=0, start2=0, start3=0) {
   # correlation methods to test
   corMethods <- c('euclidian')
   # binarize
-  binModes <- c(0)
+  binModes <- c(0, 1)
   # remove zero aspects
-  zeroaspectsModes <- c(0)
+  zeroaspectsModes <- c(0, 1)
   # quitile modes
-  qinModes <- c(3)
+  qinModes <- c(3, 4)
   # max aspects modes
   maxaspModes <- c(1, 2)
   # currency data
