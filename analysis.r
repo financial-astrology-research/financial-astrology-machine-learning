@@ -526,21 +526,22 @@ predictTransTableTest <- function(predict_table, currency_hist) {
   predict_table[,!names(predict_table) %in% c('Time', 'Mid')]
 }
 
-testCorrelations <- function() {
+testCorrelations <- function(start1=0, start2=0, start3=0) {
+  sink("~/trading/predict/output.txt", append=TRUE, split=TRUE)
   # Start the clock!
   ptm <- proc.time()
-  # correlation methods to test
-  corMethods <- c('canberra', 'euclidian', 'binary')
   # aspects modes
   aspModes <- c('all', 'majors', 'traditional', 'minmajors', 'myminors', 'minors')
   # aspects types
   aspTypes <- c('all', 'apsepexact', 'exact', 'apexact')
+  # correlation methods to test
+  corMethods <- c('euclidian')
   # binarize
-  binModes <- c(0, 1)
+  binModes <- c(0)
   # remove zero aspects
-  zeroaspectsModes <- c(0, 1)
+  zeroaspectsModes <- c(0)
   # quitile modes
-  qinModes <- c(3, 4)
+  qinModes <- c(3)
   # max aspects modes
   maxaspModes <- c(1, 2)
   # currency data
@@ -551,9 +552,12 @@ testCorrelations <- function() {
   transOpts <- expand.grid(aspModes, aspTypes)
   totTransOpts <- nrow(transOpts)
 
-  for (j in array(c(seq(25, 29, by=1)))) {
+  for (j in array(c(seq(1, 29, by=1)))) {
+    # start in the specified options
+    if (j < start1) next
     #cat("iteration = ", iter <- iter + 1, "\n")
     for (n1 in 1:totTransOpts) {
+      if (n1 < start2) next
       aspmode <- as.character(transOpts[n1,1])
       asptype <- as.character(transOpts[n1,2])
       cat("####################################################\n")
@@ -578,6 +582,7 @@ testCorrelations <- function() {
       looptm <- proc.time()
 
       for (n2 in 1:totPredOpts) {
+        if (n2 < start3) next
         cormethod <- as.character(predOpts[n2,1])
         binarize <- predOpts[[n2,2]]
         rmzeroaspects <- predOpts[[n2,3]]
@@ -601,6 +606,7 @@ testCorrelations <- function() {
       }
     }
   }
+  sink()
 }
 
 funtionizethis  <- function() {
