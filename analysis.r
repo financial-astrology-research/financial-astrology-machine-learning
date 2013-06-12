@@ -50,6 +50,10 @@ aspectsList <- list(c('a0', 'a30', 'a45', 'a60', 'a72', 'a90', 'a120', 'a135', '
 
 aspectTypesCols <- c('SUT', 'MOT', 'MET', 'VET', 'MAT', 'JUT', 'SAT', 'URT', 'NET', 'PLT')
 
+npath <- function(path) {
+  normalizePath(path.expand(path))
+}
+
 # a function that returns the position of n-th largest
 maxn <- function(x, n) {
   order_x <- order(x, decreasing = TRUE)
@@ -213,6 +217,7 @@ planetAspectsEffect <- function(ptcode, pacode, pacodet) {
 # index(trans.xts)
 
 openCurrency  <- function(currency_file) {
+  currency_file <- npath(currency_file)
   currency <- read.table(currency_file, header = T, sep=",")
   names(currency) <- c('Ticker', 'Date', 'Time', 'Open', 'Low', 'High', 'Close')
   currency <- currency[,-1]
@@ -225,6 +230,7 @@ openCurrency  <- function(currency_file) {
 }
 
 openCurrency2 <- function(currency_file) {
+  currency_file <- npath(currency_file)
   currency <- read.table(currency_file, header = F, sep=",")
   names(currency) <- c('Date', 'Time', 'Open', 'High', 'Low', 'Close', 'Volume')
   currency <- currency[,-7]
@@ -237,6 +243,7 @@ openCurrency2 <- function(currency_file) {
 }
 
 openCurrencyXts <- function(currency_file) {
+  currency_file <- npath(currency_file)
   currency <- openTrans(currency_file)
   xts(currency[,-1:-2], order.by=currency[,1])
 }
@@ -252,6 +259,8 @@ removeAspectsOutType <- function(X, asptype) {
 
 # Open a Transits table and merge with a currency table
 openTrans <- function(trans_file, effcorrection=1, aspmode='all', asptype='all') {
+  trans_file <- npath(trans_file)
+
   switch(aspmode,
     all = aspectsNames <- c('a0', 'a30', 'a45', 'a60', 'a72', 'a90', 'a120', 'a135', 'a144', 'a150', 'a180', 'a18', 'a33', 'a36', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160'),
     majors = aspectsNames <- c('a0', 'a45', 'a60', 'a90', 'a120', 'a150', 'a180'),
@@ -373,7 +382,7 @@ predictTransTable <- function(trans, trans_hist, cor_method, kplanets, kaspects,
 
 predictTransTableWrite <- function(trans, trans_hist, cor_method, kplanets, kaspects, binarize, rmzeroaspects, qinmode, filename) {
   aspect_dates_predict <- predictTransTable(trans, trans_hist, cor_method, kplanets, kaspects, binarize, rmzeroaspects, qinmode, 2)
-  write.csv(aspect_dates_predict[predColNames], file=paste("~/trading/predict/", file_name, sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
+  write.csv(aspect_dates_predict[predColNames], file=npath(paste("~/trading/predict/", file_name, sep='')), eol="\r\n", quote=FALSE, row.names=FALSE)
 }
 
 predictSingleTransTable <- function(ds, ds_hist, file_name) {
@@ -390,7 +399,7 @@ predictSingleTransTable <- function(ds, ds_hist, file_name) {
   # sort by date
   aspect_dates_predict <- arrange(aspect_dates_predict, desc(Date))
   # round the val mean
-  write.csv(aspect_dates_predict[c(2, 12:14, 3:11, 1)], file=paste("~/trading/predict/", file_name, sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
+  write.csv(aspect_dates_predict[c(2, 12:14, 3:11, 1)], file=npath(paste("~/trading/predict/", file_name, sep='')), eol="\r\n", quote=FALSE, row.names=FALSE)
 }
 
 predictAspectsTable <- function(ds_hist) {
@@ -499,19 +508,35 @@ historyAspectsCorrelation <- function(trans, trans_hist, cor_method, kplanets, k
   data.table(tmerged)
 }
 
-predictTransTableTest <- function(predict_table, currency_hist) {
-  predict_table <- merge(predict_table, currency_hist, by=c('Date'))
-  predict_table$test1 <- apply(predict_table[,c('corEff','Eff')], 1, function(x) ifelse(is.na(x[1]) | is.na(x[2]), 'none', x[1]==x[2]))
-  t1 <- prop.table(table(predict_table$test1))
-  t2 <- addmargins(table(predict_table$test1))
-  tdiff <- round(abs(t1['TRUE']-t1[['FALSE']])*100, digits=2)
+predictTransTableTest <- function(predict_table, currency_samples, sigthreshold=10) {
+  tdiffs <- list()
+  tl1 <- list()
+  tl2 <- list()
 
-  # if the difference is significant
-  if (tdiff >= 10) {
-    cat("=====================", tdiff, "=====================\n")
-    print(t1)
-    print(t2)
-    cat("\n")
+  for (i in 1:length(currency_samples)) {
+    ptt <- merge(predict_table, currency_samples[[i]], by=c('Date'))
+    ptt$test1 <- apply(ptt[,c('corEff','Eff')], 1, function(x) ifelse(is.na(x[1]) | is.na(x[2]), NA, x[1]==x[2]))
+    t1 <- prop.table(table(ptt$test1, useNA='always'))
+    t2 <- addmargins(table(ptt$test1, useNA='always'))
+    tdiff <- round(abs(t1['TRUE']-t1[['FALSE']])*100, digits=2)
+
+    if (tdiff >= sigthreshold) {
+      # append diff & tables
+      tdiffs[[length(tdiffs)+1]] <- tdiff
+      tl1[[length(tl1)+1]] <- t1
+      tl2[[length(tl2)+1]] <- t2
+    }
+  }
+
+  # if the differences are significant in all the test samples
+  if (length(tdiffs) == length(currency_samples)) {
+    for (i in 1:length(tdiffs)) {
+      # print the diffs and the tables
+      cat("=====================", tdiffs[[i]], "=====================\n")
+      print(tl1[[i]])
+      print(tl2[[i]])
+      cat("\n")
+    }
   }
   else {
     writeLines("\t\t\tInsignificant")
@@ -523,19 +548,19 @@ predictTransTableTest <- function(predict_table, currency_hist) {
   #print(prop.table(table(predict_table$test2)))
   #print(addmargins(table(predict_table$test2)))
   #cat("\n")
-  predict_table[,!names(predict_table) %in% c('Time', 'Mid')]
+  #predict_table[,!names(predict_table) %in% c('Time', 'Mid')]
 }
 
-testCorrelations <- function(start1=0, start2=0, start3=0) {
-  sink("~/trading/predict/output.txt", append=TRUE, split=TRUE)
+testCorrelations <- function(start1=0, start2=0, start3=0, sigthreshold=10) {
+  sink(npath("~/trading/predict/output.txt"), append=TRUE)
   # Start the clock!
   ptm <- proc.time()
+  # correlation methods to test
+  corMethods <- c('canberra', 'euclidian', 'binary')
   # aspects modes
   aspModes <- c('all', 'majors', 'traditional', 'minmajors', 'myminors', 'minors')
   # aspects types
   aspTypes <- c('all', 'apsepexact', 'exact', 'apexact')
-  # correlation methods to test
-  corMethods <- c('euclidian')
   # binarize
   binModes <- c(0, 1)
   # remove zero aspects
@@ -545,12 +570,16 @@ testCorrelations <- function(start1=0, start2=0, start3=0) {
   # max aspects modes
   maxaspModes <- c(1, 2)
   # currency data
-  eurusd_full <- openCurrency2("~/trading/EURUSD_day_fxpro.csv")
+  eurusd_full <- openCurrency2("~/trading/EURUSD_day_fxpro_20130611.csv")
   eurusd <- subset(eurusd_full, Date > as.Date("1998-01-01") & Date < as.Date("2012-01-01"))
   eurusd_test <- subset(eurusd_full, Date > as.Date("2012-01-01"))
+  samples <- generateSamples(eurusd_test, 3)
   # all transit options
   transOpts <- expand.grid(aspModes, aspTypes)
   totTransOpts <- nrow(transOpts)
+  # all pred options
+  predOpts <- expand.grid(corMethods, binModes, zeroaspectsModes, qinModes, maxaspModes, planetsList, aspectsList)
+  totPredOpts <- nrow(predOpts)
 
   for (j in array(c(seq(1, 29, by=1)))) {
     # start in the specified options
@@ -576,8 +605,6 @@ testCorrelations <- function(start1=0, start2=0, start3=0) {
       # combn(keys, 2, simplify=FALSE)
       # generate the planets & aspects options combinations
       #predOpts <- expand.grid(corMethods, planetsList, aspectsList)
-      predOpts <- expand.grid(corMethods, binModes, zeroaspectsModes, qinModes, maxaspModes, planetsList, aspectsList)
-      totPredOpts <- nrow(predOpts)
       # Init time for fisrt loop
       looptm <- proc.time()
 
@@ -594,11 +621,11 @@ testCorrelations <- function(start1=0, start2=0, start3=0) {
         cat("Trans Opts #", n1, " of ", totTransOpts, " -- Pred Opts #", n2, " of ", totPredOpts, "\n")
         cat("Transits File #", j, "transOpts aspmode=", aspmode, "asptype=", as.character(asptype), "\n")
         cat("\tPredict Opts cormethod=", cormethod, 'binarize=', binarize, 'rmzeroaspects=', rmzeroaspects, 'qinmode=', qinmode, 'maxasp=', maxasp, "\n")
-        cat("\tPlanets mode:", as.character(kplanets), "\n")
-        cat("\tAspects mode:", as.character(kaspects), "\n\n")
+        cat("\tPlanets mode:", kplanets, "\n")
+        cat("\tAspects mode:", kaspects, "\n\n")
 
         predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode, maxasp)
-        predictTransTest <- predictTransTableTest(predictTrans, eurusd_test)
+        predictTransTest <- predictTransTableTest(predictTrans, samples, sigthreshold)
 
         cat("Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n\n")
 
@@ -607,6 +634,24 @@ testCorrelations <- function(start1=0, start2=0, start3=0) {
     }
   }
   sink()
+}
+
+buildPredictOptions <- function() {
+  # correlation methods to test
+  corMethods <- c('canberra', 'euclidian', 'binary')
+  # aspects modes
+  aspModes <- c('all', 'majors', 'traditional', 'minmajors', 'myminors', 'minors')
+  # aspects types
+  aspTypes <- c('all', 'apsepexact', 'exact', 'apexact')
+  # binarize
+  binModes <- c(0, 1)
+  # remove zero aspects
+  zeroaspectsModes <- c(0, 1)
+  # quitile modes
+  qinModes <- c(3, 4)
+  # max aspects modes
+  maxaspModes <- c(1, 2)
+  expand.grid(corMethods, binModes, zeroaspectsModes, qinModes, maxaspModes, planetsList, aspectsList)
 }
 
 funtionizethis  <- function() {
@@ -741,15 +786,55 @@ funtionizethis  <- function() {
 }
 
 initEuroPredict <- function() {
+  predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, 'euclidian', planetsList[[2]], aspectsList[[4]], 0, 0, 3, 2)
+
   eurusd_full <- openCurrency2("~/trading/EURUSD_day_fxpro.csv")
   eurusd <- subset(eurusd_full, Date < as.Date("2012-01-01"))
   eurusd_test <- subset(eurusd_full, Date > as.Date("2012-01-01"))
-
-  trans.eur <- openTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb25.tsv", 1, 'all', 'apsepexact')
+  trans.eur <- openTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb29.tsv", 1, 'traditional', 'all')
   trans.eurusd.eur  <- mergeTrans(trans.eur, eurusd)
-  predcor <- historyAspectsCorrelation(trans.eur, trans.eurusd.eur, "canberra", planetsList[[1]], aspectsList[[1]])
+
+  predcor <- historyAspectsCorrelation(trans.eur, trans.eurusd.eur, 'binary', planetsList[[1]], aspectsList[[1]], 1, 0, 4)
+  p1 <- predcor[, sum(udis), by=Date]
+  p2 <- predcor[, sum(ddis), by=Date]
+  pt1 <- merge(p1, p2, by='Date')
+  names(pt1) <- c('Date', 'up', 'down')
+  pt1$corEff <- apply(pt1[,c('up','down'),with=FALSE], 1, function(x) ifelse(x[1] != x[2], ifelse(x[1] < x[2], 'up', 'down'), NA))
+  pt1 <- merge(pt1, eurusd)
+  prop.table(table(pt1$corEff==pt1$Eff, useNA="always"))
 
   planets.eur <- read.table("~/trading/EUR_2000-2014_planets_20130518.tsv", header = T, sep="\t")
   planets.eur$Date <- as.Date(planets.eur$Date, format="%Y-%m-%d")
 
+}
+
+bestSolution <- function(n) {
+  predOpts <- buildPredictOptions()
+  cormethod <- as.character(predOpts[n,1])
+  binarize <- predOpts[[n,2]]
+  rmzeroaspects <- predOpts[[n,3]]
+  qinmode <- predOpts[[n,4]]
+  maxasp <- predOpts[[n,5]]
+  kplanets <- predOpts[[n,6]]
+  kaspects <- predOpts[[n,7]]
+
+  eurusd_full <- openCurrency2("~/trading/EURUSD_day_fxpro_20130611.csv")
+  eurusd <- subset(eurusd_full, Date > as.Date("1998-01-01") & Date < as.Date("2011-01-01"))
+  eurusd_test <- subset(eurusd_full, Date > as.Date("2011-01-01"))
+  samples <- generateSamples(eurusd_test, 2)
+  trans.eur <- openTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb25.tsv", 1, 'all', 'all')
+  trans.eurusd.eur  <- mergeTrans(trans.eur, eurusd)
+  ptt <- predictTransTable(trans.eur, trans.eurusd.eur, cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode, maxasp)
+  samples <- list(sample1, sample2)
+  predictTransTableTest(ptt, samples, 5)
+}
+
+generateSamples <- function(ds, n) {
+  total <- nrow(ds)
+  # build test samples
+  samples <- list()
+  for (i in 1:n) {
+    samples[[i]] <- ds[sample(total, total/2),]
+  }
+  samples
 }
