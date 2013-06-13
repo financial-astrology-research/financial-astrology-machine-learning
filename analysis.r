@@ -573,7 +573,6 @@ testCorrelations <- function(start1=0, start2=0, start3=0, sigthreshold=10) {
   eurusd_full <- openCurrency2("~/trading/EURUSD_day_fxpro_20130611.csv")
   eurusd <- subset(eurusd_full, Date > as.Date("1998-01-01") & Date < as.Date("2012-01-01"))
   eurusd_test <- subset(eurusd_full, Date > as.Date("2012-01-01"))
-  samples <- generateSamples(eurusd_test, 3)
   # all transit options
   transOpts <- expand.grid(aspModes, aspTypes)
   totTransOpts <- nrow(transOpts)
@@ -617,6 +616,7 @@ testCorrelations <- function(start1=0, start2=0, start3=0, sigthreshold=10) {
         maxasp <- predOpts[[n2,5]]
         kplanets <- predOpts[[n2,6]]
         kaspects <- predOpts[[n2,7]]
+        samples <- generateSamples(eurusd_test, 3)
 
         cat("Trans Opts #", n1, " of ", totTransOpts, " -- Pred Opts #", n2, " of ", totPredOpts, "\n")
         cat("Transits File #", j, "transOpts aspmode=", aspmode, "asptype=", as.character(asptype), "\n")
@@ -822,11 +822,10 @@ bestSolution <- function(n) {
   eurusd <- subset(eurusd_full, Date > as.Date("1998-01-01") & Date < as.Date("2011-01-01"))
   eurusd_test <- subset(eurusd_full, Date > as.Date("2011-01-01"))
   samples <- generateSamples(eurusd_test, 2)
-  trans.eur <- openTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb25.tsv", 1, 'all', 'all')
+  trans.eur <- openTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb26.tsv", 1, 'all', 'all')
   trans.eurusd.eur  <- mergeTrans(trans.eur, eurusd)
   ptt <- predictTransTable(trans.eur, trans.eurusd.eur, cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode, maxasp)
-  samples <- list(sample1, sample2)
-  predictTransTableTest(ptt, samples, 5)
+  predictTransTableTest(ptt, list(eurusd_test), 1)
 }
 
 generateSamples <- function(ds, n) {
@@ -836,5 +835,7 @@ generateSamples <- function(ds, n) {
   for (i in 1:n) {
     samples[[i]] <- ds[sample(total, total/2),]
   }
+  # finally add the entire data set as a sample
+  samples[[length(samples)+1]] <- ds
   samples
 }
