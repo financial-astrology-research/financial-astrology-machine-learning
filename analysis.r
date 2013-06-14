@@ -132,14 +132,18 @@ dsPlanetsSpeed <- function(fds) {
   print(p3)
 }
 
-dsPlanetsReport <- function(ds, data_name, keys) {
-  dsasp <- reshape(ds, varying = keys, v.names = "aspect", times = keys,  direction = "long")
+dsPlanetsReport <- function(ds, data_name, kplanets, kaspects) {
+  dsasp <- reshape(ds, varying = kplanets, v.names = "aspect", times = kplanets,  direction = "long")
+  # select only the aspects to consider
+  dsasp <- subset(dsasp, aspect %in% kaspects)
+  #levels(dsasp$aspect) <- factor(dsasp$aspect)
   ds_up <- data.table(subset(dsasp, Eff=='up'))
   ds_down <- data.table(subset(dsasp, Eff=='down'))
   tup <- as.data.frame(ds_up[, as.list(table(aspect)), by = c('idx')])
   tdown <- as.data.frame(ds_down[, as.list(table(aspect)), by = c('idx')])
   tablediff <- abs(tup[,-1]-tdown[,-1])
-  diffcols <- colnames(tablediff[,tablediff >= quantile(as.matrix(tablediff))[4]])
+  qtile <- as.numeric(quantile(tablediff[,tablediff[,] > 0])[3])
+  diffcols <- colnames(tablediff[,tablediff >= qtile])
   tup[!colnames(tup) %in% diffcols] <- 0
   tdown[!colnames(tup) %in% diffcols] <- 0
   tupdown <- t(rbind(tup, tdown))[-1,]
@@ -419,7 +423,9 @@ filterLessSignificant <- function(X, qinmode) {
   Y <- X[1:end1]
   Z <- X[init2:end2]
   diffs <- abs(Y-Z)
-  qtile <- quantile(diffs)[qinmode]
+  # get the quantile only for values greater than 0
+  # TODO: if quantile = 0 then we should skip this transit
+  qtile <- as.numeric(quantile(diffs[diffs > 0])[qinmode])
   Y <- ifelse(diffs >= qtile, ifelse(Y > Z, Y, 0), 0)
   Z <- ifelse(diffs >= qtile, ifelse(Z > Y, Z, 0), 0)
   X <- cbind(Y, Z)
@@ -453,11 +459,14 @@ historyAspectsCorrelation <- function(trans, trans_hist, cor_method, kplanets, k
   dsasp <- reshape(trans_hist, varying = kplanets, v.names = "aspect", times = kplanets,  direction = "long")
   # select only the aspects to consider
   dsasp <- subset(dsasp, aspect %in% kaspects)
+  # TODO: After reduce the aspects list looks like factors of dsasp$aspect still have
+  # the complete list causing that our dsup/dsdown lists have the complete
+  # columns with too many zeros that affects how the correlations are calculated
+  # due more zeros that match increase correlation
   dsup <- subset(dsasp, Eff=='up')
   setkey(dsup, 'idx', 'aspect')
   dsdown <- subset(dsasp, Eff=='down')
   setkey(dsdown, 'idx', 'aspect')
-  # TODO: implement kaspects to correlate only by determined list of aspects
   dsup <- dsup[, as.list(completeAspectList((table(aspect)), kaspects=kaspects)), by = c('idx')]
   dsdown <- dsdown[, as.list(completeAspectList((table(aspect)), kaspects=kaspects)), by = c('idx')]
   #dsup <- as.data.frame(dsup[, as.list(table(aspect)), by = c('idx')])
@@ -508,10 +517,11 @@ historyAspectsCorrelation <- function(trans, trans_hist, cor_method, kplanets, k
   data.table(tmerged)
 }
 
-predictTransTableTest <- function(predict_table, currency_samples, sigthreshold=10) {
+predictTransTableTest <- function(predict_table, currency_samples, sigthreshold=10, ret=FALSE) {
   tdiffs <- list()
   tl1 <- list()
   tl2 <- list()
+  output <- list()
 
   for (i in 1:length(currency_samples)) {
     ptt <- merge(predict_table, currency_samples[[i]], by=c('Date'))
@@ -520,11 +530,12 @@ predictTransTableTest <- function(predict_table, currency_samples, sigthreshold=
     t2 <- addmargins(table(ptt$test1, useNA='always'))
     tdiff <- round(abs(t1['TRUE']-t1[['FALSE']])*100, digits=2)
 
-    if (tdiff >= sigthreshold) {
+    if (!is.na(tdiff) & tdiff >= sigthreshold) {
       # append diff & tables
       tdiffs[[length(tdiffs)+1]] <- tdiff
       tl1[[length(tl1)+1]] <- t1
       tl2[[length(tl2)+1]] <- t2
+      if (ret) output[[length(output)+1]] <- ptt[,!names(ptt) %in% c('Time', 'Mid')]
     }
   }
 
@@ -537,6 +548,8 @@ predictTransTableTest <- function(predict_table, currency_samples, sigthreshold=
       print(tl2[[i]])
       cat("\n")
     }
+    # display the average
+    cat("%%%%%%%%%%%%%%%%%%%%", mean(unlist(tdiffs)), "%%%%%%%%%%%%%%%%%%%%\n\n")
   }
   else {
     writeLines("\t\t\tInsignificant")
@@ -548,11 +561,13 @@ predictTransTableTest <- function(predict_table, currency_samples, sigthreshold=
   #print(prop.table(table(predict_table$test2)))
   #print(addmargins(table(predict_table$test2)))
   #cat("\n")
-  #predict_table[,!names(predict_table) %in% c('Time', 'Mid')]
+  if (ret) output
 }
 
-testCorrelations <- function(start1=0, start2=0, start3=0, sigthreshold=10) {
-  sink(npath("~/trading/predict/output.txt"), append=TRUE)
+testCorrelations <- function(sink_filename, start1=0, start2=0, start3=0, sigthreshold=10) {
+  if (!hasArg('sink_filename')) stop("Provide a sink filename.")
+  sink_filename <- paste("~/trading/predict/", sink_filename, ".txt", sep='')
+  sink(npath(sink_filename), append=TRUE)
   # Start the clock!
   ptm <- proc.time()
   # correlation methods to test
@@ -586,6 +601,10 @@ testCorrelations <- function(start1=0, start2=0, start3=0, sigthreshold=10) {
     #cat("iteration = ", iter <- iter + 1, "\n")
     for (n1 in 1:totTransOpts) {
       if (n1 < start2) next
+      # if a specific start option is set just apply it for the first transits cycle
+      # then for the next cycle start again from 0 option
+      if (n1 > start2) start3 <- 0
+      # convert the opts to plain format
       aspmode <- as.character(transOpts[n1,1])
       asptype <- as.character(transOpts[n1,2])
       cat("####################################################\n")
@@ -819,13 +838,16 @@ bestSolution <- function(n) {
   kaspects <- predOpts[[n,7]]
 
   eurusd_full <- openCurrency2("~/trading/EURUSD_day_fxpro_20130611.csv")
-  eurusd <- subset(eurusd_full, Date > as.Date("1998-01-01") & Date < as.Date("2011-01-01"))
-  eurusd_test <- subset(eurusd_full, Date > as.Date("2011-01-01"))
-  samples <- generateSamples(eurusd_test, 2)
-  trans.eur <- openTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb26.tsv", 1, 'all', 'all')
+  eurusd <- subset(eurusd_full, Date > as.Date("1998-01-01") & Date < as.Date("2012-01-01"))
+  eurusd_test <- subset(eurusd_full, Date > as.Date("2012-01-01"))
+  samples <- generateSamples(eurusd_test, 3)
+
+  trans.eur <- openTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb26.tsv", 1, 'traditional', 'all')
   trans.eurusd.eur  <- mergeTrans(trans.eur, eurusd)
   ptt <- predictTransTable(trans.eur, trans.eurusd.eur, cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode, maxasp)
-  predictTransTableTest(ptt, list(eurusd_test), 1)
+  aspect_dates_cor <- historyAspectsCorrelation(data.table(trans.eur), data.table(trans.eurusd.eur), cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode)
+  ptt.test <- predictTransTableTest(ptt, samples, 5, TRUE)
+  list(aspect_dates_cor, ptt.test)
 }
 
 generateSamples <- function(ds, n) {
