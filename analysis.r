@@ -355,7 +355,7 @@ predictTrend <- function(search_date) {
 
 predColNames = c('Date', 'idx', 'down', 'up', 'count', 'endEffect', 'S2', 'PC', 'SUR', 'SURD', 'MOR', 'MORD', 'MER', 'MERD', 'VER', 'VERD', 'MAR', 'MARD', 'JUR', 'JURD', 'SAR', 'SARD', 'URR', 'URRD', 'NER', 'NERD', 'PLR', 'PLRD', 'udis', 'ddis', 'corEff', 'ucor', 'dcor')
 
-predictTransTable <- function(trans, trans_hist, cor_method, kplanets, kaspects, binarize=1, rmzeroaspects=1, qinmode=4, maxasp=2) {
+predictTransTable <- function(trans, trans_hist, cor_method, kplanets, kaspects, binarize=1, rmzeroaspects=1, qinmode='q3', maxasp=2) {
   # convert to data table
   trans_hist <- data.table(trans_hist)
   # get the maximum S2 transit by day
@@ -415,23 +415,6 @@ predictAspectsTable <- function(ds_hist) {
   predict_table
 }
 
-filterLessSignificant <- function(X, qinmode) {
-  init1 <- 1
-  end1 <- length(X)/2
-  init2 <- end1+1
-  end2 <- length(X)
-  Y <- X[1:end1]
-  Z <- X[init2:end2]
-  diffs <- abs(Y-Z)
-  # get the quantile only for values greater than 0
-  # TODO: if quantile = 0 then we should skip this transit
-  qtile <- as.numeric(quantile(diffs[diffs > 0])[qinmode])
-  Y <- ifelse(diffs >= qtile, ifelse(Y > Z, Y, 0), 0)
-  Z <- ifelse(diffs >= qtile, ifelse(Z > Y, Z, 0), 0)
-  X <- cbind(Y, Z)
-  X
-}
-
 filterZeroAspects <- function(X) {
   init1 <- 1
   end1 <- length(X)/3
@@ -452,6 +435,7 @@ completeAspectList <- function(X, kaspects) {
 }
 
 historyAspectsCorrelation <- function(trans, trans_hist, cor_method, kplanets, kaspects, binarize=1, rmzeroaspects=1, qinmode='q3') {
+  if (qinmode %ni% c('q1', 'q2', 'q3', 'q4', 'q5')) stop("Provide a valid value for qinmode")
   #remove no needed cols to save memory
   trans <- trans[,c('Date', 'idx', kplanets), with=FALSE]
   trans_hist <- trans_hist[,c('Date', 'idx', 'Eff', kplanets), with=FALSE]
@@ -471,8 +455,9 @@ historyAspectsCorrelation <- function(trans, trans_hist, cor_method, kplanets, k
   names(dsup) <- c('idx', ucolnames)
   dsdown <- dsdown[, as.list(completeAspectList((table(aspect)), kaspects=kaspects)), by = c('idx')]
   dcolnames <- paste(names(dsdown)[2:length(names(dsdown))], 'd', sep='.')
-  names(dsdown) <- c('idx', dcolnames)
+  # before set dcolnames build the substract colnames
   scolnames <- paste(names(dsdown)[2:length(names(dsdown))], 's', sep='.')
+  names(dsdown) <- c('idx', dcolnames)
   # merge_recurse(apply(trans[,kplanets], 2, function(x) count(x)))
   # by(trans.eur[,kplanets], trans.eur$idx, function(x) { table(apply(x, 1, function(x) x)) })
   # reshape the transits data and generate aspect table
@@ -498,7 +483,6 @@ historyAspectsCorrelation <- function(trans, trans_hist, cor_method, kplanets, k
   cols1 <- seq(initcol, naspects+initcol-1)
   cols2 <- cols1 + naspects
   cols3 <- cols2 + naspects
-  cols4 <- cols3 + naspects
 
   predtable[,scolnames] = abs(predtable[,cols2,with=FALSE]-predtable[,cols3,with=FALSE])
   # set zero cols to NA for each column via data.table
@@ -573,14 +557,16 @@ predictTransTableTest <- function(predict_table, currency_samples, sigthreshold=
     ptt$test1 <- apply(ptt[,c('corEff','Eff')], 1, function(x) ifelse(is.na(x[1]) | is.na(x[2]), NA, x[1]==x[2]))
     t1 <- prop.table(table(ptt$test1, useNA='always'))
     t2 <- addmargins(table(ptt$test1, useNA='always'))
-    tdiff <- round(abs(t1['TRUE']-t1[['FALSE']])*100, digits=2)
-
-    if (!is.na(tdiff) & tdiff >= sigthreshold) {
-      # append diff & tables
-      tdiffs[[length(tdiffs)+1]] <- tdiff
-      tl1[[length(tl1)+1]] <- t1
-      tl2[[length(tl2)+1]] <- t2
-      if (ret) output[[length(output)+1]] <- ptt[,!names(ptt) %in% c('Time', 'Mid')]
+    # only if there are results for TRUE and FALSE
+    if (!is.null(t1['TRUE']) & !is.null(t1['FALSE'])) {
+      tdiff <- round(abs(t1['TRUE']-t1[['FALSE']])*100, digits=2)
+      if (!is.na(tdiff) & tdiff >= sigthreshold) {
+        # append diff & tables
+        tdiffs[[length(tdiffs)+1]] <- tdiff
+        tl1[[length(tl1)+1]] <- t1
+        tl2[[length(tl2)+1]] <- t2
+        if (ret) output[[length(output)+1]] <- ptt[,!names(ptt) %in% c('Time', 'Mid')]
+      }
     }
   }
 
@@ -615,20 +601,10 @@ testCorrelations <- function(sink_filename, start1=0, start2=0, start3=0, sigthr
   sink(npath(sink_filename), append=TRUE)
   # Start the clock!
   ptm <- proc.time()
-  # correlation methods to test
-  corMethods <- c('canberra', 'euclidian', 'binary')
   # aspects modes
   aspModes <- c('all', 'majors', 'traditional', 'minmajors', 'myminors', 'minors')
   # aspects types
   aspTypes <- c('all', 'apsepexact', 'exact', 'apexact')
-  # binarize
-  binModes <- c(0, 1)
-  # remove zero aspects
-  zeroaspectsModes <- c(0, 1)
-  # quitile modes
-  qinModes <- c(3, 4)
-  # max aspects modes
-  maxaspModes <- c(1, 2)
   # currency data
   eurusd_full <- openCurrency2("~/trading/EURUSD_day_fxpro_20130611.csv")
   eurusd <- subset(eurusd_full, Date > as.Date("1998-01-01") & Date < as.Date("2012-01-01"))
@@ -637,7 +613,7 @@ testCorrelations <- function(sink_filename, start1=0, start2=0, start3=0, sigthr
   transOpts <- expand.grid(aspModes, aspTypes)
   totTransOpts <- nrow(transOpts)
   # all pred options
-  predOpts <- expand.grid(corMethods, binModes, zeroaspectsModes, qinModes, maxaspModes, planetsList, aspectsList)
+  predOpts <- buildPredictOptions()
   totPredOpts <- nrow(predOpts)
 
   for (j in array(c(seq(1, 29, by=1)))) {
