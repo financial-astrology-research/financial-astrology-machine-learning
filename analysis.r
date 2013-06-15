@@ -136,7 +136,7 @@ dsPlanetsReport <- function(ds, data_name, kplanets, kaspects) {
   dsasp <- reshape(ds, varying = kplanets, v.names = "aspect", times = kplanets,  direction = "long")
   # select only the aspects to consider
   dsasp <- subset(dsasp, aspect %in% kaspects)
-  #levels(dsasp$aspect) <- factor(dsasp$aspect)
+  dsasp$aspect <- factor(dsasp$aspect)
   ds_up <- data.table(subset(dsasp, Eff=='up'))
   ds_down <- data.table(subset(dsasp, Eff=='down'))
   tup <- as.data.frame(ds_up[, as.list(table(aspect)), by = c('idx')])
@@ -451,7 +451,7 @@ completeAspectList <- function(X, kaspects) {
   X
 }
 
-historyAspectsCorrelation <- function(trans, trans_hist, cor_method, kplanets, kaspects, binarize=1, rmzeroaspects=1, qinmode=4) {
+historyAspectsCorrelation <- function(trans, trans_hist, cor_method, kplanets, kaspects, binarize=1, rmzeroaspects=1, qinmode='q3') {
   #remove no needed cols to save memory
   trans <- trans[,c('Date', 'idx', kplanets), with=FALSE]
   trans_hist <- trans_hist[,c('Date', 'idx', 'Eff', kplanets), with=FALSE]
@@ -459,62 +459,107 @@ historyAspectsCorrelation <- function(trans, trans_hist, cor_method, kplanets, k
   dsasp <- reshape(trans_hist, varying = kplanets, v.names = "aspect", times = kplanets,  direction = "long")
   # select only the aspects to consider
   dsasp <- subset(dsasp, aspect %in% kaspects)
-  # TODO: After reduce the aspects list looks like factors of dsasp$aspect still have
-  # the complete list causing that our dsup/dsdown lists have the complete
-  # columns with too many zeros that affects how the correlations are calculated
-  # due more zeros that match increase correlation
+  # adjust factor levels
+  dsasp$aspect <- factor(dsasp$aspect)
+  # separate the up/down tables
   dsup <- subset(dsasp, Eff=='up')
   setkey(dsup, 'idx', 'aspect')
   dsdown <- subset(dsasp, Eff=='down')
   setkey(dsdown, 'idx', 'aspect')
   dsup <- dsup[, as.list(completeAspectList((table(aspect)), kaspects=kaspects)), by = c('idx')]
+  ucolnames <- paste(names(dsup)[2:length(names(dsup))], 'u', sep='.')
+  names(dsup) <- c('idx', ucolnames)
   dsdown <- dsdown[, as.list(completeAspectList((table(aspect)), kaspects=kaspects)), by = c('idx')]
-  #dsup <- as.data.frame(dsup[, as.list(table(aspect)), by = c('idx')])
-  #dsdown <- as.data.frame(dsdown[, as.list(table(aspect)), by = c('idx')])
-  # number of aspects
-  naspects <- length(dsup)-1
-  # the first two cols are date and indx
-  initcol <- 3
-
+  dcolnames <- paste(names(dsdown)[2:length(names(dsdown))], 'd', sep='.')
+  names(dsdown) <- c('idx', dcolnames)
+  scolnames <- paste(names(dsdown)[2:length(names(dsdown))], 's', sep='.')
   # merge_recurse(apply(trans[,kplanets], 2, function(x) count(x)))
   # by(trans.eur[,kplanets], trans.eur$idx, function(x) { table(apply(x, 1, function(x) x)) })
-  # table(apply(trans[,kplanets], 1, function(x) x))
+  # reshape the transits data and generate aspect table
   dscurrent <- reshape(trans, varying = kplanets, v.names = "aspect", times = kplanets,  direction = "long")
+  # select only the aspects to consider
+  dscurrent <- subset(dscurrent, aspect %in% kaspects)
+  # adjust factor levels
+  dscurrent$aspect <- factor(dscurrent$aspect)
   setkey(dscurrent, 'Date', 'idx', 'aspect')
   dscurrent <- dscurrent[, as.list(completeAspectList((table(aspect)), kaspects=kaspects)), by = c('Date','idx')]
+  ccolnames <- paste(names(dscurrent)[3:length(names(dscurrent))], 'c', sep='.')
+  names(dscurrent) <- c('Date', 'idx', ccolnames)
 
   # merge
-  tmerged <- merge(dscurrent, dsup, by='idx')
-  tmerged <- merge(tmerged, dsdown, by='idx')
-  #tmerged <- Reduce('merge', list(dscurrent, dsup, dsdown))
-
+  predtable <- merge(dscurrent, dsup, by='idx')
+  predtable <- merge(predtable, dsdown, by='idx')
+  #predtable <- Reduce('merge', list(dscurrent, dsup, dsdown))
+  # number of aspects
+  naspects <- length(kaspects)
+  # the first two cols are date and indx
+  initcol <- 3
   # selected cols
   cols1 <- seq(initcol, naspects+initcol-1)
   cols2 <- cols1 + naspects
   cols3 <- cols2 + naspects
+  cols4 <- cols3 + naspects
+
+  predtable[,scolnames] = abs(predtable[,cols2,with=FALSE]-predtable[,cols3,with=FALSE])
+  # set zero cols to NA for each column via data.table
+  for (colname in scolnames) {
+    expr1 <- parse(text = paste(colname, "== 0"))
+    expr2 <- parse(text = paste(colname, ":= NA"))
+    predtable[eval(expr1), eval(expr2)]
+  }
+
+  # build expression to generate quantile based on the diff cols
+  expr1 <- parse(text = paste('as.list(quantile(c(',paste(scolnames, collapse=","),'), na.rm=TRUE))',sep=''))
+  qtiles <- predtable[,eval(expr1),by=c('Date','idx')]
+  names(qtiles) <- c('Date', 'idx', 'q1', 'q2', 'q3', 'q4', 'q5')
+  predtable  <- merge(predtable, qtiles, by=c('Date','idx'))
+
+  # set all the columns that are less that qintile to 0
+  for (i in 1:naspects) {
+    expr1 <- parse(text = paste(scolnames[[i]], "<", qinmode, '| is.na(', scolnames[[i]], ')'))
+    expr2 <- parse(text = paste(ucolnames[[i]], ":= 0"))
+    expr3 <- parse(text = paste(dcolnames[[i]], ":= 0"))
+    predtable[eval(expr1), eval(expr2)]
+    predtable[eval(expr1), eval(expr3)]
+  }
+
+  # leave the major value between up/downs
+  for (i in 1:naspects) {
+    # up greater that down, reset down
+    expr1 <- parse(text = paste(ucolnames[[i]], ">", dcolnames[[i]]))
+    expr2 <- parse(text = paste(dcolnames[[i]], ":= 0"))
+    predtable[eval(expr1), eval(expr2)]
+    # down greater than up, reset up
+    expr1 <- parse(text = paste(dcolnames[[i]], ">", ucolnames[[i]]))
+    expr2 <- parse(text = paste(ucolnames[[i]], ":= 0"))
+    predtable[eval(expr1), eval(expr2)]
+  }
+
+  # deprecated by above approach
+  #predtable[,c(cols2,cols3)] <- t(apply(predtable[,c(cols2,cols3)], 1, filterLessSignificant, qinmode=qinmode))
+
   # convert to data frame
-  tmerged <- as.data.frame(tmerged)
-  # filter the side when less significant was the aspect
-  tmerged[,c(cols2,cols3)] <- t(apply(tmerged[,c(cols2,cols3)], 1, filterLessSignificant, qinmode=qinmode))
+  predtable <- as.data.frame(predtable)
 
   if (rmzeroaspects) {
-    tmerged[,cols1] <- t(apply(tmerged[,c(cols1,cols2,cols3)], 1, filterZeroAspects))
+    predtable[,cols1] <- t(apply(predtable[,c(cols1,cols2,cols3)], 1, filterZeroAspects))
   }
 
   if (binarize) {
     # set active aspects to 1 so correlation fits better
-    tmerged[,c(cols1,cols2,cols3)] <- apply(tmerged[,c(cols1,cols2,cols3)], 2, function(x) ifelse(x > 0, 1, x))
+    predtable[,c(cols1,cols2,cols3)] <- apply(predtable[,c(cols1,cols2,cols3)], 2, function(x) ifelse(x > 0, 1, x))
   }
 
-  #tmerged[,cols2] <- t(apply(tmerged[,cols2], 1, function(x) ifelse(x >= x[which.max(x)]/3, 1, 0)))
-  #tmerged[,cols3] <- t(apply(tmerged[,cols3], 1, function(x) ifelse(x >= x[which.max(x)]/3, 1, 0)))
-  tmerged$udis <- apply(tmerged, 1, function(x) dist(rbind(x[cols1], x[cols2]), method=cor_method))
-  tmerged$ddis <- apply(tmerged, 1, function(x) dist(rbind(x[cols1], x[cols3]), method=cor_method))
-  tmerged$corEff <- apply(tmerged[,c('udis','ddis')], 1, function(x) ifelse(x[1] != x[2], ifelse(x[1] < x[2], 'up', 'down'), NA))
-  tmerged$ucor <- round(apply(tmerged[,c(cols1, cols2, cols3)], 1, function(x) cor(x[cols1-2], x[cols2-2], method='pearson')), digits=2)
-  tmerged$dcor <- round(apply(tmerged[,c(cols1, cols2, cols3)], 1, function(x) cor(x[cols1-2], x[cols3-2], method='pearson')), digits=2)
+  #predtable[,cols2] <- t(apply(predtable[,cols2], 1, function(x) ifelse(x >= x[which.max(x)]/3, 1, 0)))
+  #predtable[,cols3] <- t(apply(predtable[,cols3], 1, function(x) ifelse(x >= x[which.max(x)]/3, 1, 0)))
+  predtable$udis <- apply(predtable, 1, function(x) dist(rbind(x[cols1], x[cols2]), method=cor_method))
+  predtable$ddis <- apply(predtable, 1, function(x) dist(rbind(x[cols1], x[cols3]), method=cor_method))
+  # TODO: if all(c(cols1, cols2) == 0) then udis/ddis/corEff = NA we can't predict it
+  predtable$corEff <- apply(predtable[,c('udis','ddis')], 1, function(x) ifelse(x[1] != x[2], ifelse(x[1] < x[2], 'up', 'down'), NA))
+  predtable$ucor <- round(apply(predtable[,c(cols1, cols2, cols3)], 1, function(x) cor(x[cols1-2], x[cols2-2], method='pearson')), digits=2)
+  predtable$dcor <- round(apply(predtable[,c(cols1, cols2, cols3)], 1, function(x) cor(x[cols1-2], x[cols3-2], method='pearson')), digits=2)
 
-  data.table(tmerged)
+  data.table(predtable)
 }
 
 predictTransTableTest <- function(predict_table, currency_samples, sigthreshold=10, ret=FALSE) {
@@ -631,7 +676,7 @@ testCorrelations <- function(sink_filename, start1=0, start2=0, start3=0, sigthr
         cormethod <- as.character(predOpts[n2,1])
         binarize <- predOpts[[n2,2]]
         rmzeroaspects <- predOpts[[n2,3]]
-        qinmode <- predOpts[[n2,4]]
+        qinmode <- as.character(predOpts[n2,4])
         maxasp <- predOpts[[n2,5]]
         kplanets <- predOpts[[n2,6]]
         kaspects <- predOpts[[n2,7]]
@@ -667,7 +712,7 @@ buildPredictOptions <- function() {
   # remove zero aspects
   zeroaspectsModes <- c(0, 1)
   # quitile modes
-  qinModes <- c(3, 4)
+  qinModes <- c('q3', 'q4')
   # max aspects modes
   maxaspModes <- c(1, 2)
   expand.grid(corMethods, binModes, zeroaspectsModes, qinModes, maxaspModes, planetsList, aspectsList)
@@ -832,7 +877,7 @@ bestSolution <- function(n) {
   cormethod <- as.character(predOpts[n,1])
   binarize <- predOpts[[n,2]]
   rmzeroaspects <- predOpts[[n,3]]
-  qinmode <- predOpts[[n,4]]
+  qinmode <- as.character(predOpts[n,4])
   maxasp <- predOpts[[n,5]]
   kplanets <- predOpts[[n,6]]
   kaspects <- predOpts[[n,7]]
