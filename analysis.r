@@ -10,6 +10,7 @@ library(reshape)
 `%ni%` <- Negate(`%in%`)
 # no scientific notation
 options(scipen=100)
+options(error=recover)
 
 planetsList <- list(c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", "MAR", "JU", "JUR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"),
                     # combined fast planets
@@ -558,7 +559,7 @@ predictTransTableTest <- function(predict_table, currency_samples, sigthreshold=
     t1 <- prop.table(table(ptt$test1, useNA='always'))
     t2 <- addmargins(table(ptt$test1, useNA='always'))
     # only if there are results for TRUE and FALSE
-    if (!is.null(t1['TRUE']) & !is.null(t1['FALSE'])) {
+    if (!is.null(t1['TRUE']) && !is.null(t1['FALSE'])) {
       tdiff <- round(abs(t1['TRUE']-t1[['FALSE']])*100, digits=2)
       if (!is.na(tdiff) & tdiff >= sigthreshold) {
         # append diff & tables
@@ -684,7 +685,7 @@ buildPredictOptions <- function() {
   # aspects types
   aspTypes <- c('all', 'apsepexact', 'exact', 'apexact')
   # binarize
-  binModes <- c(0, 1)
+  binModes <- c(1)
   # remove zero aspects
   zeroaspectsModes <- c(0, 1)
   # quitile modes
