@@ -2,7 +2,7 @@ library(xts)
 library(timeDate)
 library(quantmod)
 library(ggplot2)
-library(msProcess)
+#library(msProcess)
 library(plyr)
 library(data.table)
 library(fields)
@@ -40,7 +40,12 @@ planetsList <- list(c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", 
                     # trans jupiter
                     c("SA", "UR", "NE", "PL"),
                     # trans saturn
-                    c("UR", "NE", "PL"))
+                    c("UR", "NE", "PL"),
+                    # special combinations
+                    c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER"),
+                    c("SU", "SUR", "ME", "MER", "VE", "VER", "JU", "JUR"),
+                    c("SU", "SUR", "VE", "VER", "JU", "JUR"),
+                    c("MA", "MAR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"))
 
 aspectsList <- list(c('a0', 'a30', 'a45', 'a60', 'a72', 'a90', 'a120', 'a135', 'a144', 'a150', 'a180', 'a18', 'a33', 'a36', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160'),
                     c('a0', 'a45', 'a60', 'a90', 'a120', 'a150', 'a180'),
@@ -49,7 +54,12 @@ aspectsList <- list(c('a0', 'a30', 'a45', 'a60', 'a72', 'a90', 'a120', 'a135', '
                     c('a30', 'a45', 'a72', 'a135', 'a144', 'a51', 'a103'),
                     c('a30', 'a45', 'a72', 'a135', 'a144', 'a18', 'a33', 'a36', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160'))
 
+# aspect types cols names
 aspectTypesCols <- c('SUT', 'MOT', 'MET', 'VET', 'MAT', 'JUT', 'SAT', 'URT', 'NET', 'PLT')
+# aspects modes
+aspModes <- c('all', 'majors', 'traditional', 'minmajors', 'myminors', 'minors')
+# aspects types
+aspTypes <- c('all', 'apsepexact', 'exact', 'apexact')
 
 npath <- function(path) {
   normalizePath(path.expand(path))
@@ -307,15 +317,15 @@ openTrans <- function(trans_file, effcorrection=1, aspmode='all', asptype='all')
     trans$Date <- as.Date(as.POSIXlt(ifelse(trans$H < 4, trans$Date-86400, trans$Date), origin="1970-01-01"), format="%Y-%m-%d")
   }
 
-  # reset the aspects that are not of the required types
-  if (asptype != 'all') {
-    trans[,planetsList[[1]]] <- t(apply(trans[,c(planetsList[[1]],aspectTypesCols)], 1, removeAspectsOutType, asptype=types))
-  }
-
   # select only the specified aspects
   if (aspmode != 'all') {
-    cat("\tFiltering by:", aspectsNames)
+    cat("\tFiltering by:", aspectsNames, "\n")
     trans <- subset(trans, AS %in% aspectsNames);
+  }
+
+  # reset the aspects that are not in the required types
+  if (asptype != 'all') {
+    trans[,planetsList[[1]]] <- t(apply(trans[,c(planetsList[[1]],aspectTypesCols)], 1, removeAspectsOutType, asptype=types))
   }
 
   # Convert the riseset times to correct timezone for Cyprus
@@ -555,11 +565,14 @@ predictTransTableTest <- function(predict_table, currency_samples, sigthreshold=
 
   for (i in 1:length(currency_samples)) {
     ptt <- merge(predict_table, currency_samples[[i]], by=c('Date'))
+    # ignore if not enough predictions
+    if (nrow(ptt) < nrow(currency_samples[[i]])/3) break
+    # compare the prediction with the day effect
     ptt$test1 <- apply(ptt[,c('corEff','Eff')], 1, function(x) ifelse(is.na(x[1]) | is.na(x[2]), NA, x[1]==x[2]))
     t1 <- prop.table(table(ptt$test1, useNA='always'))
     t2 <- addmargins(table(ptt$test1, useNA='always'))
     # only if there are results for TRUE and FALSE
-    if (!is.null(t1['TRUE']) && !is.null(t1['FALSE'])) {
+    if (all(c('TRUE', 'FALSE') %in% names(t1))) {
       tdiff <- round(abs(t1['TRUE']-t1[['FALSE']])*100, digits=2)
       if (!is.na(tdiff) & tdiff >= sigthreshold) {
         # append diff & tables
@@ -596,16 +609,12 @@ predictTransTableTest <- function(predict_table, currency_samples, sigthreshold=
   if (ret) output
 }
 
-testCorrelations <- function(sink_filename, start1=0, start2=0, start3=0, sigthreshold=10) {
+testCorrelations <- function(sink_filename, fileno, start1=0, start2=0, sigthreshold=10) {
   if (!hasArg('sink_filename')) stop("Provide a sink filename.")
   sink_filename <- paste("~/trading/predict/", sink_filename, ".txt", sep='')
   sink(npath(sink_filename), append=TRUE)
   # Start the clock!
   ptm <- proc.time()
-  # aspects modes
-  aspModes <- c('all', 'majors', 'traditional', 'minmajors', 'myminors', 'minors')
-  # aspects types
-  aspTypes <- c('all', 'apsepexact', 'exact', 'apexact')
   # currency data
   eurusd_full <- openCurrency2("~/trading/EURUSD_day_fxpro_20130611.csv")
   eurusd <- subset(eurusd_full, Date > as.Date("1998-01-01") & Date < as.Date("2012-01-01"))
@@ -617,63 +626,66 @@ testCorrelations <- function(sink_filename, start1=0, start2=0, start3=0, sigthr
   predOpts <- buildPredictOptions()
   totPredOpts <- nrow(predOpts)
 
-  for (j in array(c(seq(1, 29, by=1)))) {
-    # start in the specified options
-    if (j < start1) next
-    #cat("iteration = ", iter <- iter + 1, "\n")
-    for (n1 in 1:totTransOpts) {
-      if (n1 < start2) next
-      # if a specific start option is set just apply it for the first transits cycle
-      # then for the next cycle start again from 0 option
-      if (n1 > start2) start3 <- 0
-      # convert the opts to plain format
-      aspmode <- as.character(transOpts[n1,1])
-      asptype <- as.character(transOpts[n1,2])
-      cat("####################################################\n")
-      cat("Transits File #", j, "transOpts aspmode =", aspmode, "asptype =", as.character(asptype), "\n")
+  for (n1 in 1:totTransOpts) {
+    if (n1 < start1) next
+    # if a specific start option is set just apply it for the first transits cycle
+    # then for the next cycle start again from 0 option
+    if (n1 > start1) start2 <- 0
+    # convert the opts to plain format
+    aspmode <- as.character(transOpts[n1,1])
+    asptype <- as.character(transOpts[n1,2])
+    cat("####################################################\n")
+    cat("Transits File #", fileno, "transOpts aspmode =", aspmode, "asptype =", as.character(asptype), "\n")
 
-      file_name <- paste("~/trading/transits_eur/EUR_1997-2014_trans_orb", j, ".tsv", sep='')
-      trans.eur <- openTrans(file_name, 1, aspmode, asptype)
-      trans.eurusd.eur  <- mergeTrans(trans.eur, eurusd)
-      # found aspects in the transit data frame
-      foundasp <- unique(trans.eur$AS)
-      cat("\tFound aspects:", as.character(foundasp), "\n")
-      cat("Transits execution time: ", proc.time()-ptm, "\n\n")
-      cat(proc.time() - ptm, "\n\n")
+    # EUR file
+    file_name <- paste("~/trading/transits_eur/EUR_1997-2014_trans_orb", fileno, ".tsv", sep='')
+    trans.eur <- openTrans(file_name, 1, aspmode, asptype)
+    trans.eurusd.eur  <- mergeTrans(trans.eur, eurusd)
+    # USA file
+    file_name <- paste("~/trading/transits_usa/USA_1997-2014_trans_orb", fileno, ".tsv", sep='')
+    trans.usa <- openTrans(file_name, 1, aspmode, asptype)
+    trans.eurusd.usa  <- mergeTrans(trans.usa, eurusd)
+    # found aspects in the transit data frame
+    cat("\tFound aspects:", as.character(unique(trans.eur$AS)), "\n")
+    cat(" AND ", as.character(unique(trans.usa$AS)), "\n")
+    cat("Transits execution time: ", proc.time()-ptm, "\n\n")
 
-      # generate keys combinations
-      # combn(keys, 2, simplify=FALSE)
-      # generate the planets & aspects options combinations
-      #predOpts <- expand.grid(corMethods, planetsList, aspectsList)
-      # Init time for fisrt loop
+    # combn(keys, 2, simplify=FALSE)
+    # Init time for fisrt loop
+    looptm <- proc.time()
+
+    for (n2 in 1:totPredOpts) {
+      if (n2 < start2) next
+      cormethod <- as.character(predOpts[n2,1])
+      binarize <- predOpts[[n2,2]]
+      rmzeroaspects <- predOpts[[n2,3]]
+      qinmode <- as.character(predOpts[n2,4])
+      maxasp <- predOpts[[n2,5]]
+      kplanets <- predOpts[[n2,6]]
+      kaspects <- predOpts[[n2,7]]
+      samples <- generateSamples(eurusd_test, 3)
+
+      cat("Trans Opts #", n1, " of ", totTransOpts, " -- Pred Opts #", n2, " of ", totPredOpts, "\n")
+      cat("Transits File #", fileno, "transOpts aspmode=", aspmode, "asptype=", as.character(asptype), "\n")
+      cat("\tPredict Opts cormethod=", cormethod, 'binarize=', binarize, 'rmzeroaspects=', rmzeroaspects, 'qinmode=', qinmode, 'maxasp=', maxasp, "\n")
+      cat("\tPlanets mode:", kplanets, "\n")
+      cat("\tAspects mode:", kaspects, "\n\n")
+
+      # EUR predict
+      cat("\tEUR\n")
+      pt.eur <- predictTransTable(trans.eur, trans.eurusd.eur, cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode, maxasp)
+      ptt.eur <- predictTransTableTest(pt.eur, samples, sigthreshold)
+      # USA predict
+      cat("\tUSA\n")
+      pt.usa <- predictTransTable(trans.usa, trans.eurusd.usa, cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode, maxasp)
+      ptt.usa <- predictTransTableTest(pt.usa, samples, sigthreshold)
+
+      cat("Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n\n")
+
       looptm <- proc.time()
-
-      for (n2 in 1:totPredOpts) {
-        if (n2 < start3) next
-        cormethod <- as.character(predOpts[n2,1])
-        binarize <- predOpts[[n2,2]]
-        rmzeroaspects <- predOpts[[n2,3]]
-        qinmode <- as.character(predOpts[n2,4])
-        maxasp <- predOpts[[n2,5]]
-        kplanets <- predOpts[[n2,6]]
-        kaspects <- predOpts[[n2,7]]
-        samples <- generateSamples(eurusd_test, 3)
-
-        cat("Trans Opts #", n1, " of ", totTransOpts, " -- Pred Opts #", n2, " of ", totPredOpts, "\n")
-        cat("Transits File #", j, "transOpts aspmode=", aspmode, "asptype=", as.character(asptype), "\n")
-        cat("\tPredict Opts cormethod=", cormethod, 'binarize=', binarize, 'rmzeroaspects=', rmzeroaspects, 'qinmode=', qinmode, 'maxasp=', maxasp, "\n")
-        cat("\tPlanets mode:", kplanets, "\n")
-        cat("\tAspects mode:", kaspects, "\n\n")
-
-        predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode, maxasp)
-        predictTransTest <- predictTransTableTest(predictTrans, samples, sigthreshold)
-
-        cat("Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n\n")
-
-        looptm <- proc.time()
-      }
     }
   }
+
   sink()
 }
 
@@ -747,7 +759,7 @@ funtionizethis  <- function() {
   month = months(nowDate)
   quarter = quarters(nowDate)
 
-  # Calculate the moving average with a window of 10 points 
+  # Calculate the moving average with a window of 10 points
   mov.avg <- ma(values, 1, 10, FALSE)
 
 
