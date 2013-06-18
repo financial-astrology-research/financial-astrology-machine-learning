@@ -10,7 +10,7 @@ library(reshape)
 `%ni%` <- Negate(`%in%`)
 # no scientific notation
 options(scipen=100)
-options(error=recover)
+#options(error=recover)
 
 planetsList <- list(c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", "MAR", "JU", "JUR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"),
                     # combined fast planets
@@ -557,7 +557,7 @@ historyAspectsCorrelation <- function(trans, trans_hist, cor_method, kplanets, k
   data.table(predtable)
 }
 
-predictTransTableTest <- function(predict_table, currency_samples, sigthreshold=10, ret=FALSE) {
+predictTransTableTest <- function(directory, predict_table, currency_samples, sigthreshold=10, ret=FALSE) {
   tdiffs <- list()
   tl1 <- list()
   tl2 <- list()
@@ -594,7 +594,7 @@ predictTransTableTest <- function(predict_table, currency_samples, sigthreshold=
       cat("\n")
     }
     # display the average
-    cat("%%%%%%%%%%%%%%%%%%%%", mean(unlist(tdiffs)), "%%%%%%%%%%%%%%%%%%%%\n\n")
+    cat("%%%", directory, "%%%", median(unlist(tdiffs)), "%%%%%%%%%%%%%%%%%%%%\n\n")
   }
   else {
     writeLines("\t\t\tInsignificant")
@@ -609,7 +609,8 @@ predictTransTableTest <- function(predict_table, currency_samples, sigthreshold=
   if (ret) output
 }
 
-testCorrelations <- function(sink_filename, fileno, start1=0, start2=0, sigthreshold=10) {
+testCorrelations <- function(sink_filename, directories, fileno, start1=0, start2=0, sigthreshold=10) {
+  if (class(directories) != 'list') stop("Provide a valid directories list.")
   if (!hasArg('sink_filename')) stop("Provide a sink filename.")
   sink_filename <- paste("~/trading/predict/", sink_filename, ".txt", sep='')
   sink(npath(sink_filename), append=TRUE)
@@ -636,19 +637,20 @@ testCorrelations <- function(sink_filename, fileno, start1=0, start2=0, sigthres
     asptype <- as.character(transOpts[n1,2])
     cat("####################################################\n")
     cat("Transits File #", fileno, "transOpts aspmode =", aspmode, "asptype =", as.character(asptype), "\n")
+    cat("Directories: ", unlist(directories), "\n")
 
-    # EUR file
-    file_name <- paste("~/trading/transits_eur/EUR_1997-2014_trans_orb", fileno, ".tsv", sep='')
-    trans.eur <- openTrans(file_name, 1, aspmode, asptype)
-    trans.eurusd.eur  <- mergeTrans(trans.eur, eurusd)
-    # USA file
-    file_name <- paste("~/trading/transits_usa/USA_1997-2014_trans_orb", fileno, ".tsv", sep='')
-    trans.usa <- openTrans(file_name, 1, aspmode, asptype)
-    trans.eurusd.usa  <- mergeTrans(trans.usa, eurusd)
-    # found aspects in the transit data frame
-    cat("\tFound aspects:", as.character(unique(trans.eur$AS)), "\n")
-    cat(" AND ", as.character(unique(trans.usa$AS)), "\n")
+    # iterate trnas directories
+    ltrans <- list()
+    ltrans_hist <- list()
+    for (tn in 1:length(directories)) {
+      ltrans[[tn]] <- openTrans(paste("~/trading/", directories[[tn]], "/trans_", fileno, ".tsv", sep=''), 1, aspmode, asptype)
+      ltrans_hist[[tn]] <- mergeTrans(ltrans[[tn]], eurusd)
+      # found aspects in the transit data frame
+      cat("\tFound aspects:", sort(as.character(unique(ltrans[[tn]]$AS))), "\n")
+    }
+
     cat("Transits execution time: ", proc.time()-ptm, "\n\n")
+    cat("####################################################\n")
 
     # combn(keys, 2, simplify=FALSE)
     # Init time for fisrt loop
@@ -671,19 +673,18 @@ testCorrelations <- function(sink_filename, fileno, start1=0, start2=0, sigthres
       cat("\tPlanets mode:", kplanets, "\n")
       cat("\tAspects mode:", kaspects, "\n\n")
 
-      # EUR predict
-      cat("\tEUR\n")
-      pt.eur <- predictTransTable(trans.eur, trans.eurusd.eur, cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode, maxasp)
-      ptt.eur <- predictTransTableTest(pt.eur, samples, sigthreshold)
-      # USA predict
-      cat("\tUSA\n")
-      pt.usa <- predictTransTable(trans.usa, trans.eurusd.usa, cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode, maxasp)
-      ptt.usa <- predictTransTableTest(pt.usa, samples, sigthreshold)
+      for (tn in 1:length(directories)) {
+        cat("\t", directories[[tn]], "\n")
+        predt <- predictTransTable(ltrans[[tn]], ltrans_hist[[tn]], cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode, maxasp)
+        predtt <- predictTransTableTest(directories[[tn]], predt, samples, sigthreshold)
+      }
 
       cat("Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n\n")
-
       looptm <- proc.time()
     }
+
+    # collect garbage
+    gc()
   }
 
   sink()
