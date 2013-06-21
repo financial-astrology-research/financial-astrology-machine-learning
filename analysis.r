@@ -7,6 +7,7 @@ library(plyr)
 library(data.table)
 library(fields)
 library(reshape)
+library(randomForest)
 `%ni%` <- Negate(`%in%`)
 # no scientific notation
 options(scipen=100)
@@ -59,7 +60,7 @@ aspectTypesCols <- c('SUT', 'MOT', 'MET', 'VET', 'MAT', 'JUT', 'SAT', 'URT', 'NE
 # aspects modes
 aspModes <- c('all', 'majors', 'traditional', 'minmajors', 'myminors', 'minors')
 # aspects types
-aspTypes <- c('all', 'apsepexact', 'exact', 'apexact')
+aspTypes <- c('all', 'apsepexact', 'exact', 'apexact', 'sepexact')
 
 npath <- function(path) {
   normalizePath(path.expand(path))
@@ -294,7 +295,8 @@ openTrans <- function(trans_file, effcorrection=1, aspmode='all', asptype='all')
          all = types <- c('A', 'AE', 'SE', 'S'),
          apsepexact = types <- c('A', 'AE', 'SE'),
          exact = types <- c('AE', 'SE'),
-         apexact = types <- c('A', 'AE'))
+         apexact = types <- c('A', 'AE'),
+         sepexact = types <- c('SE', 'S'))
 
   if (!exists('types')) {
     stop("The provided asptype is not valid.")
@@ -328,6 +330,11 @@ openTrans <- function(trans_file, effcorrection=1, aspmode='all', asptype='all')
     trans[,planetsList[[1]]] <- t(apply(trans[,c(planetsList[[1]],aspectTypesCols)], 1, removeAspectsOutType, asptype=types))
   }
 
+  # replace NA aspects by none due randomForest need a value
+  trans[,planetsList[[1]]] <- apply(trans[,planetsList[[1]]], 2, function(x) ifelse(is.na(x), 'none', x))
+  # set as factors
+  trans[,planetsList[[1]]] <- lapply(trans[,planetsList[[1]]], as.factor)
+
   # Convert the riseset times to correct timezone for Cyprus
   #tzcorrect <- format(as.POSIXlt(paste(trans$Date, trans$ASC1), format = "%Y-%m-%d %H:%M") + 3600 * 2.5, "%H:%M")
   #trans$ASC1 <- tzcorrect
@@ -335,6 +342,7 @@ openTrans <- function(trans_file, effcorrection=1, aspmode='all', asptype='all')
   trans$PC <- factor(trans$PC, levels = c('SU', 'MO', 'ME', 'VE', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL'), labels = c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9))
   # give each transit type an index
   trans$idx <- with(trans, paste(PT, AS, PR, SI, sep=''))
+  trans$idx2 <- with(trans, paste(Date, PT, AS, PR, SI, sep=''))
   trans
 }
 
@@ -647,6 +655,7 @@ testCorrelations <- function(sink_filename, directories, fileno, start1=0, start
       ltrans_hist[[tn]] <- mergeTrans(ltrans[[tn]], eurusd)
       # found aspects in the transit data frame
       cat("\tFound aspects:", sort(as.character(unique(ltrans[[tn]]$AS))), "\n")
+      gc()
     }
 
     cat("Transits execution time: ", proc.time()-ptm, "\n\n")
@@ -862,6 +871,165 @@ initEuroPredict <- function() {
 
 }
 
+splitdf <- function(dataframe, seed=NULL) {
+  if (!is.null(seed)) set.seed(seed)
+  index <- 1:nrow(dataframe)
+  trainindex <- sample(index, trunc(length(index)/1.5))
+  trainset <- dataframe[trainindex, ]
+  testset <- dataframe[-trainindex, ]
+  list(trainset=trainset,testset=testset)
+}
+
+loadTrans <- function(datefix, aspmode, asptype, maxasp) {
+  trans <- openTrans("~/trading/t_eurfix/trans_30.tsv", datefix, aspmode, asptype)
+  trans <- trans[,names(trans) %ni% 'endEffect']
+  trans <- data.table(trans)
+  selected <- trans[,idx[which(S2 >= maxn(S2, maxasp))], by=c('Date')]
+  setnames(selected, 'V1', 'idx')
+  trans <- merge(selected, trans, by=c('Date', 'idx'))
+  as.data.frame(trans)
+}
+
+loadTransHist <- function(datefix, aspmode, asptype, maxasp) {
+  trans <- loadTrans(datefix, asptype, asptype, maxasp)
+  eurusd <- openCurrency2("~/trading/EURUSD_day_fxpro_20130611.csv")
+  # merge with the currency history
+  mergeTrans(trans, eurusd)
+}
+
+buildTransOpts <- function() {
+  dateFix <- c(0,1)
+  maxAspects <- seq(1,10)
+  expand.grid(dateFix, aspModes, aspTypes, maxAspects)
+}
+
+bestRandomForest <- function(threshold=0.7) {
+  trans.hist <- loadTransHist(0, 'all', 'all', 7)
+  # start prediction model
+  splits <- splitdf(trans.hist)
+  trans.training <- splits$trainset
+  trans.testing <- splits$testset
+  cols <- c('Eff', 'PT', 'SI', 'SP', 'HR',
+            "SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL",
+            #"SUR", "MOR", "MER", "VER", "MAR", "JUR", "SAR", "URR", "NER", "PLR"
+            #"SULO", "MOLO", "VELO", "MALO", "JULO", "SALO", "URLO", "NELO", "PLLO",
+            "MOSP", "MESP", "VESP", "MASP", "JUSP", "SASP", "URSP", "NESP", "PLSP",
+            "MOLA", "MELA", "VELA", "MALA", "JULA", "SALA", "PLLA"
+            )
+
+  #model <- randomForest(Eff ~ ., data = trans.training[,cols], importance=TRUE, keep.forest=TRUE)
+  model <- randomForest(Eff ~ ., data = trans.training[,cols], importance=TRUE, keep.forest=TRUE, ntree=300)
+
+  trans.testing$predicted <- predict(model, newdata=trans.testing[,cols])
+  print(prop.table(table(trans.testing$Eff == trans.testing$predicted)))
+  print(table(trans.testing$Eff == trans.testing$predicted))
+  trans.testing <- data.table(trans.testing)
+  setkey(trans.testing, 'Date')
+  pred.table <- trans.testing[,as.list(table(predicted)), by=c('Date')]
+  pred.table[,prop := (down-up)/(down+up)]
+  eurusd <- openCurrency2("~/trading/EURUSD_day_fxpro_20130611.csv")
+  eurusd <- data.table(eurusd)
+  pred.table <- merge(pred.table, eurusd, by='Date')
+  pred.table[, predEff := lapply(prop, function(x) ifelse(x > threshold, 'down', ifelse(x < -1*threshold, 'up', NA)))]
+  print(table(pred.table$Eff==pred.table$predEff,useNA='always'))
+  print(prop.table(table(pred.table$Eff==pred.table$predEff,useNA='always')))
+  model
+}
+
+testRandomForest <- function(sink_filename, sigthreshold) {
+  if (!hasArg('sink_filename')) stop("Provide a sink filename.")
+  sink_filename <- paste("~/trading/predict/", sink_filename, ".txt", sep='')
+  sink(npath(sink_filename), append=TRUE)
+  transOpts <- buildTransOpts()
+
+  for (n in 1:nrow(transOpts)) {
+    datefix <- 0
+    aspmode <- as.character(transOpts[[n,2]])
+    asptype <- as.character(transOpts[[n,3]])
+    maxasp <- transOpts[[n,4]]
+    cat("==========================================================================")
+    cat("\ntransOpts #", n, " of ", nrow(transOpts), " -  datefix =", datefix, "-  asptype =", aspmode, "-  asptype =", asptype, "-  maxasp =", maxasp, "\n")
+    trans.hist <- loadTransHist(datefix, aspmode, asptype, maxasp)
+
+    # start prediction model
+    splits <- splitdf(trans.hist)
+    trans.training <- splits$trainset
+    trans.testing <- splits$testset
+    cols <- c('Eff', 'PT', 'SI', 'SP', 'HR',
+              "SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL",
+              #"SUR", "MOR", "MER", "VER", "MAR", "JUR", "SAR", "URR", "NER", "PLR"
+              #"SULO", "MOLO", "VELO", "MALO", "JULO", "SALO", "URLO", "NELO", "PLLO",
+              "MOSP", "MESP", "VESP", "MASP", "JUSP", "SASP", "URSP", "NESP", "PLSP",
+              "MOLA", "MELA", "VELA", "MALA", "JULA", "SALA", "PLLA"
+              )
+
+    #model <- randomForest(Eff ~ ., data = trans.training[,cols], importance=TRUE, keep.forest=TRUE)
+    model <- randomForest(Eff ~ ., data = trans.training[,cols], importance=TRUE, keep.forest=TRUE, ntree=300)
+
+    #trans.testing$predicted <- predict(model, newdata=trans.testing[,cols])
+    #setkey(trans.testing, 'Date')
+    #trans.testing[,c('up','down') := as.list(table(Eff)), by=c('idx')]
+    #trans.testing[,count := down+up]
+
+    # generate from testing data some random samples and check the prediction results
+    terr <- list()
+    tdiffs <- list()
+    tl1 <- list()
+    tl2 <- list()
+    samples <- generateSamples(trans.testing, 3)
+    for (mysample in samples) {
+      predicted <- predict(model, newdata=mysample[,cols])
+      t1 <- prop.table(table(mysample$Eff == predicted))
+      t2 <- table(mysample$Eff == predicted)
+      tdiff <- round(abs(t1['TRUE']-t1[['FALSE']])*100, digits=2)
+
+      if (!is.na(tdiff) & tdiff >= sigthreshold) {
+        err.rate <- median(model$err.rate[,1])
+        terr[[length(terr)+1]] <- err.rate
+        tdiffs[[length(tdiffs)+1]] <- tdiff
+        tl1[[length(tl1)+1]] <- t1
+        tl2[[length(tl2)+1]] <- t2
+      }
+    }
+
+    # if the differences are significant in all the test samples
+    if (length(tdiffs) == length(samples)) {
+      for (i in 1:length(tdiffs)) {
+        # print the diffs and the tables
+        cat("===================== diff=", tdiffs[[i]], "-  error=", terr[[i]], "\n")
+        print(tl1[[i]])
+        print(tl2[[i]])
+        cat("\n")
+      }
+      # display the average
+      cat("%%%", median(unlist(tdiffs)), "%%%%%%%%%%%%%%%%%%%%\n\n")
+    }
+    else {
+      writeLines("\t\t\tInsignificant")
+      cat("\n")
+    }
+
+
+    #varImpPlot(model, type=1, sort=FALSE, n.var=40)
+    # remove garbage
+    gc()
+  }
+
+  sink()
+}
+
+generateSamples <- function(ds, n) {
+  total <- nrow(ds)
+  # build test samples
+  samples <- list()
+  for (i in 1:n) {
+    samples[[i]] <- ds[sample(total, total/2),]
+  }
+  # finally add the entire data set as a sample
+  samples[[length(samples)+1]] <- ds
+  samples
+}
+
 bestSolution <- function(n) {
   predOpts <- buildPredictOptions()
   cormethod <- as.character(predOpts[n,1])
@@ -885,14 +1053,4 @@ bestSolution <- function(n) {
   list(aspect_dates_cor, ptt.test)
 }
 
-generateSamples <- function(ds, n) {
-  total <- nrow(ds)
-  # build test samples
-  samples <- list()
-  for (i in 1:n) {
-    samples[[i]] <- ds[sample(total, total/2),]
-  }
-  # finally add the entire data set as a sample
-  samples[[length(samples)+1]] <- ds
-  samples
-}
+#model <- randomForest(Eff ~ ., data = training, importance=TRUE, keep.forest=TRUE)
