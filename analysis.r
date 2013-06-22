@@ -8,6 +8,7 @@ library(data.table)
 library(fields)
 library(reshape)
 library(randomForest)
+library(GA)
 `%ni%` <- Negate(`%in%`)
 # no scientific notation
 options(scipen=100)
@@ -903,24 +904,65 @@ buildTransOpts <- function() {
   expand.grid(dateFix, aspModes, aspTypes, maxAspects)
 }
 
-bestRandomForest <- function(threshold=0.7) {
+testGAOptimization <- function() {
   trans.hist <- loadTransHist(0, 'all', 'all', 7)
+  trans.training <- subset(trans.hist, Date > as.Date("1999-01-01") & Date < as.Date("2008-01-01"))
+  trans.testing <- subset(trans.hist, Date > as.Date("2012-01-01"))
+  cols <- c('PT', 'AS', 'PR', 'HR', 'SI', 'LON', 'LAT', 'SP', 'PRLON', 'S', 'S2', 'WD',
+            'SU', 'MO', 'ME', 'VE', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL',
+            'SUR', 'MOR', 'MER', 'VER', 'MAR', 'JUR', 'SAR', 'URR', 'NER', 'PLR',
+            'SULO', 'MOLO', 'MELO', 'VELO', 'MALO', 'JULO', 'SALO', 'URLO', 'NELO', 'PLLO',
+            'MOSP', 'MESP', 'VESP', 'MASP', 'JUSP', 'SASP', 'URSP', 'NESP', 'PLSP',
+            'MOS', 'MES', 'VES', 'MAS', 'JUS', 'SAS', 'URS', 'NES', 'PLS',
+            'MOLA', 'MELA', 'VELA', 'MALA', 'JULA', 'SALA', 'PLLA')
+
+  optimizeRandomForest <- function(string) {
+    inc <- which(string == 1)
+    selcols <- cols[inc]
+    model <- randomForest(Eff ~ ., data = trans.training[,c('Eff',selcols)], importance=TRUE, keep.forest=TRUE, ntree=300)
+    err <- median(model$err.rate[,1])
+    print(err)
+    err
+  }
+
+  fitness <- function(x) -optimizeRandomForest(x)
+
+  # selection
+  #gabin_lrSelection
+  #gabin_nlrSelection
+  #gabin_rwSelection - 0.30
+  #gabin_tourSelection
+  # crossovers
+  #gabin_spCrossover(object, parents, ...)
+  #gabin_uCrossover(object, parents, ...)
+  # mutation
+  #gabin_raMutation
+  GA <- ga("binary", fitness=fitness, nBits=length(cols), names=cols, monitor=gaMonitor, maxiter=50, run=10, popSize=50, selection=gabin_lrSelection)
+  summary(GA)
+  GA
+}
+
+bestRandomForest <- function() {
+  threshold=0.65
+  trans.hist <- loadTransHist(0, 'all', 'all', 7)
+  trans.training <- subset(trans.hist, Date > as.Date("1999-01-01") & Date < as.Date("2012-01-01"))
+  trans.testing <- subset(trans.hist, Date > as.Date("2012-01-01"))
   # start prediction model
   splits <- splitdf(trans.hist)
   trans.training <- splits$trainset
   trans.testing <- splits$testset
-  cols <- c('Eff', 'PT', 'SI', 'SP', 'HR',
-            "SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL",
-            #"SUR", "MOR", "MER", "VER", "MAR", "JUR", "SAR", "URR", "NER", "PLR"
-            #"SULO", "MOLO", "VELO", "MALO", "JULO", "SALO", "URLO", "NELO", "PLLO",
-            "MOSP", "MESP", "VESP", "MASP", "JUSP", "SASP", "URSP", "NESP", "PLSP",
-            "MOLA", "MELA", "VELA", "MALA", "JULA", "SALA", "PLLA"
-            )
+  cols <- c('Eff', 'PT', 'AS', 'PR', 'HR', 'SI', 'LON', 'LAT', 'SP', 'PRLON', 'S', 'S2', 'WD',
+            'SU', 'MO', 'ME', 'VE', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL',
+            'SUR', 'MOR', 'MER', 'VER', 'MAR', 'JUR', 'SAR', 'URR', 'NER', 'PLR',
+            'SULO', 'MOLO', 'MELO', 'VELO', 'MALO', 'JULO', 'SALO', 'URLO', 'NELO', 'PLLO',
+            'MOSP', 'MESP', 'VESP', 'MASP', 'JUSP', 'SASP', 'URSP', 'NESP', 'PLSP',
+            'MOS', 'MES', 'VES', 'MAS', 'JUS', 'SAS', 'URS', 'NES', 'PLS',
+            'MOLA', 'MELA', 'VELA', 'MALA', 'JULA', 'SALA', 'PLLA')
 
   #model <- randomForest(Eff ~ ., data = trans.training[,cols], importance=TRUE, keep.forest=TRUE)
   model <- randomForest(Eff ~ ., data = trans.training[,cols], importance=TRUE, keep.forest=TRUE, ntree=300)
 
-  trans.testing$predicted <- predict(model, newdata=trans.testing[,cols])
+  trans.testing$predicted <- predict(model, newdata=trans.testing[,cols[-1]])
   print(prop.table(table(trans.testing$Eff == trans.testing$predicted)))
   print(table(trans.testing$Eff == trans.testing$predicted))
   trans.testing <- data.table(trans.testing)
@@ -934,6 +976,14 @@ bestRandomForest <- function(threshold=0.7) {
   print(table(pred.table$Eff==pred.table$predEff,useNA='always'))
   print(prop.table(table(pred.table$Eff==pred.table$predEff,useNA='always')))
   model
+}
+
+predTableCount <- function(pred.table, threshold) {
+  pred.table <- data.table(pred.table)
+  setkey(pred.table, 'Date')
+  pred.table <- pred.table[,as.list(table(predicted)), by=c('Date')]
+  pred.table[,prop := (down-up)/(down+up)]
+  pred.table[, predEff := lapply(prop, function(x) ifelse(x > threshold, 'down', ifelse(x < -1*threshold, 'up', NA)))]
 }
 
 testRandomForest <- function(sink_filename, sigthreshold) {
@@ -1052,5 +1102,3 @@ bestSolution <- function(n) {
   ptt.test <- predictTransTableTest(ptt, samples, 5, TRUE)
   list(aspect_dates_cor, ptt.test)
 }
-
-#model <- randomForest(Eff ~ ., data = training, importance=TRUE, keep.forest=TRUE)
