@@ -45,9 +45,15 @@ planetsList <- list(c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", 
                     c("UR", "NE", "PL"),
                     # special combinations
                     c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER"),
+                    c("SU", "MO", "ME", "VE"),
                     c("SU", "SUR", "ME", "MER", "VE", "VER", "JU", "JUR"),
+                    c("SU", "ME", "VE", "JU"),
                     c("SU", "SUR", "VE", "VER", "JU", "JUR"),
-                    c("MA", "MAR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"))
+                    c("SU", "VE", "JU"),
+                    c("MA", "MAR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"),
+                    c("MA", "SA", "UR", "NE", "PL"))
+
+planetsCombList <- c(planetsList, combn(planetsList[[1]], 4, simplify=FALSE))
 
 aspectsList <- list(c('a0', 'a30', 'a45', 'a60', 'a72', 'a90', 'a120', 'a135', 'a144', 'a150', 'a180', 'a18', 'a33', 'a36', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160'),
                     c('a0', 'a45', 'a60', 'a90', 'a120', 'a150', 'a180'),
@@ -58,10 +64,13 @@ aspectsList <- list(c('a0', 'a30', 'a45', 'a60', 'a72', 'a90', 'a120', 'a135', '
 
 # aspect types cols names
 aspectTypesCols <- c('SUT', 'MOT', 'MET', 'VET', 'MAT', 'JUT', 'SAT', 'URT', 'NET', 'PLT')
-# aspects modes
-aspModes <- c('all', 'majors', 'traditional', 'minmajors', 'myminors', 'minors')
+
 # aspects types
-aspTypes <- c('all', 'apsepexact', 'exact', 'apexact', 'sepexact')
+aspectTypesList <- list(c('A', 'AE', 'SE', 'S'),
+                        c('A', 'AE', 'SE'),
+                        c('AE', 'SE'),
+                        c('A', 'AE'),
+                        c('SE', 'S'))
 
 npath <- function(path) {
   normalizePath(path.expand(path))
@@ -275,34 +284,8 @@ removeAspectsOutType <- function(X, asptype) {
 }
 
 # Open a Transits table and merge with a currency table
-openTrans <- function(trans_file, effcorrection=1, aspmode='all', asptype='all') {
+openTrans <- function(trans_file, effcorrection=1) {
   trans_file <- npath(trans_file)
-
-  switch(aspmode,
-    all = aspectsNames <- c('a0', 'a30', 'a45', 'a60', 'a72', 'a90', 'a120', 'a135', 'a144', 'a150', 'a180', 'a18', 'a33', 'a36', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160'),
-    majors = aspectsNames <- c('a0', 'a45', 'a60', 'a90', 'a120', 'a150', 'a180'),
-    traditional = aspectsNames <- c('a0', 'a60', 'a90', 'a120', 'a180'),
-    minmajors = aspectsNames <- c('a0', 'a30', 'a45', 'a60', 'a90', 'a120', 'a135', 'a150', 'a180'),
-    myminors = aspectsNames <- c('a30', 'a45', 'a72', 'a135', 'a144', 'a51', 'a103'),
-    minors <- aspectsNames <- c('a30', 'a45', 'a72', 'a135', 'a144', 'a18', 'a33', 'a36', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160'))
-
-  if (!exists('aspectsNames')) {
-    stop("No valid asptype value was provided.")
-  }
-
-  #TODO: the minor aspects that are very near are overlapping due orbs
-
-  switch(asptype,
-         all = types <- c('A', 'AE', 'SE', 'S'),
-         apsepexact = types <- c('A', 'AE', 'SE'),
-         exact = types <- c('AE', 'SE'),
-         apexact = types <- c('A', 'AE'),
-         sepexact = types <- c('SE', 'S'))
-
-  if (!exists('types')) {
-    stop("The provided asptype is not valid.")
-  }
-
   # transits
   trans <- read.table(trans_file, header = T, sep="\t", na.strings = "")
   trans$Date <- as.Date(trans$Date, format="%Y-%m-%d")
@@ -318,17 +301,6 @@ openTrans <- function(trans_file, effcorrection=1, aspmode='all', asptype='all')
     # the effect should be produced the previous day
     trans$Date <- as.double(strptime(trans$Date, "%Y-%m-%d"))
     trans$Date <- as.Date(as.POSIXlt(ifelse(trans$H < 4, trans$Date-86400, trans$Date), origin="1970-01-01"), format="%Y-%m-%d")
-  }
-
-  # select only the specified aspects
-  if (aspmode != 'all') {
-    cat("\tFiltering by:", aspectsNames, "\n")
-    trans <- subset(trans, AS %in% aspectsNames);
-  }
-
-  # reset the aspects that are not in the required types
-  if (asptype != 'all') {
-    trans[,planetsList[[1]]] <- t(apply(trans[,c(planetsList[[1]],aspectTypesCols)], 1, removeAspectsOutType, asptype=types))
   }
 
   # replace NA aspects by none due randomForest need a value
@@ -573,22 +545,22 @@ predictTransTableTest <- function(directory, predict_table, currency_samples, si
   output <- list()
 
   for (i in 1:length(currency_samples)) {
-    ptt <- merge(predict_table, currency_samples[[i]], by=c('Date'))
+    ptt <- merge(predict_table, currency_samples[[i]], by=c('date'))
     # ignore if not enough predictions
     if (nrow(ptt) < nrow(currency_samples[[i]])/3) break
     # compare the prediction with the day effect
-    ptt$test1 <- apply(ptt[,c('corEff','Eff')], 1, function(x) ifelse(is.na(x[1]) | is.na(x[2]), NA, x[1]==x[2]))
-    t1 <- prop.table(table(ptt$test1, useNA='always'))
-    t2 <- addmargins(table(ptt$test1, useNA='always'))
-    # only if there are results for TRUE and FALSE
-    if (all(c('TRUE', 'FALSE') %in% names(t1))) {
-      tdiff <- round(abs(t1['TRUE']-t1[['FALSE']])*100, digits=2)
+    ptt$test1 <- apply(ptt[,c('coreff','eff')], 1, function(x) ifelse(is.na(x[1]) | is.na(x[2]), na, x[1]==x[2]))
+    t1 <- prop.table(table(ptt$test1, usena='always'))
+    t2 <- addmargins(table(ptt$test1, usena='always'))
+    # only if there are results for true and false
+    if (all(c('true', 'false') %in% names(t1))) {
+      tdiff <- round(abs(t1['true']-t1[['false']])*100, digits=2)
       if (!is.na(tdiff) & tdiff >= sigthreshold) {
         # append diff & tables
         tdiffs[[length(tdiffs)+1]] <- tdiff
         tl1[[length(tl1)+1]] <- t1
         tl2[[length(tl2)+1]] <- t2
-        if (ret) output[[length(output)+1]] <- ptt[,!names(ptt) %in% c('Time', 'Mid')]
+        if (ret) output[[length(output)+1]] <- ptt[,!names(ptt) %in% c('time', 'mid')]
       }
     }
   }
@@ -708,13 +680,13 @@ buildPredictOptions <- function() {
   # aspects types
   aspTypes <- c('all', 'apsepexact', 'exact', 'apexact')
   # binarize
-  binModes <- c(1)
+  binModes <- c(0, 1)
   # remove zero aspects
   zeroaspectsModes <- c(0, 1)
   # quitile modes
-  qinModes <- c('q3', 'q4')
+  qinModes <- c('q1', 'q2', 'q3', 'q4', 'q5')
   # max aspects modes
-  maxaspModes <- c(1, 2)
+  maxaspModes <- c(1, 2, 3, 4, 5, 6, 7)
   expand.grid(corMethods, binModes, zeroaspectsModes, qinModes, maxaspModes, planetsList, aspectsList)
 }
 
@@ -1110,20 +1082,118 @@ gaint_Population <- function (object, ...) {
   nvars <- length(min)
   population <- matrix(NA, nrow = object@popSize, ncol = nvars)
   for (j in 1:nvars) {
-    population[, j] <- sample(min[j]:max[j], object@popSize)
+    population[, j] <- sample(min[j]:max[j], object@popSize, replace=TRUE)
   }
   return(population)
 }
 
-gaint_rsMutation <- function (object, parent) {
+gaint_raMutation <- function (object, parent) {
   mutate <- parent <- as.vector(object@population[parent, ])
-  dempeningFactor <- 1 - object@iter/object@maxiter
-  direction <- sample(c(-1, 1), 1)
-  value <- (object@max - object@min) * 0.67
-  mutate <- parent + direction * value * dempeningFactor
-  outside <- (mutate < object@min | mutate > object@max)
-  for (j in which(outside)) {
-    mutate[j] <- sample(object@min[j]:object@max[j], 1)
-  }
+  n <- length(parent)
+  j <- sample(1:n, size = 1)
+  mutate[j] <- sample(object@min[j]:object@max[j], 1)
   return(mutate)
+}
+
+testCorrelationOptimization <- function(sink_filename, directory, fileno) {
+  if (!hasArg('sink_filename')) stop("Provide a sink filename.")
+  sink_filename <- paste("~/trading/predict/", sink_filename, ".txt", sep='')
+  sink(npath(sink_filename), append=TRUE)
+  # Indicate which directory and file is used
+  cat("Transits directory = ", directory, " fileno = ", fileno, "\n")
+  # correlation methods to test
+  corMethods <- c('canberra','euclidian','binary')
+  # binarize
+  binModes <- c(0,1)
+  # remove zero aspects
+  zeroaspectsModes <- c(0,1)
+  # quitile modes
+  qinModes <- c('q1','q2','q3','q4','q5')
+  # max aspects modes
+  maxaspModes <- c(1,2,3,4,5,6,7)
+  # currency data
+  currency.full <- openCurrency2("~/trading/EURUSD_day_fxpro_20130611.csv")
+  currency.train <- subset(currency.full, Date > as.Date("1998-01-01") & Date < as.Date("2012-01-01"))
+  currency.test <- subset(currency.full, Date > as.Date("2012-01-01"))
+  trans <- openTrans(paste("~/trading/", directory, "/trans_", fileno, ".tsv", sep=''), 1)
+
+  corFitness <- function(x) {
+    ptm <- proc.time()
+    # build the parameters based on GA indexes
+    aspnames <- aspectsList[[x[1]]]
+    asptypes <- aspectTypesList[[x[2]]]
+    cormethod <- as.character(corMethods[[x[3]]])
+    binarize <- binModes[[x[4]]]
+    rmzeroaspects <- zeroaspectsModes[[x[5]]]
+    qinmode <- as.character(qinModes[[x[6]]])
+    maxasp <- maxaspModes[[x[7]]]
+    kplanets <- planetsCombList[[x[8]]]
+    kaspects <- aspectsList[[x[9]]]
+
+    # select only the specified aspects
+    trans.cur <- subset(trans, AS %in% aspnames);
+    # reset the aspects that are not in the required types
+    trans.cur[,planetsList[[1]]] <- t(apply(trans.cur[,c(planetsList[[1]],aspectTypesCols)], 1, removeAspectsOutType, asptype=asptypes))
+    # merge with currency data splitting by test & train data
+    trans.cur.train <- mergeTrans(trans.cur, currency.train)
+    trans.cur.test <- mergeTrans(trans.cur, currency.test)
+    # build the samples from testing data
+    samples <- generateSamples(trans.cur.test, 3)
+
+    cat("---------------------------------------------------------------------------------\n")
+    cat("\t aspnames = ")
+    dput(as.character(aspnames))
+    cat("\t asptypes = ")
+    dput(as.character(asptypes))
+    cat("\t cormethod =", cormethod, " binarize =", binarize, " rmzeroaspects =", rmzeroaspects, " qinmode =", qinmode, " maxasp =", maxasp, "\n")
+    cat("\t kplanets = ")
+    dput(as.character(kplanets))
+    cat("\t kaspects = ")
+    dput(as.character(kaspects))
+
+    # generate the predict table
+    predt <- predictTransTable(trans.cur, trans.cur.train, cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode, maxasp)
+
+    # test the samples
+    tdiffs <- list()
+    for (i in 1:length(samples)) {
+      ptt <- merge(predt, samples[[i]], by=c('Date'))
+      # ignore if not enough predictions
+      if (nrow(ptt) < nrow(samples[[i]])/2) {
+        tdiffs[[length(tdiffs)+1]] <- 0
+        break
+      }
+      # compare the prediction with the day effect
+      ptt$test <- apply(ptt[,c('corEff','Eff')], 1, function(x) ifelse(is.na(x[1]) | is.na(x[2]), NA, x[1]==x[2]))
+      t1 <- prop.table(table(ptt$test, useNA='always'))
+      t2 <- addmargins(table(ptt$test, useNA='always'))
+      # only if there are results for true and false
+      if (all(c('TRUE', 'FALSE') %in% names(t1))) {
+        tdiffs[[length(tdiffs)+1]] <- round(abs(t1['TRUE']-t1[['FALSE']])*100, digits=2)
+      }
+    }
+
+    # fitted value
+    fit <- median(unlist(tdiffs))
+    # collect garbage
+    gc()
+    # output
+    cat("%%% = ", fit, "\n")
+    # how long taked to calculate
+    cat("\t Predict execution/loop time: ", proc.time()-ptm, "\n")
+    fit
+  }
+
+  minvals <- c(1,1,1,1,1,1,1,1,1)
+  maxvals <- c(length(aspectsList), length(aspectTypesList), length(corMethods),
+               length(binModes), length(zeroaspectsModes), length(qinModes),
+               length(maxaspModes), length(planetsCombList), length(aspectsList))
+  varnames <- c('aspnames', 'asptypes', 'cormethod', 'binarize', 'rmzeroaspects', 'qinmode', 'maxasp', 'kplanets', 'kaspects')
+
+  ga("real-valued", fitness=corFitness, names=varnames,
+     monitor=gaMonitor, maxiter=50, run=20, popSize=200, min=minvals, max=maxvals,
+     selection=gareal_lrSelection, mutation=gaint_raMutation,
+     crossover=gareal_laCrossover, population=gaint_Population)
+
+  sink()
 }
