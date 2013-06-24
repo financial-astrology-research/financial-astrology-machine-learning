@@ -1175,12 +1175,13 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
 
     # fitted value
     fit <- median(unlist(tdiffs))
-    # collect garbage
-    gc()
-    # output
-    cat("%%% = ", fit, "\n")
     # how long taked to calculate
     cat("\t Predict execution/loop time: ", proc.time()-ptm, "\n")
+    # output
+    cat("%%% = ", fit, "\n")
+    # collect garbage
+    gc()
+    # return fit
     fit
   }
 
