@@ -906,7 +906,7 @@ buildTransOpts <- function() {
 
 testGAOptimization <- function() {
   trans.hist <- loadTransHist(0, 'all', 'all', 7)
-  trans.training <- subset(trans.hist, Date > as.Date("1999-01-01") & Date < as.Date("2008-01-01"))
+  trans.training <- subset(trans.hist, Date > as.Date("1999-01-01") & Date < as.Date("2011-01-01"))
   trans.testing <- subset(trans.hist, Date > as.Date("2012-01-01"))
   cols <- c('PT', 'AS', 'PR', 'HR', 'SI', 'LON', 'LAT', 'SP', 'PRLON', 'S', 'S2', 'WD',
             'SU', 'MO', 'ME', 'VE', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL',
@@ -921,14 +921,18 @@ testGAOptimization <- function() {
     selcols <- cols[inc]
     model <- randomForest(Eff ~ ., data = trans.training[,c('Eff',selcols)], importance=TRUE, keep.forest=TRUE, ntree=300)
     err <- median(model$err.rate[,1])
-    print(err)
-    err
+    trans.testing$predicted <- predict(model, newdata=trans.testing[,selcols])
+    t1 <- prop.table(table(trans.testing$Eff == trans.testing$predicted))
+    tdiff <- as.numeric(round(abs(t1['TRUE']-t1[['FALSE']])*100, digits=2))
+    print(tdiff)
+    tdiff
   }
 
-  fitness <- function(x) -optimizeRandomForest(x)
+  fitnessmax <- function(x) optimizeRandomForest(x)
+  fitnessmin <- function(x) -optimizeRandomForest(x)
 
   # selection
-  #gabin_lrSelection
+  #gabin_lrSelection - 0.25
   #gabin_nlrSelection
   #gabin_rwSelection - 0.30
   #gabin_tourSelection
@@ -937,32 +941,27 @@ testGAOptimization <- function() {
   #gabin_uCrossover(object, parents, ...)
   # mutation
   #gabin_raMutation
-  GA <- ga("binary", fitness=fitness, nBits=length(cols), names=cols, monitor=gaMonitor, maxiter=50, run=10, popSize=50, selection=gabin_lrSelection)
-  summary(GA)
-  GA
+  ga("binary", fitness=fitnessmax, nBits=length(cols), names=cols,
+     monitor=gaMonitor, maxiter=50, run=10, popSize=100,
+     selection=gabin_tourSelection, elitism=0.1)
 }
 
 bestRandomForest <- function() {
   threshold=0.65
   trans.hist <- loadTransHist(0, 'all', 'all', 7)
-  trans.training <- subset(trans.hist, Date > as.Date("1999-01-01") & Date < as.Date("2012-01-01"))
-  trans.testing <- subset(trans.hist, Date > as.Date("2012-01-01"))
+  trans.training <- subset(trans.hist, Date > as.Date("1999-01-01") & Date < as.Date("2009-01-01"))
+  trans.testing <- subset(trans.hist, Date > as.Date("2009-01-01") & Date < as.Date("2009-06-01"))
   # start prediction model
-  splits <- splitdf(trans.hist)
-  trans.training <- splits$trainset
-  trans.testing <- splits$testset
-  cols <- c('Eff', 'PT', 'AS', 'PR', 'HR', 'SI', 'LON', 'LAT', 'SP', 'PRLON', 'S', 'S2', 'WD',
-            'SU', 'MO', 'ME', 'VE', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL',
-            'SUR', 'MOR', 'MER', 'VER', 'MAR', 'JUR', 'SAR', 'URR', 'NER', 'PLR',
-            'SULO', 'MOLO', 'MELO', 'VELO', 'MALO', 'JULO', 'SALO', 'URLO', 'NELO', 'PLLO',
-            'MOSP', 'MESP', 'VESP', 'MASP', 'JUSP', 'SASP', 'URSP', 'NESP', 'PLSP',
-            'MOS', 'MES', 'VES', 'MAS', 'JUS', 'SAS', 'URS', 'NES', 'PLS',
-            'MOLA', 'MELA', 'VELA', 'MALA', 'JULA', 'SALA', 'PLLA')
+  #splits <- splitdf(trans.hist)
+  cols <- c("SI", "LON", "SP", "WD", "SU", "ME", "VE", "MA", "JU", "SA",
+            "PL", "SULO", "MOLO", "SALO", "URLO", "NELO", "SASP", "PLSP",
+            "MOS", "VES", "MAS", "JUS", "SAS", "URS", "NES", "MOLA", "MELA",
+            "VELA", "MALA", "JULA")
 
   #model <- randomForest(Eff ~ ., data = trans.training[,cols], importance=TRUE, keep.forest=TRUE)
-  model <- randomForest(Eff ~ ., data = trans.training[,cols], importance=TRUE, keep.forest=TRUE, ntree=300)
-
-  trans.testing$predicted <- predict(model, newdata=trans.testing[,cols[-1]])
+  model <- randomForest(Eff ~ ., data = trans.training[,c('Eff',cols)], importance=TRUE, keep.forest=TRUE, ntree=300)
+  print(model)
+  trans.testing$predicted <- predict(model, newdata=trans.testing[,cols])
   print(prop.table(table(trans.testing$Eff == trans.testing$predicted)))
   print(table(trans.testing$Eff == trans.testing$predicted))
   trans.testing <- data.table(trans.testing)
@@ -1101,4 +1100,30 @@ bestSolution <- function(n) {
   aspect_dates_cor <- historyAspectsCorrelation(data.table(trans.eur), data.table(trans.eurusd.eur), cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode)
   ptt.test <- predictTransTableTest(ptt, samples, 5, TRUE)
   list(aspect_dates_cor, ptt.test)
+}
+
+#dput(as.character(selcols))
+
+gaint_Population <- function (object, ...) {
+  min <- object@min
+  max <- object@max
+  nvars <- length(min)
+  population <- matrix(NA, nrow = object@popSize, ncol = nvars)
+  for (j in 1:nvars) {
+    population[, j] <- sample(min[j]:max[j], object@popSize)
+  }
+  return(population)
+}
+
+gaint_rsMutation <- function (object, parent) {
+  mutate <- parent <- as.vector(object@population[parent, ])
+  dempeningFactor <- 1 - object@iter/object@maxiter
+  direction <- sample(c(-1, 1), 1)
+  value <- (object@max - object@min) * 0.67
+  mutate <- parent + direction * value * dempeningFactor
+  outside <- (mutate < object@min | mutate > object@max)
+  for (j in which(outside)) {
+    mutate[j] <- sample(object@min[j]:object@max[j], 1)
+  }
+  return(mutate)
 }
