@@ -53,7 +53,8 @@ planetsList <- list(c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", 
                     c("MA", "MAR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"),
                     c("MA", "SA", "UR", "NE", "PL"))
 
-planetsCombList <- c(planetsList, combn(planetsList[[1]], 4, simplify=FALSE))
+planetsCombList <- c(planetsList, combn(planetsList[[1]], 4, simplify=FALSE),
+                     combn(planetsList[[1]], 5, simplify=FALSE), combn(planetsList[[1]], 6, simplify=FALSE))
 
 aspectsList <- list(c('a0', 'a30', 'a45', 'a60', 'a72', 'a90', 'a120', 'a135', 'a144', 'a150', 'a180', 'a18', 'a33', 'a36', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160'),
                     c('a0', 'a45', 'a60', 'a90', 'a120', 'a150', 'a180'),
@@ -1087,12 +1088,25 @@ gaint_Population <- function (object, ...) {
   return(population)
 }
 
-gaint_raMutation <- function (object, parent) {
+gaint_raMutation <- function(object, parent) {
   mutate <- parent <- as.vector(object@population[parent, ])
   n <- length(parent)
   j <- sample(1:n, size = 1)
   mutate[j] <- sample(object@min[j]:object@max[j], 1)
   return(mutate)
+}
+
+processTrans <- function(trans, currency, aspnames, asptypes) {
+  currency.train <- subset(currency, Date > as.Date("1998-01-01") & Date < as.Date("2012-01-01"))
+  currency.test <- subset(currency, Date > as.Date("2012-01-01"))
+  # select only the specified aspects
+  trans.cur <- subset(trans, AS %in% aspnames);
+  # reset the aspects that are not in the required types
+  trans.cur[,planetsList[[1]]] <- t(apply(trans.cur[,c(planetsList[[1]],aspectTypesCols)], 1, removeAspectsOutType, asptype=asptypes))
+  # merge with currency data splitting by test & train data
+  trans.cur.train <- mergeTrans(trans.cur, currency.train)
+  trans.cur.test <- mergeTrans(trans.cur, currency.test)
+  list(all=trans.cur, train=trans.cur.train, test=trans.cur.test)
 }
 
 testCorrelationOptimization <- function(sink_filename, directory, fileno) {
@@ -1112,9 +1126,7 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
   # max aspects modes
   maxaspModes <- c(1,2,3,4,5,6,7)
   # currency data
-  currency.full <- openCurrency2("~/trading/EURUSD_day_fxpro_20130611.csv")
-  currency.train <- subset(currency.full, Date > as.Date("1998-01-01") & Date < as.Date("2012-01-01"))
-  currency.test <- subset(currency.full, Date > as.Date("2012-01-01"))
+  currency <- openCurrency2("~/trading/EURUSD_day_fxpro_20130611.csv")
   trans <- openTrans(paste("~/trading/", directory, "/trans_", fileno, ".tsv", sep=''), 1)
 
   corFitness <- function(x) {
@@ -1130,29 +1142,23 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
     kplanets <- planetsCombList[[x[8]]]
     kaspects <- aspectsList[[x[9]]]
 
-    # select only the specified aspects
-    trans.cur <- subset(trans, AS %in% aspnames);
-    # reset the aspects that are not in the required types
-    trans.cur[,planetsList[[1]]] <- t(apply(trans.cur[,c(planetsList[[1]],aspectTypesCols)], 1, removeAspectsOutType, asptype=asptypes))
-    # merge with currency data splitting by test & train data
-    trans.cur.train <- mergeTrans(trans.cur, currency.train)
-    trans.cur.test <- mergeTrans(trans.cur, currency.test)
-    # build the samples from testing data
-    samples <- generateSamples(trans.cur.test, 3)
-
     cat("---------------------------------------------------------------------------------\n")
     cat("\t aspnames = ")
     dput(as.character(aspnames))
     cat("\t asptypes = ")
     dput(as.character(asptypes))
-    cat("\t cormethod =", cormethod, " binarize =", binarize, " rmzeroaspects =", rmzeroaspects, " qinmode =", qinmode, " maxasp =", maxasp, "\n")
+    cat("\t cormethod =", cormethod, ", binarize =", binarize, ", rmzeroaspects =", rmzeroaspects, ", qinmode =", qinmode, ", maxasp =", maxasp, "\n")
     cat("\t kplanets = ")
     dput(as.character(kplanets))
     cat("\t kaspects = ")
     dput(as.character(kaspects))
 
+    # process transits
+    trans.sp <- processTrans(trans, currency, aspnames, asptypes)
+    # build the samples from testing data
+    samples <- generateSamples(trans.sp$test, 3)
     # generate the predict table
-    predt <- predictTransTable(trans.cur, trans.cur.train, cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode, maxasp)
+    predt <- predictTransTable(trans.sp$all, trans.sp$train, cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode, maxasp)
 
     # test the samples
     tdiffs <- list()
@@ -1168,8 +1174,8 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
       t1 <- prop.table(table(ptt$test, useNA='always'))
       t2 <- addmargins(table(ptt$test, useNA='always'))
       # only if there are results for true and false
-      if (all(c('TRUE', 'FALSE') %in% names(t1))) {
-        tdiffs[[length(tdiffs)+1]] <- round(abs(t1['TRUE']-t1[['FALSE']])*100, digits=2)
+      if (all(c('TRUE', 'FALSE', NA) %in% names(t1))) {
+        tdiffs[[length(tdiffs)+1]] <- round((abs(t1['TRUE']-t1[['FALSE']])-t1[is.na(names(t1))])*100, digits=2)
       }
     }
 
@@ -1192,9 +1198,41 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
   varnames <- c('aspnames', 'asptypes', 'cormethod', 'binarize', 'rmzeroaspects', 'qinmode', 'maxasp', 'kplanets', 'kaspects')
 
   ga("real-valued", fitness=corFitness, names=varnames,
-     monitor=gaMonitor, maxiter=50, run=20, popSize=200, min=minvals, max=maxvals,
+     monitor=gaMonitor, maxiter=100, run=20, popSize=500, min=minvals, max=maxvals,
      selection=gareal_lrSelection, mutation=gaint_raMutation,
      crossover=gareal_laCrossover, population=gaint_Population)
 
   sink()
+}
+
+testCorrelationSolution <- function(directory, fileno, aspnames, asptypes, cormethod, binarize, rmzeroaspects, qinmode, maxasp, kplanets, kaspects) {
+  # currency data
+  currency <- openCurrency2("~/trading/EURUSD_day_fxpro_20130611.csv")
+  trans <- openTrans(paste("~/trading/", directory, "/trans_", fileno, ".tsv", sep=''), 1)
+
+  # process transits
+  trans.sp <- processTrans(trans, currency, aspnames, asptypes)
+  # build the samples from testing data
+  samples <- generateSamples(trans.sp$test, 3)
+  # generate the predict table
+  predt <- predictTransTable(trans.sp$all, trans.sp$train, cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode, maxasp)
+
+  # test the samples
+  tdiffs <- list()
+  for (i in 1:length(samples)) {
+    ptt <- merge(predt, samples[[i]], by=c('Date'))
+    # compare the prediction with the day effect
+    ptt$test <- apply(ptt[,c('corEff','Eff')], 1, function(x) ifelse(is.na(x[1]) | is.na(x[2]), NA, x[1]==x[2]))
+    t1 <- prop.table(table(ptt$test, useNA='always'))
+    t2 <- addmargins(table(ptt$test, useNA='always'))
+    # only if there are results for true and false
+    if (all(c('TRUE', 'FALSE', NA) %in% names(t1))) {
+      print(t1)
+      print(t2)
+      tdiffs[[length(tdiffs)+1]] <- round((abs(t1['TRUE']-t1[['FALSE']])-t1[is.na(names(t1))])*100, digits=2)
+    }
+  }
+
+  # fitted value
+  cat("%%% = ", median(unlist(tdiffs)))
 }
