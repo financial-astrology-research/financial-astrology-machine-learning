@@ -1146,7 +1146,8 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
     cat('\t aspnames=c(', paste(shQuote(aspnames), collapse=","), "),\n", sep='')
     cat('\t asptypes=c(', paste(shQuote(asptypes), collapse=","), "),\n", sep='')
     cat("\t cormethod=", shQuote(cormethod), ", binarize=", binarize, ", rmzeroaspects=",
-        rmzeroaspects, ", qinmode=", shQuote(qinmode), ", maxasp=", maxasp, ",\n", sep='')
+        rmzeroaspects, ", qinmode=", shQuote(qinmode), ", maxasp=",
+        maxasp, ", predtreshold=", predtreshold, ",\n", sep='')
     cat('\t kplanets=c(', paste(shQuote(kplanets), collapse=","), "),\n", sep='')
     cat('\t kaspects=c(', paste(shQuote(kaspects), collapse=","), "))\n", sep='')
 
@@ -1243,7 +1244,8 @@ testAggregatedPredictTransTable <- function(predict.table.aggr, trans.test, curr
   fitness <- 0
   # only if there are results complete results
   if (all(c('TRUE', 'FALSE', NA) %in% names(t1))) {
-    fitness <- as.numeric(abs(t1['TRUE']-t1[['FALSE']]) * efficiency) - t1[is.na(names(t1))]
+    propEfficiency <- function(x, y, z, eff) abs(x*eff-y*eff)-z*eff
+    fitness <- propEfficiency(as.numeric(t1['TRUE']), as.numeric(t1['FALSE']), as.numeric(t1[is.na(names(t1))]), efficiency)
     fitness <- round(fitness * 100, digits=2)
   }
 
