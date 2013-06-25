@@ -1121,6 +1121,8 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
   qinModes <- c('q1','q2','q3','q4','q5')
   # max aspects modes
   maxaspModes <- c(1,2,3,4,5,6,7)
+  # predict Thresholds
+  predThresholds <- seq(0.2, 1, by=0.2)
   # currency data
   currency <- openCurrency2("~/trading/EURUSD_day_fxpro_20130611.csv")
   trans <- openTrans(paste("~/trading/", directory, "/trans_", fileno, ".tsv", sep=''), 1)
@@ -1137,6 +1139,7 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
     maxasp <- maxaspModes[[x[7]]]
     kplanets <- planetsCombList[[x[8]]]
     kaspects <- aspectsCombList[[x[9]]]
+    predtreshold <- predThresholds[[x[10]]]
 
     cat("---------------------------------------------------------------------------------\n")
     cat("testCorrelationSolution(directory=", shQuote(directory), ", fileno=", fileno, ",\n", sep='')
@@ -1152,44 +1155,35 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
     # build the samples from testing data
     samples <- generateSamples(trans.sp$test, 3)
     # generate the predict table
-    predt <- predictTransTable(trans.sp$all, trans.sp$train, cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode, maxasp)
+    predict.table <- predictTransTable(trans.sp$all, trans.sp$train, cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode, maxasp)
 
     # test the samples
-    tdiffs <- list()
+    fitness <- list()
     for (i in 1:length(samples)) {
-      ptt <- merge(predt, samples[[i]], by=c('Date','idx'))
-      # ignore if not enough predictions
-      if (nrow(ptt) < nrow(samples[[i]])/2) {
-        tdiffs[[length(tdiffs)+1]] <- 0
-        break
-      }
-      # compare the prediction with the day effect
-      ptt$test <- apply(ptt[,c('corEff','Eff')], 1, function(x) ifelse(is.na(x[1]) | is.na(x[2]), NA, x[1]==x[2]))
-      t1 <- prop.table(table(ptt$test, useNA='always'))
-      t2 <- addmargins(table(ptt$test, useNA='always'))
-      # only if there are results for true and false
-      if (all(c('TRUE', 'FALSE', NA) %in% names(t1))) {
-        tdiffs[[length(tdiffs)+1]] <- round((abs(t1['TRUE']-t1[['FALSE']])-t1[is.na(names(t1))])*100, digits=2)
-      }
+      # day aggregated predictions
+      predict.table.aggr <- aggregatePredictTransTable(predict.table, predtreshold)
+      test.result <- testAggregatedPredictTransTable(predict.table.aggr, samples[[i]], currency)
+      cat("\t Efficiency = ", test.result$efficiency, ", fitness = ", test.result$fitness, "\n")
+      fitness[[length(fitness)+1]] <- test.result$fitness
     }
 
     # fitted value
-    fit <- median(unlist(tdiffs))
+    fitness.median <- median(unlist(fitness))
     # how long taked to calculate
     cat("\t Predict execution/loop time: ", proc.time()-ptm, "\n")
     # output
-    cat("%%% = ", fit, "\n")
+    cat("%%% = ", fitness.median, "\n")
     # collect garbage
     gc()
     # return fit
-    fit
+    fitness.median
   }
 
-  minvals <- c(1,1,1,1,1,1,1,1,1)
+  minvals <- c(1,1,1,1,1,1,1,1,1,1)
   maxvals <- c(length(aspectsCombList), length(aspectTypesList), length(corMethods),
                length(binModes), length(zeroaspectsModes), length(qinModes),
-               length(maxaspModes), length(planetsCombList), length(aspectsCombList))
-  varnames <- c('aspnames', 'asptypes', 'cormethod', 'binarize', 'rmzeroaspects', 'qinmode', 'maxasp', 'kplanets', 'kaspects')
+               length(maxaspModes), length(planetsCombList), length(aspectsCombList), length(predThresholds))
+  varnames <- c('aspnames', 'asptypes', 'cormethod', 'binarize', 'rmzeroaspects', 'qinmode', 'maxasp', 'kplanets', 'kaspects', 'predtreshold')
 
   ga("real-valued", fitness=corFitness, names=varnames,
      monitor=gaMonitor, maxiter=200, run=20, popSize=500, min=minvals, max=maxvals,
@@ -1199,7 +1193,8 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
   sink()
 }
 
-testCorrelationSolution <- function(directory, fileno, aspnames, asptypes, cormethod, binarize, rmzeroaspects, qinmode, maxasp, kplanets, kaspects) {
+testCorrelationSolution <- function(directory, fileno, aspnames, asptypes, cormethod, binarize,
+                                    rmzeroaspects, qinmode, maxasp, kplanets, kaspects, predtreshold) {
   # currency data
   currency <- openCurrency2("~/trading/EURUSD_day_fxpro_20130611.csv")
   trans <- openTrans(paste("~/trading/", directory, "/trans_", fileno, ".tsv", sep=''), 1)
@@ -1209,29 +1204,22 @@ testCorrelationSolution <- function(directory, fileno, aspnames, asptypes, corme
   # build the samples from testing data
   samples <- generateSamples(trans.sp$test, 3)
   # generate the predict table
-  predt <- predictTransTable(trans.sp$all, trans.sp$train, cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode, maxasp)
+  predict.table <- predictTransTable(trans.sp$all, trans.sp$train, cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode, maxasp)
 
   # test the samples
-  tdiffs <- list()
+  fitness <- list()
   for (i in 1:length(samples)) {
-    ptt <- merge(predt, samples[[i]], by=c('Date','idx'))
-    # compare the prediction with the day effect
-    ptt$test <- apply(ptt[,c('corEff','Eff')], 1, function(x) ifelse(is.na(x[1]) | is.na(x[2]), NA, x[1]==x[2]))
-    t1 <- prop.table(table(ptt$test, useNA='always'))
-    t2 <- addmargins(table(ptt$test, useNA='always'))
-    # only if there are results for true and false
-    if (all(c('TRUE', 'FALSE', NA) %in% names(t1))) {
-      print(t1)
-      print(t2)
-      tdiffs[[length(tdiffs)+1]] <- round((abs(t1['TRUE']-t1[['FALSE']])-t1[is.na(names(t1))])*100, digits=2)
-    }
+    # day aggregated predictions
+    predict.table.aggr <- aggregatePredictTransTable(predict.table, predtreshold)
+    test.result <- testAggregatedPredictTransTable(predict.table.aggr, samples[[i]], currency)
+    print(test.result$t1)
+    print(test.result$t2)
+    cat("\n Efficiency = ", test.result$efficiency, ", fitness = ", test.result$fitness, "\n\n")
+    fitness[[length(fitness)+1]] <- test.result$fitness
   }
 
-  # day aggregated predictions
-  #ptt.aggr <- aggregatePredictTransTable(predt, trans.sp$test, currency, 0.5)
-
   # fitted value
-  cat("%%% = ", median(unlist(tdiffs)))
+  cat("\t %%% = ", median(unlist(fitness)), "\n\n")
 }
 
 completeEffectList <- function(X) {
@@ -1241,16 +1229,32 @@ completeEffectList <- function(X) {
   X
 }
 
-aggregatePredictTransTable <- function(predict.table, trans.test, currency, threshold) {
-  ptt <- subset(predict.table, idx2 %in% trans.test$idx2)
-  ptt <- data.table(ptt)
-  setkey(ptt, 'Date')
-  pred.agg <- ptt[,as.list(completeEffectList(table(corEff))), by=c('Date')]
-  pred.agg[,prop := (down-up)/(down+up)]
-  pred.table <- merge(pred.agg, currency, by='Date')
-  pred.table[, predEff := lapply(prop, function(x) ifelse(x > threshold, 'down', ifelse(x < -threshold, 'up', NA)))]
-  cat("=================== Aggregated =========================")
-  print(table(pred.table$Eff == pred.table$predEff, useNA='always'))
-  print(prop.table(table(pred.table$Eff == pred.table$predEff, useNA='always')))
-  pred.table
+testAggregatedPredictTransTable <- function(predict.table.aggr, trans.test, currency) {
+  predict.table.aggr <- subset(predict.table.aggr, Date %in% trans.test$Date)
+  predict.table.aggr <- merge(predict.table.aggr, currency, by='Date')
+  # less predictions over the number of trading days decay
+  efficiency <- length(unique(predict.table.aggr$Date))/length(unique(trans.test$Date))
+  # compare the prediction with the day effect
+  testPredictAggr <- function(x) ifelse(is.na(x[[1]]) | is.na(x[[2]]), NA, x[[1]]==x[[2]])
+  predict.table.aggr[, test := apply(.SD, 1, testPredictAggr), .SDcols=c('predEff','Eff')]
+  # process results
+  t1 <- prop.table(table(predict.table.aggr$test, useNA='always'))
+  t2 <- addmargins(table(predict.table.aggr$test, useNA='always'))
+  fitness <- 0
+  # only if there are results complete results
+  if (all(c('TRUE', 'FALSE', NA) %in% names(t1))) {
+    fitness <- as.numeric(abs(t1['TRUE']-t1[['FALSE']]) * efficiency) - t1[is.na(names(t1))]
+    fitness <- round(fitness * 100, digits=2)
+  }
+
+  list(fitness=fitness, efficiency=efficiency, t1=t1, t2=t2)
+}
+
+aggregatePredictTransTable <- function(predict.table, threshold) {
+  predict.table <- data.table(predict.table)
+  setkey(predict.table, 'Date')
+  predict.table.aggr <- predict.table[,as.list(completeEffectList(table(corEff))), by=c('Date')]
+  predict.table.aggr[,prop := (down-up)/(down+up)]
+  # proportion determines a trend that overpass the threshold
+  predict.table.aggr[, predEff := lapply(prop, function(x) ifelse(x > threshold, 'down', ifelse(x < -threshold, 'up', NA)))]
 }
