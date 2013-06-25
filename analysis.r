@@ -1164,7 +1164,7 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
       # day aggregated predictions
       predict.table.aggr <- aggregatePredictTransTable(predict.table, predtreshold)
       test.result <- testAggregatedPredictTransTable(predict.table.aggr, samples[[i]], currency)
-      cat("\t Efficiency = ", test.result$efficiency, ", fitness = ", test.result$fitness, "\n")
+      cat("\t Total = ", test.result$totdays, "/ Trend = ", test.result$tredays, "/ Fitness = ", test.result$fitness, "\n")
       fitness[[length(fitness)+1]] <- test.result$fitness
     }
 
@@ -1215,7 +1215,7 @@ testCorrelationSolution <- function(directory, fileno, aspnames, asptypes, corme
     test.result <- testAggregatedPredictTransTable(predict.table.aggr, samples[[i]], currency)
     print(test.result$t1)
     print(test.result$t2)
-    cat("\n Efficiency = ", test.result$efficiency, ", fitness = ", test.result$fitness, "\n\n")
+    cat("\n Total = ", test.result$totdays, "/ Trend = ", test.result$tredays, "/ Fitness = ", test.result$fitness, "\n\n")
     fitness[[length(fitness)+1]] <- test.result$fitness
   }
 
@@ -1234,22 +1234,21 @@ testAggregatedPredictTransTable <- function(predict.table.aggr, trans.test, curr
   predict.table.aggr <- subset(predict.table.aggr, Date %in% trans.test$Date)
   predict.table.aggr <- merge(predict.table.aggr, currency, by='Date')
   # less predictions over the number of trading days decay
-  efficiency <- length(unique(predict.table.aggr$Date))/length(unique(trans.test$Date))
+  totdays <- length(unique(trans.test$Date))
   # compare the prediction with the day effect
   testPredictAggr <- function(x) ifelse(is.na(x[[1]]) | is.na(x[[2]]), NA, x[[1]]==x[[2]])
   predict.table.aggr[, test := apply(.SD, 1, testPredictAggr), .SDcols=c('predEff','Eff')]
   # process results
   t1 <- prop.table(table(predict.table.aggr$test, useNA='always'))
   t2 <- addmargins(table(predict.table.aggr$test, useNA='always'))
-  fitness <- 0
+  fitness <- tredays <- 0
   # only if there are results complete results
-  if (all(c('TRUE', 'FALSE', NA) %in% names(t1))) {
-    propEfficiency <- function(x, y, z, eff) abs(x*eff-y*eff)-z*eff
-    fitness <- propEfficiency(as.numeric(t1['TRUE']), as.numeric(t1['FALSE']), as.numeric(t1[is.na(names(t1))]), efficiency)
-    fitness <- round(fitness * 100, digits=2)
+  if (all(c('TRUE', 'FALSE', NA) %in% names(t2))) {
+    tredays <- abs(as.numeric(t2['TRUE'])-as.numeric(t2['FALSE']))
+    fitness <- round((tredays/totdays)*100, digits=2)
   }
 
-  list(fitness=fitness, efficiency=efficiency, t1=t1, t2=t2)
+  list(fitness=fitness, totdays=totdays, tredays=tredays, t1=t1, t2=t2)
 }
 
 aggregatePredictTransTable <- function(predict.table, threshold) {
