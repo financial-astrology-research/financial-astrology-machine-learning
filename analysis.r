@@ -1186,7 +1186,7 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
   varnames <- c('aspnames', 'asptypes', 'cormethod', 'binarize', 'rmzeroaspects', 'qinmode', 'maxasp', 'kplanets', 'kaspects', 'predtreshold')
 
   ga("real-valued", fitness=corFitness, names=varnames,
-     monitor=gaMonitor, maxiter=200, run=20, popSize=500, min=minvals, max=maxvals,
+     monitor=gaMonitor, maxiter=500, run=20, popSize=1000, min=minvals, max=maxvals,
      selection=gareal_lrSelection, mutation=gaint_raMutation,
      crossover=gareal_laCrossover, population=gaint_Population)
 
