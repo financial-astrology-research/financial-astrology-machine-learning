@@ -54,14 +54,17 @@ planetsList <- list(c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", 
                     c("MA", "SA", "UR", "NE", "PL"))
 
 planetsCombList <- c(planetsList, combn(planetsList[[1]], 4, simplify=FALSE),
-                     combn(planetsList[[1]], 5, simplify=FALSE), combn(planetsList[[1]], 6, simplify=FALSE))
+                     combn(planetsList[[1]], 6, simplify=FALSE), combn(planetsList[[1]], 8, simplify=FALSE))
 
-aspectsList <- list(c('a0', 'a30', 'a45', 'a60', 'a72', 'a90', 'a120', 'a135', 'a144', 'a150', 'a180', 'a18', 'a33', 'a36', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160'),
+aspectsList <- list(c('a0', 'a30', 'a45', 'a60', 'a72', 'a90', 'a120', 'a135', 'a144', 'a150', 'a180', 'a18', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160'),
                     c('a0', 'a45', 'a60', 'a90', 'a120', 'a150', 'a180'),
                     c('a0', 'a60', 'a90', 'a120', 'a180'),
                     c('a0', 'a30', 'a45', 'a60', 'a90', 'a120', 'a135', 'a150', 'a180'),
                     c('a30', 'a45', 'a72', 'a135', 'a144', 'a51', 'a103'),
-                    c('a30', 'a45', 'a72', 'a135', 'a144', 'a18', 'a33', 'a36', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160'))
+                    c('a30', 'a45', 'a72', 'a135', 'a144', 'a18', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160'))
+
+aspectsCombList <- c(aspectsList, combn(aspectsList[[1]], 6, simplify=FALSE),
+                     combn(aspectsList[[1]], 9, simplify=FALSE), combn(aspectsList[[1]], 12, simplify=FALSE))
 
 # aspect types cols names
 aspectTypesCols <- c('SUT', 'MOT', 'MET', 'VET', 'MAT', 'JUT', 'SAT', 'URT', 'NET', 'PLT')
@@ -1132,7 +1135,7 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
   corFitness <- function(x) {
     ptm <- proc.time()
     # build the parameters based on GA indexes
-    aspnames <- aspectsList[[x[1]]]
+    aspnames <- aspectsCombList[[x[1]]]
     asptypes <- aspectTypesList[[x[2]]]
     cormethod <- as.character(corMethods[[x[3]]])
     binarize <- binModes[[x[4]]]
@@ -1140,7 +1143,7 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
     qinmode <- as.character(qinModes[[x[6]]])
     maxasp <- maxaspModes[[x[7]]]
     kplanets <- planetsCombList[[x[8]]]
-    kaspects <- aspectsList[[x[9]]]
+    kaspects <- aspectsCombList[[x[9]]]
 
     cat("---------------------------------------------------------------------------------\n")
     cat("\t aspnames = ")
@@ -1192,13 +1195,13 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
   }
 
   minvals <- c(1,1,1,1,1,1,1,1,1)
-  maxvals <- c(length(aspectsList), length(aspectTypesList), length(corMethods),
+  maxvals <- c(length(aspectsCombList), length(aspectTypesList), length(corMethods),
                length(binModes), length(zeroaspectsModes), length(qinModes),
-               length(maxaspModes), length(planetsCombList), length(aspectsList))
+               length(maxaspModes), length(planetsCombList), length(aspectsCombList))
   varnames <- c('aspnames', 'asptypes', 'cormethod', 'binarize', 'rmzeroaspects', 'qinmode', 'maxasp', 'kplanets', 'kaspects')
 
   ga("real-valued", fitness=corFitness, names=varnames,
-     monitor=gaMonitor, maxiter=100, run=20, popSize=500, min=minvals, max=maxvals,
+     monitor=gaMonitor, maxiter=200, run=20, popSize=1000, min=minvals, max=maxvals,
      selection=gareal_lrSelection, mutation=gaint_raMutation,
      crossover=gareal_laCrossover, population=gaint_Population)
 
