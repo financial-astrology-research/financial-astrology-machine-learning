@@ -349,35 +349,30 @@ predictTrend <- function(search_date) {
   chartSeries(eurusd.hour.xts, subset=chart_dates, major.ticks='hours', show.grid=TRUE, theme='white.mono')
 }
 
-predColNames = c('Date', 'idx', 'down', 'up', 'count', 'endEffect', 'S2', 'PC', 'SUR', 'SURD', 'MOR', 'MORD', 'MER', 'MERD', 'VER', 'VERD', 'MAR', 'MARD', 'JUR', 'JURD', 'SAR', 'SARD', 'URR', 'URRD', 'NER', 'NERD', 'PLR', 'PLRD', 'udis', 'ddis', 'corEff', 'ucor', 'dcor')
+predColNames = c('Date', 'idx', 'idx2', 'endEffect', 'S2', 'PC', 'SUR', 'SURD', 'MOR', 'MORD', 'MER', 'MERD', 'VER', 'VERD', 'MAR', 'MARD', 'JUR', 'JURD', 'SAR', 'SARD', 'URR', 'URRD', 'NER', 'NERD', 'PLR', 'PLRD', 'udis', 'ddis', 'corEff', 'ucor', 'dcor')
 
-predictTransTable <- function(trans, trans_hist, cor_method, kplanets, kaspects, binarize=1, rmzeroaspects=1, qinmode='q3', maxasp=2) {
-  # convert to data table
-  trans_hist <- data.table(trans_hist)
-  # get the maximum S2 transit by day
-  #ddply(testMatrix, .(GroupID), summarize, Name=Name[which.max(Value)])
-  # get the maximun and the ones that are in a max(S2)-5 threshold
-  # ddply(trans, .(Date), summarize, Name=S2[which(S2 > max(S2)-3)])
-  #selected <- ddply(trans, .(Date), summarize, idx=idx[which(S2 >= maxn(S2, maxasp))])
-  predict_table <- predictAspectsTable(trans_hist)
-  # to allow data table setkey
+predictTransTable <- function(trans, trans.hist, cor_method, kplanets, kaspects, binarize=1, rmzeroaspects=1, qinmode='q3', maxasp=2) {
+  # data.table conflicts with timeDate
   trans$endEffect <- as.character(trans$endEffect)
-  # create data table
+  trans.hist$endEffect <- as.character(trans.hist$endEffect)
+  # convert to data table
+  trans.hist <- data.table(trans.hist)
   trans <- data.table(trans)
   setkey(trans, 'Date')
+  # generate the count effect table
+  #predict_table <- predictAspectsTable(trans.hist)
   selected <- trans[, idx[which(S2 >= maxn(S2, maxasp))], by=c('Date')]
-  names(selected) <- c('Date', 'idx')
+  setnames(selected, 'V1', 'idx')
   # get the aspects correlation table
-  aspect_dates_cor <- historyAspectsCorrelation(trans, trans_hist, cor_method, kplanets, kaspects, binarize, rmzeroaspects, qinmode)
+  aspect_dates_cor <- historyAspectsCorrelation(trans, trans.hist, cor_method, kplanets, kaspects, binarize, rmzeroaspects, qinmode)
   # merge
-  aspect_dates_predict <- merge(selected, predict_table, by='idx')
-  aspect_dates_predict <- merge(aspect_dates_predict, trans, by=c('Date', 'idx'))
-  aspect_dates_predict <- merge(aspect_dates_predict, aspect_dates_cor, by=c('Date', 'idx'))
-  # sort by date
-  aspect_dates_predict <- arrange(aspect_dates_predict, desc(Date))
-  #col_names = c('Date', 'idx', 'down', 'up', 'count', 'endEffect', 'JUR', 'SAR', 'URR', 'NER', 'PLR')
-  aspect_dates_predict <- as.data.frame(aspect_dates_predict)
-  aspect_dates_predict[predColNames]
+  #aspect_dates_predict <- merge(selected, predict_table, by='idx')
+  predict.table <- merge(selected, trans, by=c('Date', 'idx'))
+  predict.table <- merge(predict.table, aspect_dates_cor, by=c('Date', 'idx'))
+  # sort and return
+  predict.table <- arrange(predict.table, desc(Date))
+  predict.table <- as.data.frame(predict.table)
+  predict.table[predColNames]
 }
 
 predictTransTableWrite <- function(trans, trans_hist, cor_method, kplanets, kaspects, binarize, rmzeroaspects, qinmode, filename) {
@@ -1116,8 +1111,6 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
   if (!hasArg('sink_filename')) stop("Provide a sink filename.")
   sink_filename <- paste("~/trading/predict/", sink_filename, ".txt", sep='')
   sink(npath(sink_filename), append=TRUE)
-  # Indicate which directory and file is used
-  cat("Transits directory = ", directory, " fileno = ", fileno, "\n")
   # correlation methods to test
   corMethods <- c('canberra','euclidian','binary')
   # binarize
@@ -1146,15 +1139,13 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
     kaspects <- aspectsCombList[[x[9]]]
 
     cat("---------------------------------------------------------------------------------\n")
-    cat("\t aspnames = ")
-    dput(as.character(aspnames))
-    cat("\t asptypes = ")
-    dput(as.character(asptypes))
-    cat("\t cormethod =", cormethod, ", binarize =", binarize, ", rmzeroaspects =", rmzeroaspects, ", qinmode =", qinmode, ", maxasp =", maxasp, "\n")
-    cat("\t kplanets = ")
-    dput(as.character(kplanets))
-    cat("\t kaspects = ")
-    dput(as.character(kaspects))
+    cat("testCorrelationSolution(directory=", shQuote(directory), ", fileno=", fileno, ",\n", sep='')
+    cat('\t aspnames=c(', paste(shQuote(aspnames), collapse=","), "),\n", sep='')
+    cat('\t asptypes=c(', paste(shQuote(asptypes), collapse=","), "),\n", sep='')
+    cat("\t cormethod=", shQuote(cormethod), ", binarize=", binarize, ", rmzeroaspects=",
+        rmzeroaspects, ", qinmode=", shQuote(qinmode), ", maxasp=", maxasp, ",\n", sep='')
+    cat('\t kplanets=c(', paste(shQuote(kplanets), collapse=","), "),\n", sep='')
+    cat('\t kaspects=c(', paste(shQuote(kaspects), collapse=","), "))\n", sep='')
 
     # process transits
     trans.sp <- processTrans(trans, currency, aspnames, asptypes)
@@ -1166,7 +1157,7 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
     # test the samples
     tdiffs <- list()
     for (i in 1:length(samples)) {
-      ptt <- merge(predt, samples[[i]], by=c('Date'))
+      ptt <- merge(predt, samples[[i]], by=c('Date','idx'))
       # ignore if not enough predictions
       if (nrow(ptt) < nrow(samples[[i]])/2) {
         tdiffs[[length(tdiffs)+1]] <- 0
@@ -1201,7 +1192,7 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
   varnames <- c('aspnames', 'asptypes', 'cormethod', 'binarize', 'rmzeroaspects', 'qinmode', 'maxasp', 'kplanets', 'kaspects')
 
   ga("real-valued", fitness=corFitness, names=varnames,
-     monitor=gaMonitor, maxiter=200, run=20, popSize=1000, min=minvals, max=maxvals,
+     monitor=gaMonitor, maxiter=200, run=20, popSize=500, min=minvals, max=maxvals,
      selection=gareal_lrSelection, mutation=gaint_raMutation,
      crossover=gareal_laCrossover, population=gaint_Population)
 
@@ -1223,7 +1214,7 @@ testCorrelationSolution <- function(directory, fileno, aspnames, asptypes, corme
   # test the samples
   tdiffs <- list()
   for (i in 1:length(samples)) {
-    ptt <- merge(predt, samples[[i]], by=c('Date'))
+    ptt <- merge(predt, samples[[i]], by=c('Date','idx'))
     # compare the prediction with the day effect
     ptt$test <- apply(ptt[,c('corEff','Eff')], 1, function(x) ifelse(is.na(x[1]) | is.na(x[2]), NA, x[1]==x[2]))
     t1 <- prop.table(table(ptt$test, useNA='always'))
@@ -1236,6 +1227,30 @@ testCorrelationSolution <- function(directory, fileno, aspnames, asptypes, corme
     }
   }
 
+  # day aggregated predictions
+  #ptt.aggr <- aggregatePredictTransTable(predt, trans.sp$test, currency, 0.5)
+
   # fitted value
   cat("%%% = ", median(unlist(tdiffs)))
+}
+
+completeEffectList <- function(X) {
+  effects <- c('up','down')
+  missidx <- effects[effects %ni% names(X)]
+  X[missidx] <- 0
+  X
+}
+
+aggregatePredictTransTable <- function(predict.table, trans.test, currency, threshold) {
+  ptt <- subset(predict.table, idx2 %in% trans.test$idx2)
+  ptt <- data.table(ptt)
+  setkey(ptt, 'Date')
+  pred.agg <- ptt[,as.list(completeEffectList(table(corEff))), by=c('Date')]
+  pred.agg[,prop := (down-up)/(down+up)]
+  pred.table <- merge(pred.agg, currency, by='Date')
+  pred.table[, predEff := lapply(prop, function(x) ifelse(x > threshold, 'down', ifelse(x < -threshold, 'up', NA)))]
+  cat("=================== Aggregated =========================")
+  print(table(pred.table$Eff == pred.table$predEff, useNA='always'))
+  print(prop.table(table(pred.table$Eff == pred.table$predEff, useNA='always')))
+  pred.table
 }
