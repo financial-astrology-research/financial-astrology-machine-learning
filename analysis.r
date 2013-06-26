@@ -53,8 +53,7 @@ planetsList <- list(c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", 
                     c("MA", "MAR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"),
                     c("MA", "SA", "UR", "NE", "PL"))
 
-planetsCombList <- c(planetsList, combn(planetsList[[1]], 4, simplify=FALSE),
-                     combn(planetsList[[1]], 6, simplify=FALSE), combn(planetsList[[1]], 8, simplify=FALSE))
+planetsCombList <- c(planetsList, combn(planetsList[[1]], 5, simplify=FALSE))
 
 aspectsList <- list(c('a0', 'a30', 'a45', 'a60', 'a72', 'a90', 'a120', 'a135', 'a144', 'a150', 'a180', 'a18', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160'),
                     c('a0', 'a45', 'a60', 'a90', 'a120', 'a150', 'a180'),
@@ -63,8 +62,7 @@ aspectsList <- list(c('a0', 'a30', 'a45', 'a60', 'a72', 'a90', 'a120', 'a135', '
                     c('a30', 'a45', 'a72', 'a135', 'a144', 'a51', 'a103'),
                     c('a30', 'a45', 'a72', 'a135', 'a144', 'a18', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160'))
 
-aspectsCombList <- c(aspectsList, combn(aspectsList[[1]], 6, simplify=FALSE),
-                     combn(aspectsList[[1]], 9, simplify=FALSE), combn(aspectsList[[1]], 12, simplify=FALSE))
+aspectsCombList <- aspectsList
 
 # aspect types cols names
 aspectTypesCols <- c('SUT', 'MOT', 'MET', 'VET', 'MAT', 'JUT', 'SAT', 'URT', 'NET', 'PLT')
@@ -1094,6 +1092,14 @@ gaint_raMutation <- function(object, parent) {
   return(mutate)
 }
 
+gaint_rwSelection <- function (object, ...) {
+  prob <- abs(object@fitness)/sum(abs(object@fitness))
+  sel <- sample(1:object@popSize, size = object@popSize, prob = pmin(pmax(0, prob), 1, na.rm = TRUE), replace = TRUE)
+  out <- list(population = object@population[sel, , drop = FALSE],
+              fitness = object@fitness[sel])
+  return(out)
+}
+
 processTrans <- function(trans, currency, aspnames, asptypes) {
   currency.train <- subset(currency, Date > as.Date("1998-01-01") & Date < as.Date("2012-01-01"))
   currency.test <- subset(currency, Date > as.Date("2012-01-01"))
@@ -1186,9 +1192,9 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
                length(maxaspModes), length(planetsCombList), length(aspectsCombList), length(predThresholds))
   varnames <- c('aspnames', 'asptypes', 'cormethod', 'binarize', 'rmzeroaspects', 'qinmode', 'maxasp', 'kplanets', 'kaspects', 'predtreshold')
 
-  ga("real-valued", fitness=corFitness, names=varnames,
-     monitor=gaMonitor, maxiter=500, run=20, popSize=1000, min=minvals, max=maxvals,
-     selection=gareal_lrSelection, mutation=gaint_raMutation,
+  ga("real-valued", fitness=myFitness, names=varnames,
+     monitor=gaMonitor, maxiter=500, run=20, popSize=500, min=minvals, max=maxvals,
+     selection=gaint_rwSelection, mutation=gaint_raMutation,
      crossover=gareal_laCrossover, population=gaint_Population)
 
   sink()
