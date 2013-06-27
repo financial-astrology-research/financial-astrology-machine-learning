@@ -53,7 +53,8 @@ planetsList <- list(c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", 
                     c("MA", "MAR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"),
                     c("MA", "SA", "UR", "NE", "PL"))
 
-planetsCombList <- c(planetsList, combn(planetsList[[1]], 5, simplify=FALSE))
+planetsCombList <- planetsList
+#combn(planetsList[[1]], 5, simplify=FALSE))
 
 aspectsList <- list(c('a0', 'a30', 'a45', 'a60', 'a72', 'a90', 'a120', 'a135', 'a144', 'a150', 'a180', 'a18', 'a40', 'a51', 'a80', 'a103', 'a108', 'a154', 'a160'),
                     c('a0', 'a45', 'a60', 'a90', 'a120', 'a150', 'a180'),
@@ -1192,8 +1193,8 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
                length(maxaspModes), length(planetsCombList), length(aspectsCombList), length(predThresholds))
   varnames <- c('aspnames', 'asptypes', 'cormethod', 'binarize', 'rmzeroaspects', 'qinmode', 'maxasp', 'kplanets', 'kaspects', 'predtreshold')
 
-  ga("real-valued", fitness=myFitness, names=varnames,
-     monitor=gaMonitor, maxiter=500, run=20, popSize=500, min=minvals, max=maxvals,
+  ga("real-valued", fitness=corFitness, names=varnames,
+     monitor=gaMonitor, maxiter=500, run=20, popSize=400, min=minvals, max=maxvals,
      selection=gaint_rwSelection, mutation=gaint_raMutation,
      crossover=gareal_laCrossover, population=gaint_Population)
 
