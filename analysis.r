@@ -1171,20 +1171,20 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
       # day aggregated predictions
       predict.table.aggr <- aggregatePredictTransTable(predict.table, predtreshold)
       test.result <- testAggregatedPredictTransTable(predict.table.aggr, samples[[i]], currency)
-      cat("\t Total = ", test.result$totdays, "/ Trend = ", test.result$tredays, "/ Fitness = ", test.result$fitness, "\n")
-      fitness[[length(fitness)+1]] <- test.result$fitness
+      cat("\t Total = ", test.result$totdays, "/ Trend = ", test.result$tredays, "/ % = ", test.result$percent, "\n")
+      fitness[[length(fitness)+1]] <- test.result$tredays
     }
 
     # fitted value
-    fitness.median <- median(unlist(fitness))
+    evfitness <- fitnessMeanStability(fitness)
     # how long taked to calculate
     cat("\t Predict execution/loop time: ", proc.time()-ptm, "\n")
     # output
-    cat("%%% = ", fitness.median, "\n")
+    cat("### = ", evfitness, "\n")
     # collect garbage
     gc()
     # return fit
-    fitness.median
+    evfitness
   }
 
   minvals <- c(1,1,1,1,1,1,1,1,1,1)
@@ -1222,12 +1222,17 @@ testCorrelationSolution <- function(directory, fileno, aspnames, asptypes, corme
     test.result <- testAggregatedPredictTransTable(predict.table.aggr, samples[[i]], currency)
     print(test.result$t1)
     print(test.result$t2)
-    cat("\n Total = ", test.result$totdays, "/ Trend = ", test.result$tredays, "/ Fitness = ", test.result$fitness, "\n\n")
-    fitness[[length(fitness)+1]] <- test.result$fitness
+    cat("\n Total = ", test.result$totdays, "/ Trend = ", test.result$tredays, "/ % = ", test.result$percent, "\n\n")
+    fitness[[length(fitness)+1]] <- test.result$tredays
   }
 
   # fitted value
-  cat("\t %%% = ", median(unlist(fitness)), "\n\n")
+  cat("\t ### = ", fitnessMeanStability(fitness), "\n\n")
+}
+
+fitnessMeanStability <- function(fitness) {
+  fitness <- unlist(fitness)
+  round(mean(fitness) * (1 - sd(fitness) / mean(fitness)))
 }
 
 completeEffectList <- function(X) {
@@ -1248,14 +1253,14 @@ testAggregatedPredictTransTable <- function(predict.table.aggr, trans.test, curr
   # process results
   t1 <- prop.table(table(predict.table.aggr$test, useNA='always'))
   t2 <- addmargins(table(predict.table.aggr$test, useNA='always'))
-  fitness <- tredays <- 0
+  fitness <- tredays <- percent <- 0
   # only if there are results complete results
   if (all(c('TRUE', 'FALSE', NA) %in% names(t2))) {
     tredays <- abs(as.numeric(t2['TRUE'])-as.numeric(t2['FALSE']))
-    fitness <- round((tredays/totdays)*100, digits=2)
+    percent <- round((tredays/totdays)*100, digits=2)
   }
 
-  list(fitness=fitness, totdays=totdays, tredays=tredays, t1=t1, t2=t2)
+  list(percent=percent, totdays=totdays, tredays=tredays, t1=t1, t2=t2)
 }
 
 aggregatePredictTransTable <- function(predict.table, threshold) {
