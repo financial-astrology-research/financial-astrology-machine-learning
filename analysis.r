@@ -1129,7 +1129,7 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
   # max aspects modes
   maxaspModes <- c(1,2,3,4,5,6,7)
   # predict Thresholds
-  predThresholds <- seq(0.2, 1, by=0.2)
+  predThresholds <- seq(0.1, 0.9, by=0.1)
   # currency data
   currency <- openCurrency2("~/trading/EURUSD_day_fxpro_20130611.csv")
   trans <- openTrans(paste("~/trading/", directory, "/trans_", fileno, ".tsv", sep=''), 1)
