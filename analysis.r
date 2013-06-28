@@ -1115,6 +1115,8 @@ processTrans <- function(trans, currency, aspnames, asptypes) {
 }
 
 testCorrelationOptimization <- function(sink_filename, directory, fileno) {
+  # Init clock
+  ptm <- proc.time()
   if (!hasArg('sink_filename')) stop("Provide a sink filename.")
   sink_filename <- paste("~/trading/predict/", sink_filename, ".txt", sep='')
   sink(npath(sink_filename), append=TRUE)
@@ -1135,7 +1137,7 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
   trans <- openTrans(paste("~/trading/", directory, "/trans_", fileno, ".tsv", sep=''), 1)
 
   corFitness <- function(x) {
-    ptm <- proc.time()
+    looptm <- proc.time()
     # build the parameters based on GA indexes
     aspnames <- aspectsCombList[[x[1]]]
     asptypes <- aspectTypesList[[x[2]]]
@@ -1178,7 +1180,7 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
     # fitted value
     evfitness <- fitnessMeanStability(fitness)
     # how long taked to calculate
-    cat("\t Predict execution/loop time: ", proc.time()-ptm, "\n")
+    cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
     # output
     cat("### = ", evfitness, "\n")
     # collect garbage
