@@ -68,6 +68,9 @@ aspectsCombList <- aspectsList
 # aspect types cols names
 aspectTypesCols <- c('SUT', 'MOT', 'MET', 'VET', 'MAT', 'JUT', 'SAT', 'URT', 'NET', 'PLT')
 
+# planets cols
+planetsBaseCols <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL")
+
 # aspects types
 aspectTypesList <- list(c('A', 'AE', 'SE', 'S'),
                         c('A', 'AE', 'SE'),
@@ -290,43 +293,41 @@ removeAspectsOutType <- function(X, asptype) {
 openTrans <- function(trans_file, effcorrection=1) {
   trans_file <- npath(trans_file)
   # transits
-  trans <- read.table(trans_file, header = T, sep="\t", na.strings = "")
-  trans$Date <- as.Date(trans$Date, format="%Y-%m-%d")
-  trans$S2 <- with(trans, {S+SUS+MOS+MES+VES+JUS+SAS+URS+NES+PLS})
-  trans$endEffect <- timeDate(paste(trans$Date, trans$Hour), format = "%Y-%m-%d %H:%M:%S", zone = "UTC", FinCenter = "CET")
-  trans$WD <- format(trans$endEffect, "%w");
-  trans$H <- as.numeric(format(trans$endEffect, "%H"));
-  # remove the slow planets and other points that complicate prediction
-  trans <- subset(trans, PT %ni% c('MO', 'JU', 'SA', 'UR', 'NE', 'PL') & PR %ni% c('Asc', 'MC'));
+  trans <- fread(trans_file, header = T, sep="\t", na.strings = "", verbose=FALSE)
+  trans[, Date := as.Date(Date, format="%Y-%m-%d")]
+  trans[, S2 := S+SUS+MOS+MES+VES+JUS+SAS+URS+NES+PLS]
+  trans[, endEffect := paste(Date, Hour)]
+  timeEffect <- strptime(trans$endEffect, format="%Y-%m-%d %H:%M:%S", tz="UTC")
+  trans[, WD := format(timeEffect, "%w")]
+  trans[, H := as.numeric(format(timeEffect, "%H"))]
+  # remove the slow planets transits and other points that complicate prediction
+  trans <- trans[PT %ni% c('MO', 'JU', 'SA', 'UR', 'NE', 'PL') & PR %ni% c('Asc', 'MC')]
 
   if (effcorrection) {
     # substract one day to the aspects tha are early in the day
     # the effect should be produced the previous day
-    trans$Date <- as.double(strptime(trans$Date, "%Y-%m-%d"))
-    trans$Date <- as.Date(as.POSIXlt(ifelse(trans$H < 4, trans$Date-86400, trans$Date), origin="1970-01-01"), format="%Y-%m-%d")
+    trans[, Date := as.double(strptime(Date, "%Y-%m-%d"))]
+    trans[, Date := as.Date(as.POSIXlt(ifelse(H < 4, Date-86400, Date), origin="1970-01-01"), format="%Y-%m-%d")]
   }
 
   # replace NA aspects by none due randomForest need a value
-  trans[,planetsList[[1]]] <- apply(trans[,planetsList[[1]]], 2, function(x) ifelse(is.na(x), 'none', x))
+  trans[, planetsList[[1]] := lapply(.SD, function(x) ifelse(is.na(x), 'none', x)), .SDcols=planetsList[[1]]]
   # set as factors
-  trans[,planetsList[[1]]] <- lapply(trans[,planetsList[[1]]], as.factor)
+  trans[, planetsList[[1]] := lapply(.SD, as.factor), .SDcols=planetsList[[1]]]
 
   # Convert the riseset times to correct timezone for Cyprus
   #tzcorrect <- format(as.POSIXlt(paste(trans$Date, trans$ASC1), format = "%Y-%m-%d %H:%M") + 3600 * 2.5, "%H:%M")
   #trans$ASC1 <- tzcorrect
-  trans$PC <- trans$PT
-  trans$PC <- factor(trans$PC, levels = c('SU', 'MO', 'ME', 'VE', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL'), labels = c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9))
+  trans[, PC := trans$PT]
+  trans[, PC := factor(trans$PC, levels = c('SU', 'MO', 'ME', 'VE', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL'), labels = c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9))]
   # give each transit type an index
-  trans$idx <- with(trans, paste(PT, AS, PR, SI, sep=''))
-  trans$idx2 <- with(trans, paste(Date, PT, AS, PR, SI, sep=''))
-  trans
+  trans[, idx := paste(PT, AS, PR, SI, sep='')]
+  trans[, idx2 := paste(Date, PT, AS, PR, SI, sep='')]
+  return(as.data.frame(trans))
 }
 
 openTransXts <- function(trans_file) {
   trans <- openTrans(trans_file)
-  # xts need to receive a unique Date column so we leave only Date col
-  # as Date type.
-  trans$endEffect <- as.character(trans$endEffect)
   # remove the time column
   trans_xts <- xts(trans[,-2], order.by=trans$Date)
   trans_xts
@@ -351,9 +352,6 @@ predictTrend <- function(search_date) {
 predColNames = c('Date', 'idx', 'idx2', 'endEffect', 'S2', 'PC', 'SUR', 'SURD', 'MOR', 'MORD', 'MER', 'MERD', 'VER', 'VERD', 'MAR', 'MARD', 'JUR', 'JURD', 'SAR', 'SARD', 'URR', 'URRD', 'NER', 'NERD', 'PLR', 'PLRD', 'udis', 'ddis', 'corEff', 'ucor', 'dcor')
 
 predictTransTable <- function(trans, trans.hist, cor_method, kplanets, kaspects, binarize=1, rmzeroaspects=1, qinmode='q3', maxasp=2) {
-  # data.table conflicts with timeDate
-  trans$endEffect <- as.character(trans$endEffect)
-  trans.hist$endEffect <- as.character(trans.hist$endEffect)
   # convert to data table
   trans.hist <- data.table(trans.hist)
   trans <- data.table(trans)
@@ -909,7 +907,7 @@ processTrans <- function(trans, currency, aspnames, asptypes) {
   currency.train <- subset(currency, Date > as.Date("1998-01-01") & Date < as.Date("2012-01-01"))
   currency.test <- subset(currency, Date > as.Date("2012-01-01"))
   # select only the specified aspects
-  trans.cur <- subset(trans, AS %in% aspnames);
+  trans.cur <- subset(trans, AS %in% aspnames)
   # reset the aspects that are not in the required types
   trans.cur[,planetsList[[1]]] <- t(apply(trans.cur[,c(planetsList[[1]],aspectTypesCols)], 1, removeAspectsOutType, asptype=asptypes))
   # merge with currency data splitting by test & train data
