@@ -357,7 +357,7 @@ predictTransTable <- function(trans, trans.hist, cor_method, kplanets, kaspects,
   # convert to data table
   trans.hist <- data.table(trans.hist)
   trans <- data.table(trans)
-  setkey(trans, 'Date')
+  setkey(trans, 'Date', 'idx')
   # generate the count effect table
   #predict_table <- predictAspectsTable(trans.hist)
   selected <- trans[, idx[which(S2 >= maxn(S2, maxasp))], by=c('Date')]
@@ -534,158 +534,6 @@ historyAspectsCorrelation <- function(trans, trans_hist, cor_method, kplanets, k
   predtable$dcor <- round(apply(predtable[,c(cols1, cols2, cols3)], 1, function(x) cor(x[cols1-2], x[cols3-2], method='pearson')), digits=2)
 
   data.table(predtable)
-}
-
-predictTransTableTest <- function(directory, predict_table, currency_samples, sigthreshold=10, ret=FALSE) {
-  tdiffs <- list()
-  tl1 <- list()
-  tl2 <- list()
-  output <- list()
-
-  for (i in 1:length(currency_samples)) {
-    ptt <- merge(predict_table, currency_samples[[i]], by=c('date'))
-    # ignore if not enough predictions
-    if (nrow(ptt) < nrow(currency_samples[[i]])/3) break
-    # compare the prediction with the day effect
-    ptt$test1 <- apply(ptt[,c('coreff','eff')], 1, function(x) ifelse(is.na(x[1]) | is.na(x[2]), na, x[1]==x[2]))
-    t1 <- prop.table(table(ptt$test1, usena='always'))
-    t2 <- addmargins(table(ptt$test1, usena='always'))
-    # only if there are results for true and false
-    if (all(c('true', 'false') %in% names(t1))) {
-      tdiff <- round(abs(t1['true']-t1[['false']])*100, digits=2)
-      if (!is.na(tdiff) & tdiff >= sigthreshold) {
-        # append diff & tables
-        tdiffs[[length(tdiffs)+1]] <- tdiff
-        tl1[[length(tl1)+1]] <- t1
-        tl2[[length(tl2)+1]] <- t2
-        if (ret) output[[length(output)+1]] <- ptt[,!names(ptt) %in% c('time', 'mid')]
-      }
-    }
-  }
-
-  # if the differences are significant in all the test samples
-  if (length(tdiffs) == length(currency_samples)) {
-    for (i in 1:length(tdiffs)) {
-      # print the diffs and the tables
-      cat("=====================", tdiffs[[i]], "=====================\n")
-      print(tl1[[i]])
-      print(tl2[[i]])
-      cat("\n")
-    }
-    # display the average
-    cat("%%%", directory, "%%%", median(unlist(tdiffs)), "%%%%%%%%%%%%%%%%%%%%\n\n")
-  }
-  else {
-    writeLines("\t\t\tInsignificant")
-    cat("\n")
-  }
-
-  #predict_table$couEff <- apply(predict_table[,3:5], 1, function(x) ifelse(x[1] != x[2], ifelse(x[1] > x[2], 'down', 'up'), NA))
-  #predict_table$test2 <- apply(predict_table[,c('Eff','couEff')], 1, function(x) ifelse(is.na(x[1]) | is.na(x[2]), 'none', x[1]==x[2]))
-  #print(prop.table(table(predict_table$test2)))
-  #print(addmargins(table(predict_table$test2)))
-  #cat("\n")
-  if (ret) output
-}
-
-testCorrelations <- function(sink_filename, directories, fileno, start1=0, start2=0, sigthreshold=10) {
-  if (class(directories) != 'list') stop("Provide a valid directories list.")
-  if (!hasArg('sink_filename')) stop("Provide a sink filename.")
-  sink_filename <- paste("~/trading/predict/", sink_filename, ".txt", sep='')
-  sink(npath(sink_filename), append=TRUE)
-  # Start the clock!
-  ptm <- proc.time()
-  # currency data
-  eurusd_full <- openCurrency2("~/trading/EURUSD_day_fxpro_20130611.csv")
-  eurusd <- subset(eurusd_full, Date > as.Date("1998-01-01") & Date < as.Date("2012-01-01"))
-  eurusd_test <- subset(eurusd_full, Date > as.Date("2012-01-01"))
-  # all transit options
-  transOpts <- expand.grid(aspModes, aspTypes)
-  totTransOpts <- nrow(transOpts)
-  # all pred options
-  predOpts <- buildPredictOptions()
-  totPredOpts <- nrow(predOpts)
-
-  for (n1 in 1:totTransOpts) {
-    if (n1 < start1) next
-    # if a specific start option is set just apply it for the first transits cycle
-    # then for the next cycle start again from 0 option
-    if (n1 > start1) start2 <- 0
-    # convert the opts to plain format
-    aspmode <- as.character(transOpts[n1,1])
-    asptype <- as.character(transOpts[n1,2])
-    cat("####################################################\n")
-    cat("Transits File #", fileno, "transOpts aspmode =", aspmode, "asptype =", as.character(asptype), "\n")
-    cat("Directories: ", unlist(directories), "\n")
-
-    # iterate trnas directories
-    ltrans <- list()
-    ltrans_hist <- list()
-    for (tn in 1:length(directories)) {
-      ltrans[[tn]] <- openTrans(paste("~/trading/", directories[[tn]], "/trans_", fileno, ".tsv", sep=''), 1, aspmode, asptype)
-      ltrans_hist[[tn]] <- mergeTrans(ltrans[[tn]], eurusd)
-      # found aspects in the transit data frame
-      cat("\tFound aspects:", sort(as.character(unique(ltrans[[tn]]$AS))), "\n")
-      gc()
-    }
-
-    cat("Transits execution time: ", proc.time()-ptm, "\n\n")
-    cat("####################################################\n")
-
-    # combn(keys, 2, simplify=FALSE)
-    # Init time for fisrt loop
-    looptm <- proc.time()
-
-    for (n2 in 1:totPredOpts) {
-      if (n2 < start2) next
-      cormethod <- as.character(predOpts[n2,1])
-      binarize <- predOpts[[n2,2]]
-      rmzeroaspects <- predOpts[[n2,3]]
-      qinmode <- as.character(predOpts[n2,4])
-      maxasp <- predOpts[[n2,5]]
-      kplanets <- predOpts[[n2,6]]
-      kaspects <- predOpts[[n2,7]]
-      samples <- generateSamples(eurusd_test, 3)
-
-      cat("Trans Opts #", n1, " of ", totTransOpts, " -- Pred Opts #", n2, " of ", totPredOpts, "\n")
-      cat("Transits File #", fileno, "transOpts aspmode=", aspmode, "asptype=", as.character(asptype), "\n")
-      cat("\tPredict Opts cormethod=", cormethod, 'binarize=', binarize, 'rmzeroaspects=', rmzeroaspects, 'qinmode=', qinmode, 'maxasp=', maxasp, "\n")
-      cat("\tPlanets mode:", kplanets, "\n")
-      cat("\tAspects mode:", kaspects, "\n\n")
-
-      for (tn in 1:length(directories)) {
-        cat("\t", directories[[tn]], "\n")
-        predt <- predictTransTable(ltrans[[tn]], ltrans_hist[[tn]], cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode, maxasp)
-        predtt <- predictTransTableTest(directories[[tn]], predt, samples, sigthreshold)
-      }
-
-      cat("Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n\n")
-      looptm <- proc.time()
-    }
-
-    # collect garbage
-    gc()
-  }
-
-  sink()
-}
-
-buildPredictOptions <- function() {
-  # correlation methods to test
-  corMethods <- c('canberra', 'euclidian', 'binary')
-  # aspects modes
-  aspModes <- c('all', 'majors', 'traditional', 'minmajors', 'myminors', 'minors')
-  # aspects types
-  aspTypes <- c('all', 'apsepexact', 'exact', 'apexact')
-  # binarize
-  binModes <- c(0, 1)
-  # remove zero aspects
-  zeroaspectsModes <- c(0, 1)
-  # quitile modes
-  qinModes <- c('q1', 'q2', 'q3', 'q4', 'q5')
-  # max aspects modes
-  maxaspModes <- c(1, 2, 3, 4, 5, 6, 7)
-  expand.grid(corMethods, binModes, zeroaspectsModes, qinModes, maxaspModes, planetsList, aspectsList)
 }
 
 funtionizethis  <- function() {
@@ -1047,29 +895,6 @@ generateSamples <- function(ds, n) {
   # finally add the entire data set as a sample
   samples[[length(samples)+1]] <- ds
   samples
-}
-
-bestSolution <- function(n) {
-  predOpts <- buildPredictOptions()
-  cormethod <- as.character(predOpts[n,1])
-  binarize <- predOpts[[n,2]]
-  rmzeroaspects <- predOpts[[n,3]]
-  qinmode <- as.character(predOpts[n,4])
-  maxasp <- predOpts[[n,5]]
-  kplanets <- predOpts[[n,6]]
-  kaspects <- predOpts[[n,7]]
-
-  eurusd_full <- openCurrency2("~/trading/EURUSD_day_fxpro_20130611.csv")
-  eurusd <- subset(eurusd_full, Date > as.Date("1998-01-01") & Date < as.Date("2012-01-01"))
-  eurusd_test <- subset(eurusd_full, Date > as.Date("2012-01-01"))
-  samples <- generateSamples(eurusd_test, 3)
-
-  trans.eur <- openTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb26.tsv", 1, 'traditional', 'all')
-  trans.eurusd.eur  <- mergeTrans(trans.eur, eurusd)
-  ptt <- predictTransTable(trans.eur, trans.eurusd.eur, cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode, maxasp)
-  aspect_dates_cor <- historyAspectsCorrelation(data.table(trans.eur), data.table(trans.eurusd.eur), cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode)
-  ptt.test <- predictTransTableTest(ptt, samples, 5, TRUE)
-  list(aspect_dates_cor, ptt.test)
 }
 
 #dput(as.character(selcols))
