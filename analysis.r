@@ -6,7 +6,7 @@ library(ggplot2)
 library(plyr)
 library(data.table)
 library(fields)
-library(reshape)
+library(reshape2)
 library(randomForest)
 library(GA)
 `%ni%` <- Negate(`%in%`)
@@ -374,8 +374,8 @@ predictTransTable <- function(trans, trans.hist, cor_method, kplanets, kaspects,
   predict.table[predColNames]
 }
 
-predictTransTableWrite <- function(trans, trans_hist, cor_method, kplanets, kaspects, binarize, rmzeroaspects, qinmode, filename) {
-  aspect_dates_predict <- predictTransTable(trans, trans_hist, cor_method, kplanets, kaspects, binarize, rmzeroaspects, qinmode, 2)
+predictTransTableWrite <- function(trans, trans.hist, cor_method, kplanets, kaspects, binarize, rmzeroaspects, qinmode, filename) {
+  aspect_dates_predict <- predictTransTable(trans, trans.hist, cor_method, kplanets, kaspects, binarize, rmzeroaspects, qinmode, 2)
   write.csv(aspect_dates_predict[predColNames], file=npath(paste("~/trading/predict/", file_name, sep='')), eol="\r\n", quote=FALSE, row.names=FALSE)
 }
 
@@ -424,42 +424,44 @@ completeAspectList <- function(X, kaspects) {
   X
 }
 
-historyAspectsCorrelation <- function(trans, trans_hist, cor_method, kplanets, kaspects, binarize=1, rmzeroaspects=1, qinmode='q3') {
+historyAspectsCorrelation <- function(trans, trans.hist, cor_method, kplanets, kaspects, binarize=1, rmzeroaspects=1, qinmode='q3') {
   if (qinmode %ni% c('q1', 'q2', 'q3', 'q4', 'q5')) stop("Provide a valid value for qinmode")
   #remove no needed cols to save memory
   trans <- trans[,c('Date', 'idx', kplanets), with=FALSE]
-  trans_hist <- trans_hist[,c('Date', 'idx', 'Eff', kplanets), with=FALSE]
-  #kplanets <- kplanets[plamode:length(kplanets)]
-  dsasp <- reshape(trans_hist, varying = kplanets, v.names = "aspect", times = kplanets,  direction = "long")
+  trans.hist <- trans.hist[,c('Date', 'idx', 'Eff', kplanets), with=FALSE]
+  # melt return a data.frame so we need to convert to data.table
+  dsasp <- data.table(melt(trans.hist, id.var=c('Date', 'idx', 'Eff'), measure.var=kplanets))
+  setnames(dsasp, c('Date', 'idx', 'Eff', 'planet', 'aspect'))
+  setkey(dsasp, 'Date', 'idx', 'Eff', 'aspect')
   # select only the aspects to consider
-  dsasp <- subset(dsasp, aspect %in% kaspects)
+  dsasp <- dsasp[aspect %in% kaspects]
   # adjust factor levels
   dsasp$aspect <- factor(dsasp$aspect)
   # separate the up/down tables
-  dsup <- subset(dsasp, Eff=='up')
-  setkey(dsup, 'idx', 'aspect')
-  dsdown <- subset(dsasp, Eff=='down')
-  setkey(dsdown, 'idx', 'aspect')
+  dsup <- dsasp[Eff=='up']
+  dsdown <- dsasp[Eff=='down']
+  # build up/down aspect tables
   dsup <- dsup[, as.list(completeAspectList((table(aspect)), kaspects=kaspects)), by = c('idx')]
   ucolnames <- paste(names(dsup)[2:length(names(dsup))], 'u', sep='.')
-  names(dsup) <- c('idx', ucolnames)
+  setnames(dsup, c('idx', ucolnames))
   dsdown <- dsdown[, as.list(completeAspectList((table(aspect)), kaspects=kaspects)), by = c('idx')]
   dcolnames <- paste(names(dsdown)[2:length(names(dsdown))], 'd', sep='.')
   # before set dcolnames build the substract colnames
   scolnames <- paste(names(dsdown)[2:length(names(dsdown))], 's', sep='.')
-  names(dsdown) <- c('idx', dcolnames)
+  setnames(dsdown, c('idx', dcolnames))
   # merge_recurse(apply(trans[,kplanets], 2, function(x) count(x)))
   # by(trans.eur[,kplanets], trans.eur$idx, function(x) { table(apply(x, 1, function(x) x)) })
   # reshape the transits data and generate aspect table
-  dscurrent <- reshape(trans, varying = kplanets, v.names = "aspect", times = kplanets,  direction = "long")
+  dscurrent <- data.table(melt(trans, id.var=c('Date','idx'), measure.var=kplanets))
+  setnames(dscurrent, c('Date', 'idx', 'planet', 'aspect'))
   # select only the aspects to consider
-  dscurrent <- subset(dscurrent, aspect %in% kaspects)
+  dscurrent <- dscurrent[aspect %in% kaspects]
   # adjust factor levels
   dscurrent$aspect <- factor(dscurrent$aspect)
   setkey(dscurrent, 'Date', 'idx', 'aspect')
   dscurrent <- dscurrent[, as.list(completeAspectList((table(aspect)), kaspects=kaspects)), by = c('Date','idx')]
   ccolnames <- paste(names(dscurrent)[3:length(names(dscurrent))], 'c', sep='.')
-  names(dscurrent) <- c('Date', 'idx', ccolnames)
+  setnames(dscurrent, c('Date', 'idx', ccolnames))
 
   # merge
   predtable <- merge(dscurrent, dsup, by='idx')
@@ -485,7 +487,7 @@ historyAspectsCorrelation <- function(trans, trans_hist, cor_method, kplanets, k
   # build expression to generate quantile based on the diff cols
   expr1 <- parse(text = paste('as.list(quantile(c(',paste(scolnames, collapse=","),'), na.rm=TRUE))',sep=''))
   qtiles <- predtable[,eval(expr1),by=c('Date','idx')]
-  names(qtiles) <- c('Date', 'idx', 'q1', 'q2', 'q3', 'q4', 'q5')
+  setnames(qtiles, c('Date', 'idx', 'q1', 'q2', 'q3', 'q4', 'q5'))
   predtable  <- merge(predtable, qtiles, by=c('Date','idx'))
 
   # set all the columns that are less that qintile to 0
@@ -665,29 +667,6 @@ funtionizethis  <- function() {
   d + scale_colour_hue(h=c(0, 360, l=100, c=200))
 
   ggplot(filld, aes(xmin = start, xmax = end, ymin = 4, ymax = 5, fill = label)) + geom_rect() + geom_segment(aes(x = 4, y = 0, xend = 4, yend = 5, colour = label), size = 2, show_guide = FALSE) + geom_text(aes(x = p, y = 4.5, label = label), colour = "white", size = 10) + coord_polar() + scale_y_continuous(limits = c(0, 5))
-}
-
-initEuroPredict <- function() {
-  predictTrans <- predictTransTable(trans.eur, trans.eurusd.eur, 'euclidian', planetsList[[2]], aspectsList[[4]], 0, 0, 3, 2)
-
-  eurusd_full <- openCurrency2("~/trading/EURUSD_day_fxpro.csv")
-  eurusd <- subset(eurusd_full, Date < as.Date("2012-01-01"))
-  eurusd_test <- subset(eurusd_full, Date > as.Date("2012-01-01"))
-  trans.eur <- openTrans("~/trading/transits_eur/EUR_1997-2014_trans_orb29.tsv", 1, 'traditional', 'all')
-  trans.eurusd.eur  <- mergeTrans(trans.eur, eurusd)
-
-  predcor <- historyAspectsCorrelation(trans.eur, trans.eurusd.eur, 'binary', planetsList[[1]], aspectsList[[1]], 1, 0, 4)
-  p1 <- predcor[, sum(udis), by=Date]
-  p2 <- predcor[, sum(ddis), by=Date]
-  pt1 <- merge(p1, p2, by='Date')
-  names(pt1) <- c('Date', 'up', 'down')
-  pt1$corEff <- apply(pt1[,c('up','down'),with=FALSE], 1, function(x) ifelse(x[1] != x[2], ifelse(x[1] < x[2], 'up', 'down'), NA))
-  pt1 <- merge(pt1, eurusd)
-  prop.table(table(pt1$corEff==pt1$Eff, useNA="always"))
-
-  planets.eur <- read.table("~/trading/EUR_2000-2014_planets_20130518.tsv", header = T, sep="\t")
-  planets.eur$Date <- as.Date(planets.eur$Date, format="%Y-%m-%d")
-
 }
 
 splitdf <- function(dataframe, seed=NULL) {
