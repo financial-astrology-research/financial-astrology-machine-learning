@@ -924,16 +924,18 @@ processTrans <- function(trans, currency, aspnames, asptypes) {
   list(all=trans.cur, train=trans.cur.train, test=trans.cur.test)
 }
 
-processPlanets <- function(planets, currency) {
-  currency.train <- subset(currency, Date > as.Date("1998-01-01") & Date < as.Date("2012-01-01"))
-  currency.test <- subset(currency, Date > as.Date("2012-01-01"))
+processPlanets <- function(planets, currency, syear, eyear) {
+  sdate <- paste(syear, "-01-01", sep='')
+  edate <- paste(eyear, "-01-01", sep='')
+  currency.train <- subset(currency, Date > as.Date(sdate) & Date < as.Date(edate))
+  currency.test <- subset(currency, Date > as.Date(edate))
   # merge with currency data splitting by test & train data
   planets.train <- merge(planets, currency.train, by='Date')
   planets.test <- merge(planets, currency.test, by='Date')
   list(all=planets, train=planets.train, test=planets.test)
 }
 
-testDailyRandomForest <- function(sink_filename, planetsdir, fileno, commoditydir, commodityfile) {
+testDailyRandomForest <- function(sink_filename, planetsdir, fileno, commoditydir, commodityfile, syear, eyear) {
   # Init clock
   ptm <- proc.time()
   if (!hasArg('sink_filename')) stop("Provide a sink filename.")
@@ -942,7 +944,7 @@ testDailyRandomForest <- function(sink_filename, planetsdir, fileno, commoditydi
   # currency data
   currency <- openCommodity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
   planets <- openPlanets(paste("~/trading/", planetsdir, "/planets_", fileno, ".tsv", sep=''))
-  colNames <- c(paste(planetsBaseCols, 'LON', sep=''), paste(planetsBaseCols, 'SP', sep=''))
+  colNames <- c(paste(planetsBaseCols, 'LON', sep=''), paste(planetsBaseCols, 'LAT', sep=''), paste(planetsBaseCols, 'SP', sep=''))
   cat("\n")
 
   dailyRFFitness <- function(string) {
@@ -953,15 +955,16 @@ testDailyRandomForest <- function(sink_filename, planetsdir, fileno, commoditydi
 
     cat("---------------------------------------------------------------------------------\n")
     cat("testDailyRandomForestSolution(planetsdir=", shQuote(planetsdir), ", fileno=", fileno, ",\n", sep='')
-    cat("commoditydir=", shQuote(commoditydir), ", commodityfile=", shQuote(commodityfile), ",\n", sep='')
+    cat("\t commoditydir=", shQuote(commoditydir), ", commodityfile=", shQuote(commodityfile), sep='')
+    cat(", syear=", shQuote(syear), ", eyear=", shQuote(eyear), ",\n", sep='')
     cat('\t selcols=c(', paste(shQuote(selcols), collapse=","), "))\n", sep='')
 
     # process planets
-    planets.sp <- processPlanets(planets, currency)
+    planets.sp <- processPlanets(planets, currency, syear, eyear)
     # build the samples from testing data
     samples <- generateSamples(planets.sp$test, 3)
     # build model
-    model <- randomForest(Eff ~ ., data = planets.sp$train[,c('Eff',selcols), with=FALSE], importance=TRUE, keep.forest=TRUE, ntree=300)
+    model <- randomForest(Eff ~ ., data = planets.sp$train[,c('Eff',selcols), with=FALSE], importance=FALSE, keep.forest=TRUE, ntree=300)
 
     # test the samples
     fitness <- list()
@@ -981,12 +984,13 @@ testDailyRandomForest <- function(sink_filename, planetsdir, fileno, commoditydi
     # output
     cat("### = ", evfitness, "\n")
     # collect garbage
+    rm(planets.sp, samples, model)
     gc()
     # return fit
     evfitness
   }
 
-  ga("binary", fitness=dailyRFFitness, names=colNames, nBits=20,
+  ga("binary", fitness=dailyRFFitness, names=colNames, nBits=length(colNames),
      monitor=gaMonitor, maxiter=500, run=20, popSize=400,
      selection=gabin_rwSelection)
 
