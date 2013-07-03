@@ -290,14 +290,16 @@ removeAspectsOutType <- function(X, asptype) {
 }
 
 # Open a Transits table and merge with a currency table
-openTrans <- function(trans_file, effcorrection=1) {
+openTrans <- function(trans_file, effcorrection=0, hourcorrection=7) {
   trans_file <- npath(trans_file)
   # transits
-  trans <- fread(trans_file, header = T, sep="\t", na.strings = "", verbose=FALSE)
+  trans <- fread(trans_file, header = T, sep="\t", na.strings = "", verbose = FALSE)
   trans[, Date := as.Date(Date, format="%Y-%m-%d")]
   trans[, S2 := S+SUS+MOS+MES+VES+JUS+SAS+URS+NES+PLS]
-  trans[, endEffect := paste(Date, Hour)]
-  timeEffect <- strptime(trans$endEffect, format="%Y-%m-%d %H:%M:%S", tz="UTC")
+  #timeEffect <- strptime(trans$endEffect, format="%Y-%m-%d %H:%M:%S", tz="UTC")
+  # timeDate automatically correct summer time based on the rules of the financial center
+  timeEffect <- timeDate(paste(trans$Date, trans$Hour), format = "%Y-%m-%d %H:%M:%S", zone = "UTC", FinCenter = "Europe/Bucharest")
+  trans[, endEffect := as.character(timeEffect)]
   trans[, WD := format(timeEffect, "%w")]
   trans[, H := as.numeric(format(timeEffect, "%H"))]
   # remove the slow planets transits and other points that complicate prediction
@@ -307,7 +309,7 @@ openTrans <- function(trans_file, effcorrection=1) {
     # substract one day to the aspects tha are early in the day
     # the effect should be produced the previous day
     trans[, Date := as.double(strptime(Date, "%Y-%m-%d"))]
-    trans[, Date := as.Date(as.POSIXlt(ifelse(H < 4, Date-86400, Date), origin="1970-01-01"), format="%Y-%m-%d")]
+    trans[, Date := as.Date(as.POSIXlt(ifelse(H <= hourcorrection, Date-86400, Date), origin="1970-01-01"), format="%Y-%m-%d")]
   }
 
   # replace NA aspects by none due randomForest need a value
@@ -590,7 +592,6 @@ funtionizethis  <- function() {
 
   # Calculate the moving average with a window of 10 points
   mov.avg <- ma(values, 1, 10, FALSE)
-
 
   ## calculate peaks and valleys
   currency.planets = merge(usdcad, planets, by = "Date")
