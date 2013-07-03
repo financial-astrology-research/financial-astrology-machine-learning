@@ -261,7 +261,7 @@ openCurrency  <- function(currency_file) {
   currency
 }
 
-openCurrency2 <- function(currency_file) {
+openCommodity <- function(currency_file) {
   currency_file <- npath(currency_file)
   currency <- read.table(currency_file, header = F, sep=",")
   names(currency) <- c('Date', 'Time', 'Open', 'High', 'Low', 'Close', 'Volume')
@@ -538,6 +538,13 @@ historyAspectsCorrelation <- function(trans, trans.hist, cor_method, kplanets, k
   data.table(predtable)
 }
 
+openPlanets <- function(planets.file) {
+  planets.file <- npath(planets.file)
+  planets <- fread(planets.file, header = T, sep="\t", na.strings="", verbose = F)
+  planets$Date <- as.Date(planets$Date, format="%Y-%m-%d")
+  return(planets)
+}
+
 funtionizethis  <- function() {
   # hourly rate history
   eurusd.hour <- read.table("~/trading/EURUSD_hour.csv", header = T, sep=",")
@@ -549,7 +556,7 @@ funtionizethis  <- function() {
 
   # euro usd currency daily
   eurusd_full <- openCurrency("~/trading/EURUSD_day.csv")
-  #eurusd <- openCurrency2("~/trading/")
+  #eurusd <- openCommodity("~/trading/")
   # usd cad currency daily
   usdcad <- openCurrency("~/trading/USDCAD_day.csv")
   # transits USD chart
@@ -689,7 +696,7 @@ loadTrans <- function(datefix, aspmode, asptype, maxasp) {
 
 loadTransHist <- function(datefix, aspmode, asptype, maxasp) {
   trans <- loadTrans(datefix, asptype, asptype, maxasp)
-  eurusd <- openCurrency2("~/trading/EURUSD_day_fxpro_20130611.csv")
+  eurusd <- openCommodity("~/trading/EURUSD_day_fxpro_20130611.csv")
   # merge with the currency history
   mergeTrans(trans, eurusd)
 }
@@ -764,7 +771,7 @@ bestRandomForest <- function() {
   setkey(trans.testing, 'Date')
   pred.table <- trans.testing[,as.list(table(predicted)), by=c('Date')]
   pred.table[,prop := (down-up)/(down+up)]
-  eurusd <- openCurrency2("~/trading/EURUSD_day_fxpro_20130611.csv")
+  eurusd <- openCommodity("~/trading/EURUSD_day_fxpro_20130611.csv")
   eurusd <- data.table(eurusd)
   pred.table <- merge(pred.table, eurusd, by='Date')
   pred.table[, predEff := lapply(prop, function(x) ifelse(x > threshold, 'down', ifelse(x < -1*threshold, 'up', NA)))]
@@ -917,6 +924,75 @@ processTrans <- function(trans, currency, aspnames, asptypes) {
   list(all=trans.cur, train=trans.cur.train, test=trans.cur.test)
 }
 
+processPlanets <- function(planets, currency) {
+  currency.train <- subset(currency, Date > as.Date("1998-01-01") & Date < as.Date("2012-01-01"))
+  currency.test <- subset(currency, Date > as.Date("2012-01-01"))
+  # merge with currency data splitting by test & train data
+  planets.train <- merge(planets, currency.train, by='Date')
+  planets.test <- merge(planets, currency.test, by='Date')
+  list(all=planets, train=planets.train, test=planets.test)
+}
+
+testDailyRandomForest <- function(sink_filename, planetsdir, fileno, commoditydir, commodityfile) {
+  # Init clock
+  ptm <- proc.time()
+  if (!hasArg('sink_filename')) stop("Provide a sink filename.")
+  sink_filename <- paste("~/trading/predict/", sink_filename, ".txt", sep='')
+  sink(npath(sink_filename), append=TRUE)
+  # currency data
+  currency <- openCommodity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
+  planets <- openPlanets(paste("~/trading/", planetsdir, "/planets_", fileno, ".tsv", sep=''))
+  colNames <- c(paste(planetsBaseCols, 'LON', sep=''), paste(planetsBaseCols, 'SP', sep=''))
+  cat("\n")
+
+  dailyRFFitness <- function(string) {
+    looptm <- proc.time()
+    # the chromosome that indicate us which columns to include
+    inc <- which(string == 1)
+    selcols <- colNames[inc]
+
+    cat("---------------------------------------------------------------------------------\n")
+    cat("testDailyRandomForestSolution(planetsdir=", shQuote(planetsdir), ", fileno=", fileno, ",\n", sep='')
+    cat("commoditydir=", shQuote(commoditydir), ", commodityfile=", shQuote(commodityfile), ",\n", sep='')
+    cat('\t selcols=c(', paste(shQuote(selcols), collapse=","), "))\n", sep='')
+
+    # process planets
+    planets.sp <- processPlanets(planets, currency)
+    # build the samples from testing data
+    samples <- generateSamples(planets.sp$test, 3)
+    # build model
+    model <- randomForest(Eff ~ ., data = planets.sp$train[,c('Eff',selcols), with=FALSE], importance=TRUE, keep.forest=TRUE, ntree=300)
+
+    # test the samples
+    fitness <- list()
+    for (i in 1:length(samples)) {
+      predEff <- predict(model, newdata=samples[[i]][,selcols, with=FALSE])
+      samples[[i]][, predEff := predEff]
+      # day aggregated predictions
+      test.result <- testDailyRandomForestPredictions(samples[[i]])
+      cat("\t Total = ", test.result$totdays, "/ Trend = ", test.result$tredays, "/ % = ", test.result$percent, "\n")
+      fitness[[length(fitness)+1]] <- test.result$tredays
+    }
+
+    # fitted value
+    evfitness <- fitnessMeanStability(fitness)
+    # how long taked to calculate
+    cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
+    # output
+    cat("### = ", evfitness, "\n")
+    # collect garbage
+    gc()
+    # return fit
+    evfitness
+  }
+
+  ga("binary", fitness=dailyRFFitness, names=colNames, nBits=20,
+     monitor=gaMonitor, maxiter=500, run=20, popSize=400,
+     selection=gabin_rwSelection)
+
+  sink()
+}
+
 testCorrelationOptimization <- function(sink_filename, directory, fileno) {
   # Init clock
   ptm <- proc.time()
@@ -936,7 +1012,7 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
   # predict Thresholds
   predThresholds <- seq(0.1, 0.9, by=0.1)
   # currency data
-  currency <- openCurrency2("~/trading/EURUSD_day_fxpro_20130611.csv")
+  currency <- openCommodity("~/trading/EURUSD_day_fxpro_20130611.csv")
   trans <- openTrans(paste("~/trading/", directory, "/trans_", fileno, ".tsv", sep=''), 1)
 
   corFitness <- function(x) {
@@ -1009,7 +1085,7 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
 testCorrelationSolution <- function(directory, fileno, aspnames, asptypes, cormethod, binarize,
                                     rmzeroaspects, qinmode, maxasp, kplanets, kaspects, predtreshold) {
   # currency data
-  currency <- openCurrency2("~/trading/EURUSD_day_fxpro_20130611.csv")
+  currency <- openCommodity("~/trading/EURUSD_day_fxpro_20130611.csv")
   trans <- openTrans(paste("~/trading/", directory, "/trans_", fileno, ".tsv", sep=''), 1)
 
   # process transits
@@ -1047,6 +1123,25 @@ completeEffectList <- function(X) {
   X
 }
 
+testDailyRandomForestPredictions <- function(sample.predicted) {
+  # less predictions over the number of trading days decay
+  totdays <- length(unique(sample.predicted$Date))
+  # compare the prediction with the day effect
+  testPrediction <- function(x) ifelse(is.na(x[[1]]) | is.na(x[[2]]), NA, x[[1]]==x[[2]])
+  sample.predicted[, test := apply(.SD, 1, testPrediction), .SDcols=c('predEff','Eff')]
+  # process results
+  t1 <- prop.table(table(sample.predicted$test, useNA='always'))
+  t2 <- addmargins(table(sample.predicted$test, useNA='always'))
+  fitness <- tredays <- percent <- 0
+  # only if there are results complete results
+  if (all(c('TRUE', 'FALSE', NA) %in% names(t2))) {
+    tredays <- abs(as.numeric(t2['TRUE'])-as.numeric(t2['FALSE']))
+    percent <- round((tredays/totdays)*100, digits=2)
+  }
+
+  list(percent=percent, totdays=totdays, tredays=tredays, t1=t1, t2=t2)
+}
+
 testAggregatedPredictTransTable <- function(predict.table.aggr, trans.test, currency) {
   predict.table.aggr <- subset(predict.table.aggr, Date %in% trans.test$Date)
   predict.table.aggr <- merge(predict.table.aggr, currency, by='Date')
@@ -1075,4 +1170,8 @@ aggregatePredictTransTable <- function(predict.table, threshold) {
   predict.table.aggr[,prop := (down-up)/(down+up)]
   # proportion determines a trend that overpass the threshold
   predict.table.aggr[, predEff := lapply(prop, function(x) ifelse(x > threshold, 'down', ifelse(x < -threshold, 'up', NA)))]
+}
+
+diffDegrees <- function(x, y) {
+  abs(((x-y+180) %% 360) - 180)
 }
