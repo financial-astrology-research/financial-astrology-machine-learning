@@ -991,7 +991,7 @@ testDailyRandomForest <- function(sink_filename, planetsdir, fileno, commoditydi
   }
 
   ga("binary", fitness=dailyRFFitness, names=colNames, nBits=length(colNames),
-     monitor=gaMonitor, maxiter=500, run=20, popSize=400,
+     monitor=gaMonitor, maxiter=500, run=30, popSize=400,
      selection=gabin_rwSelection)
 
   sink()
@@ -1079,7 +1079,7 @@ testCorrelationOptimization <- function(sink_filename, directory, fileno) {
   varnames <- c('aspnames', 'asptypes', 'cormethod', 'binarize', 'rmzeroaspects', 'qinmode', 'maxasp', 'kplanets', 'kaspects', 'predtreshold')
 
   ga("real-valued", fitness=corFitness, names=varnames,
-     monitor=gaMonitor, maxiter=500, run=20, popSize=400, min=minvals, max=maxvals,
+     monitor=gaMonitor, maxiter=500, run=30, popSize=400, min=minvals, max=maxvals,
      selection=gaint_rwSelection, mutation=gaint_raMutation,
      crossover=gareal_laCrossover, population=gaint_Population)
 
