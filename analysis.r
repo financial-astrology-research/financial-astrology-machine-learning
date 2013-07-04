@@ -936,7 +936,8 @@ processPlanets <- function(planets, currency, syear, eyear) {
   list(all=planets, train=planets.train, test=planets.test)
 }
 
-testDailyRandomForest <- function(sink_filename, planetsdir, fileno, commoditydir, commodityfile, syear, eyear) {
+testDailyRandomForest <- function(sink_filename, planetsdir, fileno, commoditydir, commodityfile,
+                                  syear, eyear, modelfun='randomForest', predproc=FALSE, ...) {
   # Init clock
   ptm <- proc.time()
   if (!hasArg('sink_filename')) stop("Provide a sink filename.")
@@ -957,7 +958,7 @@ testDailyRandomForest <- function(sink_filename, planetsdir, fileno, commoditydi
     cat("---------------------------------------------------------------------------------\n")
     cat("testDailyRandomForestSolution(planetsdir=", shQuote(planetsdir), ", fileno=", fileno, ",\n", sep='')
     cat("\t commoditydir=", shQuote(commoditydir), ", commodityfile=", shQuote(commodityfile), sep='')
-    cat(", syear=", shQuote(syear), ", eyear=", shQuote(eyear), ",\n", sep='')
+    cat(", syear=", shQuote(syear), ", eyear=", shQuote(eyear), ", modelfun=", shQuote(modelfun), ", predproc=", predproc, ",\n", sep='')
     cat('\t selcols=c(', paste(shQuote(selcols), collapse=","), "))\n", sep='')
 
     # process planets
@@ -965,12 +966,16 @@ testDailyRandomForest <- function(sink_filename, planetsdir, fileno, commoditydi
     # build the samples from testing data
     samples <- generateSamples(planets.sp$test, 3)
     # build model
-    model <- randomForest(Eff ~ ., data = planets.sp$train[,c('Eff',selcols), with=FALSE], importance=FALSE, keep.forest=TRUE, ntree=300)
+    modelfun <- get(modelfun)
+    model <- modelfun(Eff ~ ., data = planets.sp$train[,c('Eff',selcols), with=FALSE], ...)
 
     # test the samples
     fitness <- list()
     for (i in 1:length(samples)) {
       predEff <- predict(model, newdata=samples[[i]][,selcols, with=FALSE])
+      if (predproc) {
+        predEff <- predEffProcessFactor(predEff)
+      }
       samples[[i]][, predEff := predEff]
       # day aggregated predictions
       test.result <- testDailyRandomForestPredictions(samples[[i]])
@@ -1014,7 +1019,6 @@ testDailyRandomForestSolution <- function(planetsdir, fileno, commoditydir, comm
   model <- modelfun(Eff ~ ., data = planets.sp$train[,c('Eff',selcols), with=FALSE], ...)
 
   # test the samples
-  fitness <- list()
   for (i in 1:length(samples)) {
     predEff <- predict(model, newdata=samples[[i]][,selcols, with=FALSE])
     if (predproc) {
@@ -1023,8 +1027,7 @@ testDailyRandomForestSolution <- function(planetsdir, fileno, commoditydir, comm
     samples[[i]][, predEff := predEff]
     # day aggregated predictions
     test.result <- testDailyRandomForestPredictions(samples[[i]])
-    cat("\t Total = ", test.result$totdays, "/ Trend = ", test.result$tredays, "/ % = ", test.result$percent, "\n")
-    fitness[[length(fitness)+1]] <- test.result$tredays
+    cat("Total = ", test.result$totdays, "/ Trend = ", test.result$tredays, "/ % = ", test.result$percent, "\n")
   }
   return(model)
 }
