@@ -1095,7 +1095,7 @@ testCorrelationSolution <- function(directory, fileno, aspnames, asptypes, corme
   # process transits
   trans.sp <- processTrans(trans, currency, aspnames, asptypes)
   # build the samples from testing data
-  samples <- generateSamples(trans.sp$test, 3)
+  samples <- generateSamples(trans.sp$test, 5)
   # generate the predict table
   predict.table <- predictTransTable(trans.sp$all, trans.sp$train, cormethod, kplanets, kaspects, binarize, rmzeroaspects, qinmode, maxasp)
 
@@ -1116,6 +1116,11 @@ testCorrelationSolution <- function(directory, fileno, aspnames, asptypes, corme
 }
 
 fitnessMeanStability <- function(fitness) {
+  # last fitness is greater due considers the complete test data we need to
+  # adjust dividing by 2 that is the rule used to generate samples.
+  fitness[[length(fitness)]] <- fitness[[length(fitness)]]/2
+  # penalize the less stable solutions removing a proportional part depending
+  # how much are deviated.
   fitness <- unlist(fitness)
   round(mean(fitness) * (1 - sd(fitness) / mean(fitness)))
 }
