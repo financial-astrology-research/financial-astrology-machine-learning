@@ -925,13 +925,14 @@ processTrans <- function(trans, currency, aspnames, asptypes) {
 }
 
 processPlanets <- function(planets, currency, syear, eyear) {
+  currency <- data.table(currency)
   sdate <- paste(syear, "-01-01", sep='')
   edate <- paste(eyear, "-01-01", sep='')
   currency.train <- subset(currency, Date > as.Date(sdate) & Date < as.Date(edate))
   currency.test <- subset(currency, Date > as.Date(edate))
   # merge with currency data splitting by test & train data
-  planets.train <- merge(planets, currency.train, by='Date')
-  planets.test <- merge(planets, currency.test, by='Date')
+  planets.train <- merge(currency.train, planets, by='Date')
+  planets.test <- merge(currency.test, planets, by='Date')
   list(all=planets, train=planets.train, test=planets.test)
 }
 
@@ -995,6 +996,42 @@ testDailyRandomForest <- function(sink_filename, planetsdir, fileno, commoditydi
      selection=gabin_rwSelection)
 
   sink()
+}
+
+testDailyRandomForestSolution <- function(planetsdir, fileno, commoditydir, commodityfile,
+                                          syear, eyear, selcols, modelfun='randomForest', predproc=FALSE, ...) {
+  # currency data
+  currency <- openCommodity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
+  planets <- openPlanets(paste("~/trading/", planetsdir, "/planets_", fileno, ".tsv", sep=''))
+  colNames <- c(paste(planetsBaseCols, 'LON', sep=''), paste(planetsBaseCols, 'LAT', sep=''), paste(planetsBaseCols, 'SP', sep=''))
+  # process planets
+  planets.sp <- processPlanets(planets, currency, syear, eyear)
+  # build the samples from testing data
+  samples <- generateSamples(planets.sp$test, 3)
+  # build model
+  #model <- rpart(as.factor(Eff) ~ ., data = planets.sp$train[,c('Eff',selcols), with=FALSE], method='class')
+  modelfun <- get(modelfun)
+  model <- modelfun(Eff ~ ., data = planets.sp$train[,c('Eff',selcols), with=FALSE], ...)
+
+  # test the samples
+  fitness <- list()
+  for (i in 1:length(samples)) {
+    predEff <- predict(model, newdata=samples[[i]][,selcols, with=FALSE])
+    if (predproc) {
+      predEff <- predEffProcessFactor(predEff)
+    }
+    samples[[i]][, predEff := predEff]
+    # day aggregated predictions
+    test.result <- testDailyRandomForestPredictions(samples[[i]])
+    cat("\t Total = ", test.result$totdays, "/ Trend = ", test.result$tredays, "/ % = ", test.result$percent, "\n")
+    fitness[[length(fitness)+1]] <- test.result$tredays
+  }
+  return(model)
+}
+
+predEffProcessFactor <- function(predEff) {
+  prediffs <- predEff[,1]-predEff[,2]
+  ifelse(prediffs >= 0,  'up', 'down')
 }
 
 testCorrelationOptimization <- function(sink_filename, directory, fileno) {
