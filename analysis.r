@@ -71,6 +71,13 @@ aspectTypesCols <- c('SUT', 'MOT', 'MET', 'VET', 'MAT', 'JUT', 'SAT', 'URT', 'NE
 # planets cols
 planetsBaseCols <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL")
 
+# planets columns names
+planetsLonCols <- paste(planetsBaseCols, 'LON', sep='')
+planetsLatCols <- paste(planetsBaseCols, 'LAT', sep='')
+planetsSpCols <- paste(planetsBaseCols, 'SP', sep='')
+planetsCombLon <- combn(planetsLonCols, 2, simplify=F)
+planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
+
 # aspects types
 aspectTypesList <- list(c('A', 'AE', 'SE', 'S'),
                         c('A', 'AE', 'SE'),
@@ -925,6 +932,12 @@ processTrans <- function(trans, currency, aspnames, asptypes) {
 }
 
 processPlanets <- function(planets, currency, syear, eyear) {
+  # calculate longitudinal differences
+  for (i in 1:length(planetsCombLon)) {
+    combname <- paste(planetsCombLon[[i]][1], planetsCombLon[[i]][2], sep='')
+    planets[, c(combname) := diffDeg(get(planetsCombLon[[i]][1]), get(planetsCombLon[[i]][2]))]
+  }
+
   currency <- data.table(currency)
   sdate <- paste(syear, "-01-01", sep='')
   edate <- paste(eyear, "-01-01", sep='')
@@ -946,7 +959,7 @@ testDailyRandomForest <- function(sink_filename, planetsdir, fileno, commoditydi
   # currency data
   currency <- openCommodity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
   planets <- openPlanets(paste("~/trading/", planetsdir, "/planets_", fileno, ".tsv", sep=''))
-  colNames <- c(paste(planetsBaseCols, 'LON', sep=''), paste(planetsBaseCols, 'LAT', sep=''), paste(planetsBaseCols, 'SP', sep=''))
+  colNames <- c(planetsLonCols, planetsSpCols, planetsCombLonCols)
   cat("\n")
 
   dailyRFFitness <- function(string) {
@@ -1221,6 +1234,6 @@ aggregatePredictTransTable <- function(predict.table, threshold) {
   predict.table.aggr[, predEff := lapply(prop, function(x) ifelse(x > threshold, 'down', ifelse(x < -threshold, 'up', NA)))]
 }
 
-diffDegrees <- function(x, y) {
+diffDeg <- function(x, y) {
   abs(((x-y+180) %% 360) - 180)
 }
