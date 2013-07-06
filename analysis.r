@@ -8,6 +8,8 @@ library(data.table)
 library(fields)
 library(reshape2)
 library(randomForest)
+library(rpart)
+library(evtree)
 library(GA)
 `%ni%` <- Negate(`%in%`)
 # no scientific notation
@@ -69,7 +71,7 @@ aspectsCombList <- aspectsList
 aspectTypesCols <- c('SUT', 'MOT', 'MET', 'VET', 'MAT', 'JUT', 'SAT', 'URT', 'NET', 'PLT')
 
 # planets cols
-planetsBaseCols <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL")
+planetsBaseCols <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "NN", "SN")
 
 # planets columns names
 planetsLonCols <- paste(planetsBaseCols, 'LON', sep='')
@@ -77,6 +79,8 @@ planetsLatCols <- paste(planetsBaseCols, 'LAT', sep='')
 planetsSpCols <- paste(planetsBaseCols, 'SP', sep='')
 planetsCombLon <- combn(planetsLonCols, 2, simplify=F)
 planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
+planetsGridLon <- expand.grid(planetsLonCols, planetsLonCols)
+planetsGridLonCols <- as.character(apply(planetsGridLon, 1, function(x) paste(x[1], 'r', x[2], sep='')))
 
 # aspects types
 aspectTypesList <- list(c('A', 'AE', 'SE', 'S'),
@@ -931,11 +935,20 @@ processTrans <- function(trans, currency, aspnames, asptypes) {
   list(all=trans.cur, train=trans.cur.train, test=trans.cur.test)
 }
 
-processPlanets <- function(planets, currency, syear, eyear) {
+processPlanets <- function(planets, currency, syear, eyear, chart) {
   # calculate longitudinal differences
   for (i in 1:length(planetsCombLon)) {
     combname <- paste(planetsCombLon[[i]][1], planetsCombLon[[i]][2], sep='')
     planets[, c(combname) := diffDeg(get(planetsCombLon[[i]][1]), get(planetsCombLon[[i]][2]))]
+  }
+
+  if (hasArg('chart')) {
+    for (i in 1:nrow(planetsGridLon)) {
+      chartCol  <- as.character(planetsGridLon[i,1])
+      planetsCol <- as.character(planetsGridLon[i,2])
+      combname <- paste(chartCol, 'r', planetsCol, sep='')
+      planets[, c(combname) := diffDeg(get(planetsCol), chart[[chartCol]][1])]
+    }
   }
 
   currency <- data.table(currency)
@@ -949,8 +962,40 @@ processPlanets <- function(planets, currency, syear, eyear) {
   list(all=planets, train=planets.train, test=planets.test)
 }
 
+colNLon <- function() {
+  c(planetsLonCols)
+}
+
+colNLat <- function() {
+  c(planetsLatCols)
+}
+
+colNSp <- function() {
+  c(planetsSpCols)
+}
+
+colNLonGrid <- function() {
+  c(planetsGridLonCols)
+}
+
+colMix1 <- function() {
+  c(planetsLonCols, planetsGridLonCols)
+}
+
+colMix2 <- function() {
+  c(planetsLonCols, planetsGridLonCols, planetsSpCols)
+}
+
+colMix3 <- function() {
+  c(planetsLonCols, planetsGridLonCols, planetsSpCols)
+}
+
+colAll <- function() {
+  c(planetsLonCols, planetsSpCols, planetsLatCols, planetsCombLonCols, planetsGridLonCols)
+}
+
 testDailyRandomForest <- function(sink_filename, planetsdir, fileno, commoditydir, commodityfile,
-                                  syear, eyear, modelfun='randomForest', predproc=FALSE, ...) {
+                                  syear, eyear, modelfun='randomForest', predproc=FALSE, colNames, chartfile, ...) {
   # Init clock
   ptm <- proc.time()
   if (!hasArg('sink_filename')) stop("Provide a sink filename.")
@@ -959,7 +1004,7 @@ testDailyRandomForest <- function(sink_filename, planetsdir, fileno, commoditydi
   # currency data
   currency <- openCommodity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
   planets <- openPlanets(paste("~/trading/", planetsdir, "/planets_", fileno, ".tsv", sep=''))
-  colNames <- c(planetsLonCols, planetsSpCols, planetsCombLonCols)
+  if (hasArg('chartfile')) chart <- fread(paste("~/trading/charts/", chartfile, '.tsv', sep=''), header = T, sep="\t", na.strings="")
   cat("\n")
 
   dailyRFFitness <- function(string) {
@@ -972,10 +1017,17 @@ testDailyRandomForest <- function(sink_filename, planetsdir, fileno, commoditydi
     cat("testDailyRandomForestSolution(planetsdir=", shQuote(planetsdir), ", fileno=", fileno, ",\n", sep='')
     cat("\t commoditydir=", shQuote(commoditydir), ", commodityfile=", shQuote(commodityfile), sep='')
     cat(", syear=", shQuote(syear), ", eyear=", shQuote(eyear), ", modelfun=", shQuote(modelfun), ", predproc=", predproc, ",\n", sep='')
+    cat(", chartfile=", shQuote(chartfile), ", colNames=", shQuote(colNames), ",\n", sep='')
     cat('\t selcols=c(', paste(shQuote(selcols), collapse=","), "))\n", sep='')
 
     # process planets
-    planets.sp <- processPlanets(planets, currency, syear, eyear)
+    if (exists('chart')) {
+      planets.sp <- processPlanets(planets, currency, syear, eyear, chart)
+    }
+    else {
+      planets.sp <- processPlanets(planets, currency, syear, eyear)
+    }
+
     # build the samples from testing data
     samples <- generateSamples(planets.sp$test, 3)
     # build model
@@ -1010,7 +1062,7 @@ testDailyRandomForest <- function(sink_filename, planetsdir, fileno, commoditydi
   }
 
   ga("binary", fitness=dailyRFFitness, names=colNames, nBits=length(colNames),
-     monitor=gaMonitor, maxiter=500, run=30, popSize=400,
+     monitor=gaMonitor, maxiter=1000, run=50, popSize=500,
      selection=gabin_rwSelection)
 
   sink()
@@ -1236,4 +1288,11 @@ aggregatePredictTransTable <- function(predict.table, threshold) {
 
 diffDeg <- function(x, y) {
   abs(((x-y+180) %% 360) - 180)
+}
+
+#ev <- evtree(choice ~ ., data = BBBClub, minbucket = 10, maxdepth = 2)
+#rp <- as.party(rpart(choice ~ ., data = BBBClub, minbucket = 10))
+#ct <- ctree(choice ~ ., data = BBBClub, minbucket = 10, mincrit = 0.99)
+runtest <- function() {
+  testDailyRandomForest('output21','dplanets',2,'currency','EURUSD_fxpro','1998','2012','rpart',T,colMix1(),'bceborn')
 }
