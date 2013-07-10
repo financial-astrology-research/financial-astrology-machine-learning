@@ -556,7 +556,7 @@ historyAspectsCorrelation <- function(trans, trans.hist, cor_method, kplanets, k
 
 openPlanets <- function(planets.file, chart, cusorbs) {
   planets.file <- npath(planets.file)
-  planets <- fread(planets.file, header = T, sep="\t", na.strings="", verbose = F)
+  planets <- fread(planets.file, sep="\t", na.strings="", verbose = F)
   planets$Date <- as.Date(planets$Date, format="%Y-%m-%d")
 
   # calculate longitudinal differences
@@ -831,10 +831,10 @@ predTableCount <- function(pred.table, threshold) {
   pred.table[, predEff := lapply(prop, function(x) ifelse(x > threshold, 'down', ifelse(x < -1*threshold, 'up', NA)))]
 }
 
-testRandomForest <- function(sink_filename, sigthreshold) {
-  if (!hasArg('sink_filename')) stop("Provide a sink filename.")
-  sink_filename <- paste("~/trading/predict/", sink_filename, ".txt", sep='')
-  sink(npath(sink_filename), append=TRUE)
+testRandomForest <- function(sinkfile, sigthreshold) {
+  if (!hasArg('sinkfile')) stop("Provide a sink filename.")
+  sinkfile <- paste("~/trading/predict/", sinkfile, ".txt", sep='')
+  sink(npath(sinkfile), append=TRUE)
   transOpts <- buildTransOpts()
 
   for (n in 1:nrow(transOpts)) {
@@ -1009,13 +1009,13 @@ colAll <- function() {
   c(planetsLonCols, planetsSpCols, planetsLatCols, planetsCombLonCols, planetsGridLonCols)
 }
 
-testDailyRandomForest <- function(sink_filename, planetsdir, fileno, commoditydir, commodityfile,
+testDailyRandomForest <- function(sinkfile, planetsdir, fileno, commoditydir, commodityfile,
                                   sdate, edate, modelfun='randomForest', predproc=FALSE, colNames, chartfile, ...) {
   # Init clock
   ptm <- proc.time()
-  if (!hasArg('sink_filename')) stop("Provide a sink filename.")
-  sink_filename <- paste("~/trading/predict/", sink_filename, ".txt", sep='')
-  sink(npath(sink_filename), append=TRUE)
+  if (!hasArg('sinkfile')) stop("Provide a sink filename.")
+  sinkfile <- paste("~/trading/predict/", sinkfile, ".txt", sep='')
+  sink(npath(sinkfile), append=TRUE)
   # currency data
   currency <- openCommodity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
   if (hasArg('chartfile')) chart <- fread(paste("~/trading/charts/", chartfile, '.tsv', sep=''), header = T, sep="\t", na.strings="")
@@ -1130,12 +1130,12 @@ predEffProcessFactor <- function(predEff) {
   ifelse(prediffs >= 0,  'up', 'down')
 }
 
-testCorrelationOptimization <- function(sink_filename, directory, fileno) {
+testCorrelationOptimization <- function(sinkfile, directory, fileno) {
   # Init clock
   ptm <- proc.time()
-  if (!hasArg('sink_filename')) stop("Provide a sink filename.")
-  sink_filename <- paste("~/trading/predict/", sink_filename, ".txt", sep='')
-  sink(npath(sink_filename), append=TRUE)
+  if (!hasArg('sinkfile')) stop("Provide a sink filename.")
+  sinkfile <- paste("~/trading/predict/", sinkfile, ".txt", sep='')
+  sink(npath(sinkfile), append=TRUE)
   # correlation methods to test
   corMethods <- c('canberra','euclidian','binary')
   # binarize
@@ -1356,23 +1356,39 @@ plotGridAspectsEffect <- function(plotfile, ds, threshold) {
   return(tdiffs)
 }
 
-testDailyPlanetsOrbsGA <- function(planetsdir, fileno, commoditydir, commodityfile, sdate, edate, chartfile) {
+testDailyPlanetsOrbsGA <- function(sinkfile, planetsdir, fileno, commoditydir, commodityfile, sdate, edate, chartfile) {
+  # sink output
+  if (!hasArg('sinkfile')) stop("Provide a sink filename.")
+  sinkfile <- paste("~/trading/predict/", sinkfile, ".txt", sep='')
+  sink(npath(sinkfile), append=TRUE)
   # currency data
   currency <- openCommodity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
+  chart <- fread(paste("~/trading/charts/", chartfile, '.tsv', sep=''), sep="\t", na.strings="")
   itest <- 1
+  # Init clock
+  ptm <- proc.time()
 
   testDailyPlanetsOrbs <- function(cusorbs) {
-    chart <- fread(paste("~/trading/charts/", chartfile, '.tsv', sep=''), header = T, sep="\t", na.strings="")
+    looptm <- proc.time()
+    # round orbs to 2 decimals
+    cusorbs <- round(cusorbs, digits=2)
     planets <- openPlanets(paste("~/trading/", planetsdir, "/planets_", fileno, ".tsv", sep=''), chart, cusorbs)
     # process planets
     planets.sp <- processPlanets(planets, currency, sdate, edate)
     # process analysis
     fitness <- plotGridAspectsEffect(paste(chartfile, '-', itest), planets.sp$train, 30)
+
+    cat("\n---------------------------------------------------------------------------------\n")
     cat("Test #", itest, "\n", sep='')
     cat('\t cusorbs=c(', paste(cusorbs, collapse=","), ")\n", sep='')
-    cat("# Patterns =", length(fitness), "\n", sep='')
-    cat("%%%", median(unlist(fitness)), "%%%%%%%%%%%%%%%%%%%%\n\n")
+    cat("###", length(fitness), " / %%% =", median(unlist(fitness)), "\n\n")
+    # how long taked to calculate
+    cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
     itest <<- itest+1
+
+    # collect garbage
+    rm(planets, planets.sp)
+    gc()
     return(length(fitness))
   }
 
@@ -1383,4 +1399,6 @@ testDailyPlanetsOrbsGA <- function(planetsdir, fileno, commoditydir, commodityfi
   ga("real-valued", fitness=testDailyPlanetsOrbs, names=varnames,
      monitor=gaMonitor, maxiter=50, run=30, popSize=10,
      min=minvals, max=maxvals, selection=gareal_rwSelection)
+
+  sink()
 }
