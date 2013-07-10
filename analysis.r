@@ -1332,9 +1332,9 @@ runtest <- function() {
 
 vplayout <- function(x, y) viewport(layout.pos.row = x, layout.pos.col = y)
 
-plotGridAspectsEffect <- function(plotfile, ds, threshold) {
+plotGridAspectsEffect <- function(plotfile, ds, threshold, resplot=T) {
   tdiffs <- list()
-  pdf(paste("~/", plotfile, ".pdf", sep=''), width = 11, height = 8, family='Helvetica', pointsize=12)
+  if (resplot) pdf(npath(paste("~/", plotfile, ".pdf", sep='')), width = 11, height = 8, family='Helvetica', pointsize=12)
   for (i in 1:length(planetsGridAspCols)) {
     ##print(ggplot(aes(x=get(selcols[[i]])), data=ds) + facet_grid(Eff ~ .) + geom_density(adjust=1/2) + xlab(selcols[[i]]))
     dsp <- subset(ds, get(planetsGridAspCols[[i]]) == TRUE)
@@ -1343,16 +1343,18 @@ plotGridAspectsEffect <- function(plotfile, ds, threshold) {
       tdiff <- as.numeric(round(abs(t1['down']-t1[['up']])*100, digits=2))
       if (tdiff >= threshold) {
         tdiffs[[length(tdiffs)+1]] <- tdiff
-        p1 <- ggplot(aes_string(x=planetsGridAspCols[[i]], fill="Eff"), data=dsp) + geom_bar(position="fill") + xlab(planetsGridAspCols[[i]]) + scale_y_continuous(breaks=seq(from=0, to=1, by=0.1))
-        p2 <- ggplot(aes_string(x=planetsGridAspCols[[i]], fill="Eff"), data=dsp) + geom_bar() + xlab(planetsGridAspCols[[i]])
-        grid.newpage()
-        pushViewport(viewport(layout = grid.layout(1, 2)))
-        print(p1, vp = vplayout(1, 1))
-        print(p2, vp = vplayout(1, 2))
+        if (resplot) {
+          p1 <- ggplot(aes_string(x=planetsGridAspCols[[i]], fill="Eff"), data=dsp) + geom_bar(position="fill") + xlab(planetsGridAspCols[[i]]) + scale_y_continuous(breaks=seq(from=0, to=1, by=0.1))
+          p2 <- ggplot(aes_string(x=planetsGridAspCols[[i]], fill="Eff"), data=dsp) + geom_bar() + xlab(planetsGridAspCols[[i]])
+          grid.newpage()
+          pushViewport(viewport(layout = grid.layout(1, 2)))
+          print(p1, vp = vplayout(1, 1))
+          print(p2, vp = vplayout(1, 2))
+        }
       }
     }
   }
-  dev.off()
+  if (resplot) dev.off()
   return(tdiffs)
 }
 
@@ -1363,7 +1365,7 @@ testDailyPlanetsOrbsGA <- function(sinkfile, planetsdir, fileno, commoditydir, c
   sink(npath(sinkfile), append=TRUE)
   # currency data
   currency <- openCommodity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
-  chart <- fread(paste("~/trading/charts/", chartfile, '.tsv', sep=''), sep="\t", na.strings="")
+  chart <- fread(npath(paste("~/trading/charts/", chartfile, '.tsv', sep='')), sep="\t", na.strings="")
   itest <- 1
   # Init clock
   ptm <- proc.time()
@@ -1376,14 +1378,14 @@ testDailyPlanetsOrbsGA <- function(sinkfile, planetsdir, fileno, commoditydir, c
     # process planets
     planets.sp <- processPlanets(planets, currency, sdate, edate)
     # process analysis
-    fitness <- plotGridAspectsEffect(paste(chartfile, '-', itest), planets.sp$train, 30)
+    fitness <- plotGridAspectsEffect(paste(chartfile, '-', itest), planets.sp$train, 30, F)
 
     cat("\n---------------------------------------------------------------------------------\n")
     cat("Test #", itest, "\n", sep='')
     cat('\t cusorbs=c(', paste(cusorbs, collapse=","), ")\n", sep='')
+    cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
     cat("###", length(fitness), " / %%% =", median(unlist(fitness)), "\n\n")
     # how long taked to calculate
-    cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
     itest <<- itest+1
 
     # collect garbage
