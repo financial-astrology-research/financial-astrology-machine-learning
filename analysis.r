@@ -935,7 +935,7 @@ processTrans <- function(trans, currency, aspnames, asptypes) {
   list(all=trans.cur, train=trans.cur.train, test=trans.cur.test)
 }
 
-processPlanets <- function(planets, currency, syear, eyear, chart) {
+processPlanets <- function(planets, currency, sdate, edate, chart) {
   # calculate longitudinal differences
   for (i in 1:length(planetsCombLon)) {
     combname <- paste(planetsCombLon[[i]][1], planetsCombLon[[i]][2], sep='')
@@ -952,8 +952,6 @@ processPlanets <- function(planets, currency, syear, eyear, chart) {
   }
 
   currency <- data.table(currency)
-  sdate <- paste(syear, "-01-01", sep='')
-  edate <- paste(eyear, "-01-01", sep='')
   currency.train <- subset(currency, Date > as.Date(sdate) & Date < as.Date(edate))
   currency.test <- subset(currency, Date > as.Date(edate))
   # merge with currency data splitting by test & train data
@@ -995,7 +993,7 @@ colAll <- function() {
 }
 
 testDailyRandomForest <- function(sink_filename, planetsdir, fileno, commoditydir, commodityfile,
-                                  syear, eyear, modelfun='randomForest', predproc=FALSE, colNames, chartfile, ...) {
+                                  sdate, edate, modelfun='randomForest', predproc=FALSE, colNames, chartfile, ...) {
   # Init clock
   ptm <- proc.time()
   if (!hasArg('sink_filename')) stop("Provide a sink filename.")
@@ -1016,16 +1014,16 @@ testDailyRandomForest <- function(sink_filename, planetsdir, fileno, commoditydi
     cat("---------------------------------------------------------------------------------\n")
     cat("testDailyRandomForestSolution(planetsdir=", shQuote(planetsdir), ", fileno=", fileno, ",\n", sep='')
     cat("\t commoditydir=", shQuote(commoditydir), ", commodityfile=", shQuote(commodityfile), sep='')
-    cat(", syear=", shQuote(syear), ", eyear=", shQuote(eyear), ", modelfun=", shQuote(modelfun), ", predproc=", predproc, ",\n", sep='')
-    cat(", chartfile=", shQuote(chartfile), ", colNames=", shQuote(colNames), ",\n", sep='')
+    cat(", sdate=", shQuote(sdate), ", edate=", shQuote(edate), ", modelfun=", shQuote(modelfun), sep='')
+    cat(", predproc=", predproc, ", chartfile=", shQuote(chartfile), ",\n", sep='')
     cat('\t selcols=c(', paste(shQuote(selcols), collapse=","), "))\n", sep='')
 
     # process planets
     if (exists('chart')) {
-      planets.sp <- processPlanets(planets, currency, syear, eyear, chart)
+      planets.sp <- processPlanets(planets, currency, sdate, edate, chart)
     }
     else {
-      planets.sp <- processPlanets(planets, currency, syear, eyear)
+      planets.sp <- processPlanets(planets, currency, sdate, edate)
     }
 
     # build the samples from testing data
@@ -1069,13 +1067,22 @@ testDailyRandomForest <- function(sink_filename, planetsdir, fileno, commoditydi
 }
 
 testDailyRandomForestSolution <- function(planetsdir, fileno, commoditydir, commodityfile,
-                                          syear, eyear, selcols, modelfun='randomForest', predproc=FALSE, ...) {
+                                          sdate, edate, selcols, modelfun='randomForest', predproc=FALSE, chartfile, ...) {
   # currency data
   currency <- openCommodity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
   planets <- openPlanets(paste("~/trading/", planetsdir, "/planets_", fileno, ".tsv", sep=''))
   colNames <- c(paste(planetsBaseCols, 'LON', sep=''), paste(planetsBaseCols, 'LAT', sep=''), paste(planetsBaseCols, 'SP', sep=''))
+  if (hasArg('chartfile')) chart <- fread(paste("~/trading/charts/", chartfile, '.tsv', sep=''), header = T, sep="\t", na.strings="")
   # process planets
-  planets.sp <- processPlanets(planets, currency, syear, eyear)
+
+  # process planets
+  if (exists('chart')) {
+    planets.sp <- processPlanets(planets, currency, sdate, edate, chart)
+  }
+  else {
+    planets.sp <- processPlanets(planets, currency, sdate, edate)
+  }
+
   # build the samples from testing data
   samples <- generateSamples(planets.sp$test, 3)
   # build model
@@ -1287,7 +1294,14 @@ aggregatePredictTransTable <- function(predict.table, threshold) {
 }
 
 diffDeg <- function(x, y) {
-  abs(((x-y+180) %% 360) - 180)
+  vals <- abs(((x-y+180) %% 360) - 180)
+  aspects = c(0, 30, 45, 60, 72, 90, 120, 135, 144, 150, 180, 18, 40, 52, 80, 104, 108, 155, 160)
+  orbs    = c(3,  1,  1,  1,  1,  3,   3,   1,   1,   1,   3,  1,  1,  1,  1,   1,   1,   1,   1)
+  for (i in 1:length(aspects)) {
+    vals[vals >= aspects[i]-orbs[i] & vals <= aspects[i]+orbs[i]] <- aspects[i]
+  }
+  vals[vals %ni% aspects] <- NA
+  return(vals)
 }
 
 #ev <- evtree(choice ~ ., data = BBBClub, minbucket = 10, maxdepth = 2)
@@ -1296,3 +1310,12 @@ diffDeg <- function(x, y) {
 runtest <- function() {
   testDailyRandomForest('output21','dplanets',2,'currency','EURUSD_fxpro','1998','2012','rpart',T,colMix1(),'bceborn')
 }
+
+#pdf("~/colseffect2.pdf", width = 11, height = 8, family='Helvetica', pointsize=12)
+#selcols  <- colAll()
+#for (i in 1:length(selcols)) {
+  ##print(ggplot(aes(x=get(selcols[[i]])), data=ds) + facet_grid(Eff ~ .) + geom_density(adjust=1/2) + xlab(selcols[[i]]))
+  #maxval <- max(with(ds, get(selcols[[i]])))
+  #print(ggplot(aes(x=get(selcols[[i]]), fill=Eff), data=ds) + geom_bar(position="fill") + xlab(selcols[[i]]))
+#}
+#dev.off()
