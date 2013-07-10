@@ -73,6 +73,10 @@ aspectTypesCols <- c('SUT', 'MOT', 'MET', 'VET', 'MAT', 'JUT', 'SAT', 'URT', 'NE
 # planets cols
 planetsBaseCols <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "NN", "SN")
 
+# Aspects and orbs
+aspects = c(0, 30, 45, 60, 72, 90, 120, 135, 144, 150, 180, 18, 40, 52, 80, 104, 108, 155, 160)
+orbs    = c(3,  1,  1,  1,  1,  3,   3,   1,   1,   1,   3,  1,  1,  1,  1,   1,   1,   1,   1)
+
 # planets columns names
 planetsLonCols <- paste(planetsBaseCols, 'LON', sep='')
 planetsLatCols <- paste(planetsBaseCols, 'LAT', sep='')
@@ -81,6 +85,7 @@ planetsCombLon <- combn(planetsLonCols, 2, simplify=F)
 planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
 planetsGridLon <- expand.grid(planetsLonCols, planetsLonCols)
 planetsGridLonCols <- as.character(apply(planetsGridLon, 1, function(x) paste(x[1], 'r', x[2], sep='')))
+planetsGridAspCols <- as.character(apply(expand.grid(planetsGridLonCols, aspects), 1, function(x) paste(x[1], '.', as.numeric(x[2]), sep='')))
 
 # aspects types
 aspectTypesList <- list(c('A', 'AE', 'SE', 'S'),
@@ -549,10 +554,37 @@ historyAspectsCorrelation <- function(trans, trans.hist, cor_method, kplanets, k
   data.table(predtable)
 }
 
-openPlanets <- function(planets.file) {
+openPlanets <- function(planets.file, chart, cusorbs) {
   planets.file <- npath(planets.file)
   planets <- fread(planets.file, header = T, sep="\t", na.strings="", verbose = F)
   planets$Date <- as.Date(planets$Date, format="%Y-%m-%d")
+
+  # calculate longitudinal differences
+  for (i in 1:length(planetsCombLon)) {
+    combname <- paste(planetsCombLon[[i]][1], planetsCombLon[[i]][2], sep='')
+    planets[, c(combname) := diffDeg(get(planetsCombLon[[i]][1]), get(planetsCombLon[[i]][2]), orbs)]
+  }
+
+  if (hasArg('chart')) {
+    if (hasArg('cusorbs')) orbs <- cusorbs
+    if (length(cusorbs) != length(orbs)) {
+      stop("There are missing custom orbs")
+    }
+    for (i in 1:nrow(planetsGridLon)) {
+      chartCol  <- as.character(planetsGridLon[i,1])
+      planetsCol <- as.character(planetsGridLon[i,2])
+      combname <- paste(chartCol, 'r', planetsCol, sep='')
+      planets[, c(combname) := diffDeg(get(planetsCol), chart[[chartCol]][1], orbs)]
+      for (j in 1:length(aspects)) {
+        combnameasp <- c(paste(combname, '.', aspects[j], sep=''))
+        # initialize
+        planets[, c(combnameasp) := NA]
+        # set to 1 the matching rows
+        planets[get(combname)==aspects[j], c(combnameasp) := 1]
+      }
+    }
+  }
+
   return(planets)
 }
 
@@ -935,22 +967,7 @@ processTrans <- function(trans, currency, aspnames, asptypes) {
   list(all=trans.cur, train=trans.cur.train, test=trans.cur.test)
 }
 
-processPlanets <- function(planets, currency, sdate, edate, chart) {
-  # calculate longitudinal differences
-  for (i in 1:length(planetsCombLon)) {
-    combname <- paste(planetsCombLon[[i]][1], planetsCombLon[[i]][2], sep='')
-    planets[, c(combname) := diffDeg(get(planetsCombLon[[i]][1]), get(planetsCombLon[[i]][2]))]
-  }
-
-  if (hasArg('chart')) {
-    for (i in 1:nrow(planetsGridLon)) {
-      chartCol  <- as.character(planetsGridLon[i,1])
-      planetsCol <- as.character(planetsGridLon[i,2])
-      combname <- paste(chartCol, 'r', planetsCol, sep='')
-      planets[, c(combname) := diffDeg(get(planetsCol), chart[[chartCol]][1])]
-    }
-  }
-
+processPlanets <- function(planets, currency, sdate, edate) {
   currency <- data.table(currency)
   currency.train <- subset(currency, Date > as.Date(sdate) & Date < as.Date(edate))
   currency.test <- subset(currency, Date > as.Date(edate))
@@ -1001,8 +1018,16 @@ testDailyRandomForest <- function(sink_filename, planetsdir, fileno, commoditydi
   sink(npath(sink_filename), append=TRUE)
   # currency data
   currency <- openCommodity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
-  planets <- openPlanets(paste("~/trading/", planetsdir, "/planets_", fileno, ".tsv", sep=''))
   if (hasArg('chartfile')) chart <- fread(paste("~/trading/charts/", chartfile, '.tsv', sep=''), header = T, sep="\t", na.strings="")
+
+  # process planets
+  if (exists('chart')) {
+    planets <- openPlanets(paste("~/trading/", planetsdir, "/planets_", fileno, ".tsv", sep=''), chart)
+  }
+  else {
+    planets <- openPlanets(paste("~/trading/", planetsdir, "/planets_", fileno, ".tsv", sep=''))
+  }
+
   cat("\n")
 
   dailyRFFitness <- function(string) {
@@ -1019,12 +1044,7 @@ testDailyRandomForest <- function(sink_filename, planetsdir, fileno, commoditydi
     cat('\t selcols=c(', paste(shQuote(selcols), collapse=","), "))\n", sep='')
 
     # process planets
-    if (exists('chart')) {
-      planets.sp <- processPlanets(planets, currency, sdate, edate, chart)
-    }
-    else {
-      planets.sp <- processPlanets(planets, currency, sdate, edate)
-    }
+    planets.sp <- processPlanets(planets, currency, sdate, edate)
 
     # build the samples from testing data
     samples <- generateSamples(planets.sp$test, 3)
@@ -1070,18 +1090,19 @@ testDailyRandomForestSolution <- function(planetsdir, fileno, commoditydir, comm
                                           sdate, edate, selcols, modelfun='randomForest', predproc=FALSE, chartfile, ...) {
   # currency data
   currency <- openCommodity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
-  planets <- openPlanets(paste("~/trading/", planetsdir, "/planets_", fileno, ".tsv", sep=''))
   colNames <- c(paste(planetsBaseCols, 'LON', sep=''), paste(planetsBaseCols, 'LAT', sep=''), paste(planetsBaseCols, 'SP', sep=''))
   if (hasArg('chartfile')) chart <- fread(paste("~/trading/charts/", chartfile, '.tsv', sep=''), header = T, sep="\t", na.strings="")
-  # process planets
 
   # process planets
   if (exists('chart')) {
-    planets.sp <- processPlanets(planets, currency, sdate, edate, chart)
+    planets <- openPlanets(paste("~/trading/", planetsdir, "/planets_", fileno, ".tsv", sep=''), chart)
   }
   else {
-    planets.sp <- processPlanets(planets, currency, sdate, edate)
+    planets <- openPlanets(paste("~/trading/", planetsdir, "/planets_", fileno, ".tsv", sep=''))
   }
+
+  # process planets
+  planets.sp <- processPlanets(planets, currency, sdate, edate)
 
   # build the samples from testing data
   samples <- generateSamples(planets.sp$test, 3)
@@ -1293,10 +1314,8 @@ aggregatePredictTransTable <- function(predict.table, threshold) {
   predict.table.aggr[, predEff := lapply(prop, function(x) ifelse(x > threshold, 'down', ifelse(x < -threshold, 'up', NA)))]
 }
 
-diffDeg <- function(x, y) {
+diffDeg <- function(x, y, orbs) {
   vals <- abs(((x-y+180) %% 360) - 180)
-  aspects = c(0, 30, 45, 60, 72, 90, 120, 135, 144, 150, 180, 18, 40, 52, 80, 104, 108, 155, 160)
-  orbs    = c(3,  1,  1,  1,  1,  3,   3,   1,   1,   1,   3,  1,  1,  1,  1,   1,   1,   1,   1)
   for (i in 1:length(aspects)) {
     vals[vals >= aspects[i]-orbs[i] & vals <= aspects[i]+orbs[i]] <- aspects[i]
   }
@@ -1311,11 +1330,57 @@ runtest <- function() {
   testDailyRandomForest('output21','dplanets',2,'currency','EURUSD_fxpro','1998','2012','rpart',T,colMix1(),'bceborn')
 }
 
-#pdf("~/colseffect2.pdf", width = 11, height = 8, family='Helvetica', pointsize=12)
-#selcols  <- colAll()
-#for (i in 1:length(selcols)) {
-  ##print(ggplot(aes(x=get(selcols[[i]])), data=ds) + facet_grid(Eff ~ .) + geom_density(adjust=1/2) + xlab(selcols[[i]]))
-  #maxval <- max(with(ds, get(selcols[[i]])))
-  #print(ggplot(aes(x=get(selcols[[i]]), fill=Eff), data=ds) + geom_bar(position="fill") + xlab(selcols[[i]]))
-#}
-#dev.off()
+vplayout <- function(x, y) viewport(layout.pos.row = x, layout.pos.col = y)
+
+plotGridAspectsEffect <- function(plotfile, ds, threshold) {
+  tdiffs <- list()
+  pdf(paste("~/", plotfile, ".pdf", sep=''), width = 11, height = 8, family='Helvetica', pointsize=12)
+  for (i in 1:length(planetsGridAspCols)) {
+    ##print(ggplot(aes(x=get(selcols[[i]])), data=ds) + facet_grid(Eff ~ .) + geom_density(adjust=1/2) + xlab(selcols[[i]]))
+    dsp <- subset(ds, get(planetsGridAspCols[[i]]) == TRUE)
+    if (nrow(dsp) > 0) {
+      t1 <- prop.table(table(dsp$Eff))
+      tdiff <- as.numeric(round(abs(t1['down']-t1[['up']])*100, digits=2))
+      if (tdiff >= threshold) {
+        tdiffs[[length(tdiffs)+1]] <- tdiff
+        p1 <- ggplot(aes_string(x=planetsGridAspCols[[i]], fill="Eff"), data=dsp) + geom_bar(position="fill") + xlab(planetsGridAspCols[[i]]) + scale_y_continuous(breaks=seq(from=0, to=1, by=0.1))
+        p2 <- ggplot(aes_string(x=planetsGridAspCols[[i]], fill="Eff"), data=dsp) + geom_bar() + xlab(planetsGridAspCols[[i]])
+        grid.newpage()
+        pushViewport(viewport(layout = grid.layout(1, 2)))
+        print(p1, vp = vplayout(1, 1))
+        print(p2, vp = vplayout(1, 2))
+      }
+    }
+  }
+  dev.off()
+  return(tdiffs)
+}
+
+testDailyPlanetsOrbsGA <- function(planetsdir, fileno, commoditydir, commodityfile, sdate, edate, chartfile) {
+  # currency data
+  currency <- openCommodity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
+  itest <- 1
+
+  testDailyPlanetsOrbs <- function(cusorbs) {
+    chart <- fread(paste("~/trading/charts/", chartfile, '.tsv', sep=''), header = T, sep="\t", na.strings="")
+    planets <- openPlanets(paste("~/trading/", planetsdir, "/planets_", fileno, ".tsv", sep=''), chart, cusorbs)
+    # process planets
+    planets.sp <- processPlanets(planets, currency, sdate, edate)
+    # process analysis
+    fitness <- plotGridAspectsEffect(paste(chartfile, '-', itest), planets.sp$train, 30)
+    cat("Test #", itest, "\n", sep='')
+    cat('\t cusorbs=c(', paste(cusorbs, collapse=","), ")\n", sep='')
+    cat("# Patterns =", length(fitness), "\n", sep='')
+    cat("%%%", median(unlist(fitness)), "%%%%%%%%%%%%%%%%%%%%\n\n")
+    itest <<- itest+1
+    return(length(fitness))
+  }
+
+  minvals = c(0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5)
+  maxvals = c(4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0)
+  varnames = c('0', '30', '45', '60', '72', '90', '120', '135', '144', '150', '180', '18', '40', '52', '80', '104', '108', '155', '160')
+
+  ga("real-valued", fitness=testDailyPlanetsOrbs, names=varnames,
+     monitor=gaMonitor, maxiter=50, run=30, popSize=10,
+     min=minvals, max=maxvals, selection=gareal_rwSelection)
+}
