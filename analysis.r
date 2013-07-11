@@ -85,7 +85,7 @@ planetsCombLon <- combn(planetsLonCols, 2, simplify=F)
 planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
 planetsGridLon <- expand.grid(planetsLonCols, planetsLonCols)
 planetsGridLonCols <- as.character(apply(planetsGridLon, 1, function(x) paste(x[1], 'r', x[2], sep='')))
-planetsGridAspCols <- as.character(apply(expand.grid(planetsGridLonCols, aspects), 1, function(x) paste(x[1], '.', as.numeric(x[2]), sep='')))
+planetsGridAspCols <- as.character(apply(expand.grid(planetsGridLonCols, aspects), 1, function(x) paste(x[1], '_', as.numeric(x[2]), sep='')))
 
 # aspects types
 aspectTypesList <- list(c('A', 'AE', 'SE', 'S'),
@@ -566,23 +566,21 @@ openPlanets <- function(planets.file, chart, cusorbs) {
   }
 
   if (hasArg('chart')) {
-    if (hasArg('cusorbs')) orbs <- cusorbs
-    if (length(cusorbs) != length(orbs)) {
-      stop("There are missing custom orbs")
+    if (hasArg('cusorbs')) {
+      orbs <- cusorbs
+      if (length(cusorbs) != length(orbs)) {
+        stop("There are missing custom orbs")
+      }
     }
     for (i in 1:nrow(planetsGridLon)) {
       chartCol  <- as.character(planetsGridLon[i,1])
       planetsCol <- as.character(planetsGridLon[i,2])
       combname <- paste(chartCol, 'r', planetsCol, sep='')
       planets[, c(combname) := diffDeg(get(planetsCol), chart[[chartCol]][1], orbs)]
-      for (j in 1:length(aspects)) {
-        combnameasp <- c(paste(combname, '.', aspects[j], sep=''))
-        # initialize
-        planets[, c(combnameasp) := NA]
-        # set to 1 the matching rows
-        planets[get(combname)==aspects[j], c(combnameasp) := 1]
-      }
     }
+    # convert to long format and then to wide to build a column for each planetrad+planet+aspect
+    planets <- melt(planets, id.var=c('Date'), measure.var=planetsGridLonCols)
+    planets <- data.table(dcast(planets, Date ~ variable+value))
   }
 
   return(planets)
@@ -1333,19 +1331,20 @@ runtest <- function() {
 vplayout <- function(x, y) viewport(layout.pos.row = x, layout.pos.col = y)
 
 plotGridAspectsEffect <- function(plotfile, ds, threshold, resplot=T) {
+  selCols <- planetsGridAspCols[planetsGridAspCols %in% colnames(ds)]
   tdiffs <- list()
   if (resplot) pdf(npath(paste("~/", plotfile, ".pdf", sep='')), width = 11, height = 8, family='Helvetica', pointsize=12)
-  for (i in 1:length(planetsGridAspCols)) {
+  for (i in 1:length(selCols)) {
     ##print(ggplot(aes(x=get(selcols[[i]])), data=ds) + facet_grid(Eff ~ .) + geom_density(adjust=1/2) + xlab(selcols[[i]]))
-    dsp <- subset(ds, get(planetsGridAspCols[[i]]) == TRUE)
+    dsp <- subset(ds, get(selCols[[i]]) >= 0)
     if (nrow(dsp) > 0) {
       t1 <- prop.table(table(dsp$Eff))
       tdiff <- as.numeric(round(abs(t1['down']-t1[['up']])*100, digits=2))
       if (tdiff >= threshold) {
         tdiffs[[length(tdiffs)+1]] <- tdiff
         if (resplot) {
-          p1 <- ggplot(aes_string(x=planetsGridAspCols[[i]], fill="Eff"), data=dsp) + geom_bar(position="fill") + xlab(planetsGridAspCols[[i]]) + scale_y_continuous(breaks=seq(from=0, to=1, by=0.1))
-          p2 <- ggplot(aes_string(x=planetsGridAspCols[[i]], fill="Eff"), data=dsp) + geom_bar() + xlab(planetsGridAspCols[[i]])
+          p1 <- ggplot(aes_string(x=selCols[[i]], fill="Eff"), data=dsp) + geom_bar(position="fill") + xlab(selCols[[i]]) + scale_y_continuous(breaks=seq(from=0, to=1, by=0.1))
+          p2 <- ggplot(aes_string(x=selCols[[i]], fill="Eff"), data=dsp) + geom_bar() + xlab(selCols[[i]])
           grid.newpage()
           pushViewport(viewport(layout = grid.layout(1, 2)))
           print(p1, vp = vplayout(1, 1))
@@ -1399,7 +1398,7 @@ testDailyPlanetsOrbsGA <- function(sinkfile, planetsdir, fileno, commoditydir, c
   varnames = c('0', '30', '45', '60', '72', '90', '120', '135', '144', '150', '180', '18', '40', '52', '80', '104', '108', '155', '160')
 
   ga("real-valued", fitness=testDailyPlanetsOrbs, names=varnames,
-     monitor=gaMonitor, maxiter=50, run=30, popSize=10,
+     monitor=gaMonitor, maxiter=100, run=30, popSize=100,
      min=minvals, max=maxvals, selection=gareal_rwSelection)
 
   sink()
