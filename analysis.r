@@ -1403,3 +1403,16 @@ testDailyPlanetsOrbsGA <- function(sinkfile, planetsdir, fileno, commoditydir, c
 
   sink()
 }
+
+testDailyPlanetsOrbSolution <- function(planetsdir, fileno, commoditydir, commodityfile, sdate, edate, chartfile, cusorbs) {
+  # currency data
+  currency <- openCommodity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
+  chart <- fread(npath(paste("~/trading/charts/", chartfile, '.tsv', sep='')), sep="\t", na.strings="")
+  cusorbs <- round(cusorbs, digits=2)
+  planets <- openPlanets(paste("~/trading/", planetsdir, "/planets_", fileno, ".tsv", sep=''), chart, cusorbs)
+  # process planets
+  planets.sp <- processPlanets(planets, currency, sdate, edate)
+  # process analysis
+  fitness <- plotGridAspectsEffect(paste(chartfile, '-', itest), planets.sp$train, 30, F)
+  cat("###", length(fitness), " / %%% =", median(unlist(fitness)), "\n\n")
+}
