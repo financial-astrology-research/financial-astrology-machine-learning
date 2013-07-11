@@ -1335,7 +1335,6 @@ plotGridAspectsEffect <- function(plotfile, ds, threshold, resplot=T) {
   tdiffs <- list()
   if (resplot) pdf(npath(paste("~/", plotfile, ".pdf", sep='')), width = 11, height = 8, family='Helvetica', pointsize=12)
   for (i in 1:length(selCols)) {
-    ##print(ggplot(aes(x=get(selcols[[i]])), data=ds) + facet_grid(Eff ~ .) + geom_density(adjust=1/2) + xlab(selcols[[i]]))
     dsp <- subset(ds, get(selCols[[i]]) >= 0)
     if (nrow(dsp) > 0) {
       t1 <- prop.table(table(dsp$Eff))
@@ -1343,6 +1342,7 @@ plotGridAspectsEffect <- function(plotfile, ds, threshold, resplot=T) {
       if (tdiff >= threshold) {
         tdiffs[[length(tdiffs)+1]] <- tdiff
         if (resplot) {
+          dsp[, selCols[[i]] := as.factor(get(dsp[,selCols[[i]]]))]
           p1 <- ggplot(aes_string(x=selCols[[i]], fill="Eff"), data=dsp) + geom_bar(position="fill") + xlab(selCols[[i]]) + scale_y_continuous(breaks=seq(from=0, to=1, by=0.1))
           p2 <- ggplot(aes_string(x=selCols[[i]], fill="Eff"), data=dsp) + geom_bar() + xlab(selCols[[i]])
           grid.newpage()
@@ -1381,7 +1381,10 @@ testDailyPlanetsOrbsGA <- function(sinkfile, planetsdir, fileno, commoditydir, c
 
     cat("\n---------------------------------------------------------------------------------\n")
     cat("Test #", itest, "\n", sep='')
-    cat('\t cusorbs=c(', paste(cusorbs, collapse=","), ")\n", sep='')
+    cat("testDailyPlanetsOrbsSolution(planetsdir=", shQuote(planetsdir), ", fileno=", fileno, sep='')
+    cat(", commoditydir=", shQuote(commoditydir), ",\n\t commodityfile=", shQuote(commodityfile), sep='')
+    cat(", sdate=", shQuote(sdate), ", edate=", shQuote(edate), ", chartfile=", shQuote(chartfile), sep='')
+    cat(",\n\t cusorbs=c(", paste(cusorbs, collapse=","), "))\n", sep='')
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
     cat("###", length(fitness), " / %%% =", median(unlist(fitness)), "\n\n")
     # how long taked to calculate
@@ -1402,14 +1405,21 @@ testDailyPlanetsOrbsGA <- function(sinkfile, planetsdir, fileno, commoditydir, c
     solutions[,j] <- runif(100, minvals[j], maxvals[j])
   }
 
-  solutions[1:6,] <- matrix(nrow=6, ncol=19, byrow=T,
-                            c(3.0, 1.0, 1.0, 1.0, 1.0, 3.0, 3.0, 1.0, 1.0, 1.0, 3.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
-                              3.0, 0.5, 0.5, 0.5, 0.5, 3.0, 3.0, 0.5, 0.5, 0.5, 3.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
-                              3.0, 1.5, 1.5, 1.5, 1.5, 3.0, 3.0, 1.5, 1.5, 1.5, 3.0, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5,
-                              4.0, 1.0, 1.0, 1.0, 1.0, 4.0, 4.0, 1.0, 1.0, 1.0, 4.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
-                              4.0, 2.0, 2.0, 2.0, 2.0, 4.0, 4.0, 2.0, 2.0, 2.0, 4.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
-                              2.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 3.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
-                              2.0, 0.5, 0.5, 0.5, 0.5, 2.0, 2.0, 0.5, 0.5, 0.5, 3.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5))
+  suggested <- c(3.0, 1.0, 1.0, 1.0, 1.0, 3.0, 3.0, 1.0, 1.0, 1.0, 3.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+                 3.0, 0.5, 0.5, 0.5, 0.5, 3.0, 3.0, 0.5, 0.5, 0.5, 3.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+                 3.0, 1.5, 1.5, 1.5, 1.5, 3.0, 3.0, 1.5, 1.5, 1.5, 3.0, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5,
+                 4.0, 1.0, 1.0, 1.0, 1.0, 4.0, 4.0, 1.0, 1.0, 1.0, 4.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+                 4.0, 2.0, 2.0, 2.0, 2.0, 4.0, 4.0, 2.0, 2.0, 2.0, 4.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
+                 2.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+                 2.0, 0.5, 0.5, 0.5, 0.5, 2.0, 2.0, 0.5, 0.5, 0.5, 2.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+                 1.0, 0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+                 1.0, 0.3, 0.3, 0.3, 0.3, 1.0, 1.0, 0.3, 0.3, 0.3, 1.0, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3,
+                 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+                 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+                 1.5, 0.5, 0.5, 0.5, 0.5, 1.5, 1.5, 0.5, 0.5, 0.5, 3.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5)
+
+  srows <- length(suggested)/19
+  solutions[1:srows,] <- matrix(nrow=srows, ncol=19, byrow=T, suggested)
 
   ga("real-valued", fitness=testDailyPlanetsOrbs, names=varnames,
      monitor=gaMonitor, maxiter=100, run=30, popSize=100, pcrossover = 0.7, pmutation = 0.3,
@@ -1418,7 +1428,8 @@ testDailyPlanetsOrbsGA <- function(sinkfile, planetsdir, fileno, commoditydir, c
   sink()
 }
 
-testDailyPlanetsOrbSolution <- function(planetsdir, fileno, commoditydir, commodityfile, sdate, edate, chartfile, cusorbs) {
+testDailyPlanetsOrbsSolution <- function(planetsdir, fileno, commoditydir, commodityfile,
+                                         sdate, edate, chartfile, cusorbs, resplot=F) {
   # currency data
   currency <- openCommodity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
   chart <- fread(npath(paste("~/trading/charts/", chartfile, '.tsv', sep='')), sep="\t", na.strings="")
@@ -1427,6 +1438,6 @@ testDailyPlanetsOrbSolution <- function(planetsdir, fileno, commoditydir, commod
   # process planets
   planets.sp <- processPlanets(planets, currency, sdate, edate)
   # process analysis
-  fitness <- plotGridAspectsEffect(paste(chartfile, '-', itest), planets.sp$train, 30, F)
+  fitness <- plotGridAspectsEffect(paste(commodityfile, chartfile, sdate, edate, paste(cusorbs, collapse='-')), planets.sp$train, 30, resplot)
   cat("###", length(fitness), " / %%% =", median(unlist(fitness)), "\n\n")
 }
