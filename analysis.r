@@ -1398,7 +1398,7 @@ testDailyPlanetsOrbsGA <- function(sinkfile, planetsdir, fileno, commoditydir, c
   varnames = c('0', '30', '45', '60', '72', '90', '120', '135', '144', '150', '180', '18', '40', '52', '80', '104', '108', '155', '160')
 
   ga("real-valued", fitness=testDailyPlanetsOrbs, names=varnames,
-     monitor=gaMonitor, maxiter=100, run=30, popSize=100,
+     monitor=gaMonitor, maxiter=100, run=30, popSize=100, pcrossover = 0.7, pmutation = 0.3,
      min=minvals, max=maxvals, selection=gareal_rwSelection)
 
   sink()
