@@ -1396,10 +1396,24 @@ testDailyPlanetsOrbsGA <- function(sinkfile, planetsdir, fileno, commoditydir, c
   minvals = c(0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5)
   maxvals = c(4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0)
   varnames = c('0', '30', '45', '60', '72', '90', '120', '135', '144', '150', '180', '18', '40', '52', '80', '104', '108', '155', '160')
+  solutions <- matrix(NA, nrow = 100, ncol = length(minvals))
+
+  for (j in 1:length(minvals)) {
+    solutions[,j] <- runif(100, minvals[j], maxvals[j])
+  }
+
+  solutions[1:6,] <- matrix(nrow=6, ncol=19, byrow=T,
+                            c(3.0, 1.0, 1.0, 1.0, 1.0, 3.0, 3.0, 1.0, 1.0, 1.0, 3.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+                              3.0, 0.5, 0.5, 0.5, 0.5, 3.0, 3.0, 0.5, 0.5, 0.5, 3.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+                              3.0, 1.5, 1.5, 1.5, 1.5, 3.0, 3.0, 1.5, 1.5, 1.5, 3.0, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5,
+                              4.0, 1.0, 1.0, 1.0, 1.0, 4.0, 4.0, 1.0, 1.0, 1.0, 4.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+                              4.0, 2.0, 2.0, 2.0, 2.0, 4.0, 4.0, 2.0, 2.0, 2.0, 4.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
+                              2.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 3.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+                              2.0, 0.5, 0.5, 0.5, 0.5, 2.0, 2.0, 0.5, 0.5, 0.5, 3.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5))
 
   ga("real-valued", fitness=testDailyPlanetsOrbs, names=varnames,
      monitor=gaMonitor, maxiter=100, run=30, popSize=100, pcrossover = 0.7, pmutation = 0.3,
-     min=minvals, max=maxvals, selection=gareal_rwSelection)
+     min=minvals, max=maxvals, selection=gareal_rwSelection, suggestions=solutions)
 
   sink()
 }
