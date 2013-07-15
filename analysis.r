@@ -71,11 +71,12 @@ aspectsCombList <- aspectsList
 aspectTypesCols <- c('SUT', 'MOT', 'MET', 'VET', 'MAT', 'JUT', 'SAT', 'URT', 'NET', 'PLT')
 
 # planets cols
-planetsBaseCols <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "NN", "SN")
+planetsBaseCols <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "SN", "NN")
 
 # Aspects and orbs
 aspects = c(0, 30, 45, 60, 72, 90, 120, 135, 144, 150, 180, 18, 40, 52, 80, 104, 108, 155, 160)
-orbs    = c(3,  1,  1,  1,  1,  3,   3,   1,   1,   1,   3,  1,  1,  1,  1,   1,   1,   1,   1)
+orbs = c(1,0.3,0.3,0.3,0.3,1,1,0.3,0.3,0.3,1,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3)
+zodDegrees <- seq(0, 360, by=2)
 
 # planets columns names
 planetsLonCols <- paste(planetsBaseCols, 'LON', sep='')
@@ -86,6 +87,7 @@ planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1]
 planetsGridLon <- expand.grid(planetsLonCols, planetsLonCols)
 planetsGridLonCols <- as.character(apply(planetsGridLon, 1, function(x) paste(x[1], 'r', x[2], sep='')))
 planetsGridAspCols <- as.character(apply(expand.grid(planetsGridLonCols, aspects), 1, function(x) paste(x[1], '_', as.numeric(x[2]), sep='')))
+planetsGridZodCols <- as.character(apply(expand.grid(planetsLonCols, zodDegrees), 1, function(x) paste(x[1], '_', as.numeric(x[2]), sep='')))
 
 # aspects types
 aspectTypesList <- list(c('A', 'AE', 'SE', 'S'),
@@ -271,7 +273,8 @@ openCurrency  <- function(currency_file) {
   currency <- currency[,-1]
   #currency$Mid <- (currency$High + currency$Low + currency$Close) / 3
   currency$Mid <- (currency$High + currency$Low + currency$Close + currency$Open) / 4
-  currency$val <- currency$Mid - currency$Open
+  #currency$val <- currency$Mid - currency$Open
+  currency$val <- c(0, round(diff(currency$Mid, lag=1), digits=4))
   currency$Eff = cut(currency$val, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE)
   currency$Date <- as.Date(as.character(currency$Date), format="%Y%m%d")
   currency
@@ -562,28 +565,53 @@ openPlanets <- function(planets.file, chart, cusorbs) {
   # calculate longitudinal differences
   for (i in 1:length(planetsCombLon)) {
     combname <- paste(planetsCombLon[[i]][1], planetsCombLon[[i]][2], sep='')
-    planets[, c(combname) := diffDeg(get(planetsCombLon[[i]][1]), get(planetsCombLon[[i]][2]), orbs)]
-  }
-
-  if (hasArg('chart')) {
-    if (hasArg('cusorbs')) {
-      orbs <- cusorbs
-      if (length(cusorbs) != length(orbs)) {
-        stop("There are missing custom orbs")
-      }
-    }
-    for (i in 1:nrow(planetsGridLon)) {
-      chartCol  <- as.character(planetsGridLon[i,1])
-      planetsCol <- as.character(planetsGridLon[i,2])
-      combname <- paste(chartCol, 'r', planetsCol, sep='')
-      planets[, c(combname) := diffDeg(get(planetsCol), chart[[chartCol]][1], orbs)]
-    }
-    # convert to long format and then to wide to build a column for each planetrad+planet+aspect
-    planets <- melt(planets, id.var=c('Date'), measure.var=planetsGridLonCols)
-    planets <- data.table(dcast(planets, Date ~ variable+value))
+    planets[, c(combname) := diffDeg(get(planetsCombLon[[i]][1]), get(planetsCombLon[[i]][2]), orbs, aspects)]
   }
 
   return(planets)
+}
+
+openPlanetsZod <- function(planets.file, currency, sdate, edate, threshold, planetsLonCols, planetsGridZodCols, aspects, cusorbs) {
+  planets.file <- npath(planets.file)
+  planets <- fread(planets.file, sep="\t", na.strings="", verbose = F)
+  planets$Date <- as.Date(planets$Date, format="%Y-%m-%d")
+  planets <- subset(planets, Date >= as.Date(sdate))
+
+  if (hasArg('cusorbs')) {
+    orbs <- cusorbs
+    if (length(cusorbs) != length(orbs)) {
+      stop("There are missing custom orbs")
+    }
+  }
+
+  for (currentCol in planetsLonCols) {
+    zodDegreesCols <- paste(currentCol, zodDegrees, sep='_')
+    exp1 <- parse(text = paste('c(zodDegreesCols) := list(', paste('diffDeg(get(currentCol),', zodDegrees, ',orbs, aspects)', sep='', collapse=', '), ')', sep=''))
+    planets[, eval(exp1)]
+  }
+
+  # convert to long format and then to wide to build a column for each planetrad+planet+aspect
+  planets <- data.table(melt(planets, id.var=c('Date'), measure.var=planetsGridZodCols))
+  planets[, idx := paste(variable, value, sep='_')]
+  setkey(planets, 'Date', 'variable', 'value', 'idx')
+  planets <- planets[!is.na(value)]
+  planets <- merge(planets, currency, by='Date')
+
+  # split test and train data
+  planets.train <- planets[Date < as.Date(edate)]
+  planets.test <- planets[Date >= as.Date(edate)]
+  # calculate the significance of the aspects
+  significance.prop <- planets.train[, as.list(prop.table(table(Eff))), by='idx']
+  significance.count <- planets.train[, as.list(table(Eff)), by='idx']
+  significance <- merge(significance.prop, significance.count, by='idx')
+  significance[, c('trend', 'count') := list(up.x-down.x, down.y+up.y)]
+  # filter significance by 40% of trend
+  significance <- significance[trend > threshold | trend < -threshold]
+  #planets <- data.table(dcast(planets, Date ~ variable+value))
+  # for the test data leave only the significant aspects
+  planets.test <- planets.test[idx %in% significance$idx]
+
+  return(list(sig=significance, test=planets.test))
 }
 
 funtionizethis  <- function() {
@@ -1125,7 +1153,7 @@ testDailyRandomForestSolution <- function(planetsdir, fileno, commoditydir, comm
 
 predEffProcessFactor <- function(predEff) {
   prediffs <- predEff[,1]-predEff[,2]
-  ifelse(prediffs >= 0,  'up', 'down')
+  ifelse(prediffs >= 0,  'down', 'up')
 }
 
 testCorrelationOptimization <- function(sinkfile, directory, fileno) {
@@ -1312,7 +1340,7 @@ aggregatePredictTransTable <- function(predict.table, threshold) {
   predict.table.aggr[, predEff := lapply(prop, function(x) ifelse(x > threshold, 'down', ifelse(x < -threshold, 'up', NA)))]
 }
 
-diffDeg <- function(x, y, orbs) {
+diffDeg <- function(x, y, orbs, aspects) {
   vals <- abs(((x-y+180) %% 360) - 180)
   for (i in 1:length(aspects)) {
     vals[vals >= aspects[i]-orbs[i] & vals <= aspects[i]+orbs[i]] <- aspects[i]
@@ -1340,7 +1368,7 @@ plotGridAspectsEffect <- function(plotfile, ds, threshold, resplot=T) {
       t1 <- prop.table(table(dsp$Eff))
       tdiff <- as.numeric(round(abs(t1['down']-t1[['up']])*100, digits=2))
       if (tdiff >= threshold) {
-        tdiffs[[length(tdiffs)+1]] <- tdiff
+        tdiffs[[selCols[[i]]]] <- tdiff
         if (resplot) {
           dsp[, selCols[[i]] := as.factor(get(dsp[,selCols[[i]]]))]
           p1 <- ggplot(aes_string(x=selCols[[i]], fill="Eff"), data=dsp) + geom_bar(position="fill") + xlab(selCols[[i]]) + scale_y_continuous(breaks=seq(from=0, to=1, by=0.1))
@@ -1439,5 +1467,45 @@ testDailyPlanetsOrbsSolution <- function(planetsdir, fileno, commoditydir, commo
   planets.sp <- processPlanets(planets, currency, sdate, edate)
   # process analysis
   fitness <- plotGridAspectsEffect(paste(commodityfile, chartfile, sdate, edate, paste(cusorbs, collapse='-')), planets.sp$train, 30, resplot)
-  cat("###", length(fitness), " / %%% =", median(unlist(fitness)), "\n\n")
+  # binarize
+  selcols <- names(fitness)
+  planets.sp$train[, c(selcols) := lapply(.SD, function(x) ifelse(is.na(x), 0, 1)), .SDcols=selcols]
+  planets.sp$test[, c(selcols) := lapply(.SD, function(x) ifelse(is.na(x), 0, 1)), .SDcols=selcols]
+
+  cat("###", length(fitness), " / %%% =", median(unlist(fitness)), "\n")
+  cat("Cols:", names(fitness), "\n\n")
+  return(list(selcols=names(fitness), data=planets.sp))
+}
+
+testZodDegAspectsGA <- function(sinkfile) {
+  if (!hasArg('sinkfile')) stop("Provide a sink filename.")
+  sinkfile <- paste("~/trading/predict/", sinkfile, ".txt", sep='')
+  sink(npath(sinkfile), append=TRUE)
+
+  currency <- openCommodity("~/trading/currency/EURUSD_fxpro.csv")
+  testZodDegAspectsFitness <- function(string) {
+    inc1 <- which(string[1:12] == 1)
+    inc2 <- which(string[13:32] == 1)
+    selAspects <- aspects[inc1]
+    selPlanetsLonCols <- planetsLonCols[inc2]
+    planetsGridZodCols <- as.character(apply(expand.grid(selPlanetsLonCols, zodDegrees), 1, function(x) paste(x[1], '_', as.numeric(x[2]), sep='')))
+    res <- openPlanetsZod("~/trading/dplanets/planets_2.tsv", currency, "2000-01-01", "2011-01-01", 0.40, selPlanetsLonCols, planetsGridZodCols, selAspects)
+    ds <- merge(res$test, res$sig, by='idx')
+    ds <- ds[count > quantile(ds$count)[2]]
+    ds.sum <- ds[, list(sum(down.y), sum(up.y)), by='Date']
+    ds.sum <- merge(ds.sum, currency, by='Date')
+    ds.sum[, predEff := ifelse(V1 > V2, 'down', 'up')]
+    t1 <- table(ds.sum$Eff==ds.sum$predEff)
+    fitness <- abs(t1['TRUE']-t1[['FALSE']])
+    cat(paste(shQuote(selAspects), collapse=","), "\n")
+    cat(paste(shQuote(selPlanetsLonCols), collapse=","), "\n")
+    cat("### = ", fitness, "\n")
+    return(fitness)
+  }
+
+  ga("binary", fitness=testZodDegAspectsFitness, names=as.character(aspects), nBits=length(aspects),
+     monitor=gaMonitor, maxiter=500, run=50, popSize=100,
+     selection=gabin_rwSelection)
+
+  sink()
 }
