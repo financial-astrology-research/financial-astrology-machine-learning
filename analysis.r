@@ -619,6 +619,8 @@ planetsDaySignificance <- function(planets.day, significance, verbose=F) {
   significance.day <- data.table()
   cols <- c(paste(planetsLonCols, 'G', sep=''), paste(planetsSpCols, 'G', sep=''))
   colsbyanalogy <- c('JULONG', 'SALONG', 'NELONG', 'PLLONG', 'NNLONG')
+  #init <- as.numeric( sub("\\((.+),.*", "\\1", planets.day[curcol]))
+  #keyranges <- apply(matrix(seq(init, init+8), ncol=2, byrow=T), 1, function(x) return(paste('(', x[1], ',', x[2], ']', sep='')))
   for (curcol in cols) {
     if (curcol == 'URLONG') {
       res <- significance[key==planets.day[curcol] & variable %in% c('MALONG', 'SALONG')]
