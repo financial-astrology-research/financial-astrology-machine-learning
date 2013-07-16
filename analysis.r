@@ -655,6 +655,7 @@ planetsDaySignificance <- function(planets.day, significance, verbose=F) {
   if (verbose) {
     print(planets.day['Date'])
     print(significance.day)
+    print(planets.day.asp)
     print(significance.day[, sum(V4)-sum(V3)])
   }
 
@@ -1437,9 +1438,9 @@ aggregatePredictTransTable <- function(predict.table, threshold) {
 diffDeg <- function(x, y, orbs, aspects) {
   vals <- abs(((x-y+180) %% 360) - 180)
   for (i in 1:length(aspects)) {
-    vals[vals >= aspects[i]-orbs[i] & vals <= aspects[i]+orbs[i]] <- paste('a', aspects[i], sep='')
+    vals[vals >= aspects[i]-orbs[i] & vals <= aspects[i]+orbs[i]] <- aspects[i]
   }
-  vals[vals %ni% paste('a', aspects, sep='')] <- 'non'
+  vals[vals %ni% aspects] <- 'non'
   return(vals)
 }
 
