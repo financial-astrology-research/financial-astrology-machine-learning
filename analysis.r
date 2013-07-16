@@ -641,9 +641,20 @@ planetsDaySignificance <- function(planets.day, significance, verbose=F) {
     }
   }
 
+  patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
+  activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
+  planets.day.asp <- planets.day[planets.day != "non" & names(planets.day) %in% activecols]
+  for (curcol in names(planets.day.asp)) {
+    res <- significance[key==planets.day.asp[curcol] & variable==curcol]
+    if (nrow(res) > 0) {
+      res[, origin := curcol]
+      significance.day <- rbind(significance.day, res)
+    }
+  }
+
   if (verbose) {
+    print(planets.day['Date'])
     print(significance.day)
-    print(planets.day[planets.day != "non" & names(planets.day) %in% planetsCombLonCols])
     print(significance.day[, sum(V4)-sum(V3)])
   }
 
@@ -1594,15 +1605,17 @@ testZodDegAspectsGA <- function(sinkfile) {
 }
 
 # TODO: filter planets by train and test subsets
+aspects = c(0, 30, 45, 60, 90, 120, 135, 150, 180)
+orbs =  c(2.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0)
 planetsLonCols <- paste(c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL"), 'LON', sep='')
-planetsSpCols <- paste(c("MO", "MA", "JU", "NE"), 'SP', sep='')
+planetsSpCols <- paste(c("MO", "VE", "MA", "JU", "SA", "NE"), 'SP', sep='')
 planetsLonCols2 <- paste(c("SU", "MO", "ME", "VE", "JU", "SA", "UR", "NE", "PL", "NN"), 'LON', sep='')
 planetsCombLon <- combn(planetsLonCols2, 2, simplify=F)
 planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
 planets <- openPlanets("~/trading/dplanets/planets_2.tsv", orbs, aspects, 1, 50)
 currency <- openCommodity("~/trading/currency/EURUSD_fxpro.csv")
 significance <- planetsVarsSignificance(planets[Date > as.Date('1999-01-01') & Date < as.Date('2011-01-01')], currency, 0.30)
-predEff <- apply(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-02-01')], 1, function(x) planetsDaySignificance(x, significance, T))
+predEff <- apply(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-02-01')], 1, function(x) planetsDaySignificance(x, significance, F))
 predEff <- ifelse(predEff > 0, 'up', ifelse(predEff < 0, 'down', NA))
 ds <- planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-02-01')]
 ds[, predEff := predEff]
