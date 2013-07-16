@@ -75,7 +75,7 @@ planetsBaseCols <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL",
 
 # Aspects and orbs
 aspects = c(0, 30, 45, 60, 72, 90, 120, 135, 144, 150, 180, 18, 40, 52, 80, 104, 108, 155, 160)
-orbs = c(1,0.3,0.3,0.3,0.3,1,1,0.3,0.3,0.3,1,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3)
+orbs = c(2,1,1,1,1,2,2,1,1,1,2,1,1,1,1,1,1,1,1)
 zodDegrees <- seq(0, 360, by=2)
 
 # planets columns names
@@ -557,10 +557,21 @@ historyAspectsCorrelation <- function(trans, trans.hist, cor_method, kplanets, k
   data.table(predtable)
 }
 
-openPlanets <- function(planets.file, chart, cusorbs) {
+openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1, spby=60) {
   planets.file <- npath(planets.file)
   planets <- fread(planets.file, sep="\t", na.strings="", verbose = F)
   planets$Date <- as.Date(planets$Date, format="%Y-%m-%d")
+
+  if (hasArg('cusorbs')) {
+    orbs <- cusorbs
+    if (length(cusorbs) != length(orbs)) {
+      stop("There are missing custom orbs")
+    }
+  }
+
+  if (hasArg('cusaspects')) {
+    aspects <- cusaspects
+  }
 
   # calculate longitudinal differences
   for (i in 1:length(planetsCombLon)) {
@@ -568,7 +579,79 @@ openPlanets <- function(planets.file, chart, cusorbs) {
     planets[, c(combname) := diffDeg(get(planetsCombLon[[i]][1]), get(planetsCombLon[[i]][2]), orbs, aspects)]
   }
 
+  for (loncol in planetsLonCols) {
+    planets[, c(paste(loncol, 'G', sep='')) := cut(get(loncol), seq(0, 360, by=lonby))]
+  }
+
+  for (spcol in planetsSpCols) {
+    minsp <- min(planets[, spcol, with=F])
+    maxsp <- max(planets[, spcol, with=F])
+    bin <- (maxsp-minsp)/spby
+    if (bin > 0) {
+      planets[, c(paste(spcol, 'G', sep='')) := cut(get(spcol), seq(minsp, maxsp, by=bin))]
+    }
+  }
+
   return(planets)
+}
+
+planetsVarsSignificance <- function(planets, currency, threshold) {
+  planets  <- merge(planets, currency, by='Date')
+  spcols <- paste(planetsSpCols, 'G', sep='')
+  loncols <- paste(planetsLonCols, 'G', sep='')
+  cols <- c(loncols, spcols, planetsCombLonCols)
+  significance <- data.table()
+
+  for (curcol in cols) {
+    idx <- length(significance)+1
+    t1 <- planets[, cbind(as.list(prop.table(table(Eff))), as.list(table(Eff))), by=curcol]
+    t1[, c('diff', 'variable') := list(V2-V1, curcol)]
+    setnames(t1, curcol, 'key')
+    t1[, key := as.character(key)]
+    t1 <- t1[diff >= threshold | diff <= -threshold]
+    significance <- rbind(significance, t1)
+  }
+
+  return(significance)
+}
+
+planetsDaySignificance <- function(planets.day, significance, verbose=F) {
+  significance.day <- data.table()
+  cols <- c(paste(planetsLonCols, 'G', sep=''), paste(planetsSpCols, 'G', sep=''))
+  colsbyanalogy <- c('JULONG', 'SALONG', 'NELONG', 'PLLONG', 'NNLONG')
+  for (curcol in cols) {
+    if (curcol == 'URLONG') {
+      res <- significance[key==planets.day[curcol] & variable %in% c('MALONG', 'SALONG')]
+    }
+    else if (curcol == 'NELONG') {
+      res <- significance[key==planets.day[curcol] & variable %in% c('JULONG', 'SALONG')]
+    }
+    else if (curcol == 'PLLONG') {
+      res <- significance[key==planets.day[curcol] & variable %in% c('SULONG', 'MELONG', 'VELONG', 'MALONG')]
+    }
+    else if (curcol %in% colsbyanalogy) {
+      res <- significance[key==planets.day[curcol]]
+    }
+    else {
+      res <- significance[key==planets.day[curcol] & variable==curcol]
+    }
+    if (nrow(res) > 0) {
+      res[, origin := curcol]
+      significance.day <- rbind(significance.day, res)
+    }
+  }
+
+  if (verbose) {
+    print(significance.day)
+    print(planets.day[planets.day != "non" & names(planets.day) %in% planetsCombLonCols])
+    print(significance.day[, sum(V4)-sum(V3)])
+  }
+
+  if (nrow(significance.day) > 0) {
+    return(as.integer(significance.day[, sum(V4)-sum(V3)]))
+  }
+
+  return(0)
 }
 
 openPlanetsZod <- function(planets.file, currency, sdate, edate, threshold, planetsLonCols, planetsGridZodCols, aspects, cusorbs) {
@@ -1343,9 +1426,9 @@ aggregatePredictTransTable <- function(predict.table, threshold) {
 diffDeg <- function(x, y, orbs, aspects) {
   vals <- abs(((x-y+180) %% 360) - 180)
   for (i in 1:length(aspects)) {
-    vals[vals >= aspects[i]-orbs[i] & vals <= aspects[i]+orbs[i]] <- aspects[i]
+    vals[vals >= aspects[i]-orbs[i] & vals <= aspects[i]+orbs[i]] <- paste('a', aspects[i], sep='')
   }
-  vals[vals %ni% aspects] <- NA
+  vals[vals %ni% paste('a', aspects, sep='')] <- 'non'
   return(vals)
 }
 
@@ -1509,3 +1592,20 @@ testZodDegAspectsGA <- function(sinkfile) {
 
   sink()
 }
+
+# TODO: filter planets by train and test subsets
+planetsLonCols <- paste(c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL"), 'LON', sep='')
+planetsSpCols <- paste(c("MO", "MA", "JU", "NE"), 'SP', sep='')
+planetsLonCols2 <- paste(c("SU", "MO", "ME", "VE", "JU", "SA", "UR", "NE", "PL", "NN"), 'LON', sep='')
+planetsCombLon <- combn(planetsLonCols2, 2, simplify=F)
+planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
+planets <- openPlanets("~/trading/dplanets/planets_2.tsv", orbs, aspects, 1, 50)
+currency <- openCommodity("~/trading/currency/EURUSD_fxpro.csv")
+significance <- planetsVarsSignificance(planets[Date > as.Date('1999-01-01') & Date < as.Date('2011-01-01')], currency, 0.30)
+predEff <- apply(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-02-01')], 1, function(x) planetsDaySignificance(x, significance, T))
+predEff <- ifelse(predEff > 0, 'up', ifelse(predEff < 0, 'down', NA))
+ds <- planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-02-01')]
+ds[, predEff := predEff]
+ds <- merge(ds, currency, by='Date')
+table(ds$Eff==ds$predEff, useNA='always')
+#day.sig <- planetsDaySignificance(planets[Date=='2013-07-16'], significance)
