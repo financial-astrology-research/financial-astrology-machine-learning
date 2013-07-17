@@ -75,7 +75,19 @@ planetsBaseCols <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL",
 
 # Aspects and orbs
 aspects = c(0, 30, 45, 60, 72, 90, 120, 135, 144, 150, 180, 18, 40, 52, 80, 104, 108, 155, 160)
-orbs = c(2,1,1,1,1,2,2,1,1,1,2,1,1,1,1,1,1,1,1)
+orbs = list(SULON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
+            MOLON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
+            MELON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
+            VELON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
+            MALON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
+            JULON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
+            SALON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
+            URLON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
+            NELON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
+            PLLON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
+            NNLON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
+            SNLON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5))
+
 zodDegrees <- seq(0, 360, by=2)
 
 # planets columns names
@@ -576,7 +588,8 @@ openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1, spby=60) {
   # calculate longitudinal differences
   for (i in 1:length(planetsCombLon)) {
     combname <- paste(planetsCombLon[[i]][1], planetsCombLon[[i]][2], sep='')
-    planets[, c(combname) := diffDeg(get(planetsCombLon[[i]][1]), get(planetsCombLon[[i]][2]), orbs, aspects)]
+    comborbs <- orbs[[planetsCombLon[[i]][1]]] + orbs[[planetsCombLon[[i]][2]]]
+    planets[, c(combname) := diffDeg(get(planetsCombLon[[i]][1]), get(planetsCombLon[[i]][2]), comborbs, aspects)]
   }
 
   for (loncol in planetsLonCols) {
@@ -584,12 +597,7 @@ openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1, spby=60) {
   }
 
   for (spcol in planetsSpCols) {
-    minsp <- min(planets[, spcol, with=F])
-    maxsp <- max(planets[, spcol, with=F])
-    bin <- (maxsp-minsp)/spby
-    if (bin > 0) {
-      planets[, c(paste(spcol, 'G', sep='')) := cut(get(spcol), seq(minsp, maxsp, by=bin))]
-    }
+    planets[, c(paste(spcol, 'G', sep='')) := cut(get(spcol), breaks=spby)]
   }
 
   return(planets)
@@ -615,28 +623,13 @@ planetsVarsSignificance <- function(planets, currency, threshold) {
   return(significance)
 }
 
-planetsDaySignificance <- function(planets.day, significance, verbose=F) {
+planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, verbose=F) {
   significance.day <- data.table()
-  cols <- c(paste(planetsLonCols, 'G', sep=''), paste(planetsSpCols, 'G', sep=''))
-  colsbyanalogy <- c('JULONG', 'SALONG', 'NELONG', 'PLLONG', 'NNLONG')
+  cols <- c(paste(planetsLonCols, 'G', sep=''))
   #init <- as.numeric( sub("\\((.+),.*", "\\1", planets.day[curcol]))
   #keyranges <- apply(matrix(seq(init, init+8), ncol=2, byrow=T), 1, function(x) return(paste('(', x[1], ',', x[2], ']', sep='')))
   for (curcol in cols) {
-    if (curcol == 'URLONG') {
-      res <- significance[key==planets.day[curcol] & variable %in% c('MALONG', 'SALONG')]
-    }
-    else if (curcol == 'NELONG') {
-      res <- significance[key==planets.day[curcol] & variable %in% c('JULONG', 'SALONG')]
-    }
-    else if (curcol == 'PLLONG') {
-      res <- significance[key==planets.day[curcol] & variable %in% c('SULONG', 'MELONG', 'VELONG', 'MALONG')]
-    }
-    else if (curcol %in% colsbyanalogy) {
-      res <- significance[key==planets.day[curcol]]
-    }
-    else {
-      res <- significance[key==planets.day[curcol] & variable==curcol]
-    }
+    res <- significance[key==planets.day[curcol] & variable %in% planetsAnalogy[[curcol]]]
     if (nrow(res) > 0) {
       res[, origin := curcol]
       significance.day <- rbind(significance.day, res)
@@ -646,18 +639,20 @@ planetsDaySignificance <- function(planets.day, significance, verbose=F) {
   patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
   activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
   planets.day.asp <- planets.day[planets.day != "non" & names(planets.day) %in% activecols]
-  for (curcol in names(planets.day.asp)) {
-    res <- significance[key==planets.day.asp[curcol] & variable==curcol]
-    if (nrow(res) > 0) {
-      res[, origin := curcol]
-      significance.day <- rbind(significance.day, res)
-    }
-  }
+  #for (curcol in names(planets.day.asp)) {
+    #loncol1 <- paste(substr(curcol, 1, 5), 'G', sep='')
+    #loncol2 <- paste(substr(curcol, 6, 10), 'G', sep='')
+    #significance.day[origin == loncol1 & V3 > V4, V3 := V3*1.5]
+    #significance.day[origin == loncol1 & V4 > V3, V4 := V4*1.5]
+    #significance.day[origin == loncol2 & V3 > V4, V3 := V3*1.5]
+    #significance.day[origin == loncol2 & V4 > V3, V4 := V4*1.5]
+  #}
 
   if (verbose) {
     print(planets.day['Date'])
     print(significance.day)
     print(planets.day.asp)
+    print(planets.day[planetsSpCols])
     print(significance.day[, sum(V4)-sum(V3)])
   }
 
@@ -1437,10 +1432,10 @@ aggregatePredictTransTable <- function(predict.table, threshold) {
   predict.table.aggr[, predEff := lapply(prop, function(x) ifelse(x > threshold, 'down', ifelse(x < -threshold, 'up', NA)))]
 }
 
-diffDeg <- function(x, y, orbs, aspects) {
+diffDeg <- function(x, y, comborbs, aspects) {
   vals <- abs(((x-y+180) %% 360) - 180)
   for (i in 1:length(aspects)) {
-    vals[vals >= aspects[i]-orbs[i] & vals <= aspects[i]+orbs[i]] <- aspects[i]
+    vals[vals >= aspects[i]-comborbs[i] & vals <= aspects[i]+comborbs[i]] <- aspects[i]
   }
   vals[vals %ni% aspects] <- 'non'
   return(vals)
@@ -1607,21 +1602,85 @@ testZodDegAspectsGA <- function(sinkfile) {
   sink()
 }
 
-# TODO: filter planets by train and test subsets
-aspects = c(0, 30, 45, 60, 90, 120, 135, 150, 180)
-orbs =  c(2.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0)
-planetsLonCols <- paste(c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL"), 'LON', sep='')
-planetsSpCols <- paste(c("MO", "VE", "MA", "JU", "SA", "NE"), 'SP', sep='')
-planetsLonCols2 <- paste(c("SU", "MO", "ME", "VE", "JU", "SA", "UR", "NE", "PL", "NN"), 'LON', sep='')
-planetsCombLon <- combn(planetsLonCols2, 2, simplify=F)
-planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
-planets <- openPlanets("~/trading/dplanets/planets_2.tsv", orbs, aspects, 1, 50)
-currency <- openCommodity("~/trading/currency/EURUSD_fxpro.csv")
-significance <- planetsVarsSignificance(planets[Date > as.Date('1999-01-01') & Date < as.Date('2011-01-01')], currency, 0.30)
-predEff <- apply(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-02-01')], 1, function(x) planetsDaySignificance(x, significance, F))
-predEff <- ifelse(predEff > 0, 'up', ifelse(predEff < 0, 'down', NA))
-ds <- planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-02-01')]
-ds[, predEff := predEff]
-ds <- merge(ds, currency, by='Date')
-table(ds$Eff==ds$predEff, useNA='always')
-#day.sig <- planetsDaySignificance(planets[Date=='2013-07-16'], significance)
+testPlanetsAnalogySignificanceGA <- function(sinkfile) {
+  if (!hasArg('sinkfile')) stop("Provide a sink filename.")
+  sinkfile <- paste("~/trading/predict/", sinkfile, ".txt", sep='')
+  sink(npath(sinkfile), append=TRUE)
+
+  aspects = c(0, 30, 45, 60, 90, 120, 135, 150, 180)
+
+  orbs = list(SULON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
+              MOLON = c(4.0, 2.0, 2.0, 2.0, 4.0, 2.0, 2.0, 2.0, 2.0),
+              MELON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
+              VELON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
+              MALON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
+              JULON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
+              SALON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
+              URLON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
+              NELON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
+              PLLON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
+              NNLON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
+              SNLON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5))
+
+  planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG', 'SNLONG')
+
+  planetsLonCols <- paste(c("SU", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "NN"), 'LON', sep='')
+  planetsSpCols <- paste(c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL"), 'SP', sep='')
+  planetsLonCols2 <- paste(c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "NN"), 'LON', sep='')
+  currency <- openCommodity("~/trading/currency/EURUSD_fxpro.csv")
+  planetsCombLon <- combn(planetsLonCols2, 2, simplify=F)
+  planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
+  planets <- openPlanets("~/trading/dplanets/planets_4.tsv", orbs, aspects, 2, 50)
+  significance <- planetsVarsSignificance(planets[Date > as.Date('1999-01-01') & Date < as.Date('2011-01-01')], currency, 0.10)
+
+  testPlanetsAnalogyFitness <- function(string) {
+    #panalogy <- list(SULONG = c("SULONG", "MELONG", "VELONG", "SALONG"),
+    #      MOLONG = c("SULONG", "VELONG", "MALONG", "SNLONG"),
+    #      MELONG = c("MOLONG", "VELONG", "MALONG", "SALONG", "URLONG", "NELONG"),
+    #      VELONG = c("MELONG", "MALONG", "JULONG", "NELONG", "PLLONG", "NNLONG", "SNLONG"),
+    #      MALONG = c("SULONG", "MOLONG", "MALONG", "JULONG", "URLONG", "NELONG", "PLLONG", "NNLONG", "SNLONG"),
+    #      JULONG = c("MOLONG", "MELONG", "URLONG", "PLLONG", "SNLONG"),
+    #      SALONG = c("MOLONG", "MELONG", "MALONG", "JULONG", "NELONG", "NNLONG"),
+    #      URLONG = c("MOLONG", "MALONG", "JULONG", "URLONG", "PLLONG", "SNLONG"),
+    #      NELONG = c("MOLONG", "VELONG", "MALONG", "SALONG", "PLLONG", "NNLONG"),
+    #      PLLONG = c("MOLONG", "MELONG", "MALONG", "URLONG", "PLLONG", "SNLONG"),
+    #      NNLONG = c("SULONG", "MOLONG", "MELONG", "NNLONG"))
+
+    panalogy <- list(SULONG = planetsLonGCols[which(string[1:12] == 1)],
+                     MOLONG = planetsLonGCols[which(string[13:24] == 1)],
+                     MELONG = planetsLonGCols[which(string[25:36] == 1)],
+                     VELONG = planetsLonGCols[which(string[37:48] == 1)],
+                     MALONG = planetsLonGCols[which(string[49:60] == 1)],
+                     JULONG = planetsLonGCols[which(string[61:72] == 1)],
+                     SALONG = planetsLonGCols[which(string[73:84] == 1)],
+                     URLONG = planetsLonGCols[which(string[85:96] == 1)],
+                     NELONG = planetsLonGCols[which(string[97:108] == 1)],
+                     PLLONG = planetsLonGCols[which(string[109:120] == 1)],
+                     NNLONG = planetsLonGCols[which(string[121:132] == 1)])
+
+    predEff <- apply(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')], 1, function(x) planetsDaySignificance(x, significance, panalogy, F))
+    predEff <- ifelse(predEff > 0, 'up', ifelse(predEff < 0, 'down', NA))
+    ds <- planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')]
+    ds[, predEff := predEff]
+    ds <- merge(ds, currency, by='Date')
+    t1 <- table(ds$Eff == ds$predEff, useNA='always')
+    fitness <- abs(t1['TRUE']-t1[['FALSE']])
+    cat("\n---------------------------------------------------------------------------------\n")
+    dput(panalogy)
+    print(t1)
+    cat("### = ", fitness, "\n")
+    # garbage
+    rm(panalogy, predEff, ds, t1)
+    gc()
+    return(fitness)
+  }
+
+  ga("binary", fitness=testPlanetsAnalogyFitness, nBits=132,
+     monitor=gaMonitor, maxiter=100, run=50, popSize=100, pcrossover = 0.7, pmutation = 0.2,
+     selection=gabin_rwSelection)
+  #testPlanetsAnalogyFitness('xxx')
+
+  sink()
+}
+
+#predEff <- apply(planets[Date >= as.Date('2013-01-01') & Date <= as.Date('2013-01-17')], 1, function(x) planetsDaySignificance(x, significance, planetsAnalogy, T))
