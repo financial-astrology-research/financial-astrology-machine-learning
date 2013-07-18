@@ -11,6 +11,7 @@ library(randomForest)
 library(rpart)
 library(evtree)
 library(GA)
+library(gtools)
 `%ni%` <- Negate(`%in%`)
 # no scientific notation
 options(scipen=100)
@@ -1602,8 +1603,9 @@ testZodDegAspectsGA <- function(sinkfile) {
   sink()
 }
 
-testPlanetsAnalogySignificanceGA <- function(sinkfile) {
+testPlanetsAnalogySignificanceGA <- function(sinkfile, gafunc) {
   if (!hasArg('sinkfile')) stop("Provide a sink filename.")
+  if (!hasArg('gafunc')) stop("Provide a GA function to execute")
   sinkfile <- paste("~/trading/predict/", sinkfile, ".txt", sep='')
   sink(npath(sinkfile), append=TRUE)
 
@@ -1624,6 +1626,18 @@ testPlanetsAnalogySignificanceGA <- function(sinkfile) {
 
   planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG', 'SNLONG')
 
+  panalogy <- list(SULONG = c("SULONG", "MOLONG", "VELONG", "MALONG", "JULONG", "SALONG", "PLLONG", "NNLONG"),
+                   MOLONG = c("MOLONG", "MELONG", "VELONG", "URLONG"),
+                   MELONG = c("MELONG", "VELONG", "JULONG", "URLONG", "PLLONG"),
+                   VELONG = c("MOLONG", "MELONG", "MALONG", "JULONG", "SALONG", "NNLONG", "SNLONG"),
+                   MALONG = c("MELONG", "MALONG", "JULONG", "SALONG", "NELONG", "NNLONG", "SNLONG"),
+                   JULONG = c("SULONG", "MOLONG", "MELONG", "VELONG", "MALONG", "NELONG", "SNLONG"),
+                   SALONG = c("SULONG", "MOLONG", "MELONG", "VELONG", "JULONG", "SALONG", "URLONG", "PLLONG", "NNLONG", "SNLONG"),
+                   URLONG = c("MOLONG", "MELONG", "JULONG", "URLONG", "SNLONG"),
+                   NELONG = c("MOLONG", "MELONG", "MALONG", "JULONG", "SALONG", "NELONG", "SNLONG"),
+                   PLLONG = c("VELONG", "MALONG", "JULONG", "SALONG", "NELONG", "PLLONG"),
+                   NNLONG = c("MELONG", "VELONG", "MALONG", "JULONG", "SALONG", "NNLONG"))
+
   planetsLonCols <- paste(c("SU", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "NN"), 'LON', sep='')
   planetsSpCols <- paste(c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL"), 'SP', sep='')
   planetsLonCols2 <- paste(c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "NN"), 'LON', sep='')
@@ -1632,20 +1646,9 @@ testPlanetsAnalogySignificanceGA <- function(sinkfile) {
   planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
   planets <- openPlanets("~/trading/dplanets/planets_4.tsv", orbs, aspects, 2, 50)
   significance <- planetsVarsSignificance(planets[Date > as.Date('1999-01-01') & Date < as.Date('2011-01-01')], currency, 0.10)
+  keyranges <- mixedsort(unique(significance[variable %in% planetsLonGCols]$key))
 
   testPlanetsAnalogyFitness <- function(string) {
-    #panalogy <- list(SULONG = c("SULONG", "MELONG", "VELONG", "SALONG"),
-    #      MOLONG = c("SULONG", "VELONG", "MALONG", "SNLONG"),
-    #      MELONG = c("MOLONG", "VELONG", "MALONG", "SALONG", "URLONG", "NELONG"),
-    #      VELONG = c("MELONG", "MALONG", "JULONG", "NELONG", "PLLONG", "NNLONG", "SNLONG"),
-    #      MALONG = c("SULONG", "MOLONG", "MALONG", "JULONG", "URLONG", "NELONG", "PLLONG", "NNLONG", "SNLONG"),
-    #      JULONG = c("MOLONG", "MELONG", "URLONG", "PLLONG", "SNLONG"),
-    #      SALONG = c("MOLONG", "MELONG", "MALONG", "JULONG", "NELONG", "NNLONG"),
-    #      URLONG = c("MOLONG", "MALONG", "JULONG", "URLONG", "PLLONG", "SNLONG"),
-    #      NELONG = c("MOLONG", "VELONG", "MALONG", "SALONG", "PLLONG", "NNLONG"),
-    #      PLLONG = c("MOLONG", "MELONG", "MALONG", "URLONG", "PLLONG", "SNLONG"),
-    #      NNLONG = c("SULONG", "MOLONG", "MELONG", "NNLONG"))
-
     panalogy <- list(SULONG = planetsLonGCols[which(string[1:12] == 1)],
                      MOLONG = planetsLonGCols[which(string[13:24] == 1)],
                      MELONG = planetsLonGCols[which(string[25:36] == 1)],
@@ -1659,6 +1662,31 @@ testPlanetsAnalogySignificanceGA <- function(sinkfile) {
                      NNLONG = planetsLonGCols[which(string[121:132] == 1)])
 
     predEff <- apply(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')], 1, function(x) planetsDaySignificance(x, significance, panalogy, F))
+
+    fitness <- predEffProcess(predEff, panalogy)
+    rm(panalogy, predEff)
+    gc()
+    return(fitness)
+  }
+
+  testDegreesWeightFitness <- function(krweights) {
+    names(krweights) <- keyranges
+    krweights <- as.list(krweights)
+    krweights <- lapply(krweights, function(x) round(x, digits=3))
+    # clone the significance table to weight on it preserving the original
+    significance.w <- data.table(significance)
+    # alter the significance weights
+    for (keyrange in keyranges) {
+      significance.w[key == keyrange, c('V3', 'V4') := list(V3 * krweights[[keyrange]], V4 * krweights[[keyrange]])]
+    }
+    predEff <- apply(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')], 1, function(x) planetsDaySignificance(x, significance.w, panalogy, F))
+    fitness <- predEffProcess(predEff, krweights)
+    rm(panalogy, predEff)
+    gc()
+    return(fitness)
+  }
+
+  predEffProcess <- function(predEff, optvariable) {
     predEff <- ifelse(predEff > 0, 'up', ifelse(predEff < 0, 'down', NA))
     ds <- planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')]
     ds[, predEff := predEff]
@@ -1666,19 +1694,31 @@ testPlanetsAnalogySignificanceGA <- function(sinkfile) {
     t1 <- table(ds$Eff == ds$predEff, useNA='always')
     fitness <- abs(t1['TRUE']-t1[['FALSE']])
     cat("\n---------------------------------------------------------------------------------\n")
-    dput(panalogy)
+    dput(optvariable)
     print(t1)
     cat("### = ", fitness, "\n")
     # garbage
-    rm(panalogy, predEff, ds, t1)
-    gc()
+    rm(predEff, ds, t1)
     return(fitness)
   }
 
-  ga("binary", fitness=testPlanetsAnalogyFitness, nBits=132,
-     monitor=gaMonitor, maxiter=100, run=50, popSize=100, pcrossover = 0.7, pmutation = 0.2,
-     selection=gabin_rwSelection)
-  #testPlanetsAnalogyFitness('xxx')
+  gaPlanetsAnalogy <- function() {
+    ga("binary", fitness=testPlanetsAnalogyFitness, nBits=132,
+       monitor=gaMonitor, maxiter=200, run=50, popSize=200, pcrossover = 0.7, pmutation = 0.2,
+       selection=gabin_rwSelection)
+  }
+
+  gaDegreesWeight <- function() {
+    minvals <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    maxvals <- c(2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2)
+
+    ga("real-valued", fitness=testDegreesWeightFitness, names=keyranges,
+       monitor=gaMonitor, maxiter=2, run=50, popSize=10, pcrossover = 0.7, pmutation = 0.2,
+       min=minvals, max=maxvals, selection=gareal_rwSelection)
+  }
+
+  gafunc <- get(get('gafunc'))
+  gafunc()
 
   sink()
 }
