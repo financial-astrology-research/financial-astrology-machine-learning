@@ -573,6 +573,7 @@ historyAspectsCorrelation <- function(trans, trans.hist, cor_method, kplanets, k
 openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1, spby=60) {
   planets.file <- npath(planets.file)
   planets <- fread(planets.file, sep="\t", na.strings="", verbose = F)
+  setkey(planets, 'Date')
   planets$Date <- as.Date(planets$Date, format="%Y-%m-%d")
 
   if (hasArg('cusorbs')) {
@@ -630,35 +631,44 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, ve
   #init <- as.numeric( sub("\\((.+),.*", "\\1", planets.day[curcol]))
   #keyranges <- apply(matrix(seq(init, init+8), ncol=2, byrow=T), 1, function(x) return(paste('(', x[1], ',', x[2], ']', sep='')))
   for (curcol in cols) {
-    res <- significance[key==planets.day[curcol] & variable %in% planetsAnalogy[[curcol]]]
+    res <- significance[key==planets.day[[curcol]] & variable %in% planetsAnalogy[[curcol]]]
     if (nrow(res) > 0) {
       res[, origin := curcol]
       significance.day <- rbind(significance.day, res)
     }
   }
 
-  patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
-  activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
-  planets.day.asp <- planets.day[planets.day != "non" & names(planets.day) %in% activecols]
+  #patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
+  #activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
+  #planets.day.asp <- planets.day[planets.day != "non" & names(planets.day) %in% activecols]
   #for (curcol in names(planets.day.asp)) {
-    #loncol1 <- paste(substr(curcol, 1, 5), 'G', sep='')
-    #loncol2 <- paste(substr(curcol, 6, 10), 'G', sep='')
-    #significance.day[origin == loncol1 & V3 > V4, V3 := V3*1.5]
-    #significance.day[origin == loncol1 & V4 > V3, V4 := V4*1.5]
-    #significance.day[origin == loncol2 & V3 > V4, V3 := V3*1.5]
-    #significance.day[origin == loncol2 & V4 > V3, V4 := V4*1.5]
+  #  loncol1 <- paste(substr(curcol, 1, 5), 'G', sep='')
+  #  loncol2 <- paste(substr(curcol, 6, 10), 'G', sep='')
+  #  significance.day[origin == loncol1 & V3 > V4, V3 := V3*1.5]
+  #  significance.day[origin == loncol1 & V4 > V3, V4 := V4*1.5]
+  #  significance.day[origin == loncol2 & V3 > V4, V3 := V3*1.5]
+  #  significance.day[origin == loncol2 & V4 > V3, V4 := V4*1.5]
   #}
 
   if (verbose) {
-    print(planets.day['Date'])
+    print(planets.day[['Date']])
     print(significance.day)
     print(planets.day.asp)
-    print(planets.day[planetsSpCols])
+    print(planets.day[, planetsSpCols, with=F])
     print(significance.day[, sum(V4)-sum(V3)])
   }
 
   if (nrow(significance.day) > 0) {
-    return(as.integer(significance.day[, sum(V4)-sum(V3)]))
+    trend <- as.integer(significance.day[, sum(V4)-sum(V3)])
+    if (trend > 0) {
+      return('up')
+    }
+    else if (trend < 0) {
+      return('down')
+    }
+    else {
+      return('none')
+    }
   }
 
   return(0)
@@ -1603,9 +1613,9 @@ testZodDegAspectsGA <- function(sinkfile) {
   sink()
 }
 
-testPlanetsAnalogySignificanceGA <- function(sinkfile, gafunc) {
+testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
   if (!hasArg('sinkfile')) stop("Provide a sink filename.")
-  if (!hasArg('gafunc')) stop("Provide a GA function to execute")
+  if (!hasArg('execfunc')) stop("Provide a GA function to execute")
   sinkfile <- paste("~/trading/predict/", sinkfile, ".txt", sep='')
   sink(npath(sinkfile), append=TRUE)
   ptm <- proc.time()
@@ -1647,9 +1657,11 @@ testPlanetsAnalogySignificanceGA <- function(sinkfile, gafunc) {
   planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
   planets <- openPlanets("~/trading/dplanets/planets_4.tsv", orbs, aspects, 2, 50)
   significance <- planetsVarsSignificance(planets[Date > as.Date('1999-01-01') & Date < as.Date('2011-01-01')], currency, 0.10)
+  setkey(significance, 'key', 'variable', 'V3', 'V4')
   keyranges <- mixedsort(unique(significance[variable %in% planetsLonGCols]$key))
 
   testPlanetsAnalogyFitness <- function(string) {
+    looptm <- proc.time()
     panalogy <- list(SULONG = planetsLonGCols[which(string[1:12] == 1)],
                      MOLONG = planetsLonGCols[which(string[13:24] == 1)],
                      MELONG = planetsLonGCols[which(string[25:36] == 1)],
@@ -1662,10 +1674,12 @@ testPlanetsAnalogySignificanceGA <- function(sinkfile, gafunc) {
                      PLLONG = planetsLonGCols[which(string[109:120] == 1)],
                      NNLONG = planetsLonGCols[which(string[121:132] == 1)])
 
-    predEff <- apply(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')], 1, function(x) planetsDaySignificance(x, significance, panalogy, F))
+    planets.test <- data.table(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')])
+    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, F))
+    planets.test[, predEff := predEff]
 
-    fitness <- predEffProcess(looptm, predEff, krweights)
-    rm(panalogy, predEff)
+    fitness <- predEffProcess(planets.test, panalogy, looptm)
+    rm(panalogy, planets.test)
     gc()
     return(fitness)
   }
@@ -1677,24 +1691,25 @@ testPlanetsAnalogySignificanceGA <- function(sinkfile, gafunc) {
     krweights <- lapply(krweights, function(x) round(x, digits=3))
     # clone the significance table to weight on it preserving the original
     significance.w <- data.table(significance)
-    setkey(significance.w, 'key', 'V3', 'V4')
+    setkey(significance.w, 'key', 'variable', 'V3', 'V4')
+
     # alter the significance weights
     for (keyrange in keyranges) {
       significance.w[key == keyrange, c('V3', 'V4') := list(V3 * krweights[[keyrange]], V4 * krweights[[keyrange]])]
     }
-    predEff <- apply(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')], 1, function(x) planetsDaySignificance(x, significance.w, panalogy, F))
-    fitness <- predEffProcess(looptm, predEff, krweights)
-    rm(significance.w, panalogy, predEff)
+
+    planets.test <- data.table(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')])
+    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance.w, panalogy, F))
+    planets.test[, predEff := predEff]
+    fitness <- predEffProcess(planets.test, krweights, looptm)
+    rm(significance.w, planets.test)
     gc()
     return(fitness)
   }
 
-  predEffProcess <- function(looptm, predEff, optvariable) {
-    predEff <- ifelse(predEff > 0, 'up', ifelse(predEff < 0, 'down', NA))
-    ds <- planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')]
-    ds[, predEff := predEff]
-    ds <- merge(ds, currency, by='Date')
-    t1 <- table(ds$Eff == ds$predEff, useNA='always')
+  predEffProcess <- function(planets.test, optvariable, looptm) {
+    planets.test <- merge(planets.test, currency, by='Date')
+    t1 <- table(planets.test$Eff == planets.test$predEff)
     fitness <- abs(t1['TRUE']-t1[['FALSE']])
     cat("\n---------------------------------------------------------------------------------\n")
     dput(optvariable)
@@ -1702,7 +1717,7 @@ testPlanetsAnalogySignificanceGA <- function(sinkfile, gafunc) {
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
     cat("### = ", fitness, "\n")
     # garbage
-    rm(predEff, ds, t1)
+    rm(planets.test, t1)
     return(fitness)
   }
 
@@ -1721,8 +1736,8 @@ testPlanetsAnalogySignificanceGA <- function(sinkfile, gafunc) {
        min=minvals, max=maxvals, selection=gareal_rwSelection)
   }
 
-  gafunc <- get(get('gafunc'))
-  gafunc()
+  execfunc <- get(get('execfunc'))
+  execfunc(...)
 
   sink()
 }
