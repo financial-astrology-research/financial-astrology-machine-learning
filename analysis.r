@@ -638,9 +638,6 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, ve
     }
   }
 
-  #patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
-  #activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
-  #planets.day.asp <- planets.day[planets.day != "non" & names(planets.day) %in% activecols]
   #for (curcol in names(planets.day.asp)) {
   #  loncol1 <- paste(substr(curcol, 1, 5), 'G', sep='')
   #  loncol2 <- paste(substr(curcol, 6, 10), 'G', sep='')
@@ -651,10 +648,13 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, ve
   #}
 
   if (verbose) {
+    patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
+    activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
+    planets.day.asp <- planets.day[planets.day != "non" & names(planets.day) %in% activecols]
     print(planets.day[['Date']])
     print(significance.day)
     print(planets.day.asp)
-    print(planets.day[, planetsSpCols, with=F])
+    print(planets.day[planetsSpCols])
     print(significance.day[, sum(V4)-sum(V3)])
   }
 
@@ -1734,6 +1734,13 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
     ga("real-valued", fitness=testDegreesWeightFitness, names=keyranges,
        monitor=gaMonitor, maxiter=200, run=50, popSize=200, pcrossover = 0.7, pmutation = 0.2,
        min=minvals, max=maxvals, selection=gareal_rwSelection)
+  }
+
+  testPredict <- function(sdate, edate, verbose) {
+    planets.test <- data.table(planets[Date >= as.Date(sdate) & Date <= as.Date(edate)])
+    setkey(planets.test, 'Date')
+    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, verbose))
+    planets.test[, predEff := predEff]
   }
 
   execfunc <- get(get('execfunc'))
