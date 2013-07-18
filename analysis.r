@@ -1608,6 +1608,7 @@ testPlanetsAnalogySignificanceGA <- function(sinkfile, gafunc) {
   if (!hasArg('gafunc')) stop("Provide a GA function to execute")
   sinkfile <- paste("~/trading/predict/", sinkfile, ".txt", sep='')
   sink(npath(sinkfile), append=TRUE)
+  ptm <- proc.time()
 
   aspects = c(0, 30, 45, 60, 90, 120, 135, 150, 180)
 
@@ -1663,7 +1664,7 @@ testPlanetsAnalogySignificanceGA <- function(sinkfile, gafunc) {
 
     predEff <- apply(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')], 1, function(x) planetsDaySignificance(x, significance, panalogy, F))
 
-    fitness <- predEffProcess(predEff, panalogy)
+    fitness <- predEffProcess(looptm, predEff, krweights)
     rm(panalogy, predEff)
     gc()
     return(fitness)
@@ -1671,22 +1672,24 @@ testPlanetsAnalogySignificanceGA <- function(sinkfile, gafunc) {
 
   testDegreesWeightFitness <- function(krweights) {
     names(krweights) <- keyranges
+    looptm <- proc.time()
     krweights <- as.list(krweights)
     krweights <- lapply(krweights, function(x) round(x, digits=3))
     # clone the significance table to weight on it preserving the original
     significance.w <- data.table(significance)
+    setkey(significance.w, 'key', 'V3', 'V4')
     # alter the significance weights
     for (keyrange in keyranges) {
       significance.w[key == keyrange, c('V3', 'V4') := list(V3 * krweights[[keyrange]], V4 * krweights[[keyrange]])]
     }
     predEff <- apply(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')], 1, function(x) planetsDaySignificance(x, significance.w, panalogy, F))
-    fitness <- predEffProcess(predEff, krweights)
-    rm(panalogy, predEff)
+    fitness <- predEffProcess(looptm, predEff, krweights)
+    rm(significance.w, panalogy, predEff)
     gc()
     return(fitness)
   }
 
-  predEffProcess <- function(predEff, optvariable) {
+  predEffProcess <- function(looptm, predEff, optvariable) {
     predEff <- ifelse(predEff > 0, 'up', ifelse(predEff < 0, 'down', NA))
     ds <- planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')]
     ds[, predEff := predEff]
@@ -1696,6 +1699,7 @@ testPlanetsAnalogySignificanceGA <- function(sinkfile, gafunc) {
     cat("\n---------------------------------------------------------------------------------\n")
     dput(optvariable)
     print(t1)
+    cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
     cat("### = ", fitness, "\n")
     # garbage
     rm(predEff, ds, t1)
@@ -1713,7 +1717,7 @@ testPlanetsAnalogySignificanceGA <- function(sinkfile, gafunc) {
     maxvals <- c(2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2)
 
     ga("real-valued", fitness=testDegreesWeightFitness, names=keyranges,
-       monitor=gaMonitor, maxiter=2, run=50, popSize=10, pcrossover = 0.7, pmutation = 0.2,
+       monitor=gaMonitor, maxiter=200, run=50, popSize=200, pcrossover = 0.7, pmutation = 0.2,
        min=minvals, max=maxvals, selection=gareal_rwSelection)
   }
 
