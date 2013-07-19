@@ -1637,17 +1637,17 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
 
   planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG', 'SNLONG')
 
-  panalogy <- list(SULONG = c("SULONG", "MOLONG", "VELONG", "MALONG", "JULONG", "SALONG", "PLLONG", "NNLONG"),
-                   MOLONG = c("MOLONG", "MELONG", "VELONG", "URLONG"),
+  panalogy <- list(SULONG = c("SULONG", "MOLONG", "VELONG", "MALONG", "JULONG", "SALONG"),
+                   MOLONG = c("MOLONG", "MELONG", "VELONG", "URLONG", "SNLONG"),
                    MELONG = c("MELONG", "VELONG", "JULONG", "URLONG", "PLLONG"),
                    VELONG = c("MOLONG", "MELONG", "MALONG", "JULONG", "SALONG", "NNLONG", "SNLONG"),
-                   MALONG = c("MELONG", "MALONG", "JULONG", "SALONG", "NELONG", "NNLONG", "SNLONG"),
-                   JULONG = c("SULONG", "MOLONG", "MELONG", "VELONG", "MALONG", "NELONG", "SNLONG"),
-                   SALONG = c("SULONG", "MOLONG", "MELONG", "VELONG", "JULONG", "SALONG", "URLONG", "PLLONG", "NNLONG", "SNLONG"),
-                   URLONG = c("MOLONG", "MELONG", "JULONG", "URLONG", "SNLONG"),
-                   NELONG = c("MOLONG", "MELONG", "MALONG", "JULONG", "SALONG", "NELONG", "SNLONG"),
-                   PLLONG = c("VELONG", "MALONG", "JULONG", "SALONG", "NELONG", "PLLONG"),
-                   NNLONG = c("MELONG", "VELONG", "MALONG", "JULONG", "SALONG", "NNLONG"))
+                   MALONG = c("MELONG", "SALONG", "NELONG", "PLLONG", "NNLONG", "SNLONG"),
+                   JULONG = c("SULONG", "MOLONG", "MELONG", "VELONG", "MALONG", "JULONG", "NELONG", "SNLONG"),
+                   SALONG = c("SULONG", "MOLONG", "MELONG", "JULONG", "SALONG", "URLONG", "PLLONG", "SNLONG"),
+                   URLONG = c("MOLONG", "MELONG", "JULONG", "URLONG", "NELONG", "SNLONG"),
+                   NELONG = c("MOLONG", "MELONG", "MALONG", "SALONG", "NELONG", "SNLONG"),
+                   PLLONG = c("SULONG", "VELONG", "MALONG", "SALONG", "NELONG", "PLLONG"),
+                   NNLONG = c("MELONG", "VELONG", "MALONG", "JULONG", "SALONG", "NNLONG")
 
   planetsLonCols <- paste(c("SU", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "NN"), 'LON', sep='')
   planetsSpCols <- paste(c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL"), 'SP', sep='')
