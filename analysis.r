@@ -1687,7 +1687,6 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
   weightSignificance <- function(significance, krweights) {
     names(krweights) <- keyranges
     krweights <- as.list(krweights)
-    krweights <- lapply(krweights, function(x) round(x, digits=3))
     # clone the significance table to weight on it preserving the original
     significance.w <- data.table(significance)
     setkey(significance.w, 'key', 'variable', 'V3', 'V4')
@@ -1702,6 +1701,7 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
 
   testDegreesWeightFitness <- function(krweights) {
     looptm <- proc.time()
+    krweights <- round(krweights, digits=3)
     significance.w <- weightSignificance(significance, krweights)
     planets.test <- data.table(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')])
     predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance.w, panalogy, F))
