@@ -1734,7 +1734,7 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
 
   gaDegreesWeight <- function() {
     minvals <- rep(0, 180)
-    maxvals <- rep(0, 180)
+    maxvals <- rep(2, 180)
     solutions <- matrix(NA, nrow = 100, ncol = length(minvals))
 
     for (j in 1:length(minvals)) {
