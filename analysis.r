@@ -1647,7 +1647,7 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
                    URLONG = c("MOLONG", "MELONG", "JULONG", "URLONG", "NELONG", "SNLONG"),
                    NELONG = c("MOLONG", "MELONG", "MALONG", "SALONG", "NELONG", "SNLONG"),
                    PLLONG = c("SULONG", "VELONG", "MALONG", "SALONG", "NELONG", "PLLONG"),
-                   NNLONG = c("MELONG", "VELONG", "MALONG", "JULONG", "SALONG", "NNLONG")
+                   NNLONG = c("MELONG", "VELONG", "MALONG", "JULONG", "SALONG", "NNLONG"))
 
   planetsLonCols <- paste(c("SU", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "NN"), 'LON', sep='')
   planetsSpCols <- paste(c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL"), 'SP', sep='')
@@ -1684,9 +1684,8 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
     return(fitness)
   }
 
-  testDegreesWeightFitness <- function(krweights) {
+  weightSignificance <- function(significance, krweights) {
     names(krweights) <- keyranges
-    looptm <- proc.time()
     krweights <- as.list(krweights)
     krweights <- lapply(krweights, function(x) round(x, digits=3))
     # clone the significance table to weight on it preserving the original
@@ -1698,6 +1697,12 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
       significance.w[key == keyrange, c('V3', 'V4') := list(V3 * krweights[[keyrange]], V4 * krweights[[keyrange]])]
     }
 
+    return(significance.w)
+  }
+
+  testDegreesWeightFitness <- function(krweights) {
+    looptm <- proc.time()
+    significance.w <- weightSignificance(significance, krweights)
     planets.test <- data.table(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')])
     predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance.w, panalogy, F))
     planets.test[, predEff := predEff]
@@ -1728,19 +1733,36 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
   }
 
   gaDegreesWeight <- function() {
-    minvals <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-    maxvals <- c(2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2)
+    minvals <- rep(0, 180)
+    maxvals <- rep(0, 180)
+    solutions <- matrix(NA, nrow = 100, ncol = length(minvals))
+
+    for (j in 1:length(minvals)) {
+      solutions[,j] <- runif(100, minvals[j], maxvals[j])
+    }
+
+    suggested <- c(rep(1, 180), suggestedEURUSD())
+    srows <- length(suggested)/180
+    solutions[1:srows,] <- matrix(nrow=srows, ncol=180, byrow=T, suggested)
 
     ga("real-valued", fitness=testDegreesWeightFitness, names=keyranges,
-       monitor=gaMonitor, maxiter=200, run=50, popSize=200, pcrossover = 0.7, pmutation = 0.2,
-       min=minvals, max=maxvals, selection=gareal_rwSelection)
+       monitor=gaMonitor, maxiter=200, run=50, popSize=100, pcrossover = 0.7, pmutation = 0.2,
+       min=minvals, max=maxvals, selection=gareal_rwSelection, suggestions=solutions)
   }
 
-  testPredict <- function(sdate, edate, verbose) {
+  testPredict <- function(sdate, edate, verbose=F) {
+    looptm <- proc.time()
+    krweights <- suggestedEURUSD()
+    significance.w <- weightSignificance(significance, krweights)
     planets.test <- data.table(planets[Date >= as.Date(sdate) & Date <= as.Date(edate)])
-    setkey(planets.test, 'Date')
-    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, verbose))
+    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance.w, panalogy, verbose))
     planets.test[, predEff := predEff]
+    fitness <- predEffProcess(planets.test, krweights, looptm)
+  }
+
+  suggestedEURUSD <- function() {
+    solution <- c(1.053,  1.014,  0.991,  0.832,  1.075,  1.136,  1.162,  0.876,  1.075,  0.839,  0.962,  1.19,  1.044,  0.83,  0.605,  0.993,  0.79,  1.248,  1.379,  1.161,  1.128,  1.164,  0.885,  0.969,  1.049,  0.812,  1.184,  0.908,  1.25,  1.268,  0.821,  0.919,  1.163,  1.004,  0.743,  1.251,  0.785,  0.912,  1.202,  1.347,  0.976,  1.032,  1.076,  0.792,  1.162,  1.183,  0.579,  1.077,  0.942,  0.707,  0.925,  1.241,  0.975,  1.141,  1.338,  1.304,  1.316,  0.858,  0.89,  1.08,  0.786,  1.132,  0.859,  0.728,  1.064,  1.214,  1.117,  0.855,  1.138,  0.979,  0.981,  0.912,  0.838,  1.001,  1.023,  0.852,  0.937,  0.878,  1.122,  1.146,  0.892,  0.793,  1.137,  0.97,  1.114,  1.156,  1.079,  1.209,  0.839,  1.048,  0.917,  1.044,  0.713,  1.111,  1.083,  0.911,  1.321,  0.861,  0.696,  1.249,  0.827,  1.151,  1.014,  1.031,  0.796,  0.98,  1.315,  0.909,  1.131,  0.788,  1.285,  0.927,  1.321,  0.718,  1.146,  0.881,  1.101,  0.933,  0.635,  1.151,  0.835,  1.328,  1.29,  0.972,  1.104,  1.06,  1.013,  0.863,  1.127,  0.925,  1.059,  0.979,  1.169,  1.045,  1.171,  1.086,  1.133,  1.081,  1.029,  1.211,  0.787,  0.704,  1.062,  1.015,  1.063,  0.824,  1.011,  0.693,  1.142,  0.964,  0.938,  0.964,  1.151,  1.4,  0.594,  0.828,  1.091,  0.962,  0.781,  0.668,  1.022,  1.192,  1.272,  0.754,  1.185,  1.039,  1.023,  1.264,  1.378,  1.106,  0.89,  0.889,  1.23,  0.965,  0.753,  1.059,  1.309,  1.115,  0.914,  1.186)
+    return(solution)
   }
 
   execfunc <- get(get('execfunc'))
@@ -1748,5 +1770,3 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
 
   sink()
 }
-
-#predEff <- apply(planets[Date >= as.Date('2013-01-01') & Date <= as.Date('2013-01-17')], 1, function(x) planetsDaySignificance(x, significance, planetsAnalogy, T))
