@@ -122,6 +122,22 @@ maxn <- function(x, n) {
   x[order_x[n]]
 }
 
+shift <- function(x, shift_by) {
+  stopifnot(is.numeric(shift_by))
+  stopifnot(is.numeric(x))
+  if (length(shift_by) > 1)
+    return(sapply(shift_by, shift, x=x))
+  out <- NULL
+  abs_shift_by = abs(shift_by)
+  if (shift_by > 0)
+    out <- c(tail(x, -abs_shift_by), rep(NA, abs_shift_by))
+  else if (shift_by < 0 )
+    out <- c(rep(NA, abs_shift_by), head(x, -abs_shift_by))
+  else
+    out <- x
+  out
+}
+
 dsPlanetsData <- function(ds) {
   # remove observations that don't have enough market reaction (mondays with less than 12 hours)
   fds <- subset(ds, !(dayOfWeek(ds$endEffect) == 'Mon' & as.numeric(format(ds$endEffect, '%H')) < 12))
@@ -1775,15 +1791,15 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
     fitness <- predEffProcess(planets.test, list(panalogy, krweights), looptm)
   }
 
-  generatePredict <- function(sdate, edate, verbose=T) {
+  generatePredict <- function(sdate, edate, predfile, verbose=T) {
+    if (!hasArg('predfile')) stop("Provide a predfile filename.")
     looptm <- proc.time()
     panalogy <- solutionAnalogyEURUSD()
     planets.test <- data.table(planets[Date >= as.Date(sdate) & Date <= as.Date(edate)])
     setkey(planets.test, 'Date')
     predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, F, verbose))
     planets.test <- cbind(planets.test, predEff=predEff)
-    cat("\n\n")
-    print(planets.test[, c('Date', 'predEff'), with=F])
+    write.csv(planets.test[, c('Date', 'predEff'), with=F], file=paste("~/trading/predict/", predfile, ".csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
   }
 
   optimizeSignificance <- function() {
