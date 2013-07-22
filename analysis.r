@@ -1636,19 +1636,6 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
               SNLON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5))
 
   planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG', 'SNLONG')
-
-  panalogy <- list(SULONG = c("SULONG", "MOLONG", "VELONG", "MALONG", "JULONG", "SALONG"),
-                   MOLONG = c("MOLONG", "MELONG", "VELONG", "URLONG", "SNLONG"),
-                   MELONG = c("MELONG", "VELONG", "JULONG", "URLONG", "PLLONG"),
-                   VELONG = c("MOLONG", "MELONG", "MALONG", "JULONG", "SALONG", "NNLONG", "SNLONG"),
-                   MALONG = c("MELONG", "SALONG", "NELONG", "PLLONG", "NNLONG", "SNLONG"),
-                   JULONG = c("SULONG", "MOLONG", "MELONG", "VELONG", "MALONG", "JULONG", "NELONG", "SNLONG"),
-                   SALONG = c("SULONG", "MOLONG", "MELONG", "JULONG", "SALONG", "URLONG", "PLLONG", "SNLONG"),
-                   URLONG = c("MOLONG", "MELONG", "JULONG", "URLONG", "NELONG", "SNLONG"),
-                   NELONG = c("MOLONG", "MELONG", "MALONG", "SALONG", "NELONG", "SNLONG"),
-                   PLLONG = c("SULONG", "VELONG", "MALONG", "SALONG", "NELONG", "PLLONG"),
-                   NNLONG = c("MELONG", "VELONG", "MALONG", "JULONG", "SALONG", "NNLONG"))
-
   planetsLonCols <- paste(c("SU", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "NN"), 'LON', sep='')
   planetsSpCols <- paste(c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL"), 'SP', sep='')
   planetsLonCols2 <- paste(c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "NN"), 'LON', sep='')
@@ -1733,6 +1720,7 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
   }
 
   gaDegreesWeight <- function() {
+    panalogy <- solutionAnalogyEURUSD()
     minvals <- rep(0, 180)
     maxvals <- rep(2, 180)
     solutions <- matrix(NA, nrow = 100, ncol = length(minvals))
@@ -1750,14 +1738,25 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
        min=minvals, max=maxvals, selection=gareal_rwSelection, suggestions=solutions)
   }
 
-  testPredict <- function(sdate, edate, verbose=F) {
+  testPredictAnalogy <- function(sdate, edate, verbose=F) {
     looptm <- proc.time()
-    krweights <- suggestedEURUSD()
-    significance.w <- weightSignificance(significance, krweights)
+    panalogy <- solutionAnalogyEURUSD()
     planets.test <- data.table(planets[Date >= as.Date(sdate) & Date <= as.Date(edate)])
-    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance.w, panalogy, verbose))
-    planets.test[, predEff := predEff]
-    fitness <- predEffProcess(planets.test, krweights, looptm)
+    setkey(planets.test, 'Date')
+    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, verbose))
+    planets.test <- cbind(planets.test, predEff=predEff)
+    fitness <- predEffProcess(planets.test, panalogy, looptm)
+  }
+
+  generatePredict <- function(sdate, edate, verbose=T) {
+    looptm <- proc.time()
+    panalogy <- solutionAnalogyEURUSD()
+    planets.test <- data.table(planets[Date >= as.Date(sdate) & Date <= as.Date(edate)])
+    setkey(planets.test, 'Date')
+    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, verbose))
+    planets.test <- cbind(planets.test, predEff=predEff)
+    cat("\n\n")
+    print(planets.test[, c('Date', 'predEff'), with=F])
   }
 
   optimizeSignificance <- function() {
