@@ -625,7 +625,7 @@ planetsVarsSignificance <- function(planets, currency, threshold) {
   return(significance)
 }
 
-planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, verbose=F) {
+planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, answer=T, verbose=F) {
   significance.day <- data.table()
   cols <- c(paste(planetsLonCols, 'G', sep=''))
   #init <- as.numeric( sub("\\((.+),.*", "\\1", planets.day[curcol]))
@@ -660,14 +660,20 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, ve
 
   if (nrow(significance.day) > 0) {
     trend <- as.integer(significance.day[, sum(V4)-sum(V3)])
-    if (trend > 0) {
-      return('up')
-    }
-    else if (trend < 0) {
-      return('down')
+    # the result could return as answer (factor) or numeric (kind of probability)
+    if (answer) {
+      if (trend > 0) {
+        return('up')
+      }
+      else if (trend < 0) {
+        return('down')
+      }
+      else {
+        return('none')
+      }
     }
     else {
-      return('none')
+      return(trend)
     }
   }
 
@@ -1636,13 +1642,13 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
               SNLON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5))
 
   planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG', 'SNLONG')
-  planetsLonCols <- paste(c("SU", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "NN"), 'LON', sep='')
-  planetsSpCols <- paste(c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL"), 'SP', sep='')
-  planetsLonCols2 <- paste(c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "NN"), 'LON', sep='')
-  currency <- openSecurity(paste("~/trading/", security, "/", securityfile, ".csv", sep=''))
+  planetsLonCols <- paste(c("SU", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "NN"), 'LON', sep="")
+  planetsSpCols <- paste(c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL"), 'SP', sep="")
+  planetsLonCols2 <- paste(c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "NN"), 'LON', sep="")
+  currency <- openSecurity(paste("~/trading/", securitydir, "/", securityfile, ".csv", sep=""))
   planetsCombLon <- combn(planetsLonCols2, 2, simplify=F)
   planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
-  planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv"), orbs, aspects, 2, 50)
+  planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""), orbs, aspects, 2, 50)
   significance <- planetsVarsSignificance(planets[Date >= as.Date('1999-01-01') & Date < as.Date('2011-01-01')], currency, 0.10)
   setkey(significance, 'key', 'variable', 'V3', 'V4')
   keyranges <- mixedsort(unique(significance[variable %in% planetsLonGCols]$key))
@@ -1662,7 +1668,7 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
                      NNLONG = planetsLonGCols[which(string[121:132] == 1)])
 
     planets.test <- data.table(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')])
-    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, F))
+    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, T, F))
     planets.test <- cbind(planets.test, predEff=predEff)
 
     fitness <- predEffProcess(planets.test, panalogy, looptm)
@@ -1692,7 +1698,7 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
     krweights <- round(krweights, digits=3)
     significance.w <- weightSignificance(significance, krweights)
     planets.test <- data.table(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')])
-    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance.w, panalogy, F))
+    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance.w, panalogy, T, F))
     planets.test <- cbind(planets.test, predEff=predEff)
     fitness <- predEffProcess(planets.test, list(panalogy, krweights), looptm)
     rm(significance.w, planets.test)
@@ -1713,7 +1719,7 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
     else {
       dput(optvariables)
     }
-    cat("securitydir=", securitydir, ", securityfile=", securityfile, ", planetsfile=", planetsfile, "\n", sep="")
+    cat("securitydir=", shQuote(securitydir), ", securityfile=", shQuote(securityfile), ", planetsfile=", shQuote(planetsfile), "\n", sep="")
     print(t1)
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
     cat("### = ", fitness, "\n")
@@ -1749,10 +1755,10 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
 
   testPredictAnalogy <- function(sdate, edate, verbose=F) {
     looptm <- proc.time()
-    panalogy <- solutionAnalogyEURUSD()
+    panalogy <- solutionAnalogyEURUSD2()
     planets.test <- data.table(planets[Date >= as.Date(sdate) & Date <= as.Date(edate)])
     setkey(planets.test, 'Date')
-    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, verbose))
+    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, T, verbose))
     planets.test <- cbind(planets.test, predEff=predEff)
     fitness <- predEffProcess(planets.test, panalogy, looptm)
   }
@@ -1764,7 +1770,7 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
     significance.w <- weightSignificance(significance, krweights)
     planets.test <- data.table(planets[Date >= as.Date(sdate) & Date <= as.Date(edate)])
     setkey(planets.test, 'Date')
-    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, verbose))
+    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, T, verbose))
     planets.test <- cbind(planets.test, predEff=predEff)
     fitness <- predEffProcess(planets.test, list(panalogy, krweights), looptm)
   }
@@ -1774,7 +1780,7 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
     panalogy <- solutionAnalogyEURUSD()
     planets.test <- data.table(planets[Date >= as.Date(sdate) & Date <= as.Date(edate)])
     setkey(planets.test, 'Date')
-    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, verbose))
+    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, F, verbose))
     planets.test <- cbind(planets.test, predEff=predEff)
     cat("\n\n")
     print(planets.test[, c('Date', 'predEff'), with=F])
@@ -1789,7 +1795,7 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
       significance <- planetsVarsSignificance(planets[Date > as.Date('1999-01-01') & Date < as.Date('2011-01-01')], currency, threshold)
       significance.w <- weightSignificance(significance, krweights)
       planets.test <- data.table(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')])
-      predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance.w, panalogy, F))
+      predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance.w, panalogy, T, F))
       planets.test <- cbind(planets.test, predEff=predEff)
       fitness <- predEffProcess(planets.test, threshold, looptm)
       rm(significance, significance.w, planets.test, predEff)
