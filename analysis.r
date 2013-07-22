@@ -293,7 +293,7 @@ openCurrency  <- function(currency_file) {
   currency
 }
 
-openCommodity <- function(currency_file) {
+openSecurity <- function(currency_file) {
   currency_file <- npath(currency_file)
   currency <- read.table(currency_file, header = F, sep=",")
   names(currency) <- c('Date', 'Time', 'Open', 'High', 'Low', 'Close', 'Volume')
@@ -728,7 +728,7 @@ funtionizethis  <- function() {
 
   # euro usd currency daily
   eurusd_full <- openCurrency("~/trading/EURUSD_day.csv")
-  #eurusd <- openCommodity("~/trading/")
+  #eurusd <- openSecurity("~/trading/")
   # usd cad currency daily
   usdcad <- openCurrency("~/trading/USDCAD_day.csv")
   # transits USD chart
@@ -868,7 +868,7 @@ loadTrans <- function(datefix, aspmode, asptype, maxasp) {
 
 loadTransHist <- function(datefix, aspmode, asptype, maxasp) {
   trans <- loadTrans(datefix, asptype, asptype, maxasp)
-  eurusd <- openCommodity("~/trading/EURUSD_day_fxpro_20130611.csv")
+  eurusd <- openSecurity("~/trading/EURUSD_day_fxpro_20130611.csv")
   # merge with the currency history
   mergeTrans(trans, eurusd)
 }
@@ -943,7 +943,7 @@ bestRandomForest <- function() {
   setkey(trans.testing, 'Date')
   pred.table <- trans.testing[,as.list(table(predicted)), by=c('Date')]
   pred.table[,prop := (down-up)/(down+up)]
-  eurusd <- openCommodity("~/trading/EURUSD_day_fxpro_20130611.csv")
+  eurusd <- openSecurity("~/trading/EURUSD_day_fxpro_20130611.csv")
   eurusd <- data.table(eurusd)
   pred.table <- merge(pred.table, eurusd, by='Date')
   pred.table[, predEff := lapply(prop, function(x) ifelse(x > threshold, 'down', ifelse(x < -1*threshold, 'up', NA)))]
@@ -1146,7 +1146,7 @@ testDailyRandomForest <- function(sinkfile, planetsdir, fileno, commoditydir, co
   sinkfile <- paste("~/trading/predict/", sinkfile, ".txt", sep='')
   sink(npath(sinkfile), append=TRUE)
   # currency data
-  currency <- openCommodity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
+  currency <- openSecurity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
   if (hasArg('chartfile')) chart <- fread(paste("~/trading/charts/", chartfile, '.tsv', sep=''), header = T, sep="\t", na.strings="")
 
   # process planets
@@ -1218,7 +1218,7 @@ testDailyRandomForest <- function(sinkfile, planetsdir, fileno, commoditydir, co
 testDailyRandomForestSolution <- function(planetsdir, fileno, commoditydir, commodityfile,
                                           sdate, edate, selcols, modelfun='randomForest', predproc=FALSE, chartfile, ...) {
   # currency data
-  currency <- openCommodity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
+  currency <- openSecurity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
   colNames <- c(paste(planetsBaseCols, 'LON', sep=''), paste(planetsBaseCols, 'LAT', sep=''), paste(planetsBaseCols, 'SP', sep=''))
   if (hasArg('chartfile')) chart <- fread(paste("~/trading/charts/", chartfile, '.tsv', sep=''), header = T, sep="\t", na.strings="")
 
@@ -1278,7 +1278,7 @@ testCorrelationOptimization <- function(sinkfile, directory, fileno) {
   # predict Thresholds
   predThresholds <- seq(0.1, 0.9, by=0.1)
   # currency data
-  currency <- openCommodity("~/trading/EURUSD_day_fxpro_20130611.csv")
+  currency <- openSecurity("~/trading/EURUSD_day_fxpro_20130611.csv")
   trans <- openTrans(paste("~/trading/", directory, "/trans_", fileno, ".tsv", sep=''), 1)
 
   corFitness <- function(x) {
@@ -1351,7 +1351,7 @@ testCorrelationOptimization <- function(sinkfile, directory, fileno) {
 testCorrelationSolution <- function(directory, fileno, aspnames, asptypes, cormethod, binarize,
                                     rmzeroaspects, qinmode, maxasp, kplanets, kaspects, predtreshold) {
   # currency data
-  currency <- openCommodity("~/trading/EURUSD_day_fxpro_20130611.csv")
+  currency <- openSecurity("~/trading/EURUSD_day_fxpro_20130611.csv")
   trans <- openTrans(paste("~/trading/", directory, "/trans_", fileno, ".tsv", sep=''), 1)
 
   # process transits
@@ -1494,7 +1494,7 @@ testDailyPlanetsOrbsGA <- function(sinkfile, planetsdir, fileno, commoditydir, c
   sinkfile <- paste("~/trading/predict/", sinkfile, ".txt", sep='')
   sink(npath(sinkfile), append=TRUE)
   # currency data
-  currency <- openCommodity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
+  currency <- openSecurity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
   chart <- fread(npath(paste("~/trading/charts/", chartfile, '.tsv', sep='')), sep="\t", na.strings="")
   itest <- 1
   # Init clock
@@ -1562,7 +1562,7 @@ testDailyPlanetsOrbsGA <- function(sinkfile, planetsdir, fileno, commoditydir, c
 testDailyPlanetsOrbsSolution <- function(planetsdir, fileno, commoditydir, commodityfile,
                                          sdate, edate, chartfile, cusorbs, resplot=F) {
   # currency data
-  currency <- openCommodity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
+  currency <- openSecurity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
   chart <- fread(npath(paste("~/trading/charts/", chartfile, '.tsv', sep='')), sep="\t", na.strings="")
   cusorbs <- round(cusorbs, digits=2)
   planets <- openPlanets(paste("~/trading/", planetsdir, "/planets_", fileno, ".tsv", sep=''), chart, cusorbs)
@@ -1585,7 +1585,7 @@ testZodDegAspectsGA <- function(sinkfile) {
   sinkfile <- paste("~/trading/predict/", sinkfile, ".txt", sep='')
   sink(npath(sinkfile), append=TRUE)
 
-  currency <- openCommodity("~/trading/currency/EURUSD_fxpro.csv")
+  currency <- openSecurity("~/trading/currency/EURUSD_fxpro.csv")
   testZodDegAspectsFitness <- function(string) {
     inc1 <- which(string[1:12] == 1)
     inc2 <- which(string[13:32] == 1)
@@ -1613,7 +1613,7 @@ testZodDegAspectsGA <- function(sinkfile) {
   sink()
 }
 
-testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
+testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, planetsfile, execfunc, ...) {
   if (!hasArg('sinkfile')) stop("Provide a sink filename.")
   if (!hasArg('execfunc')) stop("Provide a GA function to execute")
   sinkfile <- paste("~/trading/predict/", sinkfile, ".txt", sep='')
@@ -1639,11 +1639,11 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
   planetsLonCols <- paste(c("SU", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "NN"), 'LON', sep='')
   planetsSpCols <- paste(c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL"), 'SP', sep='')
   planetsLonCols2 <- paste(c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "NN"), 'LON', sep='')
-  currency <- openCommodity("~/trading/currency/EURUSD_fxpro.csv")
+  currency <- openSecurity(paste("~/trading/", security, "/", securityfile, ".csv", sep=''))
   planetsCombLon <- combn(planetsLonCols2, 2, simplify=F)
   planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
-  planets <- openPlanets("~/trading/dplanets/planets_4.tsv", orbs, aspects, 2, 50)
-  significance <- planetsVarsSignificance(planets[Date > as.Date('1999-01-01') & Date < as.Date('2011-01-01')], currency, 0.10)
+  planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv"), orbs, aspects, 2, 50)
+  significance <- planetsVarsSignificance(planets[Date >= as.Date('1999-01-01') & Date < as.Date('2011-01-01')], currency, 0.10)
   setkey(significance, 'key', 'variable', 'V3', 'V4')
   keyranges <- mixedsort(unique(significance[variable %in% planetsLonGCols]$key))
 
@@ -1713,6 +1713,7 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
     else {
       dput(optvariables)
     }
+    cat("securitydir=", securitydir, ", securityfile=", securityfile, ", planetsfile=", planetsfile, "\n", sep="")
     print(t1)
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
     cat("### = ", fitness, "\n")
@@ -1761,7 +1762,6 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
     panalogy <- solutionAnalogyEURUSD2()
     krweights <- solutionWeigthEURUSD2()
     significance.w <- weightSignificance(significance, krweights)
-    panalogy <- solutionAnalogyEURUSD()
     planets.test <- data.table(planets[Date >= as.Date(sdate) & Date <= as.Date(edate)])
     setkey(planets.test, 'Date')
     predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, verbose))
@@ -1803,7 +1803,7 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
   }
 
   solutionWeigthEURUSD2 <- function() {
-    weights <- list( 0.984, 0.983, 1.001, 0.872, 1.095, 1.049, 1.066, 0.826, 1.084, 0.875, 0.946, 1.008, 1.092, 0.854, 1.022, 1.042, 1.026, 1.209, 0.977, 1.204, 1.087, 0.875, 0.977, 0.837, 1.045, 0.852, 1.132, 0.892, 1.089, 1.148, 0.901, 1.039, 1.099, 1.077, 0.937, 1.255, 0.772, 0.96, 1.179, 1.029, 1.089, 1.085, 0.925, 0.944, 0.996, 1.153, 0.835, 1.053, 1.026, 0.784, 0.991, 1.176, 1.046, 0.885, 1.104, 1.175, 1.303, 1.061, 0.873, 1.001, 0.846, 1.132, 0.91, 0.96, 1.145, 1.164, 0.942, 1.014, 1.055, 0.881, 0.947, 1.004, 0.913, 1.048, 1.002, 0.886, 0.877, 1.007, 1.096, 1.026, 0.87, 0.971, 0.918, 0.912, 0.937, 0.966, 1.044, 1.155, 0.936, 0.975, 0.97, 1.006, 0.962, 1.018, 1.044, 0.995, 1.088, 0.989, 0.886, 1.146, 0.87, 1.185, 1.042, 0.796, 0.748, 0.985, 1.123, 0.819, 1.118, 1.286, 1.26, 0.935, 1.054, 0.929, 1.057, 1.012, 1.157, 1.013, 0.867, 1.059, 0.971, 1.164, 1.138, 1.067, 1.082, 1.207, 1.124, 0.91, 1.214, 1.006, 1.013, 0.882, 1.076, 0.98, 1.126, 1.017, 1.075, 1.093, 0.983, 1.013, 0.953, 0.85, 0.984, 1.083, 1.04, 1.015, 0.933, 0.75, 1.053, 1.043, 0.909, 0.999, 1.087, 1.046, 0.989, 0.945, 1.012, 0.944, 0.925, 0.826, 0.986, 1.195, 1.139, 0.811, 1.158, 1.051, 1.141, 1.096, 1.264, 1.192, 0.95, 0.915, 1.145, 0.837, 0.946, 1.053, 1.111, 1.126, 0.925, 1.037)
+    weights <- list( 0.98, 1, 1.006, 0.914, 1.096, 1.052, 1.059, 0.841, 1.033, 1.139, 0.942, 1.072, 1.062, 0.853, 1.016, 0.916, 1.03, 1.21, 0.973, 1.194, 1.095, 0.865, 0.972, 0.842, 1.083, 0.841, 1.147, 0.888, 1.092, 1.156, 0.9, 1.037, 1.098, 1.079, 0.941, 1.254, 0.736, 0.96, 1.178, 1.059, 1.088, 1.086, 0.922, 0.945, 0.981, 1.152, 0.831, 1.044, 1.015, 0.783, 1.005, 1.173, 1.1, 0.863, 1.109, 1.181, 1.302, 1.06, 0.878, 0.999, 0.847, 1.19, 0.925, 0.957, 1.145, 1.173, 0.938, 1.002, 1.07, 0.872, 0.946, 1.001, 0.955, 1.043, 1.001, 0.886, 0.877, 1, 1.098, 1.031, 0.848, 0.972, 0.91, 0.909, 0.947, 1.008, 1.05, 1.147, 0.934, 0.981, 0.972, 1.006, 0.932, 1.021, 1.04, 0.997, 1.088, 0.99, 0.886, 1.14, 0.853, 1.201, 1.042, 1.033, 0.752, 1.374, 1.123, 0.816, 1.104, 0.766, 1.257, 0.936, 1.009, 0.954, 1.057, 0.99, 1.156, 1.012, 0.867, 1.091, 0.969, 1.16, 1.157, 1.066, 1.098, 1.222, 1.115, 0.907, 1.175, 1.006, 1.013, 0.912, 1.08, 0.977, 1.126, 1.02, 1.078, 1.093, 0.982, 1.039, 0.965, 0.835, 0.991, 1.084, 1.04, 1.015, 0.993, 0.761, 1.043, 1.044, 0.902, 0.995, 1.077, 0.83, 0.993, 0.947, 1.013, 0.948, 0.915, 0.83, 0.987, 1.193, 1.14, 0.795, 1.208, 1.061, 1.145, 1.092, 1.259, 1.222, 0.947, 0.916, 1.149, 0.908, 0.917, 1.06, 1.127, 1.122, 0.922, 1.075)
     return(weights)
   }
 
@@ -1823,17 +1823,7 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
   }
 
   solutionAnalogyEURUSD2 <- function() {
-    panalogy <- list(SULONG = c("SULONG", "MOLONG", "VELONG", "MALONG", "JULONG", "SALONG"),
-                     MOLONG = c("MOLONG", "MELONG", "VELONG", "URLONG", "SNLONG"),
-                     MELONG = c("MELONG", "VELONG", "JULONG", "URLONG", "PLLONG"),
-                     VELONG = c("MOLONG", "MELONG", "MALONG", "JULONG", "SALONG", "NNLONG", "SNLONG"),
-                     MALONG = c("MELONG", "SALONG", "NELONG", "PLLONG", "NNLONG", "SNLONG"),
-                     JULONG = c("SULONG", "MOLONG", "MELONG", "VELONG", "MALONG", "JULONG", "NELONG", "SNLONG"),
-                     SALONG = c("SULONG", "MOLONG", "MELONG", "JULONG", "SALONG", "URLONG", "PLLONG", "SNLONG"),
-                     URLONG = c("MOLONG", "MELONG", "JULONG", "URLONG", "NELONG", "SNLONG"),
-                     NELONG = c("MOLONG", "MELONG", "MALONG", "SALONG", "NELONG", "SNLONG"),
-                     PLLONG = c("SULONG", "VELONG", "MALONG", "SALONG", "NELONG", "PLLONG"),
-                     NNLONG = c("MELONG", "VELONG", "MALONG", "JULONG", "SALONG", "NNLONG"))
+    panalogy <- list(SULONG = c("SULONG", "MOLONG", "MALONG", "SALONG", "URLONG", "NELONG", "NNLONG"), MOLONG = c("MOLONG", "MELONG", "MALONG", "SALONG", "URLONG", "NELONG", "SNLONG"), MELONG = c("VELONG", "JULONG", "SALONG"), VELONG = c("SULONG", "MOLONG", "JULONG", "NNLONG"), MALONG = c("MOLONG", "VELONG", "MALONG", "NNLONG", "SNLONG"), JULONG = c("MOLONG", "VELONG", "MALONG", "URLONG", "PLLONG"), SALONG = c("MELONG", "VELONG", "JULONG", "SALONG", "NELONG"), URLONG = c("MOLONG", "VELONG", "SALONG", "URLONG", "PLLONG"), NELONG = c("MOLONG", "MALONG", "JULONG", "PLLONG", "NNLONG", "SNLONG"), PLLONG = c("VELONG", "SALONG", "PLLONG"), NNLONG = c("MELONG", "VELONG", "MALONG", "JULONG", "URLONG", "NNLONG"))
     return(panalogy)
   }
 
