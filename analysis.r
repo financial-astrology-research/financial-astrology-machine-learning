@@ -1709,7 +1709,7 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
   predEffProcess <- function(planets.test, optvariables, looptm) {
     planets.test <- merge(planets.test, currency, by='Date')
     t1 <- table(planets.test$Eff == planets.test$predEff)
-    fitness <- abs(t1['TRUE']-t1[['FALSE']])
+    fitness <- t1['TRUE']-t1[['FALSE']]
     cat("\n---------------------------------------------------------------------------------\n")
     if (class(optvariables) == 'list') {
       for (optvariable in optvariables) {
