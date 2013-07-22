@@ -1641,8 +1641,8 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
               NNLON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
               SNLON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5))
 
-  planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG', 'SNLONG')
-  planetsLonCols <- paste(c("SU", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "NN"), 'LON', sep="")
+  planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG')
+  planetsLonCols <- paste(c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "NN"), 'LON', sep="")
   planetsSpCols <- paste(c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL"), 'SP', sep="")
   planetsLonCols2 <- paste(c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "NN"), 'LON', sep="")
   currency <- openSecurity(paste("~/trading/", securitydir, "/", securityfile, ".csv", sep=""))
@@ -1655,17 +1655,17 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
 
   testPlanetsAnalogyFitness <- function(string) {
     looptm <- proc.time()
-    panalogy <- list(SULONG = planetsLonGCols[which(string[1:12] == 1)],
-                     MOLONG = planetsLonGCols[which(string[13:24] == 1)],
-                     MELONG = planetsLonGCols[which(string[25:36] == 1)],
-                     VELONG = planetsLonGCols[which(string[37:48] == 1)],
-                     MALONG = planetsLonGCols[which(string[49:60] == 1)],
-                     JULONG = planetsLonGCols[which(string[61:72] == 1)],
-                     SALONG = planetsLonGCols[which(string[73:84] == 1)],
-                     URLONG = planetsLonGCols[which(string[85:96] == 1)],
-                     NELONG = planetsLonGCols[which(string[97:108] == 1)],
-                     PLLONG = planetsLonGCols[which(string[109:120] == 1)],
-                     NNLONG = planetsLonGCols[which(string[121:132] == 1)])
+    panalogy <- list(SULONG = planetsLonGCols[which(string[1  :11 ] == 1)],
+                     MOLONG = planetsLonGCols[which(string[12 :22 ] == 1)],
+                     MELONG = planetsLonGCols[which(string[23 :33 ] == 1)],
+                     VELONG = planetsLonGCols[which(string[34 :44 ] == 1)],
+                     MALONG = planetsLonGCols[which(string[45 :55 ] == 1)],
+                     JULONG = planetsLonGCols[which(string[56 :66 ] == 1)],
+                     SALONG = planetsLonGCols[which(string[67 :77 ] == 1)],
+                     URLONG = planetsLonGCols[which(string[78 :88 ] == 1)],
+                     NELONG = planetsLonGCols[which(string[89 :99 ] == 1)],
+                     PLLONG = planetsLonGCols[which(string[100:110] == 1)],
+                     NNLONG = planetsLonGCols[which(string[111:121] == 1)])
 
     planets.test <- data.table(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')])
     predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, T, F))
@@ -1729,13 +1729,13 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
   }
 
   gaPlanetsAnalogy <- function() {
-    ga("binary", fitness=testPlanetsAnalogyFitness, nBits=132,
-       monitor=gaMonitor, maxiter=200, run=50, popSize=200, pcrossover = 0.7, pmutation = 0.2,
-       selection=gabin_rwSelection)
+    ga("binary", fitness=testPlanetsAnalogyFitness, nBits=121,
+       monitor=gaMonitor, maxiter=200, run=50, popSize=200, pcrossover = 0.6, pmutation = 0.3,
+       selection=gabin_rwSelection, crossover=gabin_spCrossover)
   }
 
   gaDegreesWeight <- function() {
-    panalogy <- solutionAnalogyEURUSD()
+    panalogy <- solutionAnalogyEURUSD2()
     minvals <- rep(0, 180)
     maxvals <- rep(2, 180)
     solutions <- matrix(NA, nrow = 100, ncol = length(minvals))
@@ -1744,7 +1744,7 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
       solutions[,j] <- runif(100, minvals[j], maxvals[j])
     }
 
-    suggested <- c(rep(1, 180), solutionWeigthEURUSD())
+    suggested <- c(rep(1, 180), solutionWeigthEURUSD2())
     srows <- length(suggested)/180
     solutions[1:srows,] <- matrix(nrow=srows, ncol=180, byrow=T, suggested)
 
