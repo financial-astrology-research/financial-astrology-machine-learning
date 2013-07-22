@@ -1688,23 +1688,31 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
 
   testDegreesWeightFitness <- function(krweights) {
     looptm <- proc.time()
+    panalogy <- solutionAnalogyEURUSD()
     krweights <- round(krweights, digits=3)
     significance.w <- weightSignificance(significance, krweights)
     planets.test <- data.table(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')])
     predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance.w, panalogy, F))
     planets.test <- cbind(planets.test, predEff=predEff)
-    fitness <- predEffProcess(planets.test, krweights, looptm)
+    fitness <- predEffProcess(planets.test, list(panalogy, krweights), looptm)
     rm(significance.w, planets.test)
     gc()
     return(fitness)
   }
 
-  predEffProcess <- function(planets.test, optvariable, looptm) {
+  predEffProcess <- function(planets.test, optvariables, looptm) {
     planets.test <- merge(planets.test, currency, by='Date')
     t1 <- table(planets.test$Eff == planets.test$predEff)
     fitness <- abs(t1['TRUE']-t1[['FALSE']])
     cat("\n---------------------------------------------------------------------------------\n")
-    dput(optvariable)
+    if (class(optvariables) == 'list') {
+      for (optvariable in optvariables) {
+        dput(optvariable)
+      }
+    }
+    else {
+      dput(optvariables)
+    }
     print(t1)
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
     cat("### = ", fitness, "\n")
@@ -1729,7 +1737,7 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
       solutions[,j] <- runif(100, minvals[j], maxvals[j])
     }
 
-    suggested <- c(rep(1, 180), suggestedEURUSD())
+    suggested <- c(rep(1, 180), solutionWeigthEURUSD())
     srows <- length(suggested)/180
     solutions[1:srows,] <- matrix(nrow=srows, ncol=180, byrow=T, suggested)
 
@@ -1748,6 +1756,19 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
     fitness <- predEffProcess(planets.test, panalogy, looptm)
   }
 
+  testPredictAnalogyWeigths <- function(sdate, edate, verbose=F) {
+    looptm <- proc.time()
+    panalogy <- solutionAnalogyEURUSD2()
+    krweights <- solutionWeigthEURUSD2()
+    significance.w <- weightSignificance(significance, krweights)
+    panalogy <- solutionAnalogyEURUSD()
+    planets.test <- data.table(planets[Date >= as.Date(sdate) & Date <= as.Date(edate)])
+    setkey(planets.test, 'Date')
+    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, verbose))
+    planets.test <- cbind(planets.test, predEff=predEff)
+    fitness <- predEffProcess(planets.test, list(panalogy, krweights), looptm)
+  }
+
   generatePredict <- function(sdate, edate, verbose=T) {
     looptm <- proc.time()
     panalogy <- solutionAnalogyEURUSD()
@@ -1761,7 +1782,7 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
 
   optimizeSignificance <- function() {
     thresholds <- seq(0, 1, by=0.05)
-    krweights <- suggestedEURUSD()
+    krweights <- solutionWeigthEURUSD()
     panology <- solutionAnalogyEURUSD()
     for (threshold in thresholds) {
       looptm <- proc.time()
@@ -1776,23 +1797,44 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
     }
   }
 
-  suggestedEURUSD <- function() {
+  solutionWeigthEURUSD <- function() {
     solution <- c(1.053,  1.014,  0.991,  0.832,  1.075,  1.136,  1.162,  0.876,  1.075,  0.839,  0.962,  1.19,  1.044,  0.83,  0.605,  0.993,  0.79,  1.248,  1.379,  1.161,  1.128,  1.164,  0.885,  0.969,  1.049,  0.812,  1.184,  0.908,  1.25,  1.268,  0.821,  0.919,  1.163,  1.004,  0.743,  1.251,  0.785,  0.912,  1.202,  1.347,  0.976,  1.032,  1.076,  0.792,  1.162,  1.183,  0.579,  1.077,  0.942,  0.707,  0.925,  1.241,  0.975,  1.141,  1.338,  1.304,  1.316,  0.858,  0.89,  1.08,  0.786,  1.132,  0.859,  0.728,  1.064,  1.214,  1.117,  0.855,  1.138,  0.979,  0.981,  0.912,  0.838,  1.001,  1.023,  0.852,  0.937,  0.878,  1.122,  1.146,  0.892,  0.793,  1.137,  0.97,  1.114,  1.156,  1.079,  1.209,  0.839,  1.048,  0.917,  1.044,  0.713,  1.111,  1.083,  0.911,  1.321,  0.861,  0.696,  1.249,  0.827,  1.151,  1.014,  1.031,  0.796,  0.98,  1.315,  0.909,  1.131,  0.788,  1.285,  0.927,  1.321,  0.718,  1.146,  0.881,  1.101,  0.933,  0.635,  1.151,  0.835,  1.328,  1.29,  0.972,  1.104,  1.06,  1.013,  0.863,  1.127,  0.925,  1.059,  0.979,  1.169,  1.045,  1.171,  1.086,  1.133,  1.081,  1.029,  1.211,  0.787,  0.704,  1.062,  1.015,  1.063,  0.824,  1.011,  0.693,  1.142,  0.964,  0.938,  0.964,  1.151,  1.4,  0.594,  0.828,  1.091,  0.962,  0.781,  0.668,  1.022,  1.192,  1.272,  0.754,  1.185,  1.039,  1.023,  1.264,  1.378,  1.106,  0.89,  0.889,  1.23,  0.965,  0.753,  1.059,  1.309,  1.115,  0.914,  1.186)
     return(solution)
   }
 
+  solutionWeigthEURUSD2 <- function() {
+    weights <- list( 0.984, 0.983, 1.001, 0.872, 1.095, 1.049, 1.066, 0.826, 1.084, 0.875, 0.946, 1.008, 1.092, 0.854, 1.022, 1.042, 1.026, 1.209, 0.977, 1.204, 1.087, 0.875, 0.977, 0.837, 1.045, 0.852, 1.132, 0.892, 1.089, 1.148, 0.901, 1.039, 1.099, 1.077, 0.937, 1.255, 0.772, 0.96, 1.179, 1.029, 1.089, 1.085, 0.925, 0.944, 0.996, 1.153, 0.835, 1.053, 1.026, 0.784, 0.991, 1.176, 1.046, 0.885, 1.104, 1.175, 1.303, 1.061, 0.873, 1.001, 0.846, 1.132, 0.91, 0.96, 1.145, 1.164, 0.942, 1.014, 1.055, 0.881, 0.947, 1.004, 0.913, 1.048, 1.002, 0.886, 0.877, 1.007, 1.096, 1.026, 0.87, 0.971, 0.918, 0.912, 0.937, 0.966, 1.044, 1.155, 0.936, 0.975, 0.97, 1.006, 0.962, 1.018, 1.044, 0.995, 1.088, 0.989, 0.886, 1.146, 0.87, 1.185, 1.042, 0.796, 0.748, 0.985, 1.123, 0.819, 1.118, 1.286, 1.26, 0.935, 1.054, 0.929, 1.057, 1.012, 1.157, 1.013, 0.867, 1.059, 0.971, 1.164, 1.138, 1.067, 1.082, 1.207, 1.124, 0.91, 1.214, 1.006, 1.013, 0.882, 1.076, 0.98, 1.126, 1.017, 1.075, 1.093, 0.983, 1.013, 0.953, 0.85, 0.984, 1.083, 1.04, 1.015, 0.933, 0.75, 1.053, 1.043, 0.909, 0.999, 1.087, 1.046, 0.989, 0.945, 1.012, 0.944, 0.925, 0.826, 0.986, 1.195, 1.139, 0.811, 1.158, 1.051, 1.141, 1.096, 1.264, 1.192, 0.95, 0.915, 1.145, 0.837, 0.946, 1.053, 1.111, 1.126, 0.925, 1.037)
+    return(weights)
+  }
+
   solutionAnalogyEURUSD <- function() {
-    return(list(SULONG = c("SULONG", "MOLONG", "MALONG", "SALONG", "URLONG", "NNLONG"),
-                MOLONG = c("MOLONG", "MELONG", "MALONG", "SALONG", "URLONG", "SNLONG"),
-                MELONG = c("VELONG", "JULONG", "SALONG"),
-                VELONG = c("SULONG", "MOLONG", "MELONG", "JULONG", "PLLONG", "NNLONG"),
-                MALONG = c("MOLONG", "MELONG", "MALONG", "NNLONG", "SNLONG"),
-                JULONG = c("MOLONG", "VELONG", "MALONG", "URLONG", "PLLONG"),
-                SALONG = c("SULONG", "MELONG", "VELONG", "JULONG", "SALONG", "NELONG", "NNLONG", "SNLONG"),
-                URLONG = c("MOLONG", "VELONG", "SALONG", "PLLONG"),
-                NELONG = c("MOLONG", "MALONG", "JULONG", "NNLONG", "SNLONG"),
-                PLLONG = c("VELONG", "SALONG", "PLLONG"),
-                NNLONG = c("MELONG", "VELONG", "JULONG")))
+    panalogy <- list(SULONG = c("SULONG", "MOLONG", "MALONG", "SALONG", "URLONG", "NNLONG"),
+                     MOLONG = c("MOLONG", "MELONG", "MALONG", "SALONG", "URLONG", "SNLONG"),
+                     MELONG = c("VELONG", "JULONG", "SALONG"),
+                     VELONG = c("SULONG", "MOLONG", "MELONG", "JULONG", "PLLONG", "NNLONG"),
+                     MALONG = c("MOLONG", "MELONG", "MALONG", "NNLONG", "SNLONG"),
+                     JULONG = c("MOLONG", "VELONG", "MALONG", "URLONG", "PLLONG"),
+                     SALONG = c("SULONG", "MELONG", "VELONG", "JULONG", "SALONG", "NELONG", "NNLONG", "SNLONG"),
+                     URLONG = c("MOLONG", "VELONG", "SALONG", "PLLONG"),
+                     NELONG = c("MOLONG", "MALONG", "JULONG", "NNLONG", "SNLONG"),
+                     PLLONG = c("VELONG", "SALONG", "PLLONG"),
+                     NNLONG = c("MELONG", "VELONG", "JULONG"))
+    return(panalogy)
+  }
+
+  solutionAnalogyEURUSD2 <- function() {
+    panalogy <- list(SULONG = c("SULONG", "MOLONG", "VELONG", "MALONG", "JULONG", "SALONG"),
+                     MOLONG = c("MOLONG", "MELONG", "VELONG", "URLONG", "SNLONG"),
+                     MELONG = c("MELONG", "VELONG", "JULONG", "URLONG", "PLLONG"),
+                     VELONG = c("MOLONG", "MELONG", "MALONG", "JULONG", "SALONG", "NNLONG", "SNLONG"),
+                     MALONG = c("MELONG", "SALONG", "NELONG", "PLLONG", "NNLONG", "SNLONG"),
+                     JULONG = c("SULONG", "MOLONG", "MELONG", "VELONG", "MALONG", "JULONG", "NELONG", "SNLONG"),
+                     SALONG = c("SULONG", "MOLONG", "MELONG", "JULONG", "SALONG", "URLONG", "PLLONG", "SNLONG"),
+                     URLONG = c("MOLONG", "MELONG", "JULONG", "URLONG", "NELONG", "SNLONG"),
+                     NELONG = c("MOLONG", "MELONG", "MALONG", "SALONG", "NELONG", "SNLONG"),
+                     PLLONG = c("SULONG", "VELONG", "MALONG", "SALONG", "NELONG", "PLLONG"),
+                     NNLONG = c("MELONG", "VELONG", "MALONG", "JULONG", "SALONG", "NNLONG"))
+    return(panalogy)
   }
 
   execfunc <- get(get('execfunc'))
