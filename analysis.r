@@ -633,7 +633,7 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, ve
   for (curcol in cols) {
     res <- significance[key==planets.day[[curcol]] & variable %in% planetsAnalogy[[curcol]]]
     if (nrow(res) > 0) {
-      res[, origin := curcol]
+      res <- cbind(res, origin=curcol)
       significance.day <- rbind(significance.day, res)
     }
   }
@@ -1676,7 +1676,7 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
 
     planets.test <- data.table(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')])
     predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, F))
-    planets.test[, predEff := predEff]
+    planets.test <- cbind(planets.test, predEff=predEff)
 
     fitness <- predEffProcess(planets.test, panalogy, looptm)
     rm(panalogy, planets.test)
@@ -1705,7 +1705,7 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
     significance.w <- weightSignificance(significance, krweights)
     planets.test <- data.table(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')])
     predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance.w, panalogy, F))
-    planets.test[, predEff := predEff]
+    planets.test <- cbind(planets.test, predEff=predEff)
     fitness <- predEffProcess(planets.test, krweights, looptm)
     rm(significance.w, planets.test)
     gc()
@@ -1760,9 +1760,40 @@ testPlanetsSignificanceGA <- function(sinkfile, execfunc, ...) {
     fitness <- predEffProcess(planets.test, krweights, looptm)
   }
 
+  optimizeSignificance <- function() {
+    thresholds <- seq(0, 1, by=0.05)
+    krweights <- suggestedEURUSD()
+    panology <- solutionAnalogyEURUSD()
+    for (threshold in thresholds) {
+      looptm <- proc.time()
+      significance <- planetsVarsSignificance(planets[Date > as.Date('1999-01-01') & Date < as.Date('2011-01-01')], currency, threshold)
+      significance.w <- weightSignificance(significance, krweights)
+      planets.test <- data.table(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')])
+      predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance.w, panalogy, F))
+      planets.test <- cbind(planets.test, predEff=predEff)
+      fitness <- predEffProcess(planets.test, threshold, looptm)
+      rm(significance, significance.w, planets.test, predEff)
+      gc()
+    }
+  }
+
   suggestedEURUSD <- function() {
     solution <- c(1.053,  1.014,  0.991,  0.832,  1.075,  1.136,  1.162,  0.876,  1.075,  0.839,  0.962,  1.19,  1.044,  0.83,  0.605,  0.993,  0.79,  1.248,  1.379,  1.161,  1.128,  1.164,  0.885,  0.969,  1.049,  0.812,  1.184,  0.908,  1.25,  1.268,  0.821,  0.919,  1.163,  1.004,  0.743,  1.251,  0.785,  0.912,  1.202,  1.347,  0.976,  1.032,  1.076,  0.792,  1.162,  1.183,  0.579,  1.077,  0.942,  0.707,  0.925,  1.241,  0.975,  1.141,  1.338,  1.304,  1.316,  0.858,  0.89,  1.08,  0.786,  1.132,  0.859,  0.728,  1.064,  1.214,  1.117,  0.855,  1.138,  0.979,  0.981,  0.912,  0.838,  1.001,  1.023,  0.852,  0.937,  0.878,  1.122,  1.146,  0.892,  0.793,  1.137,  0.97,  1.114,  1.156,  1.079,  1.209,  0.839,  1.048,  0.917,  1.044,  0.713,  1.111,  1.083,  0.911,  1.321,  0.861,  0.696,  1.249,  0.827,  1.151,  1.014,  1.031,  0.796,  0.98,  1.315,  0.909,  1.131,  0.788,  1.285,  0.927,  1.321,  0.718,  1.146,  0.881,  1.101,  0.933,  0.635,  1.151,  0.835,  1.328,  1.29,  0.972,  1.104,  1.06,  1.013,  0.863,  1.127,  0.925,  1.059,  0.979,  1.169,  1.045,  1.171,  1.086,  1.133,  1.081,  1.029,  1.211,  0.787,  0.704,  1.062,  1.015,  1.063,  0.824,  1.011,  0.693,  1.142,  0.964,  0.938,  0.964,  1.151,  1.4,  0.594,  0.828,  1.091,  0.962,  0.781,  0.668,  1.022,  1.192,  1.272,  0.754,  1.185,  1.039,  1.023,  1.264,  1.378,  1.106,  0.89,  0.889,  1.23,  0.965,  0.753,  1.059,  1.309,  1.115,  0.914,  1.186)
     return(solution)
+  }
+
+  solutionAnalogyEURUSD <- function() {
+    return(list(SULONG = c("SULONG", "MOLONG", "MALONG", "SALONG", "URLONG", "NNLONG"),
+                MOLONG = c("MOLONG", "MELONG", "MALONG", "SALONG", "URLONG", "SNLONG"),
+                MELONG = c("VELONG", "JULONG", "SALONG"),
+                VELONG = c("SULONG", "MOLONG", "MELONG", "JULONG", "PLLONG", "NNLONG"),
+                MALONG = c("MOLONG", "MELONG", "MALONG", "NNLONG", "SNLONG"),
+                JULONG = c("MOLONG", "VELONG", "MALONG", "URLONG", "PLLONG"),
+                SALONG = c("SULONG", "MELONG", "VELONG", "JULONG", "SALONG", "NELONG", "NNLONG", "SNLONG"),
+                URLONG = c("MOLONG", "VELONG", "SALONG", "PLLONG"),
+                NELONG = c("MOLONG", "MALONG", "JULONG", "NNLONG", "SNLONG"),
+                PLLONG = c("VELONG", "SALONG", "PLLONG"),
+                NNLONG = c("MELONG", "VELONG", "JULONG")))
   }
 
   execfunc <- get(get('execfunc'))
