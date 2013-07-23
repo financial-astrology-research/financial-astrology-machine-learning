@@ -1688,7 +1688,7 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
     predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, T, F))
     planets.test <- cbind(planets.test, predEff=predEff)
 
-    fitness <- predEffProcess(planets.test, panalogy, looptm)
+    fitness <- predEffProcess(planets.test, list(panalogy), looptm)
     rm(panalogy, planets.test)
     gc()
     return(fitness)
@@ -1733,9 +1733,6 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
         dput(optvariable)
       }
     }
-    else {
-      dput(optvariables)
-    }
     cat("securitydir=", shQuote(securitydir), ", securityfile=", shQuote(securityfile), ", planetsfile=", shQuote(planetsfile), "\n", sep="")
     print(t1)
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
@@ -1777,7 +1774,7 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
     setkey(planets.test, 'Date')
     predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, T, verbose))
     planets.test <- cbind(planets.test, predEff=predEff)
-    fitness <- predEffProcess(planets.test, panalogy, looptm)
+    fitness <- predEffProcess(planets.test, list(panalogy), looptm)
   }
 
   testPredictAnalogyWeigths <- function(sdate, edate, verbose=F) {
@@ -1814,7 +1811,7 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
       planets.test <- data.table(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')])
       predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance.w, panalogy, T, F))
       planets.test <- cbind(planets.test, predEff=predEff)
-      fitness <- predEffProcess(planets.test, threshold, looptm)
+      fitness <- predEffProcess(planets.test, list(threshold), looptm)
       rm(significance, significance.w, planets.test, predEff)
       gc()
     }
