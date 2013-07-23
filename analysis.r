@@ -642,7 +642,7 @@ planetsVarsSignificance <- function(planets, currency, threshold) {
 }
 
 planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, answer=T, verbose=F) {
-  significance.day <- data.table()
+  significance.day <- data.frame()
   cols <- c(paste(planetsLonCols, 'G', sep=''))
   #init <- as.numeric( sub("\\((.+),.*", "\\1", planets.day[curcol]))
   #keyranges <- apply(matrix(seq(init, init+8), ncol=2, byrow=T), 1, function(x) return(paste('(', x[1], ',', x[2], ']', sep='')))
@@ -654,6 +654,7 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
     }
   }
 
+  significance.day <- data.table(significance.day)
   #for (curcol in names(planets.day.asp)) {
   #  loncol1 <- paste(substr(curcol, 1, 5), 'G', sep='')
   #  loncol2 <- paste(substr(curcol, 6, 10), 'G', sep='')
@@ -1771,7 +1772,7 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
 
   testPredictAnalogy <- function(sdate, edate, verbose=F) {
     looptm <- proc.time()
-    panalogy <- solutionAnalogyEURUSD2()
+    panalogy <- solutionAnalogyEURUSD3()
     planets.test <- data.table(planets[Date >= as.Date(sdate) & Date <= as.Date(edate)])
     setkey(planets.test, 'Date')
     predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, T, verbose))
@@ -1846,6 +1847,11 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
 
   solutionAnalogyEURUSD2 <- function() {
     panalogy <- list(SULONG = c("SULONG", "MOLONG", "MALONG", "SALONG", "URLONG", "NELONG", "NNLONG"), MOLONG = c("MOLONG", "MELONG", "MALONG", "SALONG", "URLONG", "NELONG", "SNLONG"), MELONG = c("VELONG", "JULONG", "SALONG"), VELONG = c("SULONG", "MOLONG", "JULONG", "NNLONG"), MALONG = c("MOLONG", "VELONG", "MALONG", "NNLONG", "SNLONG"), JULONG = c("MOLONG", "VELONG", "MALONG", "URLONG", "PLLONG"), SALONG = c("MELONG", "VELONG", "JULONG", "SALONG", "NELONG"), URLONG = c("MOLONG", "VELONG", "SALONG", "URLONG", "PLLONG"), NELONG = c("MOLONG", "MALONG", "JULONG", "PLLONG", "NNLONG", "SNLONG"), PLLONG = c("VELONG", "SALONG", "PLLONG"), NNLONG = c("MELONG", "VELONG", "MALONG", "JULONG", "URLONG", "NNLONG"))
+    return(panalogy)
+  }
+
+  solutionAnalogyEURUSD3 <- function() {
+    panalogy <- list(SULONG = c("SULONG", "MALONG", "JULONG", "SALONG", "NELONG", "NNLONG", "SNLONG"), MOLONG = c("SULONG", "MOLONG", "SALONG", "URLONG", "NNLONG", "SNLONG"), MELONG = c("VELONG", "JULONG", "URLONG", "PLLONG", "NNLONG"), VELONG = c("SULONG", "NELONG", "PLLONG", "SNLONG"), MALONG = c("MOLONG", "JULONG", "URLONG", "NNLONG"), JULONG = c("MOLONG", "MELONG", "VELONG", "MALONG", "URLONG", "SNLONG"), SALONG = c("MOLONG", "JULONG", "URLONG", "NELONG", "PLLONG"), URLONG = c("JULONG", "NELONG", "PLLONG"), NELONG = c("SULONG", "MOLONG", "VELONG", "MALONG", "JULONG", "SALONG", "SNLONG"), PLLONG = c("SULONG", "MOLONG", "VELONG", "MALONG", "JULONG", "PLLONG"), NNLONG = c("SULONG", "MOLONG", "MELONG", "VELONG", "MALONG", "JULONG", "SNLONG"))
     return(panalogy)
   }
 
