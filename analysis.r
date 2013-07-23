@@ -1764,7 +1764,7 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
 
   gaPlanetsAnalogy <- function() {
     ga("binary", fitness=testPlanetsAnalogyFitness, nBits=121,
-       monitor=gaMonitor, maxiter=200, run=50, popSize=200, pcrossover = 0.6, pmutation = 0.3,
+       monitor=gaMonitor, maxiter=200, run=50, popSize=100, pcrossover = 0.6, pmutation = 0.3,
        selection=gabin_rwSelection, crossover=gabin_spCrossover)
   }
 
