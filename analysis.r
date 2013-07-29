@@ -12,6 +12,7 @@ library(rpart)
 library(evtree)
 library(GA)
 library(gtools)
+library(clusterSim)
 `%ni%` <- Negate(`%in%`)
 # no scientific notation
 options(scipen=100)
@@ -309,13 +310,13 @@ openCurrency  <- function(currency_file) {
   currency
 }
 
-openSecurity <- function(currency_file) {
+openSecurity <- function(currency_file, maperiod) {
   currency_file <- npath(currency_file)
   currency <- read.table(currency_file, header = F, sep=",")
   names(currency) <- c('Date', 'Time', 'Open', 'High', 'Low', 'Close', 'Volume')
   currency <- currency[,-7]
   currency$Mid <- (currency$High + currency$Low + currency$Close + currency$Open) / 4
-  currency$val <- currency$Mid - currency$Open
+  currency$val <- currency$Mid - SMA(currency$Mid, n=maperiod)
   #currency$val <- currency$Close - currency$Mid
   currency$Eff = cut(currency$val, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE)
   currency$Date <- as.Date(as.character(currency$Date), format="%Y.%m.%d")
@@ -641,16 +642,25 @@ planetsVarsSignificance <- function(planets, currency, threshold) {
   return(significance)
 }
 
-planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, answer=T, verbose=F) {
+planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, answer=T, verbose=F, iprev=0, inext=0) {
   significance.day <- data.frame()
   cols <- c(paste(planetsLonCols, 'G', sep=''))
   #init <- as.numeric( sub("\\((.+),.*", "\\1", planets.day[curcol]))
   #keyranges <- apply(matrix(seq(init, init+8), ncol=2, byrow=T), 1, function(x) return(paste('(', x[1], ',', x[2], ']', sep='')))
   for (curcol in cols) {
-    res <- significance[key==planets.day[[curcol]] & variable %in% planetsAnalogy[[curcol]]]
-    if (nrow(res) > 0) {
-      res <- cbind(res, origin=curcol)
-      significance.day <- rbind(significance.day, res)
+    curidx <- which(keyranges==planets.day[[curcol]])
+    if (length(curidx) > 0) {
+      indexes <- c(curidx)
+      if (iprev != 0) indexes <- c(indexes, seq(curidx, curidx-iprev))
+      if (inext != 0) indexes <- c(indexes, seq(curidx, curidx+inext))
+      indexes <- ifelse(indexes < 0, length(keyranges)+indexes+1, ifelse(indexes > length(keyranges), indexes-length(keyranges)+1, indexes))
+      indexes <- unique(indexes)
+      degroups <- keyranges[indexes]
+      res <- significance[key %in% degroups & variable %in% planetsAnalogy[[curcol]]]
+      if (nrow(res) > 0) {
+        res <- cbind(res, origin=curcol)
+        significance.day <- rbind(significance.day, res)
+      }
     }
   }
 
@@ -1856,4 +1866,92 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
   execfunc(...)
 
   sink()
+}
+
+testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
+  if (hasArg('sinkfile')) sink(npath(paste("~/trading/predict/", sinkfile, ".txt", sep='')), append=T)
+  if (!hasArg('execfunc')) stop("Provide function to execute")
+  ptm <- proc.time()
+  planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG')
+
+  relativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, iprev=0, inext=0, mapred=3, maperiod=5, threshold=0) {
+    looptm <- proc.time()
+    planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""), orbs, aspects, 2, 50)
+    security <- openSecurity(paste("~/trading/currency/", commodityfile, ".csv", sep=''), maperiod)
+    significance <- planetsVarsSignificance(planets[Date >= as.Date(tsdate) & Date <= as.Date(tedate)], security, threshold)
+    keyranges <<- mixedsort(unique(significance[variable %in% planetsLonGCols]$key))
+    setkey(significance, 'key', 'variable', 'V3', 'V4')
+
+    panalogy <- list(SULONG = c("SULONG"),
+                     MOLONG = c("MOLONG"),
+                     MELONG = c("MELONG"),
+                     VELONG = c("VELONG"),
+                     MALONG = c("MALONG"),
+                     JULONG = c("JULONG"),
+                     SALONG = c("SALONG"),
+                     URLONG = c(),
+                     NELONG = c(),
+                     PLLONG = c(),
+                     NNLONG = c("NNLONG"))
+    planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate)]
+    planets.test <- merge(planets.test, security, by='Date')
+    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, F, F, iprev, inext))
+    planets.test[, 'predEff' := SMA(predEff, mapred)]
+    planets.test <- planets.test[!is.na(predEff)]
+    planets.test[, 'predEff' := data.Normalization(predEff, type="n3")]
+    planets.test[, 'Mid' := data.Normalization(Mid, type="n3")]
+    p1 <- ggplot(planets.test, aes(Date, predEff)) + geom_line() + geom_line(data = planets.test, aes(x=Date, y=Mid), colour="red", show_guide=F) + scale_x_date(breaks=seq(as.Date(vsdate), as.Date(vedate), by=3)) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(paste("Significance Prediction", commodityfile, "SMA", maperiod, "- significance / prev=", iprev, "next=", inext, "mapred=", mapred)) + geom_vline(xintercept=as.numeric(seq(as.Date(vsdate), as.Date(vedate), by=6)), linetype=5) + scale_fill_grey() + scale_shape_identity()
+    print(p1)
+    fitness <- cor(planets.test$predEff, planets.test$Mid,  use = "complete.obs", method='spearman')
+    cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
+    cat("### = ", fitness, "\n")
+    return(fitness)
+  }
+
+  generateChartGBPUSD <- function() {
+    relativeTrend("GBPUSD_fxpro", "planets_4", "1980-01-01", "2011-12-31", "2012-01-01", "2013-07-01", 4.64, 1.01, 28.16, 3, 0.04)
+  }
+
+  relativeTrendFitness <- function(x, commodityfile, planetsfile, tsdate, tedate, vsdate, vedate) {
+    # build the parameters based on GA indexes
+    iprev <- x[1]
+    inext <- x[2]
+    mapred <- x[3]
+    maperiod <- x[4]
+    threshold <- x[5]/100
+    cat("\n---------------------------------------------------------------------------------\n")
+    cat("iprev=", iprev, ", inext=", inext, ", mapred=", mapred, ", maperiod=", maperiod, ", threshold=", threshold, "\n", sep="")
+    relativeTrend(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, iprev, inext, mapred, maperiod, threshold)
+  }
+
+  optimizeRelativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate) {
+    pdf(paste("~/chart_", commodityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
+    minvals <- c(0, 0,  2,  2,  0)
+    maxvals <- c(5, 5, 30, 50, 40)
+    varnames <- c('iprev', 'inext', 'mapred', 'maperiod', 'threshold')
+
+    ga("real-valued", fitness=relativeTrendFitness, names=varnames,
+       monitor=gaMonitor, maxiter=200, run=50, popSize=100,
+       min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.2,
+       selection=gaint_rwSelection, mutation=gaint_raMutation,
+       crossover=gareal_spCrossover, population=gaint_Population,
+       commodityfile=commodityfile, planetsfile=planetsfile,
+       tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate)
+
+    dev.off()
+  }
+
+  execfunc <- get(get('execfunc'))
+  execfunc(...)
+
+  #planets.security <- merge(planets, security, by='Date')
+  #planets.security <- subset(planets.security, !is.na(Eff) & Date >= as.Date(tsdate) & Date <= as.Date(tedate))
+  #pdf(npath(paste("~/", plotfile, "_SMA", maperiod, ".pdf", sep='')), width = 11, height = 8, family='Helvetica', pointsize=12)
+  #for (curcol in planetsLonGCols) {
+  #  p1 <- ggplot(aes_string(x=curcol, fill="Eff"), data=planets.security) + geom_bar(position="fill") + theme(axis.text.x = element_text(angle = 90, size = 5)) + xlab(curcol)  + ggtitle(paste("Significance Planets LONG groups SMA", maperiod)) + geom_hline(yintercept=seq(0, 1, by=0.1)) + scale_fill_grey()
+  #  #p1 <- qplot(x=get(curcol), y=val2, geom='boxplot', data=planets.security) + theme(axis.text.x = element_text(angle = 85, size = 7)) + xlab(curcol) + ggtitle(paste("Significance Planets LONG groups SMA", maperiod))
+  #  print(p1)
+  #}
+  #dev.off()
+  if (hasArg('sinkfile')) sink()
 }
