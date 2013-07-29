@@ -1921,18 +1921,18 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                      PLLONG = c(),
                      NNLONG = c("NNLONG"))
     planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate)]
-    planets.test <- merge(planets.test, security, by='Date')
     predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, F, F, iprev, inext, sigtype))
     planets.test[, 'predEff' := mafunc(predEff, mapred)]
     planets.test <- planets.test[!is.na(predEff)]
     planets.test[, 'predEff' := data.Normalization(predEff, type="n3")]
-    planets.test[, 'Mid' := data.Normalization(Mid, type="n3")]
     planets.test[, predEff2 := c(rep(NA, dlag), diff(predEff, dlag, 1))]
     planets.test[, predEff2 := cut(predEff2, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE)]
-    p1 <- ggplot(planets.test, aes(Date, predEff)) + geom_line() + geom_line(data = planets.test, aes(x=Date, y=Mid), colour="red", show_guide=F) + scale_x_date(breaks=seq(as.Date(vsdate), as.Date(vedate), by=3)) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(paste("Significance Prediction", commodityfile, "MA", maperiod, "- significance / prev=", iprev, "next=", inext, "mapred=", mapred)) + geom_vline(xintercept=as.numeric(seq(as.Date(vsdate), as.Date(vedate), by=6)), linetype=5) + scale_fill_grey() + scale_shape_identity()
+    planets.test.security <- merge(planets.test, security, by='Date')
+    planets.test.security[, 'Mid' := data.Normalization(Mid, type="n3")]
+    p1 <- ggplot(planets.test, aes(Date, predEff)) + geom_line() + geom_line(data = planets.test.security, aes(x=Date, y=Mid), colour="red", show_guide=F) + scale_x_date(breaks=seq(as.Date(vsdate), as.Date(vedate), by=3)) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(paste("Significance Prediction", commodityfile, "MA", maperiod, "- significance / prev=", iprev, "next=", inext, "mapred=", mapred)) + geom_vline(xintercept=as.numeric(seq(as.Date(vsdate), as.Date(vedate), by=6)), linetype=5) + scale_fill_grey() + scale_shape_identity()
     print(p1)
-    correlation <- round(cor(planets.test$predEff, planets.test$Mid,  use = "complete.obs", method='spearman'), digits=2)
-    t1 <- with(planets.test, table(Eff==predEff2))
+    correlation <- round(cor(planets.test.security$predEff, planets.test.security$Mid,  use = "complete.obs", method='spearman'), digits=2)
+    t1 <- with(planets.test.security, table(Eff==predEff2))
     fitness <- t1['TRUE']-t1[['FALSE']]
     print(t1)
     cat("correlation=", correlation)
@@ -1942,7 +1942,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   generateChartGBPUSD <- function() {
-    relativeTrend("GBPUSD_fxpro", "planets_4", "1980-01-01", "2010-12-31", "2011-01-01", "2013-07-31", 1, 3, 33, 40, 'EMA', 'count', 2, 0.23)
+    relativeTrend("GBPUSD_fxpro", "planets_4", "1980-01-01", "2009-12-31", "2012-01-01", "2013-12-31", 1, 1, 2, 20, 'SMA', 'count', 2, 0)
   }
 
   relativeTrendFitness <- function(x, commodityfile, planetsfile, tsdate, tedate, vsdate, vedate) {
