@@ -12,10 +12,11 @@ library(rpart)
 library(evtree)
 library(GA)
 library(gtools)
+library(clusterSim)
 `%ni%` <- Negate(`%in%`)
 # no scientific notation
 options(scipen=100)
-#options(error=recover)
+options(error=recover)
 
 planetsList <- list(c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", "MAR", "JU", "JUR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"),
                     # combined fast planets
@@ -309,13 +310,14 @@ openCurrency  <- function(currency_file) {
   currency
 }
 
-openSecurity <- function(currency_file) {
+openSecurity <- function(currency_file, matype, maperiod) {
+  mafunc <- get(get('matype'))
   currency_file <- npath(currency_file)
   currency <- read.table(currency_file, header = F, sep=",")
   names(currency) <- c('Date', 'Time', 'Open', 'High', 'Low', 'Close', 'Volume')
   currency <- currency[,-7]
   currency$Mid <- (currency$High + currency$Low + currency$Close + currency$Open) / 4
-  currency$val <- currency$Mid - currency$Open
+  currency$val <- currency$Mid - mafunc(currency$Mid, n=maperiod)
   #currency$val <- currency$Close - currency$Mid
   currency$Eff = cut(currency$val, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE)
   currency$Date <- as.Date(as.character(currency$Date), format="%Y.%m.%d")
@@ -631,26 +633,35 @@ planetsVarsSignificance <- function(planets, currency, threshold) {
   for (curcol in cols) {
     idx <- length(significance)+1
     t1 <- planets[, cbind(as.list(prop.table(table(Eff))), as.list(table(Eff))), by=curcol]
-    t1[, c('diff', 'variable') := list(V2-V1, curcol)]
+    t1[, c('pdiff', 'variable') := list(V2-V1, curcol)]
     setnames(t1, curcol, 'key')
     t1[, key := as.character(key)]
-    t1 <- t1[diff >= threshold | diff <= -threshold]
+    t1 <- t1[pdiff >= threshold | pdiff <= -threshold]
     significance <- rbind(significance, t1)
   }
 
   return(significance)
 }
 
-planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, answer=T, verbose=F) {
+planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, answer=T, verbose=F, iprev=0, inext=0, sigtype='count') {
   significance.day <- data.frame()
   cols <- c(paste(planetsLonCols, 'G', sep=''))
   #init <- as.numeric( sub("\\((.+),.*", "\\1", planets.day[curcol]))
   #keyranges <- apply(matrix(seq(init, init+8), ncol=2, byrow=T), 1, function(x) return(paste('(', x[1], ',', x[2], ']', sep='')))
   for (curcol in cols) {
-    res <- significance[key==planets.day[[curcol]] & variable %in% planetsAnalogy[[curcol]]]
-    if (nrow(res) > 0) {
-      res <- cbind(res, origin=curcol)
-      significance.day <- rbind(significance.day, res)
+    curidx <- which(keyranges==planets.day[[curcol]])
+    if (length(curidx) > 0) {
+      indexes <- c(curidx)
+      if (iprev != 0) indexes <- c(indexes, seq(curidx, curidx-iprev))
+      if (inext != 0) indexes <- c(indexes, seq(curidx, curidx+inext))
+      indexes <- ifelse(indexes < 0, length(keyranges)+indexes+1, ifelse(indexes > length(keyranges), indexes-length(keyranges)+1, indexes))
+      indexes <- unique(indexes)
+      degroups <- keyranges[indexes]
+      res <- significance[key %in% degroups & variable %in% planetsAnalogy[[curcol]]]
+      if (nrow(res) > 0) {
+        res <- cbind(res, origin=curcol)
+        significance.day <- rbind(significance.day, res)
+      }
     }
   }
 
@@ -664,19 +675,17 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
   #  significance.day[origin == loncol2 & V4 > V3, V4 := V4*1.5]
   #}
 
-  if (verbose) {
-    patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
-    activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
-    planets.day.asp <- planets.day[planets.day != "non" & names(planets.day) %in% activecols]
-    print(planets.day[['Date']])
-    print(significance.day)
-    print(planets.day.asp)
-    print(planets.day[planetsSpCols])
-    print(significance.day[, sum(V4)-sum(V3)])
-  }
-
   if (nrow(significance.day) > 0) {
-    trend <- as.integer(significance.day[, sum(V4)-sum(V3)])
+    if (sigtype == 'count') {
+      trend <- as.integer(significance.day[, sum(V4)-sum(V3)])
+    }
+    else if (sigtype == 'percent') {
+      trend <- as.integer(significance.day[, sum(pdiff)])
+    }
+    else {
+      stop("No valid trend type was provided.")
+    }
+
     # the result could return as answer (factor) or numeric (kind of probability)
     if (answer) {
       if (trend > 0) {
@@ -692,6 +701,17 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
     else {
       return(trend)
     }
+  }
+
+  if (verbose) {
+    patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
+    activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
+    planets.day.asp <- planets.day[planets.day != "non" & names(planets.day) %in% activecols]
+    print(planets.day[['Date']])
+    print(significance.day)
+    print(planets.day.asp)
+    print(planets.day[planetsSpCols])
+    print(trend)
   }
 
   return(0)
@@ -1103,6 +1123,21 @@ gaint_rwSelection <- function (object, ...) {
   sel <- sample(1:object@popSize, size = object@popSize, prob = pmin(pmax(0, prob), 1, na.rm = TRUE), replace = TRUE)
   out <- list(population = object@population[sel, , drop = FALSE],
               fitness = object@fitness[sel])
+  return(out)
+}
+
+gaint_blxCrossover <- function (object, parents, ...) {
+  parents <- object@population[parents, , drop = FALSE]
+  n <- ncol(parents)
+  a <- 0.5
+  children <- matrix(NA, nrow = 2, ncol = n)
+  for (i in 1:n) {
+    x <- sort(parents[, i])
+    xl <- max(x[1] - a * (x[2] - x[1]), object@min[i])
+    xu <- min(x[2] + a * (x[2] - x[1]), object@max[i])
+    children[, i] <- round(runif(2, xl, xu))
+  }
+  out <- list(children = children, fitness = NA)
   return(out)
 }
 
@@ -1865,4 +1900,106 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
   execfunc(...)
 
   sink()
+}
+
+testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
+  if (hasArg('sinkfile')) sink(npath(paste("~/trading/predict/", sinkfile, ".txt", sep='')), append=T)
+  if (!hasArg('execfunc')) stop("Provide function to execute")
+  ptm <- proc.time()
+  planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG')
+
+  relativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate,
+                            iprev, inext, mapred, maperiod, matype, sigtype, dlag, threshold=0) {
+    looptm <- proc.time()
+    mafunc <- get(get('matype'))
+    planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""), orbs, aspects, 2, 50)
+    security <- openSecurity(paste("~/trading/currency/", commodityfile, ".csv", sep=''), matype, maperiod)
+    significance <- planetsVarsSignificance(planets[Date >= as.Date(tsdate) & Date <= as.Date(tedate)], security, threshold)
+    keyranges <<- mixedsort(unique(significance[variable %in% planetsLonGCols]$key))
+    setkey(significance, 'key', 'variable', 'V3', 'V4')
+
+    panalogy <- list(SULONG = c("SULONG"),
+                     MOLONG = c(),
+                     MELONG = c("MELONG"),
+                     VELONG = c("VELONG"),
+                     MALONG = c("MALONG"),
+                     JULONG = c("JULONG"),
+                     SALONG = c("SALONG"),
+                     URLONG = c(),
+                     NELONG = c(),
+                     PLLONG = c(),
+                     NNLONG = c("NNLONG"))
+    planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate)]
+    planets.test <- merge(planets.test, security, by='Date')
+    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, F, F, iprev, inext, sigtype))
+    planets.test[, 'predEff' := mafunc(predEff, mapred)]
+    planets.test <- planets.test[!is.na(predEff)]
+    planets.test[, 'predEff' := data.Normalization(predEff, type="n3")]
+    planets.test[, 'Mid' := data.Normalization(Mid, type="n3")]
+    planets.test[, predEff2 := c(rep(NA, dlag), diff(predEff, dlag, 1))]
+    planets.test[, predEff2 := cut(predEff2, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE)]
+    p1 <- ggplot(planets.test, aes(Date, predEff)) + geom_line() + geom_line(data = planets.test, aes(x=Date, y=Mid), colour="red", show_guide=F) + scale_x_date(breaks=seq(as.Date(vsdate), as.Date(vedate), by=3)) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(paste("Significance Prediction", commodityfile, "MA", maperiod, "- significance / prev=", iprev, "next=", inext, "mapred=", mapred)) + geom_vline(xintercept=as.numeric(seq(as.Date(vsdate), as.Date(vedate), by=6)), linetype=5) + scale_fill_grey() + scale_shape_identity()
+    print(p1)
+    correlation <- round(cor(planets.test$predEff, planets.test$Mid,  use = "complete.obs", method='spearman'), digits=2)
+    t1 <- with(planets.test, table(Eff==predEff2))
+    fitness <- t1['TRUE']-t1[['FALSE']]
+    print(t1)
+    cat("correlation=", correlation)
+    cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
+    cat("### = ", fitness, "\n")
+    return(fitness)
+  }
+
+  generateChartGBPUSD <- function() {
+    relativeTrend("GBPUSD_fxpro", "planets_4", "1980-01-01", "2010-12-31", "2011-01-01", "2013-07-31", 1, 3, 33, 40, 'EMA', 'count', 2, 0.23)
+  }
+
+  relativeTrendFitness <- function(x, commodityfile, planetsfile, tsdate, tedate, vsdate, vedate) {
+    # build the parameters based on GA indexes
+    matypes <- c('SMA', 'EMA', 'WMA', 'ZLEMA')
+    sigtypes <- c('count',  'percent')
+    iprev <- x[1]
+    inext <- x[2]
+    mapred <- x[3]
+    maperiod <- x[4]
+    matype <- matypes[[x[5]]]
+    sigtype <- sigtypes[[x[6]]]
+    dlag <- x[7]
+    threshold <- x[8]/100
+    cat("\n---------------------------------------------------------------------------------\n")
+    cat("iprev=", iprev, ", inext=", inext, ", mapred=", mapred, ", maperiod=", maperiod, sep="")
+    cat(", matype=", shQuote(matype), ", sigtype=", shQuote(sigtype), ", dlag=", dlag, ", threshold=", threshold, "\n", sep="")
+    relativeTrend(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, iprev, inext, mapred, maperiod, matype, sigtype, dlag, threshold)
+  }
+
+  optimizeRelativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate) {
+    pdf(paste("~/chart_", commodityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
+    minvals <- c(0, 0,  2,  2, 1, 1, 1,  0)
+    maxvals <- c(3, 3, 40, 40, 4, 2, 5, 40)
+    varnames <- c('iprev', 'inext', 'mapred', 'maperiod', 'matype', 'sigtype', 'dlag', 'threshold')
+
+    ga("real-valued", fitness=relativeTrendFitness, names=varnames,
+       monitor=gaMonitor, maxiter=200, run=50, popSize=100,
+       min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.2,
+       selection=gaint_rwSelection, mutation=gaint_raMutation,
+       crossover=gaint_blxCrossover, population=gaint_Population,
+       commodityfile=commodityfile, planetsfile=planetsfile,
+       tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate)
+
+    dev.off()
+  }
+
+  execfunc <- get(get('execfunc'))
+  execfunc(...)
+
+  #planets.security <- merge(planets, security, by='Date')
+  #planets.security <- subset(planets.security, !is.na(Eff) & Date >= as.Date(tsdate) & Date <= as.Date(tedate))
+  #pdf(npath(paste("~/", plotfile, "_SMA", maperiod, ".pdf", sep='')), width = 11, height = 8, family='Helvetica', pointsize=12)
+  #for (curcol in planetsLonGCols) {
+  #  p1 <- ggplot(aes_string(x=curcol, fill="Eff"), data=planets.security) + geom_bar(position="fill") + theme(axis.text.x = element_text(angle = 90, size = 5)) + xlab(curcol)  + ggtitle(paste("Significance Planets LONG groups SMA", maperiod)) + geom_hline(yintercept=seq(0, 1, by=0.1)) + scale_fill_grey()
+  #  #p1 <- qplot(x=get(curcol), y=val2, geom='boxplot', data=planets.security) + theme(axis.text.x = element_text(angle = 85, size = 7)) + xlab(curcol) + ggtitle(paste("Significance Planets LONG groups SMA", maperiod))
+  #  print(p1)
+  #}
+  #dev.off()
+  if (hasArg('sinkfile')) sink()
 }
