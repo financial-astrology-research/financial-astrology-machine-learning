@@ -16,7 +16,7 @@ library(clusterSim)
 `%ni%` <- Negate(`%in%`)
 # no scientific notation
 options(scipen=100)
-#options(error=recover)
+options(error=recover)
 
 planetsList <- list(c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", "MAR", "JU", "JUR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"),
                     # combined fast planets
@@ -633,17 +633,17 @@ planetsVarsSignificance <- function(planets, currency, threshold) {
   for (curcol in cols) {
     idx <- length(significance)+1
     t1 <- planets[, cbind(as.list(prop.table(table(Eff))), as.list(table(Eff))), by=curcol]
-    t1[, c('diff', 'variable') := list(V2-V1, curcol)]
+    t1[, c('pdiff', 'variable') := list(V2-V1, curcol)]
     setnames(t1, curcol, 'key')
     t1[, key := as.character(key)]
-    t1 <- t1[diff >= threshold | diff <= -threshold]
+    t1 <- t1[pdiff >= threshold | pdiff <= -threshold]
     significance <- rbind(significance, t1)
   }
 
   return(significance)
 }
 
-planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, answer=T, verbose=F, iprev=0, inext=0) {
+planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, answer=T, verbose=F, iprev=0, inext=0, sigtype='count') {
   significance.day <- data.frame()
   cols <- c(paste(planetsLonCols, 'G', sep=''))
   #init <- as.numeric( sub("\\((.+),.*", "\\1", planets.day[curcol]))
@@ -675,19 +675,17 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
   #  significance.day[origin == loncol2 & V4 > V3, V4 := V4*1.5]
   #}
 
-  if (verbose) {
-    patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
-    activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
-    planets.day.asp <- planets.day[planets.day != "non" & names(planets.day) %in% activecols]
-    print(planets.day[['Date']])
-    print(significance.day)
-    print(planets.day.asp)
-    print(planets.day[planetsSpCols])
-    print(significance.day[, sum(V4)-sum(V3)])
-  }
-
   if (nrow(significance.day) > 0) {
-    trend <- as.integer(significance.day[, sum(V4)-sum(V3)])
+    if (sigtype == 'count') {
+      trend <- as.integer(significance.day[, sum(V4)-sum(V3)])
+    }
+    else if (sigtype == 'percent') {
+      trend <- as.integer(significance.day[, sum(pdiff)])
+    }
+    else {
+      stop("No valid trend type was provided.")
+    }
+
     # the result could return as answer (factor) or numeric (kind of probability)
     if (answer) {
       if (trend > 0) {
@@ -703,6 +701,17 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
     else {
       return(trend)
     }
+  }
+
+  if (verbose) {
+    patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
+    activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
+    planets.day.asp <- planets.day[planets.day != "non" & names(planets.day) %in% activecols]
+    print(planets.day[['Date']])
+    print(significance.day)
+    print(planets.day.asp)
+    print(planets.day[planetsSpCols])
+    print(trend)
   }
 
   return(0)
@@ -1875,7 +1884,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   ptm <- proc.time()
   planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG')
 
-  relativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, iprev, inext, mapred, maperiod, matype, threshold=0) {
+  relativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate,
+                            iprev, inext, mapred, maperiod, matype, sigtype, threshold=0) {
     looptm <- proc.time()
     mafunc <- get(get('matype'))
     planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""), orbs, aspects, 2, 50)
@@ -1897,14 +1907,14 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                      NNLONG = c("NNLONG"))
     planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate)]
     planets.test <- merge(planets.test, security, by='Date')
-    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, F, F, iprev, inext))
+    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, F, F, iprev, inext, sigtype))
     planets.test[, 'predEff' := mafunc(predEff, mapred)]
     planets.test <- planets.test[!is.na(predEff)]
     planets.test[, 'predEff' := data.Normalization(predEff, type="n3")]
     planets.test[, 'Mid' := data.Normalization(Mid, type="n3")]
     p1 <- ggplot(planets.test, aes(Date, predEff)) + geom_line() + geom_line(data = planets.test, aes(x=Date, y=Mid), colour="red", show_guide=F) + scale_x_date(breaks=seq(as.Date(vsdate), as.Date(vedate), by=3)) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(paste("Significance Prediction", commodityfile, "MA", maperiod, "- significance / prev=", iprev, "next=", inext, "mapred=", mapred)) + geom_vline(xintercept=as.numeric(seq(as.Date(vsdate), as.Date(vedate), by=6)), linetype=5) + scale_fill_grey() + scale_shape_identity()
     print(p1)
-    fitness <- cor(planets.test$predEff, planets.test$Mid,  use = "complete.obs", method='spearman')
+    fitness <- round(cor(planets.test$predEff, planets.test$Mid,  use = "complete.obs", method='spearman'), digits=2)
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
     cat("### = ", fitness, "\n")
     return(fitness)
@@ -1917,22 +1927,25 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   relativeTrendFitness <- function(x, commodityfile, planetsfile, tsdate, tedate, vsdate, vedate) {
     # build the parameters based on GA indexes
     matypes <- c('SMA', 'EMA', 'WMA', 'ZLEMA')
+    sigtypes <- c('count',  'percent')
     iprev <- x[1]
     inext <- x[2]
     mapred <- x[3]
     maperiod <- x[4]
     matype <- matypes[[x[5]]]
-    threshold <- x[6]/100
+    sigtype <- sigtypes[[x[6]]]
+    threshold <- x[7]/100
     cat("\n---------------------------------------------------------------------------------\n")
-    cat("iprev=", iprev, ", inext=", inext, ", mapred=", mapred, ", maperiod=", maperiod, ", matype=", shQuote(matype), ", threshold=", threshold, "\n", sep="")
-    relativeTrend(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, iprev, inext, mapred, maperiod, matype, threshold)
+    cat("iprev=", iprev, ", inext=", inext, ", mapred=", mapred, ", maperiod=", maperiod, sep="")
+    cat(", matype=", shQuote(matype), ", sigtype=", shQuote(sigtype), ", threshold=", threshold, "\n", sep="")
+    relativeTrend(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, iprev, inext, mapred, maperiod, matype, sigtype, threshold)
   }
 
   optimizeRelativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate) {
     pdf(paste("~/chart_", commodityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
-    minvals <- c(0, 0,  2,  2, 1,  0)
-    maxvals <- c(5, 5, 30, 50, 4, 40)
-    varnames <- c('iprev', 'inext', 'mapred', 'maperiod', 'threshold')
+    minvals <- c(0, 0,  2,  2, 1, 1,  0)
+    maxvals <- c(5, 5, 30, 50, 4, 2, 40)
+    varnames <- c('iprev', 'inext', 'mapred', 'maperiod', 'matype', 'sigtype', 'threshold')
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames,
        monitor=gaMonitor, maxiter=200, run=50, popSize=100,
