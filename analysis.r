@@ -16,7 +16,7 @@ library(clusterSim)
 `%ni%` <- Negate(`%in%`)
 # no scientific notation
 options(scipen=100)
-options(error=recover)
+#options(error=recover)
 
 planetsList <- list(c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", "MAR", "JU", "JUR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"),
                     # combined fast planets
@@ -1975,7 +1975,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     varnames <- c('iprev', 'inext', 'mapred', 'maperiod', 'matype', 'sigtype', 'dlag', 'threshold')
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames,
-       monitor=gaMonitor, maxiter=200, run=50, popSize=100,
+       monitor=gaMonitor, maxiter=200, run=50, popSize=200,
        min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.2,
        selection=gaint_rwSelection, mutation=gaint_raMutation,
        crossover=gaint_blxCrossover, population=gaint_Population,
