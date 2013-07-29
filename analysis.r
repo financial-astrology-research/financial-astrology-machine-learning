@@ -1126,6 +1126,21 @@ gaint_rwSelection <- function (object, ...) {
   return(out)
 }
 
+gaint_blxCrossover <- function (object, parents, ...) {
+  parents <- object@population[parents, , drop = FALSE]
+  n <- ncol(parents)
+  a <- 0.5
+  children <- matrix(NA, nrow = 2, ncol = n)
+  for (i in 1:n) {
+    x <- sort(parents[, i])
+    xl <- max(x[1] - a * (x[2] - x[1]), object@min[i])
+    xu <- min(x[2] + a * (x[2] - x[1]), object@max[i])
+    children[, i] <- round(runif(2, xl, xu))
+  }
+  out <- list(children = children, fitness = NA)
+  return(out)
+}
+
 processTrans <- function(trans, currency, aspnames, asptypes) {
   currency.train <- subset(currency, Date > as.Date("1998-01-01") & Date < as.Date("2012-01-01"))
   currency.test <- subset(currency, Date > as.Date("2012-01-01"))
@@ -1885,7 +1900,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG')
 
   relativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate,
-                            iprev, inext, mapred, maperiod, matype, sigtype, threshold=0) {
+                            iprev, inext, mapred, maperiod, matype, sigtype, dlag, threshold=0) {
     looptm <- proc.time()
     mafunc <- get(get('matype'))
     planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""), orbs, aspects, 2, 50)
@@ -1895,7 +1910,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     setkey(significance, 'key', 'variable', 'V3', 'V4')
 
     panalogy <- list(SULONG = c("SULONG"),
-                     MOLONG = c("MOLONG"),
+                     MOLONG = c(),
                      MELONG = c("MELONG"),
                      VELONG = c("VELONG"),
                      MALONG = c("MALONG"),
@@ -1912,16 +1927,22 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets.test <- planets.test[!is.na(predEff)]
     planets.test[, 'predEff' := data.Normalization(predEff, type="n3")]
     planets.test[, 'Mid' := data.Normalization(Mid, type="n3")]
+    planets.test[, predEff2 := c(rep(NA, dlag), diff(predEff, dlag, 1))]
+    planets.test[, predEff2 := cut(predEff2, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE)]
     p1 <- ggplot(planets.test, aes(Date, predEff)) + geom_line() + geom_line(data = planets.test, aes(x=Date, y=Mid), colour="red", show_guide=F) + scale_x_date(breaks=seq(as.Date(vsdate), as.Date(vedate), by=3)) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(paste("Significance Prediction", commodityfile, "MA", maperiod, "- significance / prev=", iprev, "next=", inext, "mapred=", mapred)) + geom_vline(xintercept=as.numeric(seq(as.Date(vsdate), as.Date(vedate), by=6)), linetype=5) + scale_fill_grey() + scale_shape_identity()
     print(p1)
-    fitness <- round(cor(planets.test$predEff, planets.test$Mid,  use = "complete.obs", method='spearman'), digits=2)
+    correlation <- round(cor(planets.test$predEff, planets.test$Mid,  use = "complete.obs", method='spearman'), digits=2)
+    t1 <- with(planets.test, table(Eff==predEff2))
+    fitness <- t1['TRUE']-t1[['FALSE']]
+    print(t1)
+    cat("correlation=", correlation)
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
     cat("### = ", fitness, "\n")
     return(fitness)
   }
 
   generateChartGBPUSD <- function() {
-    relativeTrend("GBPUSD_fxpro", "planets_4", "1980-01-01", "2011-12-31", "2012-01-01", "2013-07-01", 5, 1, 28, 3, 'SMA', 0.05)
+    relativeTrend("GBPUSD_fxpro", "planets_4", "1980-01-01", "2010-12-31", "2011-01-01", "2013-07-31", 1, 3, 33, 40, 'EMA', 'count', 2, 0.23)
   }
 
   relativeTrendFitness <- function(x, commodityfile, planetsfile, tsdate, tedate, vsdate, vedate) {
@@ -1934,24 +1955,25 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     maperiod <- x[4]
     matype <- matypes[[x[5]]]
     sigtype <- sigtypes[[x[6]]]
-    threshold <- x[7]/100
+    dlag <- x[7]
+    threshold <- x[8]/100
     cat("\n---------------------------------------------------------------------------------\n")
     cat("iprev=", iprev, ", inext=", inext, ", mapred=", mapred, ", maperiod=", maperiod, sep="")
-    cat(", matype=", shQuote(matype), ", sigtype=", shQuote(sigtype), ", threshold=", threshold, "\n", sep="")
-    relativeTrend(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, iprev, inext, mapred, maperiod, matype, sigtype, threshold)
+    cat(", matype=", shQuote(matype), ", sigtype=", shQuote(sigtype), ", dlag=", dlag, ", threshold=", threshold, "\n", sep="")
+    relativeTrend(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, iprev, inext, mapred, maperiod, matype, sigtype, dlag, threshold)
   }
 
   optimizeRelativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate) {
     pdf(paste("~/chart_", commodityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
-    minvals <- c(0, 0,  2,  2, 1, 1,  0)
-    maxvals <- c(5, 5, 30, 50, 4, 2, 40)
-    varnames <- c('iprev', 'inext', 'mapred', 'maperiod', 'matype', 'sigtype', 'threshold')
+    minvals <- c(0, 0,  2,  2, 1, 1, 1,  0)
+    maxvals <- c(3, 3, 40, 40, 4, 2, 5, 40)
+    varnames <- c('iprev', 'inext', 'mapred', 'maperiod', 'matype', 'sigtype', 'dlag', 'threshold')
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames,
        monitor=gaMonitor, maxiter=200, run=50, popSize=100,
        min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.2,
        selection=gaint_rwSelection, mutation=gaint_raMutation,
-       crossover=gareal_spCrossover, population=gaint_Population,
+       crossover=gaint_blxCrossover, population=gaint_Population,
        commodityfile=commodityfile, planetsfile=planetsfile,
        tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate)
 
