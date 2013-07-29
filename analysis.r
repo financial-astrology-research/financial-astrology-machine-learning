@@ -1658,6 +1658,10 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
               NNLON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
               SNLON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5))
 
+  tsdate <- '1999-01-01'
+  tedate <- '2011-01-01'
+  vsdate <- '2012-01-01'
+  vedate <- '2013-05-01'
   planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG')
   planetsLonCols <- paste(c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "NN"), 'LON', sep="")
   planetsSpCols <- paste(c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL"), 'SP', sep="")
@@ -1666,7 +1670,7 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
   planetsCombLon <- combn(planetsLonCols2, 2, simplify=F)
   planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
   planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""), orbs, aspects, 2, 50)
-  significance <- planetsVarsSignificance(planets[Date >= as.Date('1999-01-01') & Date < as.Date('2011-01-01')], currency, 0.10)
+  significance <- planetsVarsSignificance(planets[Date >= as.Date(tsdate) & Date < as.Date(tedate)], currency, 0.10)
   setkey(significance, 'key', 'variable', 'V3', 'V4')
   keyranges <- mixedsort(unique(significance[variable %in% planetsLonGCols]$key))
 
@@ -1684,14 +1688,20 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
                      PLLONG = planetsLonGCols[which(string[100:110] == 1)],
                      NNLONG = planetsLonGCols[which(string[111:121] == 1)])
 
-    planets.test <- data.table(planets[Date >= as.Date('2011-01-01') & Date <= as.Date('2013-04-01')])
-    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, T, F))
-    planets.test <- cbind(planets.test, predEff=predEff)
+    planets.train <- data.table(planets[Date >= as.Date(tsdate) & Date <= as.Date(tedate)])
+    predEff <- apply(planets.train, 1, function(x) planetsDaySignificance(x, significance, panalogy, T, F))
+    planets.train <- cbind(planets.train, predEff=predEff)
+    fitness1 <- predEffProcess(planets.train, list(panalogy), looptm)
 
-    fitness <- predEffProcess(planets.test, list(panalogy), looptm)
-    rm(panalogy, planets.test)
+    planets.test <- data.table(planets[Date >= as.Date(vsdate) & Date <= as.Date(vedate)])
+    predEff2 <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, T, F))
+    planets.test <- cbind(planets.test, predEff=predEff2)
+    fitness2 <- predEffProcess(planets.test, NA, looptm)
+
+    cat("\n=================================================================================\n")
+    rm(panalogy, predEff, predEff2, planets.train, planets.test)
     gc()
-    return(fitness)
+    return(fitness1)
   }
 
   weightSignificance <- function(significance, krweights) {
@@ -1727,7 +1737,6 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
     planets.test <- merge(planets.test, currency, by='Date')
     t1 <- table(planets.test$Eff == planets.test$predEff)
     fitness <- t1['TRUE']-t1[['FALSE']]
-    cat("\n---------------------------------------------------------------------------------\n")
     if (class(optvariables) == 'list') {
       for (optvariable in optvariables) {
         dput(optvariable)
@@ -1744,7 +1753,7 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
 
   gaPlanetsAnalogy <- function() {
     ga("binary", fitness=testPlanetsAnalogyFitness, nBits=121,
-       monitor=gaMonitor, maxiter=200, run=50, popSize=200, pcrossover = 0.6, pmutation = 0.3,
+       monitor=gaMonitor, maxiter=200, run=50, popSize=100, pcrossover = 0.6, pmutation = 0.3,
        selection=gabin_rwSelection, crossover=gabin_spCrossover)
   }
 
