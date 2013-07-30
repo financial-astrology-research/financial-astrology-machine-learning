@@ -1926,23 +1926,25 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets.test <- planets.test[!is.na(predEff)]
     planets.test[, 'predEff' := data.Normalization(predEff, type="n3")]
     planets.test[, predEff2 := c(rep(NA, dlag), diff(predEff, dlag, 1))]
-    planets.test[, predEff2 := cut(predEff2, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE)]
+    planets.test[, predEff3 := cut(predEff2, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE)]
     planets.test.security <- merge(planets.test, security, by='Date')
     planets.test.security[, 'Mid' := data.Normalization(Mid, type="n3")]
     p1 <- ggplot(planets.test, aes(Date, predEff)) + geom_line() + geom_line(data = planets.test.security, aes(x=Date, y=Mid), colour="red", show_guide=F) + scale_x_date(breaks=seq(as.Date(vsdate), as.Date(vedate), by=3)) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(paste("Significance Prediction", commodityfile, "MA", maperiod, "- significance / prev=", iprev, "next=", inext, "mapred=", mapred)) + geom_vline(xintercept=as.numeric(seq(as.Date(vsdate), as.Date(vedate), by=6)), linetype=5) + scale_fill_grey() + scale_shape_identity()
     print(p1)
     correlation <- round(cor(planets.test.security$predEff, planets.test.security$Mid,  use = "complete.obs", method='spearman'), digits=2)
-    t1 <- with(planets.test.security, table(Eff==predEff2))
+    t1 <- with(planets.test.security, table(Eff==predEff3))
     fitness <- t1['TRUE']-t1[['FALSE']]
     print(t1)
     cat("correlation=", correlation)
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
     cat("### = ", fitness, "\n")
-    return(fitness)
+    return(list(fitness=fitness, planets=planets.test))
   }
 
   generateChartGBPUSD <- function() {
-    relativeTrend("GBPUSD_fxpro", "planets_4", "1980-01-01", "2009-12-31", "2012-01-01", "2013-12-31", 1, 1, 2, 20, 'SMA', 'count', 2, 0)
+    predfile <- 'GBPUSD_pred'
+    res <- relativeTrend("GBPUSD_fxpro", "planets_4", "1980-01-01", "2009-12-31", "2012-01-01", "2013-12-31", 1, 1, 2, 20, 'SMA', 'count', 2, 0)
+    write.csv(res$planets[, c('Date', 'predEff2'), with=F], file=paste("~/trading/predict/", predfile, ".csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
   }
 
   relativeTrendFitness <- function(x, commodityfile, planetsfile, tsdate, tedate, vsdate, vedate) {
@@ -1960,7 +1962,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     cat("\n---------------------------------------------------------------------------------\n")
     cat("iprev=", iprev, ", inext=", inext, ", mapred=", mapred, ", maperiod=", maperiod, sep="")
     cat(", matype=", shQuote(matype), ", sigtype=", shQuote(sigtype), ", dlag=", dlag, ", threshold=", threshold, "\n", sep="")
-    relativeTrend(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, iprev, inext, mapred, maperiod, matype, sigtype, dlag, threshold)
+    res <- relativeTrend(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, iprev, inext, mapred, maperiod, matype, sigtype, dlag, threshold)
+    return(res$fitness)
   }
 
   optimizeRelativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate) {
