@@ -16,7 +16,7 @@ library(clusterSim)
 `%ni%` <- Negate(`%in%`)
 # no scientific notation
 options(scipen=100)
-#options(error=recover)
+options(error=recover)
 
 planetsList <- list(c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", "MAR", "JU", "JUR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"),
                     # combined fast planets
@@ -1921,8 +1921,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                      NELONG = c(),
                      PLLONG = c(),
                      NNLONG = c("NNLONG"))
-    planets[, wday := weekdays(Date)]
-    planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate) & wday %in% c('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')]
+    planets[, wday := format(Date, "%w")]
+    planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate) & wday %in% c(1, 2, 3, 4, 5)]
     predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, F, F, iprev, inext, sigtype))
     planets.test[, predEff := mafunc(predEff, mapred)]
     planets.test <- planets.test[!is.na(predEff)]
