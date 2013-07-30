@@ -1904,6 +1904,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     looptm <- proc.time()
     mafunc <- get(get('matype'))
     planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""), orbs, aspects, 2, 50)
+    setkey(planets, 'Date')
     security <- openSecurity(paste("~/trading/currency/", commodityfile, ".csv", sep=''), matype, maperiod)
     significance <- planetsVarsSignificance(planets[Date >= as.Date(tsdate) & Date <= as.Date(tedate)], security, threshold)
     keyranges <<- mixedsort(unique(significance[variable %in% planetsLonGCols]$key))
@@ -1920,11 +1921,12 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                      NELONG = c(),
                      PLLONG = c(),
                      NNLONG = c("NNLONG"))
-    planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate)]
+    planets[, wday := weekdays(Date)]
+    planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate) & wday %in% c('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')]
     predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, F, F, iprev, inext, sigtype))
-    planets.test[, 'predEff' := mafunc(predEff, mapred)]
+    planets.test[, predEff := mafunc(predEff, mapred)]
     planets.test <- planets.test[!is.na(predEff)]
-    planets.test[, 'predEff' := data.Normalization(predEff, type="n3")]
+    planets.test[, predEff := data.Normalization(predEff, type="n3")]
     planets.test[, predEff2 := c(rep(NA, dlag), diff(predEff, dlag, 1))]
     planets.test[, predEff3 := cut(predEff2, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE)]
     planets.test.security <- merge(planets.test, security, by='Date')
@@ -1943,7 +1945,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   generateChartGBPUSD <- function() {
     predfile <- 'GBPUSD_pred'
-    res <- relativeTrend("GBPUSD_fxpro", "planets_4", "1980-01-01", "2009-12-31", "2012-01-01", "2013-12-31", 1, 1, 2, 20, 'SMA', 'count', 2, 0)
+    res <- relativeTrend("GBPUSD_fxpro", "planets_4", "1980-01-01", "2010-12-31", "2011-01-01", "2013-12-31", 1, 1, 28, 3, 'SMA', 'count', 1, 0.38)
     write.csv(res$planets[, c('Date', 'predEff2'), with=F], file=paste("~/trading/predict/", predfile, ".csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
   }
 
