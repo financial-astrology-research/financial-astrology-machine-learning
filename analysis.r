@@ -1899,11 +1899,11 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   ptm <- proc.time()
   planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG')
 
-  relativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate,
-                            iprev, inext, mapred, maperiod, matype, sigtype, dlag, cordir, threshold=0) {
+  relativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, iprev, inext,
+                            mapred, maperiod, matype, sigtype, dlag, cordir, degsplit, threshold=0) {
     looptm <- proc.time()
     mafunc <- get(get('matype'))
-    planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""), orbs, aspects, 2, 50)
+    planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""), orbs, aspects, degsplit, 50)
     setkey(planets, 'Date')
     security <- openSecurity(paste("~/trading/currency/", commodityfile, ".csv", sep=''), matype, maperiod)
     significance <- planetsVarsSignificance(planets[Date >= as.Date(tsdate) & Date <= as.Date(tedate)], security, threshold)
@@ -1950,7 +1950,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   generateChartGBPUSD <- function() {
     predfile <- 'GBPUSD_pred'
-    res <- relativeTrend("GBPUSD_fxpro", "planets_4", "1980-01-01", "2010-12-31", "2011-01-01", "2013-12-31", 1, 1, 28, 3, 'SMA', 'count', 1, 1, 0.38)
+    res <- relativeTrend("GBPUSD_fxpro", "planets_4", "1980-01-01", "2010-12-31", "2011-01-01", "2013-12-31", 1, 1, 28, 3, 'SMA', 'count', 1, 0, 1, 0.38)
     write.csv(res$planets[, c('Date', 'predEff2'), with=F], file=paste("~/trading/predict/", predfile, ".csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
   }
 
@@ -1966,18 +1966,19 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     sigtype <- sigtypes[[x[6]]]
     dlag <- x[7]
     cordir <- x[8]
-    threshold <- x[9]/100
+    degsplit <- x[9]
+    threshold <- x[10]/100
     cat("\n---------------------------------------------------------------------------------\n")
     cat("iprev=", iprev, ", inext=", inext, ", mapred=", mapred, ", maperiod=", maperiod, sep="")
     cat(", matype=", shQuote(matype), ", sigtype=", shQuote(sigtype), ", dlag=", dlag, ", cordir" = cordir, ", threshold=", threshold, "\n", sep="")
-    res <- relativeTrend(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, iprev, inext, mapred, maperiod, matype, sigtype, dlag, cordir, threshold)
+    res <- relativeTrend(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, iprev, inext, mapred, maperiod, matype, sigtype, dlag, cordir, degsplit, threshold)
     return(res$fitness)
   }
 
   optimizeRelativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate) {
     pdf(paste("~/chart_", commodityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
-    minvals <- c(0, 0,  2,  2, 1, 1, 1, 0,  0)
-    maxvals <- c(3, 3, 40, 40, 4, 2, 5, 1, 40)
+    minvals <- c(0, 0,  2,  2, 1, 1, 1, 0,  1,  0)
+    maxvals <- c(3, 3, 40, 40, 4, 2, 5, 1, 10, 40)
     varnames <- c('iprev', 'inext', 'mapred', 'maperiod', 'matype', 'sigtype', 'dlag', 'threshold')
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames,
