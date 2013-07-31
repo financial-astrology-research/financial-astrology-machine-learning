@@ -592,7 +592,8 @@ openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1, spby=60) {
   planets.file <- npath(planets.file)
   planets <- fread(planets.file, sep="\t", na.strings="", verbose = F)
   setkey(planets, 'Date')
-  planets$Date <- as.Date(planets$Date, format="%Y-%m-%d")
+  planets[, Date := as.Date(planets$Date, format="%Y-%m-%d")]
+  planets[, DateMT4 := as.character(format(Date, "%Y.%m.%d"))]
 
   if (hasArg('cusorbs')) {
     orbs <- cusorbs
@@ -1949,9 +1950,9 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   generateChartGBPUSD <- function() {
-    predfile <- 'GBPUSD_pred'
-    res <- relativeTrend("GBPUSD_fxpro", "planets_4", "1980-01-01", "2010-12-31", "2011-01-01", "2013-12-31", 1, 1, 28, 3, 'SMA', 'count', 1, 0, 1, 0.38)
-    write.csv(res$planets[, c('Date', 'predEff2'), with=F], file=paste("~/trading/predict/", predfile, ".csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
+    predfile <- 'GBPUSD'
+    res <- relativeTrend("GBPUSD_fxpro", "planets_4", "1980-01-01", "2008-12-31", "2011-01-01", "2013-08-31", 3, 1, 25, 9, 'WMA', 'percent', 2, 0, 2, 0.39)
+    write.csv(res$planets[, c('DateMT4', 'predEff2'), with=F], file=paste("~/trading/predict/", predfile, ".csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
   }
 
   relativeTrendFitness <- function(x, commodityfile, planetsfile, tsdate, tedate, vsdate, vedate) {
