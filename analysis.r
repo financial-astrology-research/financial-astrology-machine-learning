@@ -1970,8 +1970,11 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     degsplit <- x[9]
     threshold <- x[10]/100
     cat("\n---------------------------------------------------------------------------------\n")
-    cat("iprev=", iprev, ", inext=", inext, ", mapred=", mapred, ", maperiod=", maperiod, sep="")
-    cat(", matype=", shQuote(matype), ", sigtype=", shQuote(sigtype), ", dlag=", dlag, ", cordir" = cordir, ", threshold=", threshold, "\n", sep="")
+    cat("(commodityfile=", shQuote(commodityfile), ", planetsfile=", shQuote(planetsfile), ", tsdate=", shQuote(tsdate), sep="")
+    cat(", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate", shQuote(vedate), "\n", sep="")
+    cat("\t iprev=", iprev, ", inext=", inext, ", mapred=", mapred, ", maperiod=", maperiod, sep="")
+    cat(", matype=", shQuote(matype), ", sigtype=", shQuote(sigtype), ", dlag=", dlag, ", cordir=", cordir, sep="")
+    cat(", degsplit=", degsplit, ", threshold=", threshold, ")\n", sep="")
     res <- relativeTrend(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, iprev, inext, mapred, maperiod, matype, sigtype, dlag, cordir, degsplit, threshold)
     return(res$fitness)
   }
