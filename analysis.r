@@ -1925,24 +1925,35 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets[, wday := format(Date, "%w")]
     planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate) & wday %in% c(1, 2, 3, 4, 5)]
     predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, F, F, iprev, inext, sigtype))
-    planets.test[, predEff := mafunc(predEff, mapred)]
-    planets.test <- planets.test[!is.na(predEff)]
-    planets.test[, predEff := data.Normalization(predEff, type="n3")]
-    # negative correlation
-    if (cordir == 1) {
-      planets.test[, predEff := predEff * -1]
+
+    # in case that all predictions are 0 we skip this solution
+    if (all(predEff == 0)) {
+      # very bad fitness to make this solution disappear
+      fitness <- -1000
+      correlation <- 0
+    }
+    else {
+      # negative correlation
+      if (cordir == 1) {
+        predEff <- predEff * -1
+        planets.test[, predEff := predEff]
+      }
+
+      planets.test[, predEff := mafunc(predEff, mapred)]
+      planets.test <- planets.test[!is.na(predEff)]
+      planets.test[, predEff := data.Normalization(predEff, type="n3")]
+      planets.test[, predEff2 := c(rep(NA, dlag), diff(predEff, dlag, 1))]
+      planets.test[, predEff3 := cut(predEff2, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE)]
+      planets.test.security <- merge(planets.test, security, by='Date')
+      planets.test.security[, 'Mid' := data.Normalization(Mid, type="n3")]
+      p1 <- ggplot(planets.test, aes(Date, predEff)) + geom_line() + geom_line(data = planets.test.security, aes(x=Date, y=Mid), colour="red", show_guide=F) + scale_x_date(breaks=seq(as.Date(vsdate), as.Date(vedate), by=3)) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(paste("Significance Prediction", commodityfile, "MA", maperiod, "- significance / prev=", iprev, "next=", inext, "mapred=", mapred)) + geom_vline(xintercept=as.numeric(seq(as.Date(vsdate), as.Date(vedate), by=6)), linetype=5) + scale_fill_grey() + scale_shape_identity()
+      print(p1)
+      correlation <- round(cor(planets.test.security$predEff, planets.test.security$Mid,  use = "complete.obs", method='spearman'), digits=2)
+      t1 <- with(planets.test.security, table(Eff==predEff3))
+      fitness <- t1['TRUE']-t1[['FALSE']]
+      print(t1)
     }
 
-    planets.test[, predEff2 := c(rep(NA, dlag), diff(predEff, dlag, 1))]
-    planets.test[, predEff3 := cut(predEff2, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE)]
-    planets.test.security <- merge(planets.test, security, by='Date')
-    planets.test.security[, 'Mid' := data.Normalization(Mid, type="n3")]
-    p1 <- ggplot(planets.test, aes(Date, predEff)) + geom_line() + geom_line(data = planets.test.security, aes(x=Date, y=Mid), colour="red", show_guide=F) + scale_x_date(breaks=seq(as.Date(vsdate), as.Date(vedate), by=3)) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(paste("Significance Prediction", commodityfile, "MA", maperiod, "- significance / prev=", iprev, "next=", inext, "mapred=", mapred)) + geom_vline(xintercept=as.numeric(seq(as.Date(vsdate), as.Date(vedate), by=6)), linetype=5) + scale_fill_grey() + scale_shape_identity()
-    print(p1)
-    correlation <- round(cor(planets.test.security$predEff, planets.test.security$Mid,  use = "complete.obs", method='spearman'), digits=2)
-    t1 <- with(planets.test.security, table(Eff==predEff3))
-    fitness <- t1['TRUE']-t1[['FALSE']]
-    print(t1)
     cat("correlation=", correlation)
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
     cat("### = ", fitness, "\n")
@@ -1981,8 +1992,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   optimizeRelativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate) {
     pdf(paste("~/chart_", commodityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
-    minvals <- c(0, 0,  2,  2, 1, 1, 1, 0,  1,  0)
-    maxvals <- c(3, 3, 40, 40, 4, 2, 5, 1, 10, 40)
+    minvals <- c(0, 0,  2,  2, 1, 1, 1, 0, 1,  0)
+    maxvals <- c(3, 3, 40, 40, 4, 2, 5, 1, 7, 40)
     varnames <- c('iprev', 'inext', 'mapred', 'maperiod', 'matype', 'sigtype', 'dlag', 'threshold')
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames,
