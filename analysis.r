@@ -1934,8 +1934,19 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                      NNLONG = c("NNLONG"))
     planets[, wday := format(Date, "%w")]
     planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate) & wday %in% c(1, 2, 3, 4, 5)]
+    pltitle <- paste("Significance Prediction", commodityfile, "MA", maprice, "- significance / prev=", iprev, "next=", inext, "mapredslow=", mapredslow)
+    res <- processPredictions(vsdate, vedate, planets.test, security, significance, panalogy, iprev, inext,
+                              sigtype, mapredfunc, mapredslow, mapredfast, cordir, pltitle)
+
+    cat("correlation=", res$correlation)
+    cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
+    cat("### = ", res$fitness, "\n")
+    return(list(fitness=res$fitness, planets=planets.test))
+  }
+
+  processPredictions <- function(vsdate, vedate, planets.test, security, significance, panalogy,
+                                 iprev, inext, sigtype, mapredfunc, mapredslow, mapredfast, cordir, pltitle) {
     predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, F, F, iprev, inext, sigtype))
-    predEff <- data.Normalization(predEff, type="n3")
 
     # in case that all predictions are 0 we skip this solution
     if (all(predEff == 0)) {
@@ -1944,6 +1955,9 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       correlation <- 0
     }
     else {
+      # normalize data
+      predEff <- data.Normalization(predEff, type="n3")
+
       # negative correlation
       if (cordir == 1) {
         predEff <- predEff * -1
@@ -1958,18 +1972,14 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       planets.test[, predFactor := cut(predVal, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE)]
       planets.test.security <- merge(planets.test, security, by='Date')
       planets.test.security[, 'Mid' := data.Normalization(Mid, type="n3")]
-      p1 <- ggplot(planets.test, aes(Date, predVal)) + geom_line() + geom_line(data = planets.test.security, aes(x=Date, y=Mid), colour="red", show_guide=F) + scale_x_date(breaks=seq(as.Date(vsdate), as.Date(vedate), by=3)) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(paste("Significance Prediction", commodityfile, "MA", maprice, "- significance / prev=", iprev, "next=", inext, "mapredslow=", mapredslow)) + geom_vline(xintercept=as.numeric(seq(as.Date(vsdate), as.Date(vedate), by=6)), linetype=5) + scale_fill_grey() + scale_shape_identity()
+      p1 <- ggplot(planets.test, aes(Date, predVal)) + geom_line() + geom_line(data = planets.test.security, aes(x=Date, y=Mid), colour="red", show_guide=F) + scale_x_date(breaks=seq(as.Date(vsdate), as.Date(vedate), by=3)) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + geom_vline(xintercept=as.numeric(seq(as.Date(vsdate), as.Date(vedate), by=6)), linetype=5) + scale_fill_grey() + scale_shape_identity()
       print(p1)
       correlation <- round(cor(planets.test.security$predVal, planets.test.security$Mid,  use = "complete.obs", method='spearman'), digits=2)
       t1 <- with(planets.test.security, table(Eff==predFactor))
       fitness <- t1['TRUE']-t1[['FALSE']]
       print(t1)
+      return(list(fitness=fitness, correlation=correlation))
     }
-
-    cat("correlation=", correlation)
-    cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
-    cat("### = ", fitness, "\n")
-    return(list(fitness=fitness, planets=planets.test))
   }
 
   generateChartGBPUSD <- function() {
@@ -1995,7 +2005,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     threshold <- x[11]/100
     cat("\n---------------------------------------------------------------------------------\n")
     cat("(commodityfile=", shQuote(commodityfile), ", planetsfile=", shQuote(planetsfile), ", tsdate=", shQuote(tsdate), sep="")
-    cat(", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate", shQuote(vedate), "\n", sep="")
+    cat(", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate), ",\n", sep="")
     cat("\t iprev=", iprev, ", inext=", inext, ", mapredslow=", mapredslow, ", mapredfast=", mapredfast, ", maprice=", maprice, sep="")
     cat(", mapredtype=", shQuote(mapredtype), ", mapricetype=", shQuote(mapricetype), ", sigtype=", shQuote(sigtype), sep="")
     cat(", cordir=", cordir, ", degsplit=", degsplit, ", threshold=", threshold, ")\n", sep="")
@@ -2007,7 +2017,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   optimizeRelativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate) {
     pdf(paste("~/chart_", commodityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
     minvals <- c(0, 0,  2,  2,  2, 1, 1, 1, 0, 1,  0)
-    maxvals <- c(3, 3, 40, 20, 40, 4, 4, 2, 1, 5, 40)
+    maxvals <- c(3, 3, 30, 10, 30, 4, 4, 2, 1, 5, 40)
     varnames <- c('iprev', 'inext', 'mapredslow', 'mapredfast', 'maprice', 'mapredtype',
                   'mapricetype', 'sigtype', 'cordir', 'degsplit', 'threshold')
 
