@@ -1929,7 +1929,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # in case that all predictions are 0 we skip this solution
     if (all(predEff == 0)) {
       # very bad fitness to make this solution disappear
-      fitness <- -1000
+      fitness <- 0
       correlation <- 0
     }
     else {
@@ -1993,7 +1993,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   optimizeRelativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate) {
     pdf(paste("~/chart_", commodityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
     minvals <- c(0, 0,  2,  2, 1, 1, 1, 0, 1,  0)
-    maxvals <- c(3, 3, 40, 40, 4, 2, 5, 1, 7, 40)
+    maxvals <- c(3, 3, 40, 40, 4, 2, 5, 1, 5, 40)
     varnames <- c('iprev', 'inext', 'mapred', 'maperiod', 'matype', 'sigtype', 'dlag', 'threshold')
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames,
