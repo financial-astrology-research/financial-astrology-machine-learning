@@ -1935,13 +1935,16 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets[, wday := format(Date, "%w")]
     planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate) & wday %in% c(1, 2, 3, 4, 5)]
     pltitle <- paste("Significance Prediction", commodityfile, "MA", maprice, "- significance / prev=", iprev, "next=", inext, "mapredslow=", mapredslow)
-    res <- processPredictions(vsdate, vedate, planets.test, security, significance, panalogy, iprev, inext,
+    res1 <- processPredictions(vsdate, vedate, planets.test, security, significance, panalogy, iprev, inext,
+                              sigtype, mapredfunc, mapredslow, mapredfast, cordir, pltitle)
+    planets.test2 <- planets[Date > as.Date(vedate) & wday %in% c(1, 2, 3, 4, 5)]
+    res2 <- processPredictions(vsdate, vedate, planets.test2, security, significance, panalogy, iprev, inext,
                               sigtype, mapredfunc, mapredslow, mapredfast, cordir, pltitle)
 
-    cat("correlation=", res$correlation)
+    cat("\nconfirmation test correlation=", res2$correlation, " - fitness =", res2$fitness, "\n")
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
-    cat("### = ", res$fitness, "\n")
-    return(list(fitness=res$fitness, planets=planets.test))
+    cat("correlation =", res1$correlation, "### = ", res1$fitness, "\n")
+    return(list(fitness=res1$fitness, planets=res1$planets))
   }
 
   processPredictions <- function(vsdate, vedate, planets.test, security, significance, panalogy,
@@ -1978,13 +1981,15 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       t1 <- with(planets.test.security, table(Eff==predFactor))
       fitness <- t1['TRUE']-t1[['FALSE']]
       print(t1)
-      return(list(fitness=fitness, correlation=correlation))
     }
+
+    return(list(fitness=fitness, correlation=correlation, planets=planets.test))
   }
 
   generateChartGBPUSD <- function() {
     predfile <- 'GBPUSD'
-    res <- relativeTrend("GBPUSD_fxpro", "planets_4", "1980-01-01", "2009-12-31", "2010-01-01", "2013-08-01", 2, 3, 31, 4, 19, 'WMA', 'SMA', 'count', 0, 2, 0.3)
+    res <- relativeTrend(commodityfile='GBPUSD_fxpro', planetsfile='planets_4', tsdate='1980-01-01', tedate='2009-12-31', vsdate='2010-01-01', vedate='2012-12-31', iprev=0, inext=1, mapredslow=24, mapredfast=10, maprice=8, mapredtype='SMA', mapricetype='EMA', sigtype='count', cordir=0, degsplit=4, threshold=0.04)
+
     write.csv(res$planets[, c('DateMT4', 'predVal'), with=F], file=paste("~/trading/predict/", predfile, ".csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
   }
 
