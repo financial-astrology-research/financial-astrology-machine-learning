@@ -2026,7 +2026,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   optimizeRelativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate) {
     pdf(paste("~/chart_", commodityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
     minvals <- c(0, 0,  1,  1,  2, 1, 1, 1, 0, 1,  0)
-    maxvals <- c(3, 1, 10, 10, 20, 4, 4, 2, 1, 5, 40)
+    maxvals <- c(3, 3, 10, 10, 25, 4, 4, 2, 0, 3, 30)
     varnames <- c('iprev', 'inext', 'mapredslow', 'mapredfast', 'maprice', 'mapredtype',
                   'mapricetype', 'sigtype', 'cordir', 'degsplit', 'threshold')
 
