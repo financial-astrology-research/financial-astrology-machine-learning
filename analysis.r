@@ -650,10 +650,11 @@ planetsVarsSignificance <- function(planets, currency, threshold) {
 
 planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, answer=T, verbose=F, iprev=0, inext=0, sigtype='count') {
   significance.day <- data.frame()
-  cols <- c(paste(planetsLonCols, 'G', sep=''))
+  cols <- planetsLonGCols
   #init <- as.numeric( sub("\\((.+),.*", "\\1", planets.day[curcol]))
   #keyranges <- apply(matrix(seq(init, init+8), ncol=2, byrow=T), 1, function(x) return(paste('(', x[1], ',', x[2], ']', sep='')))
   for (curcol in cols) {
+    res <- data.frame()
     curidx <- which(keyranges==planets.day[[curcol]])
     if (length(curidx) > 0) {
       indexes <- c(curidx)
@@ -662,7 +663,13 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
       indexes <- ifelse(indexes < 0, length(keyranges)+indexes+1, ifelse(indexes > length(keyranges), indexes-length(keyranges)+1, indexes))
       indexes <- unique(indexes)
       degroups <- keyranges[indexes]
-      res <- significance[key %in% degroups & variable %in% planetsAnalogy[[curcol]]]
+      # search by analogy & direct variable
+      if (!is.null(planetsAnalogy[[curcol]])) {
+        res <- significance[key %in% degroups & variable %in% planetsAnalogy[[curcol]]]
+      }
+      else {
+        res <- significance[key == planets.day[[curcol]] & variable == curcol]
+      }
       if (nrow(res) > 0) {
         res <- cbind(res, origin=curcol)
         significance.day <- rbind(significance.day, res)
@@ -1991,7 +1998,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   generateChartGBPUSD <- function() {
     predfile <- 'GBPUSD'
     pdf(paste("~/chart_", predfile, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
-    res <- relativeTrend(commodityfile='GBPUSD_fxpro', planetsfile='planets_4', tsdate='1980-01-01', tedate='2009-12-31', vsdate='2010-01-01', vedate='2010-12-31', csdate='2011-01-01', cedate='2011-12-31', iprev=1, inext=1, mapredslow=10, maprice=20, mapredtype='SMA', mapricetype='SMA', sigtype='count', cordir=0, degsplit=2, threshold=0)
+    res <- relativeTrend(commodityfile='GBPUSD_fxpro', planetsfile='planets_4', tsdate='1980-01-01', tedate='2010-12-31', vsdate='2011-05-01', vedate='2011-11-30', csdate='2011-12-01', cedate='2012-02-28', iprev=1, inext=0, mapredslow=8, maprice=13, mapredtype='EMA', mapricetype='SMA', sigtype='percent', cordir=0, degsplit=2, threshold=0.09)
+    #res <- relativeTrend(commodityfile='GBPUSD_fxpro', planetsfile='planets_4', tsdate='1980-01-01', tedate='2009-12-31', vsdate='2010-01-01', vedate='2010-12-31', csdate='2011-01-01', cedate='2011-12-31', iprev=1, inext=1, mapredslow=10, maprice=20, mapredtype='SMA', mapricetype='SMA', sigtype='count', cordir=0, degsplit=2, threshold=0)
     write.csv(res$planets[, c('DateMT4', 'predVal'), with=F], file=paste("~/trading/predict/", predfile, ".csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
     dev.off()
   }
@@ -2051,4 +2059,74 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   #}
   #dev.off()
   if (hasArg('sinkfile')) sink()
+}
+
+securityPeaksValleys <- function(security, span=50, plotfile="peaks_valleys") {
+  planets <- openPlanets("~/trading/dplanets/planets_4.tsv", orbs, aspects, 5, 10)
+  planetsBaseCols <- c("SU", "ME", "VE", "MA", "JU", "SA", "NN")
+  planetsLonCols <- paste(planetsBaseCols, 'LON', sep='')
+  planetsLonGCols <- paste(planetsBaseCols, 'LONG', sep='')
+  planetsCombLon <- combn(paste(c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "SN", "NN"), 'LON', sep=''), 2, simplify=F)
+  planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
+  cols <- c('Date', planetsLonGCols, planetsSpGCols, planetsCombLonCols)
+  pos.p <- peaks(security$Mid, span)
+  pos.v <- peaks(-security$Mid, span)
+  # take 2 days before exact peak - valley
+  dates.p <- security$Date[pos.p]
+  dates.v <- security$Date[pos.v]
+  cat(length(dates.p), "Peaks planets positions.\n")
+  planets.p <- planets[Date %in% dates.p][, cols, with=F]
+  planets.p[, type := 'peak']
+  planets.p[, ds := 'selected']
+  cat(length(dates.v), "Valleys planets positions.\n")
+  planets.v <- planets[Date %in% dates.v][, cols, with=F]
+  planets.v[, type := 'valley']
+  planets.r <- planets[sample(1:nrow(planets), length(dates.p)+length(dates.v))]
+  cat(nrow(planets.r), "Random planets positions.\n")
+  planets.pv <- rbind(planets.p, planets.v)
+
+  pdf(npath(paste("~/", plotfile, ".pdf", sep='')), width = 11, height = 8, family='Helvetica', pointsize=15)
+  plot(security$Date, security$Mid, type="l")
+  abline(v=dates.p, col="green", lty="dashed")
+  abline(v=dates.v, col="red", lty="dashed")
+
+  # Aggregated longitude
+  planets.pv.long <- data.table(melt(planets.pv, id.var=c('Date', 'type'), measure.var=planetsLonGCols))
+  planets.pv.long$value <- factor(planets.pv.long$value, mixedsort(unique(planets.pv.long$value)))
+  pl <- ggplot(aes(x=value, fill=type), data=planets.pv.long) + geom_bar(position='fill') + theme(axis.text.x = element_text(angle = 90, size = 9)) + xlab("Aggregated Planets LONG.")  + ggtitle(paste("Peaks VS Valleys Aggregated Planets (Percent)"))
+  print(pl)
+  pl <- ggplot(aes(x=value, fill=type), data=planets.pv.long) + geom_bar() + theme(axis.text.x = element_text(angle = 90, size = 9)) + xlab("Aggregated Planets LONG.")  + ggtitle(paste("Peaks VS Valleys Aggregated Planets (Count)"))
+  print(pl)
+
+  # Aggregated Aspects
+  planets.pv.asp <- data.table(melt(planets.pv, id.var=c('Date', 'type'), measure.var=planetsCombLonCols))
+  planets.pv.asp <- planets.pv.asp[value != 'anon']
+  pl <- ggplot(aes(x=value, fill=type), data=planets.pv.asp) + geom_bar(position = 'fill') + theme(axis.text.x = element_text(angle = 90, size = 9)) + xlab("Aggregated Planets Aspects")  + ggtitle(paste("Peaks VS Valleys Aggregated Planets (Percent)"))
+  print(pl)
+  pl <- ggplot(aes(x=value, fill=type), data=planets.pv.asp) + geom_bar() + theme(axis.text.x = element_text(angle = 90, size = 9)) + xlab("Aggregated Planets Aspects")  + ggtitle(paste("Peaks VS Valleys Aggregated Planets (Count)"))
+  print(pl)
+
+  for (curcol in planetsLonGCols) {
+    if (curcol == 'Date') next
+    ds <- planets.pv.long[variable == curcol]
+    if ( nrow(ds) > 0 ) {
+      pl <- ggplot(aes(x=value, fill=type), data=ds) + geom_bar(position = 'fill') + theme(axis.text.x = element_text(angle = 90, size = 9)) + xlab(curcol)  + ggtitle(paste("Peaks VS Planets variable: ", curcol, "(Percent)"))
+      print(pl)
+      pl <- ggplot(aes(x=value, fill=type), data=ds) + geom_bar() + theme(axis.text.x = element_text(angle = 90, size = 9)) + xlab(curcol)  + ggtitle(paste("Peaks VS Planets variable: ", curcol, "(Count)"))
+      print(pl)
+    }
+  }
+
+  for (curcol in planetsCombLonCols) {
+    if (curcol == 'Date') next
+    ds <- planets.pv.asp[variable == curcol]
+    if ( nrow(ds) > 0 ) {
+      pl <- ggplot(aes(x=value, fill=type), data=ds) + geom_bar(position = 'fill') + theme(axis.text.x = element_text(angle = 90, size = 9)) + xlab(curcol)  + ggtitle(paste("Peaks VS Planets variable: ", curcol, "(Percent)"))
+      print(pl)
+      pl <- ggplot(aes(x=value, fill=type), data=ds) + geom_bar() + theme(axis.text.x = element_text(angle = 90, size = 9)) + xlab(curcol)  + ggtitle(paste("Peaks VS Planets variable: ", curcol, "(Count)"))
+      print(pl)
+    }
+  }
+
+  dev.off()
 }
