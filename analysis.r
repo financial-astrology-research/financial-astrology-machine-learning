@@ -13,6 +13,7 @@ library(evtree)
 library(GA)
 library(gtools)
 library(clusterSim)
+library(splus2R)
 `%ni%` <- Negate(`%in%`)
 # no scientific notation
 options(scipen=100)
@@ -74,21 +75,22 @@ aspectTypesCols <- c('SUT', 'MOT', 'MET', 'VET', 'MAT', 'JUT', 'SAT', 'URT', 'NE
 
 # planets cols
 planetsBaseCols <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "SN", "NN")
+planetsLonGCols <- c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG')
 
 # Aspects and orbs
 aspects = c(0, 30, 45, 60, 72, 90, 120, 135, 144, 150, 180, 18, 40, 52, 80, 104, 108, 155, 160)
-orbs = list(SULON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
-            MOLON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
-            MELON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
-            VELON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
-            MALON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
-            JULON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
-            SALON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
-            URLON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
-            NELON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
-            PLLON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
-            NNLON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5),
-            SNLON = c(1.0, 0.5, 0.5, 0.5, 1.0, 0.5, 0.5, 0.5, 0.5))
+orbs = list(SULON = c(1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5),
+            MOLON = c(1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5),
+            MELON = c(1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5),
+            VELON = c(1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5),
+            MALON = c(1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5),
+            JULON = c(1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5),
+            SALON = c(1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5),
+            URLON = c(1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5),
+            NELON = c(1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5),
+            PLLON = c(1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5),
+            NNLON = c(1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5),
+            SNLON = c(1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5))
 
 zodDegrees <- seq(0, 360, by=2)
 
@@ -96,6 +98,7 @@ zodDegrees <- seq(0, 360, by=2)
 planetsLonCols <- paste(planetsBaseCols, 'LON', sep='')
 planetsLatCols <- paste(planetsBaseCols, 'LAT', sep='')
 planetsSpCols <- paste(planetsBaseCols, 'SP', sep='')
+planetsSpGCols <- paste(planetsSpCols, "G", sep="")
 planetsCombLon <- combn(planetsLonCols, 2, simplify=F)
 planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
 planetsGridLon <- expand.grid(planetsLonCols, planetsLonCols)
@@ -611,7 +614,7 @@ openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1, spby=60) {
   for (i in 1:length(planetsCombLon)) {
     combname <- paste(planetsCombLon[[i]][1], planetsCombLon[[i]][2], sep='')
     comborbs <- orbs[[planetsCombLon[[i]][1]]] + orbs[[planetsCombLon[[i]][2]]]
-    planets[, c(combname) := diffDeg(get(planetsCombLon[[i]][1]), get(planetsCombLon[[i]][2]), comborbs, aspects)]
+    planets[, c(combname) := paste('a', diffDeg(get(planetsCombLon[[i]][1]), get(planetsCombLon[[i]][2]), comborbs, aspects), sep='')]
   }
 
   for (loncol in planetsLonCols) {
@@ -1911,7 +1914,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG')
 
   relativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, iprev, inext,
-                            mapredslow, mapredfast, maprice, mapricetype, mapredtype, sigtype, cordir, degsplit, threshold=0) {
+                            mapredslow, maprice, mapricetype, mapredtype, sigtype, cordir, degsplit, threshold=0) {
     looptm <- proc.time()
     mapricefunc <- get(get('mapricetype'))
     mapredfunc <- get(get('mapredtype'))
@@ -1937,10 +1940,10 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate) & wday %in% c(1, 2, 3, 4, 5)]
     pltitle <- paste("Significance Prediction", commodityfile, "MA", maprice, "- significance / prev=", iprev, "next=", inext, "mapredslow=", mapredslow)
     res1 <- processPredictions(planets.test, security, significance, panalogy, iprev, inext,
-                              sigtype, mapredfunc, mapredslow, mapredfast, cordir, pltitle)
+                              sigtype, mapredfunc, mapredslow, cordir, pltitle)
     planets.test2 <- planets[Date > as.Date(csdate) & Date <= as.Date(cedate) & wday %in% c(1, 2, 3, 4, 5)]
     res2 <- processPredictions(planets.test2, security, significance, panalogy, iprev, inext,
-                              sigtype, mapredfunc, mapredslow, mapredfast, cordir, pltitle)
+                              sigtype, mapredfunc, mapredslow, cordir, pltitle)
 
     cat("\nconfirmation test: volatility =", res2$volatility, " - correlation =", res2$correlation, " - fitness =", res2$fitness, "\n")
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
@@ -1949,7 +1952,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   processPredictions <- function(planets.test, security, significance, panalogy, iprev, inext,
-                                 sigtype, mapredfunc, mapredslow, mapredfast, cordir, pltitle) {
+                                 sigtype, mapredfunc, mapredslow, cordir, pltitle) {
     predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, F, F, iprev, inext, sigtype))
 
     # in case that all predictions are 0 we skip this solution
@@ -1968,11 +1971,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
         predEff <- predEff * -1
       }
 
-      planets.test[, predSlow := mapredfunc(predEff, mapredslow)]
-      planets.test[, predFast := mapredfunc(predEff, mapredfast)]
-      planets.test <- planets.test[!is.na(predSlow) & !is.na(predFast)]
-      planets.test[, predVal := predFast - predSlow]
-      #planets.test[, predVal := c(rep(NA, mapredfast), diff(predSlow, mapredfast, 1))]
+      planets.test[, predVal := mapredfunc(predEff, mapredslow)]
       planets.test <- planets.test[!is.na(predVal)]
       planets.test[, predFactor := cut(predVal, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE)]
       planets.test.security <- merge(planets.test, security, by='Date')
@@ -1991,9 +1990,10 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   generateChartGBPUSD <- function() {
     predfile <- 'GBPUSD'
-    res <- relativeTrend(commodityfile='GBPUSD_fxpro', planetsfile='planets_4', tsdate='1980-01-01', tedate='2009-12-31', vsdate='2010-01-01', vedate='2012-12-31', iprev=0, inext=1, mapredslow=24, mapredfast=10, maprice=8, mapredtype='SMA', mapricetype='EMA', sigtype='count', cordir=0, degsplit=4, threshold=0.04)
-
+    pdf(paste("~/chart_", predfile, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
+    res <- relativeTrend(commodityfile='GBPUSD_fxpro', planetsfile='planets_4', tsdate='1980-01-01', tedate='2009-12-31', vsdate='2010-01-01', vedate='2010-12-31', csdate='2011-01-01', cedate='2011-12-31', iprev=1, inext=1, mapredslow=10, maprice=20, mapredtype='SMA', mapricetype='SMA', sigtype='count', cordir=0, degsplit=2, threshold=0)
     write.csv(res$planets[, c('DateMT4', 'predVal'), with=F], file=paste("~/trading/predict/", predfile, ".csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
+    dev.off()
   }
 
   relativeTrendFitness <- function(x, commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate) {
@@ -2003,31 +2003,30 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     iprev <- x[1]
     inext <- x[2]
     mapredslow <- x[3]
-    mapredfast <- x[4]
-    maprice <- x[5]
-    mapredtype <- mapricetypes[[x[6]]]
-    mapricetype <- mapricetypes[[x[7]]]
-    sigtype <- sigtypes[[x[8]]]
-    cordir <- x[9]
-    degsplit <- x[10]
-    threshold <- x[11]/100
+    maprice <- x[4]
+    mapredtype <- mapricetypes[[x[5]]]
+    mapricetype <- mapricetypes[[x[6]]]
+    sigtype <- sigtypes[[x[7]]]
+    cordir <- x[8]
+    degsplit <- x[9]
+    threshold <- x[10]/100
     cat("\n---------------------------------------------------------------------------------\n")
     cat("(commodityfile=", shQuote(commodityfile), ", planetsfile=", shQuote(planetsfile), ", tsdate=", shQuote(tsdate), sep="")
-    cat(", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate), ",\n", sep="")
-    cat(", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate), ",\n", sep="")
-    cat("\t iprev=", iprev, ", inext=", inext, ", mapredslow=", mapredslow, ", mapredfast=", mapredfast, ", maprice=", maprice, sep="")
+    cat(", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate), sep="")
+    cat(", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate), sep="")
+    cat(", iprev=", iprev, ", inext=", inext, ", mapredslow=", mapredslow, ", maprice=", maprice, sep="")
     cat(", mapredtype=", shQuote(mapredtype), ", mapricetype=", shQuote(mapricetype), ", sigtype=", shQuote(sigtype), sep="")
     cat(", cordir=", cordir, ", degsplit=", degsplit, ", threshold=", threshold, ")\n", sep="")
     res <- relativeTrend(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, iprev, inext,
-                         mapredslow, mapredfast, maprice, mapredtype, mapricetype, sigtype,  cordir, degsplit, threshold)
+                         mapredslow, maprice, mapredtype, mapricetype, sigtype,  cordir, degsplit, threshold)
     return(res$fitness)
   }
 
   optimizeRelativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate) {
     pdf(paste("~/chart_", commodityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
-    minvals <- c(0, 0,  1,  1,  2, 1, 1, 1, 0, 1,  0)
-    maxvals <- c(1, 1, 10, 10, 25, 3, 3, 2, 0, 3, 30)
-    varnames <- c('iprev', 'inext', 'mapredslow', 'mapredfast', 'maprice', 'mapredtype',
+    minvals <- c(0, 0,  1,  2, 1, 1, 1, 0, 1,  0)
+    maxvals <- c(2, 2, 20, 30, 4, 4, 2, 1, 3, 30)
+    varnames <- c('iprev', 'inext', 'mapredslow', 'maprice', 'mapredtype',
                   'mapricetype', 'sigtype', 'cordir', 'degsplit', 'threshold')
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames,
@@ -2053,5 +2052,3 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   #dev.off()
   if (hasArg('sinkfile')) sink()
 }
-
-#testPlanetsSignificanceRelative("optimizeRelativeTrend", "output_3_5", "GBPUSD_fxpro", "planets_4", "1980-01-01", "2010-12-31", "2011-01-01", "2012-12-31")
