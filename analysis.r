@@ -650,7 +650,7 @@ planetsVarsSignificance <- function(planets, currency, threshold) {
 
 planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, answer=T, verbose=F, iprev=0, inext=0, sigtype='count') {
   significance.day <- data.frame()
-  cols <- planetsLonGCols
+  cols <- c(planetsLonGCols, planetsSpGCols)
   #init <- as.numeric( sub("\\((.+),.*", "\\1", planets.day[curcol]))
   #keyranges <- apply(matrix(seq(init, init+8), ncol=2, byrow=T), 1, function(x) return(paste('(', x[1], ',', x[2], ']', sep='')))
   for (curcol in cols) {
@@ -667,13 +667,14 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
       if (!is.null(planetsAnalogy[[curcol]])) {
         res <- significance[key %in% degroups & variable %in% planetsAnalogy[[curcol]]]
       }
-      else {
-        res <- significance[key == planets.day[[curcol]] & variable == curcol]
-      }
-      if (nrow(res) > 0) {
-        res <- cbind(res, origin=curcol)
-        significance.day <- rbind(significance.day, res)
-      }
+    }
+    else {
+      res <- significance[key == planets.day[[curcol]] & variable == curcol]
+    }
+
+    if (nrow(res) > 0) {
+      res <- cbind(res, origin=curcol)
+      significance.day <- rbind(significance.day, res)
     }
   }
 
@@ -698,6 +699,17 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
       stop("No valid trend type was provided.")
     }
 
+    if (verbose) {
+      patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
+      activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
+      planets.day.asp <- planets.day[planets.day != "non" & names(planets.day) %in% activecols]
+      print(planets.day[['Date']])
+      print(significance.day)
+      print(planets.day.asp)
+      print(planets.day[planetsSpCols])
+      print(trend)
+    }
+
     # the result could return as answer (factor) or numeric (kind of probability)
     if (answer) {
       if (trend > 0) {
@@ -713,17 +725,6 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
     else {
       return(trend)
     }
-  }
-
-  if (verbose) {
-    patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
-    activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
-    planets.day.asp <- planets.day[planets.day != "non" & names(planets.day) %in% activecols]
-    print(planets.day[['Date']])
-    print(significance.day)
-    print(planets.day.asp)
-    print(planets.day[planetsSpCols])
-    print(trend)
   }
 
   return(0)
@@ -1933,15 +1934,15 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     setkey(significance, 'key', 'variable', 'V3', 'V4')
 
     panalogy <- list(SULONG = c("SULONG"),
-                     MOLONG = c(),
+                     MOLONG = c("MOLONG"),
                      MELONG = c("MELONG"),
                      VELONG = c("VELONG"),
                      MALONG = c("MALONG"),
                      JULONG = c("JULONG"),
                      SALONG = c("SALONG"),
-                     URLONG = c(),
-                     NELONG = c(),
-                     PLLONG = c(),
+                     URLONG = c("URLONG"),
+                     NELONG = c("NELONG"),
+                     PLLONG = c("PLLONG"),
                      NNLONG = c("NNLONG"))
     planets[, wday := format(Date, "%w")]
     planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate) & wday %in% c(1, 2, 3, 4, 5)]
@@ -1980,7 +1981,9 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
       planets.test[, predVal := mapredfunc(predEff, mapredslow)]
       planets.test <- planets.test[!is.na(predVal)]
-      planets.test[, predFactor := cut(predVal, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE)]
+      planets.test[, predEff := c(NA, diff(predVal, 1, 1))]
+      planets.test <- planets.test[!is.na(predEff)]
+      planets.test[, predFactor := cut(predEff, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE)]
       planets.test.security <- merge(planets.test, security, by='Date')
       volatility <- mean(planets.test.security$Mid) / sd(planets.test.security$Mid)
       planets.test.security[, 'Mid' := data.Normalization(Mid, type="n3")]
@@ -1998,7 +2001,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   generateChartGBPUSD <- function() {
     predfile <- 'GBPUSD'
     pdf(paste("~/chart_", predfile, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
-    res <- relativeTrend(commodityfile='GBPUSD_fxpro', planetsfile='planets_4', tsdate='1980-01-01', tedate='2010-12-31', vsdate='2011-05-01', vedate='2011-11-30', csdate='2011-12-01', cedate='2012-02-28', iprev=1, inext=0, mapredslow=8, maprice=13, mapredtype='EMA', mapricetype='SMA', sigtype='percent', cordir=0, degsplit=2, threshold=0.09)
+    res <- relativeTrend(commodityfile='GBPUSD_fxpro', planetsfile='planets_4', tsdate='1980-01-01', tedate='2010-12-31', vsdate='2011-05-01', vedate='2011-11-30', csdate='2011-12-01', cedate='2012-02-28', iprev=0, inext=0, mapredslow=1, maprice=6, mapredtype='SMA', mapricetype='SMA', sigtype='count', cordir=0, degsplit=1, threshold=0)
     #res <- relativeTrend(commodityfile='GBPUSD_fxpro', planetsfile='planets_4', tsdate='1980-01-01', tedate='2009-12-31', vsdate='2010-01-01', vedate='2010-12-31', csdate='2011-01-01', cedate='2011-12-31', iprev=1, inext=1, mapredslow=10, maprice=20, mapredtype='SMA', mapricetype='SMA', sigtype='count', cordir=0, degsplit=2, threshold=0)
     write.csv(res$planets[, c('DateMT4', 'predVal'), with=F], file=paste("~/trading/predict/", predfile, ".csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
     dev.off()
@@ -2033,7 +2036,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   optimizeRelativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate) {
     pdf(paste("~/chart_", commodityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
     minvals <- c(0, 0,  1,  2, 1, 1, 1, 0, 1,  0)
-    maxvals <- c(2, 2, 20, 30, 4, 4, 2, 1, 3, 30)
+    maxvals <- c(2, 2, 10, 15, 4, 4, 2, 1, 3, 30)
     varnames <- c('iprev', 'inext', 'mapredslow', 'maprice', 'mapredtype',
                   'mapricetype', 'sigtype', 'cordir', 'degsplit', 'threshold')
 
