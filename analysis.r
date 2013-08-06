@@ -1922,7 +1922,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG')
 
   relativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, iprev, inext,
-                            mapredslow, maprice, mapricetype, mapredtype, sigtype, cordir, degsplit, threshold=0) {
+                            mapredslow, maprice, mapricetype, mapredtype, sigtype, predtype, cordir, degsplit, threshold=0) {
     looptm <- proc.time()
     mapricefunc <- get(get('mapricetype'))
     mapredfunc <- get(get('mapredtype'))
@@ -1948,10 +1948,10 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate) & wday %in% c(1, 2, 3, 4, 5)]
     pltitle <- paste("Significance Prediction", commodityfile, "MA", maprice, "- significance / prev=", iprev, "next=", inext, "mapredslow=", mapredslow)
     res1 <- processPredictions(planets.test, security, significance, panalogy, iprev, inext,
-                              sigtype, mapredfunc, mapredslow, cordir, pltitle)
+                              sigtype, predtype, mapredfunc, mapredslow, cordir, pltitle)
     planets.test2 <- planets[Date > as.Date(csdate) & Date <= as.Date(cedate) & wday %in% c(1, 2, 3, 4, 5)]
     res2 <- processPredictions(planets.test2, security, significance, panalogy, iprev, inext,
-                              sigtype, mapredfunc, mapredslow, cordir, pltitle)
+                              sigtype, predtype, mapredfunc, mapredslow, cordir, pltitle)
 
     cat("\nconfirmation test: volatility =", res2$volatility, " - correlation =", res2$correlation, " - fitness =", res2$fitness, "\n")
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
@@ -1960,7 +1960,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   processPredictions <- function(planets.test, security, significance, panalogy, iprev, inext,
-                                 sigtype, mapredfunc, mapredslow, cordir, pltitle) {
+                                 sigtype, predtype, mapredfunc, mapredslow, cordir, pltitle) {
     predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, F, F, iprev, inext, sigtype))
 
     # in case that all predictions are 0 we skip this solution
@@ -1981,8 +1981,18 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
       planets.test[, predVal := mapredfunc(predEff, mapredslow)]
       planets.test <- planets.test[!is.na(predVal)]
-      planets.test[, predEff := c(NA, diff(predVal, 1, 1))]
-      planets.test <- planets.test[!is.na(predEff)]
+
+      if (predtype == 'absolute') {
+        planets.test[, predEff := predVal]
+      }
+      else if (predtype == 'relative') {
+        planets.test[, predEff := c(NA, diff(predVal, 1, 1))]
+        planets.test <- planets.test[!is.na(predEff)]
+      }
+      else {
+        stop("No valid prediction type was provided.")
+      }
+
       planets.test[, predFactor := cut(predEff, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE)]
       planets.test.security <- merge(planets.test, security, by='Date')
       volatility <- mean(planets.test.security$Mid) / sd(planets.test.security$Mid)
@@ -2011,6 +2021,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # build the parameters based on GA indexes
     mapricetypes <- c('SMA', 'EMA', 'WMA', 'ZLEMA')
     sigtypes <- c('count',  'percent')
+    predtypes <- c('absolute',  'relative')
     iprev <- x[1]
     inext <- x[2]
     mapredslow <- x[3]
@@ -2018,27 +2029,28 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     mapredtype <- mapricetypes[[x[5]]]
     mapricetype <- mapricetypes[[x[6]]]
     sigtype <- sigtypes[[x[7]]]
-    cordir <- x[8]
-    degsplit <- x[9]
-    threshold <- x[10]/100
+    predtype <- predtypes[[x[8]]]
+    cordir <- x[9]
+    degsplit <- x[10]
+    threshold <- x[11]/100
     cat("\n---------------------------------------------------------------------------------\n")
     cat("(commodityfile=", shQuote(commodityfile), ", planetsfile=", shQuote(planetsfile), ", tsdate=", shQuote(tsdate), sep="")
     cat(", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate), sep="")
     cat(", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate), sep="")
     cat(", iprev=", iprev, ", inext=", inext, ", mapredslow=", mapredslow, ", maprice=", maprice, sep="")
     cat(", mapredtype=", shQuote(mapredtype), ", mapricetype=", shQuote(mapricetype), ", sigtype=", shQuote(sigtype), sep="")
-    cat(", cordir=", cordir, ", degsplit=", degsplit, ", threshold=", threshold, ")\n", sep="")
+    cat(", predtype=", shQuote(predtype), ", cordir=", cordir, ", degsplit=", degsplit, ", threshold=", threshold, ")\n", sep="")
     res <- relativeTrend(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, iprev, inext,
-                         mapredslow, maprice, mapredtype, mapricetype, sigtype,  cordir, degsplit, threshold)
+                         mapredslow, maprice, mapredtype, mapricetype, sigtype, predtype, cordir, degsplit, threshold)
     return(res$fitness)
   }
 
   optimizeRelativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate) {
     pdf(paste("~/chart_", commodityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
-    minvals <- c(0, 0,  1,  2, 1, 1, 1, 0, 1,  0)
-    maxvals <- c(2, 2, 10, 15, 4, 4, 2, 1, 3, 30)
+    minvals <- c(0, 0,  1,  2, 1, 1, 1, 1, 0, 1,  0)
+    maxvals <- c(2, 2, 10, 15, 4, 4, 2, 2, 1, 3, 30)
     varnames <- c('iprev', 'inext', 'mapredslow', 'maprice', 'mapredtype',
-                  'mapricetype', 'sigtype', 'cordir', 'degsplit', 'threshold')
+                  'mapricetype', 'sigtype', 'predtype', 'cordir', 'degsplit', 'threshold')
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames,
        monitor=gaMonitor, maxiter=200, run=50, popSize=200, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.2,
