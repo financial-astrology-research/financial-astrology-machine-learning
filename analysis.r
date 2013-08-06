@@ -1922,11 +1922,11 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG')
 
   relativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, iprev, inext,
-                            mapredslow, maprice, mapricetype, mapredtype, sigtype, predtype, cordir, degsplit, threshold=0) {
+                            mapredslow, maprice, mapricetype, mapredtype, sigtype, predtype, cordir, degsplit, spsplit, threshold=0) {
     looptm <- proc.time()
     mapricefunc <- get(get('mapricetype'))
     mapredfunc <- get(get('mapredtype'))
-    planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""), orbs, aspects, degsplit, 50)
+    planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""), orbs, aspects, degsplit, spsplit)
     setkey(planets, 'Date')
     security <- openSecurity(paste("~/trading/currency/", commodityfile, ".csv", sep=''), mapricetype, maprice)
     significance <- planetsVarsSignificance(planets[Date >= as.Date(tsdate) & Date <= as.Date(tedate)], security, threshold)
@@ -1944,14 +1944,15 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                      NELONG = c("NELONG"),
                      PLLONG = c("PLLONG"),
                      NNLONG = c("NNLONG"))
+
     planets[, wday := format(Date, "%w")]
     planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate) & wday %in% c(1, 2, 3, 4, 5)]
     pltitle <- paste("Significance Prediction", commodityfile, "MA", maprice, "- significance / prev=", iprev, "next=", inext, "mapredslow=", mapredslow)
     res1 <- processPredictions(planets.test, security, significance, panalogy, iprev, inext,
-                              sigtype, predtype, mapredfunc, mapredslow, cordir, pltitle)
+                               sigtype, predtype, mapredfunc, mapredslow, cordir, pltitle)
     planets.test2 <- planets[Date > as.Date(csdate) & Date <= as.Date(cedate) & wday %in% c(1, 2, 3, 4, 5)]
     res2 <- processPredictions(planets.test2, security, significance, panalogy, iprev, inext,
-                              sigtype, predtype, mapredfunc, mapredslow, cordir, pltitle)
+                               sigtype, predtype, mapredfunc, mapredslow, cordir, pltitle)
 
     cat("\nconfirmation test: volatility =", res2$volatility, " - correlation =", res2$correlation, " - fitness =", res2$fitness, "\n")
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
@@ -2043,23 +2044,24 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     predtype <- predtypes[[x[8]]]
     cordir <- x[9]
     degsplit <- x[10]
-    threshold <- x[11]/100
+    spsplit <- x[11]
+    threshold <- x[12]/100
     cat("\n---------------------------------------------------------------------------------\n")
     cat("(commodityfile=", shQuote(commodityfile), ", planetsfile=", shQuote(planetsfile), ", tsdate=", shQuote(tsdate), sep="")
     cat(", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate), sep="")
     cat(", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate), sep="")
     cat(", iprev=", iprev, ", inext=", inext, ", mapredslow=", mapredslow, ", maprice=", maprice, sep="")
     cat(", mapredtype=", shQuote(mapredtype), ", mapricetype=", shQuote(mapricetype), ", sigtype=", shQuote(sigtype), sep="")
-    cat(", predtype=", shQuote(predtype), ", cordir=", cordir, ", degsplit=", degsplit, ", threshold=", threshold, ")\n", sep="")
+    cat(", predtype=", shQuote(predtype), ", cordir=", cordir, ", degsplit=", degsplit, ", spsplit=", spsplit, ", threshold=", threshold, ")\n", sep="")
     res <- relativeTrend(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, iprev, inext,
-                         mapredslow, maprice, mapredtype, mapricetype, sigtype, predtype, cordir, degsplit, threshold)
+                         mapredslow, maprice, mapredtype, mapricetype, sigtype, predtype, cordir, degsplit, spsplit, threshold)
     return(res$fitness)
   }
 
   optimizeRelativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate) {
     pdf(paste("~/chart_", commodityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
-    minvals <- c(0, 0, 1,  1, 1, 1, 1, 1, 0, 1,  0)
-    maxvals <- c(1, 1, 5, 10, 4, 4, 2, 2, 1, 3, 30)
+    minvals <- c(0, 0, 1,  1, 1, 1, 1, 1, 0, 1,  2,  0)
+    maxvals <- c(1, 1, 5, 10, 4, 4, 2, 2, 1, 3, 70, 30)
     varnames <- c('iprev', 'inext', 'mapredslow', 'maprice', 'mapredtype',
                   'mapricetype', 'sigtype', 'predtype', 'cordir', 'degsplit', 'threshold')
 
