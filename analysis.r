@@ -2029,14 +2029,12 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(list(fitness=fitness, correlation=correlation, volatility=volatility, planets=planets.test))
   }
 
-  generateChartGBPUSD <- function() {
+  testSolution <- function(...) {
     predfile <- 'GBPUSD'
     pdf(paste("~/chart_", predfile, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
-
-    res <- relativeTrend(commodityfile='GBPUSD_fxpro', planetsfile='planets_4', tsdate='1980-01-01', tedate='2010-12-31', vsdate='2011-01-01', vedate='2011-05-30', csdate='2011-06-01', cedate='2011-07-31', iprev=1, inext=1, mapredslow=4, maprice=13, mapredtype='EMA', mapricetype='WMA', sigtype='count', predtype='absolute', cordir=0, degsplit=1, spsplit=48, threshold=0.05)
-    #res <- relativeTrend(commodityfile='GBPUSD_fxpro', planetsfile='planets_4', tsdate='1980-01-01', tedate='2010-12-31', vsdate='2011-01-01', vedate='2011-05-30', csdate='2011-06-01', cedate='2011-07-31', iprev=0, inext=0, mapredslow=1, maprice=1, mapredtype='EMA', mapricetype='SMA', sigtype='percent', predtype='relative', cordir=0, degsplit=3, threshold=0.3)
-    write.csv(res$planets[, c('DateMT4', 'predVal'), with=F], file=paste("~/trading/predict/", predfile, ".csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
+    res <- relativeTrend(...)
     dev.off()
+    write.csv(res$planets[, c('DateMT4', 'predVal'), with=F], file=paste("~/trading/predict/", predfile, ".csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
   }
 
   relativeTrendFitness <- function(x, commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate) {
@@ -2057,8 +2055,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     spsplit <- x[11]
     threshold <- x[12]/100
     cat("\n---------------------------------------------------------------------------------\n")
-    cat("(commodityfile=", shQuote(commodityfile), ", planetsfile=", shQuote(planetsfile), ", tsdate=", shQuote(tsdate), sep="")
-    cat(", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate), sep="")
+    cat("testPlanetsSignificanceRelative('testSolution', commodityfile=", shQuote(commodityfile), ", planetsfile=", shQuote(planetsfile), sep="")
+    cat(", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate), sep="")
     cat(", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate), sep="")
     cat(", iprev=", iprev, ", inext=", inext, ", mapredslow=", mapredslow, ", maprice=", maprice, sep="")
     cat(", mapredtype=", shQuote(mapredtype), ", mapricetype=", shQuote(mapricetype), ", sigtype=", shQuote(sigtype), sep="")
