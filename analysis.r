@@ -649,12 +649,27 @@ planetsVarsSignificance <- function(planets, currency, threshold) {
     significance <- rbind(significance, t1)
   }
 
+  significance <- subset(significance, key != 'anon')
   return(significance)
 }
 
-planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, answer=T, verbose=F, iprev=0, inext=0, sigtype='count') {
+planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, answer=T, verbose=F, iprev=0, inext=0,
+                                   sigtype='count', uselon=1, usesp=1, useasp=1) {
   significance.day <- data.frame()
-  cols <- c(planetsLonGCols, planetsSpGCols)
+  cols <- c()
+
+  if (uselon == 1) {
+    cols <- c(cols, planetsLonGCols)
+  }
+
+  if (usesp == 1) {
+    cols <- c(cols, planetsSpGCols)
+  }
+
+  if (useasp == 1) {
+    cols <- c(cols, planetsCombLonCols)
+  }
+
   #init <- as.numeric( sub("\\((.+),.*", "\\1", planets.day[curcol]))
   #keyranges <- apply(matrix(seq(init, init+8), ncol=2, byrow=T), 1, function(x) return(paste('(', x[1], ',', x[2], ']', sep='')))
   for (curcol in cols) {
@@ -706,7 +721,7 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
     if (verbose) {
       patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
       activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
-      planets.day.asp <- planets.day[planets.day != "non" & names(planets.day) %in% activecols]
+      planets.day.asp <- planets.day[planets.day != "anon" & names(planets.day) %in% activecols]
       print(planets.day[['Date']])
       print(significance.day)
       print(planets.day.asp)
@@ -1926,7 +1941,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG')
 
   relativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, iprev, inext,
-                            mapredslow, maprice, mapredtype, mapricetype, sigtype, predtype, cordir, degsplit, spsplit, threshold=0) {
+                            mapredslow, maprice, mapredtype, mapricetype, sigtype, predtype, cordir, degsplit, spsplit,
+                            threshold, uselon, usesp, useasp) {
     looptm <- proc.time()
     mapricefunc <- get(get('mapricetype'))
     mapredfunc <- get(get('mapredtype'))
@@ -1955,12 +1971,12 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate) & wday %in% c(1, 2, 3, 4, 5)]
     res1 <- processPredictions(planets.test=planets.test, security=security, significance=significance, panalogy=panalogy,
                                iprev=iprev, inext=inext, sigtype=sigtype, predtype=predtype, mapredfunc=mapredfunc,
-                               mapredslow=mapredslow, cordir=cordir, pltitle=pltitle)
+                               mapredslow=mapredslow, cordir=cordir, pltitle=pltitle, uselon=uselon, usesp=usesp, useasp=useasp)
 
     planets.test2 <- planets[Date > as.Date(csdate) & Date <= as.Date(cedate) & wday %in% c(1, 2, 3, 4, 5)]
     res2 <- processPredictions(planets.test=planets.test2, security=security, significance=significance, panalogy=panalogy,
                                iprev=iprev, inext=inext, sigtype=sigtype, predtype=predtype, mapredfunc=mapredfunc,
-                               mapredslow=mapredslow, cordir=cordir, pltitle=pltitle)
+                               mapredslow=mapredslow, cordir=cordir, pltitle=pltitle, uselon=uselon, usesp=usesp, useasp=useasp)
 
     cat("\nconfirmation test: volatility =", res2$volatility, " - correlation =", res2$correlation, " - fitness =", res2$fitness, "\n")
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
@@ -1968,9 +1984,9 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(list(fitness=res1$fitness, planets=res1$planets))
   }
 
-  processPredictions <- function(planets.test, security, significance, panalogy, iprev, inext,
-                                 sigtype, predtype, mapredfunc, mapredslow, cordir, pltitle) {
-    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, F, F, iprev, inext, sigtype))
+  processPredictions <- function(planets.test, security, significance, panalogy, iprev, inext, sigtype, predtype,
+                                 mapredfunc, mapredslow, cordir, pltitle, uselon, usesp, useasp) {
+    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, F, T, iprev, inext, sigtype, uselon, usesp, useasp))
 
     # in case that all predictions are 0 we skip this solution
     if (all(predEff == 0)) {
@@ -1983,46 +1999,53 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       # normalize data
       predEff <- data.Normalization(predEff, type="n3")
 
-      # negative correlation
-      if (cordir == 1) {
-        predEff <- predEff * -1
-      }
-
-      planets.test[, predVal := mapredfunc(predEff, mapredslow)]
-      planets.test <- planets.test[!is.na(predVal)]
-
-      if (predtype == 'absolute') {
-        planets.test[, predEff := predVal]
-      }
-      else if (predtype == 'relative') {
-        planets.test[, predEff := c(NA, diff(predVal, 1, 1))]
-        planets.test <- planets.test[!is.na(predEff)]
+      if (all(is.nan(predEff))) {
+        fitness <- 0
+        correlation <- 0
+        volatility <- 0
       }
       else {
-        stop("No valid prediction type was provided.")
-      }
+        # negative correlation
+        if (cordir == 1) {
+          predEff <- predEff * -1
+        }
 
-      planets.test[, predFactor := cut(predEff, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE)]
-      planets.test.security <- merge(planets.test, security, by='Date')
-      volatility <- mean(planets.test.security$Mid) / sd(planets.test.security$Mid)
-      planets.test.security[, 'Mid' := data.Normalization(Mid, type="n3")]
-      p1 <- ggplot(planets.test, aes(Date, predVal)) + geom_line() + geom_line(data = planets.test.security, aes(x=Date, y=Mid), colour="red", show_guide=F) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() + scale_shape_identity()
-      print(p1)
-      correlation <- round(cor(planets.test.security$predVal, planets.test.security$Mid,  use = "complete.obs", method='spearman'), digits=2)
-      t1 <- with(planets.test.security, table(Eff==predFactor))
-      print(t1)
+        planets.test[, predVal := mapredfunc(predEff, mapredslow)]
+        planets.test <- planets.test[!is.na(predVal)]
 
-      if (all(c('TRUE', 'FALSE') %in% names(t1))) {
-        fitness <- t1[['TRUE']]-t1[['FALSE']]
-      }
-      else if ('TRUE' %in% names(t1)) {
-        fitness <- t1[['TRUE']]
-      }
-      else if ('FALSE' %in% names(t1)) {
-        fitness <- -t1[['FALSE']]
-      }
-      else {
-        stop("Predictions table verification is out of data.")
+        if (predtype == 'absolute') {
+          planets.test[, predEff := predVal]
+        }
+        else if (predtype == 'relative') {
+          planets.test[, predEff := c(NA, diff(predVal, 1, 1))]
+          planets.test <- planets.test[!is.na(predEff)]
+        }
+        else {
+          stop("No valid prediction type was provided.")
+        }
+
+        planets.test[, predFactor := cut(predEff, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE)]
+        planets.test.security <- merge(planets.test, security, by='Date')
+        volatility <- mean(planets.test.security$Mid) / sd(planets.test.security$Mid)
+        planets.test.security[, 'Mid' := data.Normalization(Mid, type="n3")]
+        p1 <- ggplot(planets.test, aes(Date, predVal)) + geom_line() + geom_line(data = planets.test.security, aes(x=Date, y=Mid), colour="red", show_guide=F) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() + scale_shape_identity()
+        print(p1)
+        correlation <- round(cor(planets.test.security$predVal, planets.test.security$Mid,  use = "complete.obs", method='spearman'), digits=2)
+        t1 <- with(planets.test.security, table(Eff==predFactor))
+        print(t1)
+
+        if (all(c('TRUE', 'FALSE') %in% names(t1))) {
+          fitness <- t1[['TRUE']]-t1[['FALSE']]
+        }
+        else if ('TRUE' %in% names(t1)) {
+          fitness <- t1[['TRUE']]
+        }
+        else if ('FALSE' %in% names(t1)) {
+          fitness <- -t1[['FALSE']]
+        }
+        else {
+          stop("Predictions table verification is out of data.")
+        }
       }
     }
 
@@ -2054,26 +2077,32 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     degsplit <- x[10]
     spsplit <- x[11]
     threshold <- x[12]/100
+    uselon <- x[13]
+    usesp <- x[14]
+    useasp <- x[15]
+
     cat("\n---------------------------------------------------------------------------------\n")
     cat("testPlanetsSignificanceRelative('testSolution', commodityfile=", shQuote(commodityfile), ", planetsfile=", shQuote(planetsfile), sep="")
     cat(", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate), sep="")
     cat(", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate), sep="")
     cat(", iprev=", iprev, ", inext=", inext, ", mapredslow=", mapredslow, ", maprice=", maprice, sep="")
     cat(", mapredtype=", shQuote(mapredtype), ", mapricetype=", shQuote(mapricetype), ", sigtype=", shQuote(sigtype), sep="")
-    cat(", predtype=", shQuote(predtype), ", cordir=", cordir, ", degsplit=", degsplit, ", spsplit=", spsplit, ", threshold=", threshold, ")\n", sep="")
+    cat(", predtype=", shQuote(predtype), ", cordir=", cordir, ", degsplit=", degsplit, ", spsplit=", spsplit, ", threshold=", threshold, sep="")
+    cat(", uselon=", uselon, ", usesp=", usesp, ", useasp=", useasp, ")\n", sep="")
     res <- relativeTrend(commodityfile=commodityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
                          csdate=csdate, cedate=cedate, iprev=iprev, inext=inext, mapredslow=mapredslow, maprice=maprice, mapredtype=mapredtype,
-                         mapricetype=mapricetype, sigtype=sigtype, predtype=predtype, cordir=cordir, degsplit=degsplit, spsplit=spsplit, threshold=threshold)
+                         mapricetype=mapricetype, sigtype=sigtype, predtype=predtype, cordir=cordir, degsplit=degsplit, spsplit=spsplit, threshold=threshold,
+                         uselon=uselon, usesp=usesp, useasp=useasp)
 
     return(res$fitness)
   }
 
   optimizeRelativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate) {
     pdf(paste("~/chart_", commodityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
-    minvals <- c(0, 0, 2,  2, 1, 1, 1, 1, 0, 1,  2,  0)
-    maxvals <- c(1, 1, 6, 15, 4, 4, 2, 2, 1, 3, 70, 30)
-    varnames <- c('iprev', 'inext', 'mapredslow', 'maprice', 'mapredtype',
-                  'mapricetype', 'sigtype', 'predtype', 'cordir', 'degsplit', 'threshold')
+    minvals <- c(0, 0, 2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 0, 0, 0)
+    maxvals <- c(1, 1, 6, 10, 4, 4, 1, 2, 0, 3, 70, 30, 1, 1, 1)
+    varnames <- c('iprev', 'inext', 'mapredslow', 'maprice', 'mapredtype', 'mapricetype', 'sigtype',
+                  'predtype', 'cordir', 'degsplit', 'spsplit', 'threshold', 'uselon', 'usesp', 'useasp')
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames,
        monitor=gaMonitor, maxiter=200, run=50, popSize=200, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.2,
