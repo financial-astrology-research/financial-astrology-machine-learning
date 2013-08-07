@@ -321,6 +321,10 @@ openSecurity <- function(currency_file, mapricetype, maprice) {
   currency <- currency[,-7]
   currency$Mid <- (currency$High + currency$Low + currency$Close + currency$Open) / 4
   currency$val <- currency$Mid - mapricefunc(currency$Mid, n=maprice)
+  currency <- subset(currency, !is.na(val))
+  if (all(currency$val == 0)) {
+    stop("Undetermined security price direction")
+  }
   #currency$val <- currency$Close - currency$Mid
   currency$Eff = cut(currency$val, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE)
   currency$Date <- as.Date(as.character(currency$Date), format="%Y.%m.%d")
@@ -2024,7 +2028,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   generateChartGBPUSD <- function() {
     predfile <- 'GBPUSD'
     pdf(paste("~/chart_", predfile, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
-    res <- relativeTrend(commodityfile='GBPUSD_fxpro', planetsfile='planets_4', tsdate='1980-01-01', tedate='2010-12-31', vsdate='2011-01-01', vedate='2011-05-30', csdate='2011-06-01', cedate='2011-07-31', iprev=0, inext=0, mapredslow=1, maprice=1, mapredtype='EMA', mapricetype='SMA', sigtype='percent', predtype='relative', cordir=0, degsplit=3, threshold=0.3)
+    res <- relativeTrend(commodityfile='GBPUSD_fxpro', planetsfile='planets_4', tsdate='1980-01-01', tedate='2010-12-31', vsdate='2011-01-01', vedate='2011-05-30', csdate='2011-06-01', cedate='2011-07-31', iprev=0, inext=0, mapredslow=1, maprice=1, mapredtype='WMA', mapricetype='EMA', sigtype='percent', predtype='relative', cordir=1, degsplit=2, spsplit=45, threshold=0.2)
+    #res <- relativeTrend(commodityfile='GBPUSD_fxpro', planetsfile='planets_4', tsdate='1980-01-01', tedate='2010-12-31', vsdate='2011-01-01', vedate='2011-05-30', csdate='2011-06-01', cedate='2011-07-31', iprev=0, inext=0, mapredslow=1, maprice=1, mapredtype='EMA', mapricetype='SMA', sigtype='percent', predtype='relative', cordir=0, degsplit=3, threshold=0.3)
     write.csv(res$planets[, c('DateMT4', 'predVal'), with=F], file=paste("~/trading/predict/", predfile, ".csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
     dev.off()
   }
@@ -2060,8 +2065,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   optimizeRelativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate) {
     pdf(paste("~/chart_", commodityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
-    minvals <- c(0, 0, 1,  1, 1, 1, 1, 1, 0, 1,  2,  0)
-    maxvals <- c(1, 1, 5, 10, 4, 4, 2, 2, 1, 3, 70, 30)
+    minvals <- c(0, 0, 2,  2, 1, 1, 1, 1, 0, 1,  2,  0)
+    maxvals <- c(1, 1, 6, 15, 4, 4, 2, 2, 1, 3, 70, 30)
     varnames <- c('iprev', 'inext', 'mapredslow', 'maprice', 'mapredtype',
                   'mapricetype', 'sigtype', 'predtype', 'cordir', 'degsplit', 'threshold')
 
