@@ -1926,7 +1926,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG')
 
   relativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, iprev, inext,
-                            mapredslow, maprice, mapricetype, mapredtype, sigtype, predtype, cordir, degsplit, spsplit, threshold=0) {
+                            mapredslow, maprice, mapredtype, mapricetype, sigtype, predtype, cordir, degsplit, spsplit, threshold=0) {
     looptm <- proc.time()
     mapricefunc <- get(get('mapricetype'))
     mapredfunc <- get(get('mapredtype'))
@@ -1938,7 +1938,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     setkey(significance, 'key', 'variable', 'V3', 'V4')
 
     panalogy <- list(SULONG = c("SULONG"),
-                     MOLONG = c("MOLONG"),
+                     MOLONG = c("nouse"),
                      MELONG = c("MELONG"),
                      VELONG = c("VELONG"),
                      MALONG = c("MALONG"),
@@ -1950,13 +1950,17 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                      NNLONG = c("NNLONG"))
 
     planets[, wday := format(Date, "%w")]
-    planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate) & wday %in% c(1, 2, 3, 4, 5)]
     pltitle <- paste("Significance Prediction", commodityfile, "MA", maprice, "- significance / prev=", iprev, "next=", inext, "mapredslow=", mapredslow)
-    res1 <- processPredictions(planets.test, security, significance, panalogy, iprev, inext,
-                               sigtype, predtype, mapredfunc, mapredslow, cordir, pltitle)
+
+    planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate) & wday %in% c(1, 2, 3, 4, 5)]
+    res1 <- processPredictions(planets.test=planets.test, security=security, significance=significance, panalogy=panalogy,
+                               iprev=iprev, inext=inext, sigtype=sigtype, predtype=predtype, mapredfunc=mapredfunc,
+                               mapredslow=mapredslow, cordir=cordir, pltitle=pltitle)
+
     planets.test2 <- planets[Date > as.Date(csdate) & Date <= as.Date(cedate) & wday %in% c(1, 2, 3, 4, 5)]
-    res2 <- processPredictions(planets.test2, security, significance, panalogy, iprev, inext,
-                               sigtype, predtype, mapredfunc, mapredslow, cordir, pltitle)
+    res2 <- processPredictions(planets.test=planets.test2, security=security, significance=significance, panalogy=panalogy,
+                               iprev=iprev, inext=inext, sigtype=sigtype, predtype=predtype, mapredfunc=mapredfunc,
+                               mapredslow=mapredslow, cordir=cordir, pltitle=pltitle)
 
     cat("\nconfirmation test: volatility =", res2$volatility, " - correlation =", res2$correlation, " - fitness =", res2$fitness, "\n")
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
@@ -2028,7 +2032,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   generateChartGBPUSD <- function() {
     predfile <- 'GBPUSD'
     pdf(paste("~/chart_", predfile, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
-    res <- relativeTrend(commodityfile='GBPUSD_fxpro', planetsfile='planets_4', tsdate='1980-01-01', tedate='2010-12-31', vsdate='2011-01-01', vedate='2011-05-30', csdate='2011-06-01', cedate='2011-07-31', iprev=0, inext=0, mapredslow=1, maprice=1, mapredtype='WMA', mapricetype='EMA', sigtype='percent', predtype='relative', cordir=1, degsplit=2, spsplit=45, threshold=0.2)
+
+    res <- relativeTrend(commodityfile='GBPUSD_fxpro', planetsfile='planets_4', tsdate='1980-01-01', tedate='2010-12-31', vsdate='2011-01-01', vedate='2011-05-30', csdate='2011-06-01', cedate='2011-07-31', iprev=1, inext=1, mapredslow=4, maprice=13, mapredtype='EMA', mapricetype='WMA', sigtype='count', predtype='absolute', cordir=0, degsplit=1, spsplit=48, threshold=0.05)
     #res <- relativeTrend(commodityfile='GBPUSD_fxpro', planetsfile='planets_4', tsdate='1980-01-01', tedate='2010-12-31', vsdate='2011-01-01', vedate='2011-05-30', csdate='2011-06-01', cedate='2011-07-31', iprev=0, inext=0, mapredslow=1, maprice=1, mapredtype='EMA', mapricetype='SMA', sigtype='percent', predtype='relative', cordir=0, degsplit=3, threshold=0.3)
     write.csv(res$planets[, c('DateMT4', 'predVal'), with=F], file=paste("~/trading/predict/", predfile, ".csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
     dev.off()
@@ -2058,8 +2063,10 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     cat(", iprev=", iprev, ", inext=", inext, ", mapredslow=", mapredslow, ", maprice=", maprice, sep="")
     cat(", mapredtype=", shQuote(mapredtype), ", mapricetype=", shQuote(mapricetype), ", sigtype=", shQuote(sigtype), sep="")
     cat(", predtype=", shQuote(predtype), ", cordir=", cordir, ", degsplit=", degsplit, ", spsplit=", spsplit, ", threshold=", threshold, ")\n", sep="")
-    res <- relativeTrend(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, iprev, inext,
-                         mapredslow, maprice, mapredtype, mapricetype, sigtype, predtype, cordir, degsplit, spsplit, threshold)
+    res <- relativeTrend(commodityfile=commodityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
+                         csdate=csdate, cedate=cedate, iprev=iprev, inext=inext, mapredslow=mapredslow, maprice=maprice, mapredtype=mapredtype,
+                         mapricetype=mapricetype, sigtype=sigtype, predtype=predtype, cordir=cordir, degsplit=degsplit, spsplit=spsplit, threshold=threshold)
+
     return(res$fitness)
   }
 
