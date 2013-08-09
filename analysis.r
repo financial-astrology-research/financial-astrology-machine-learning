@@ -78,7 +78,7 @@ planetsBaseCols <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL",
 planetsLonGCols <- c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG')
 
 # Aspects and orbs
-aspects = c(0, 30, 45, 60, 72, 90, 120, 135, 144, 150, 180, 52, 104)
+aspects = c(0, 30, 45, 60, 90, 120, 135, 150, 180)
 orbs = list(SULON = c(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
             MOLON = c(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
             MELON = c(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
@@ -698,16 +698,43 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
   }
 
   significance.day <- data.table(significance.day)
-  #for (curcol in names(planets.day.asp)) {
-  #  loncol1 <- paste(substr(curcol, 1, 5), 'G', sep='')
-  #  loncol2 <- paste(substr(curcol, 6, 10), 'G', sep='')
-  #  significance.day[origin == loncol1 & V3 > V4, V3 := V3*1.5]
-  #  significance.day[origin == loncol1 & V4 > V3, V4 := V4*1.5]
-  #  significance.day[origin == loncol2 & V3 > V4, V3 := V3*1.5]
-  #  significance.day[origin == loncol2 & V4 > V3, V4 := V4*1.5]
-  #}
+  patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
+  activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
+  planets.day.asp <- planets.day[planets.day != "anon" & names(planets.day) %in% activecols]
+  energy <- list(SULONG = 1, MOLONG = 1, MELONG = 1, VELONG = 1, MALONG = 1, JULONG = 1, SALONG = 1,
+                 NELONG = 1, URLONG = 1, NELONG = 1, PLLONG = 1, NNLONG = 1, SNLONG = 1)
+  energy.pos <- list(SULONG = 1, MOLONG = 1, MELONG = 1, VELONG = 1, MALONG = 1, JULONG = 1, SALONG = 1,
+                     NELONG = 1, URLONG = 1, NELONG = 1, PLLONG = 1, NNLONG = 1, SNLONG = 1)
+  energy.neg <- list(SULONG = 1, MOLONG = 1, MELONG = 1, VELONG = 1, MALONG = 1, JULONG = 1, SALONG = 1,
+                     NELONG = 1, URLONG = 1, NELONG = 1, PLLONG = 1, NNLONG = 1, SNLONG = 1)
+
+  for (curcol in names(planets.day.asp)) {
+    loncol1 <- paste(substr(curcol, 1, 5), 'G', sep='')
+    loncol2 <- paste(substr(curcol, 6, 10), 'G', sep='')
+    aspname <- planets.day.asp[[curcol]]
+
+    if (aspname %in% c('a0', 'a30', 'a60', 'a120')) {
+      energy.pos[[loncol1]] <- energy.pos[[loncol1]] + 1
+      energy.pos[[loncol2]] <- energy.pos[[loncol2]] + 1
+    }
+    if (aspname %in% c('a45', 'a90', 'a135', 'a150', 'a180')) {
+      energy.neg[[loncol1]] <- energy.neg[[loncol1]] + 1
+      energy.neg[[loncol2]] <- energy.neg[[loncol2]] + 1
+    }
+
+    energy[[loncol1]] <- energy[[loncol1]] + 1
+    energy[[loncol2]] <- energy[[loncol2]] + 1
+  }
 
   if (nrow(significance.day) > 0) {
+    # TODO: test different ways of add energy as positive/negative aspects, total aspects, inverted influence, etc.
+    # TODO: allow input parameter for: no energy, global energy, positive/negative energy, inverted positive/negative
+    # only positive energy, only negative energy.
+    for (curcol in names(energy)) {
+      significance.day[origin == curcol, c('V3', 'V4') := list(V3 * energy[[curcol]], V4 * energy[[curcol]])]
+      significance.day[origin == curcol, c('V2', 'V1') := list(V2 * energy[[curcol]], V1 * energy[[curcol]])]
+    }
+
     if (sigtype == 'count') {
       trend <- as.integer(significance.day[, sum(V4)-sum(V3)])
     }
@@ -719,14 +746,18 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
     }
 
     if (verbose) {
-      patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
-      activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
-      planets.day.asp <- planets.day[planets.day != "anon" & names(planets.day) %in% activecols]
+      # TODO: print the energy lists as tables
       cat("=============================================================\n")
       cat("Date:", planets.day[['Date']], "\n")
       print(significance.day)
-      cat("\n")
+      cat("Aspect Table\n")
       print(planets.day.asp)
+      cat("Total Aspects:\n")
+      print(energy)
+      cat("Positive Aspects:\n")
+      print(energy.pos)
+      cat("Negative Aspects:\n")
+      print(energy.neg)
       cat("\n")
       print(planets.day[planetsSpCols])
       cat("\n")
