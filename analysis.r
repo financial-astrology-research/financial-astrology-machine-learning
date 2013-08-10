@@ -702,11 +702,11 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
   activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
   planets.day.asp <- planets.day[planets.day != "anon" & names(planets.day) %in% activecols]
   energy <- list(SULONG = 1, MOLONG = 1, MELONG = 1, VELONG = 1, MALONG = 1, JULONG = 1, SALONG = 1,
-                 NELONG = 1, URLONG = 1, NELONG = 1, PLLONG = 1, NNLONG = 1, SNLONG = 1)
+                 URLONG = 1, NELONG = 1, PLLONG = 1, NNLONG = 1, SNLONG = 1)
   energy.pos <- list(SULONG = 1, MOLONG = 1, MELONG = 1, VELONG = 1, MALONG = 1, JULONG = 1, SALONG = 1,
-                     NELONG = 1, URLONG = 1, NELONG = 1, PLLONG = 1, NNLONG = 1, SNLONG = 1)
+                     URLONG = 1, NELONG = 1, PLLONG = 1, NNLONG = 1, SNLONG = 1)
   energy.neg <- list(SULONG = 1, MOLONG = 1, MELONG = 1, VELONG = 1, MALONG = 1, JULONG = 1, SALONG = 1,
-                     NELONG = 1, URLONG = 1, NELONG = 1, PLLONG = 1, NNLONG = 1, SNLONG = 1)
+                     URLONG = 1, NELONG = 1, PLLONG = 1, NNLONG = 1, SNLONG = 1)
   aspweights <- list(a0 = 3, a30 = 1, a45 = 1, a60 = 2, a90 = 3, a120 = 2, a135 = 1, a150 = 2, a180 = 3)
 
   for (curcol in names(planets.day.asp)) {
@@ -807,11 +807,11 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
       cat("Aspect Table\n")
       print(planets.day.asp)
       cat("Total Aspects:\n")
-      print(energy)
+      print(t(energy))
       cat("Positive Aspects:\n")
-      print(energy.pos)
+      print(t(energy.pos))
       cat("Negative Aspects:\n")
-      print(energy.neg)
+      print(t(energy.neg))
       cat("\n")
       print(planets.day[planetsSpCols])
       cat("\n")
