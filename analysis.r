@@ -654,7 +654,7 @@ planetsVarsSignificance <- function(planets, currency, threshold) {
 }
 
 planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, answer=T, verbose=F, iprev=0, inext=0,
-                                   sigtype='count', uselon=1, usesp=1, useasp=1) {
+                                   sigtype='count', uselon=1, usesp=1, useasp=1, energymode=0) {
   significance.day <- data.frame()
   cols <- c()
 
@@ -731,8 +731,54 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
     # TODO: allow input parameter for: no energy, global energy, positive/negative energy, inverted positive/negative
     # only positive energy, only negative energy.
     for (curcol in names(energy)) {
-      significance.day[origin == curcol, c('V3', 'V4') := list(V3 * energy[[curcol]], V4 * energy[[curcol]])]
-      significance.day[origin == curcol, c('V2', 'V1') := list(V2 * energy[[curcol]], V1 * energy[[curcol]])]
+      if (energymode == 1) {
+        # add more energy to the planets with more aspects
+        significance.day[origin == curcol, c('V3', 'V4') := list(V3 * energy[[curcol]], V4 * energy[[curcol]])]
+      }
+      else if ( energymode == 2 ) {
+        # add more energy to the lower part based on bad aspects and to the upper part with good aspects
+        significance.day[origin == curcol & V3 > V4, V3 := V3 * energy.pos[[curcol]]]
+        significance.day[origin == curcol & V4 > V3, V4 := V4 * energy.pos[[curcol]]]
+        significance.day[origin == curcol & V3 < V4, V3 := V3 * energy.neg[[curcol]]]
+        significance.day[origin == curcol & V4 < V3, V4 := V4 * energy.neg[[curcol]]]
+      }
+      else if ( energymode == 3 ) {
+         # add more energy to the lower part based on good aspects and to the upper part with bad aspects
+        significance.day[origin == curcol & V3 > V4, V3 := V3 * energy.neg[[curcol]]]
+        significance.day[origin == curcol & V4 > V3, V4 := V4 * energy.neg[[curcol]]]
+        significance.day[origin == curcol & V3 < V4, V3 := V3 * energy.pos[[curcol]]]
+        significance.day[origin == curcol & V4 < V3, V4 := V4 * energy.pos[[curcol]]]
+      }
+      else if ( energymode == 4 ) {
+        # add more energy only to lower part based on bad aspects
+        significance.day[origin == curcol & V3 < V4, V3 := V3 * energy.neg[[curcol]]]
+        significance.day[origin == curcol & V4 < V3, V4 := V4 * energy.neg[[curcol]]]
+      }
+      else if ( energymode == 5 ) {
+        # add more energy only to lower part based on good aspects
+        significance.day[origin == curcol & V3 < V4, V3 := V3 * energy.pos[[curcol]]]
+        significance.day[origin == curcol & V4 < V3, V4 := V4 * energy.pos[[curcol]]]
+      }
+      else if ( energy == 6 ) {
+        # add more energy only to upper part based on bad aspects
+        significance.day[origin == curcol & V3 > V4, V3 := V3 * energy.neg[[curcol]]]
+        significance.day[origin == curcol & V4 > V3, V4 := V4 * energy.neg[[curcol]]]
+      }
+      else if ( energy == 7 ) {
+        # add more energy only to upper part based on good aspects
+        significance.day[origin == curcol & V3 > V4, V3 := V3 * energy.pos[[curcol]]]
+        significance.day[origin == curcol & V4 > V3, V4 := V4 * energy.pos[[curcol]]]
+      }
+      else if ( energy == 8 ) {
+        # add more energy to lower part based in all aspects
+        significance.day[origin == curcol & V3 < V4, V3 := V3 * energy[[curcol]]]
+        significance.day[origin == curcol & V4 < V3, V4 := V4 * energy[[curcol]]]
+      }
+      else if ( energy == 9 ) {
+        # add more energy to upper part based in all aspects
+        significance.day[origin == curcol & V3 > V4, V3 := V3 * energy[[curcol]]]
+        significance.day[origin == curcol & V4 > V3, V4 := V4 * energy[[curcol]]]
+      }
     }
 
     if (sigtype == 'count') {
@@ -1977,7 +2023,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   relativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, iprev, inext,
                             mapredslow, maprice, mapredtype, mapricetype, sigtype, predtype, cordir, degsplit, spsplit,
-                            threshold, uselon, usesp, useasp, verbose=F) {
+                            threshold, uselon, usesp, useasp, energymode=energymode, verbose=F) {
     looptm <- proc.time()
     mapricefunc <- get(get('mapricetype'))
     mapredfunc <- get(get('mapredtype'))
@@ -2007,13 +2053,13 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     res1 <- processPredictions(planets.test=planets.test, security=security, significance=significance, panalogy=panalogy,
                                iprev=iprev, inext=inext, sigtype=sigtype, predtype=predtype, mapredfunc=mapredfunc,
                                mapredslow=mapredslow, cordir=cordir, pltitle=pltitle, uselon=uselon, usesp=usesp,
-                               useasp=useasp, verbose=verbose)
+                               useasp=useasp, energymode=energymode, verbose=verbose)
 
     planets.test2 <- planets[Date > as.Date(csdate) & Date <= as.Date(cedate) & wday %in% c(1, 2, 3, 4, 5)]
     res2 <- processPredictions(planets.test=planets.test2, security=security, significance=significance, panalogy=panalogy,
                                iprev=iprev, inext=inext, sigtype=sigtype, predtype=predtype, mapredfunc=mapredfunc,
                                mapredslow=mapredslow, cordir=cordir, pltitle=pltitle, uselon=uselon, usesp=usesp,
-                               useasp=useasp, verbose=verbose)
+                               useasp=useasp, energymode=energymode, verbose=verbose)
 
     cat("\nconfirmation test: volatility =", res2$volatility, " - correlation =", res2$correlation, " - fitness =", res2$fitness, "\n")
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
@@ -2022,8 +2068,9 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   processPredictions <- function(planets.test, security, significance, panalogy, iprev, inext, sigtype, predtype,
-                                 mapredfunc, mapredslow, cordir, pltitle, uselon, usesp, useasp, verbose) {
-    predEff <- apply(planets.test, 1, function(x) planetsDaySignificance(x, significance, panalogy, F, verbose, iprev, inext, sigtype, uselon, usesp, useasp))
+                                 mapredfunc, mapredslow, cordir, pltitle, uselon, usesp, useasp, energymode, verbose) {
+    predEff <- apply(planets.test, 1, function(x)
+                     planetsDaySignificance(x, significance, panalogy, F, verbose, iprev, inext, sigtype, uselon, usesp, useasp, energymode))
 
     # in case that all predictions are 0 we skip this solution
     if (all(predEff == 0)) {
