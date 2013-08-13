@@ -1318,7 +1318,7 @@ colAll <- function() {
   c(planetsLonCols, planetsSpCols, planetsLatCols, planetsCombLonCols, planetsGridLonCols)
 }
 
-testDailyRandomForest <- function(sinkfile, planetsdir, fileno, commoditydir, commodityfile,
+testDailyRandomForest <- function(sinkfile, planetsdir, fileno, securitydir, securityfile,
                                   sdate, edate, modelfun='randomForest', predproc=FALSE, colNames, chartfile, ...) {
   # Init clock
   ptm <- proc.time()
@@ -1326,7 +1326,7 @@ testDailyRandomForest <- function(sinkfile, planetsdir, fileno, commoditydir, co
   sinkfile <- paste("~/trading/predict/", sinkfile, ".txt", sep='')
   sink(npath(sinkfile), append=TRUE)
   # currency data
-  currency <- openSecurity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
+  currency <- openSecurity(paste("~/trading/", securitydir, "/", securityfile, ".csv", sep=''))
   if (hasArg('chartfile')) chart <- fread(paste("~/trading/charts/", chartfile, '.tsv', sep=''), header = T, sep="\t", na.strings="")
 
   # process planets
@@ -1347,7 +1347,7 @@ testDailyRandomForest <- function(sinkfile, planetsdir, fileno, commoditydir, co
 
     cat("---------------------------------------------------------------------------------\n")
     cat("testDailyRandomForestSolution(planetsdir=", shQuote(planetsdir), ", fileno=", fileno, ",\n", sep='')
-    cat("\t commoditydir=", shQuote(commoditydir), ", commodityfile=", shQuote(commodityfile), sep='')
+    cat("\t securitydir=", shQuote(securitydir), ", securityfile=", shQuote(securityfile), sep='')
     cat(", sdate=", shQuote(sdate), ", edate=", shQuote(edate), ", modelfun=", shQuote(modelfun), sep='')
     cat(", predproc=", predproc, ", chartfile=", shQuote(chartfile), ",\n", sep='')
     cat('\t selcols=c(', paste(shQuote(selcols), collapse=","), "))\n", sep='')
@@ -1395,10 +1395,10 @@ testDailyRandomForest <- function(sinkfile, planetsdir, fileno, commoditydir, co
   sink()
 }
 
-testDailyRandomForestSolution <- function(planetsdir, fileno, commoditydir, commodityfile,
+testDailyRandomForestSolution <- function(planetsdir, fileno, securitydir, securityfile,
                                           sdate, edate, selcols, modelfun='randomForest', predproc=FALSE, chartfile, ...) {
   # currency data
-  currency <- openSecurity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
+  currency <- openSecurity(paste("~/trading/", securitydir, "/", securityfile, ".csv", sep=''))
   colNames <- c(paste(planetsBaseCols, 'LON', sep=''), paste(planetsBaseCols, 'LAT', sep=''), paste(planetsBaseCols, 'SP', sep=''))
   if (hasArg('chartfile')) chart <- fread(paste("~/trading/charts/", chartfile, '.tsv', sep=''), header = T, sep="\t", na.strings="")
 
@@ -1668,13 +1668,13 @@ plotGridAspectsEffect <- function(plotfile, ds, threshold, resplot=T) {
   return(tdiffs)
 }
 
-testDailyPlanetsOrbsGA <- function(sinkfile, planetsdir, fileno, commoditydir, commodityfile, sdate, edate, chartfile) {
+testDailyPlanetsOrbsGA <- function(sinkfile, planetsdir, fileno, securitydir, securityfile, sdate, edate, chartfile) {
   # sink output
   if (!hasArg('sinkfile')) stop("Provide a sink filename.")
   sinkfile <- paste("~/trading/predict/", sinkfile, ".txt", sep='')
   sink(npath(sinkfile), append=TRUE)
   # currency data
-  currency <- openSecurity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
+  currency <- openSecurity(paste("~/trading/", securitydir, "/", securityfile, ".csv", sep=''))
   chart <- fread(npath(paste("~/trading/charts/", chartfile, '.tsv', sep='')), sep="\t", na.strings="")
   itest <- 1
   # Init clock
@@ -1693,7 +1693,7 @@ testDailyPlanetsOrbsGA <- function(sinkfile, planetsdir, fileno, commoditydir, c
     cat("\n---------------------------------------------------------------------------------\n")
     cat("Test #", itest, "\n", sep='')
     cat("testDailyPlanetsOrbsSolution(planetsdir=", shQuote(planetsdir), ", fileno=", fileno, sep='')
-    cat(", commoditydir=", shQuote(commoditydir), ",\n\t commodityfile=", shQuote(commodityfile), sep='')
+    cat(", securitydir=", shQuote(securitydir), ",\n\t securityfile=", shQuote(securityfile), sep='')
     cat(", sdate=", shQuote(sdate), ", edate=", shQuote(edate), ", chartfile=", shQuote(chartfile), sep='')
     cat(",\n\t cusorbs=c(", paste(cusorbs, collapse=","), "))\n", sep='')
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
@@ -1739,17 +1739,17 @@ testDailyPlanetsOrbsGA <- function(sinkfile, planetsdir, fileno, commoditydir, c
   sink()
 }
 
-testDailyPlanetsOrbsSolution <- function(planetsdir, fileno, commoditydir, commodityfile,
+testDailyPlanetsOrbsSolution <- function(planetsdir, fileno, securitydir, securityfile,
                                          sdate, edate, chartfile, cusorbs, resplot=F) {
   # currency data
-  currency <- openSecurity(paste("~/trading/", commoditydir, "/", commodityfile, ".csv", sep=''))
+  currency <- openSecurity(paste("~/trading/", securitydir, "/", securityfile, ".csv", sep=''))
   chart <- fread(npath(paste("~/trading/charts/", chartfile, '.tsv', sep='')), sep="\t", na.strings="")
   cusorbs <- round(cusorbs, digits=2)
   planets <- openPlanets(paste("~/trading/", planetsdir, "/planets_", fileno, ".tsv", sep=''), chart, cusorbs)
   # process planets
   planets.sp <- processPlanets(planets, currency, sdate, edate)
   # process analysis
-  fitness <- plotGridAspectsEffect(paste(commodityfile, chartfile, sdate, edate, paste(cusorbs, collapse='-')), planets.sp$train, 30, resplot)
+  fitness <- plotGridAspectsEffect(paste(securityfile, chartfile, sdate, edate, paste(cusorbs, collapse='-')), planets.sp$train, 30, resplot)
   # binarize
   selcols <- names(fitness)
   planets.sp$train[, c(selcols) := lapply(.SD, function(x) ifelse(is.na(x), 0, 1)), .SDcols=selcols]
@@ -2030,7 +2030,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   ptm <- proc.time()
   planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG')
 
-  relativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, iprev, inext,
+  relativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, iprev, inext,
                             mapredslow, maprice, mapredtype, mapricetype, sigtype, predtype, cordir, degsplit, spsplit,
                             threshold, uselon, usesp, useasp, energymode, energyweight, dateformat, verbose=F) {
     looptm <- proc.time()
@@ -2038,7 +2038,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     mapredfunc <- get(get('mapredtype'))
     planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""), orbs, aspects, degsplit, spsplit)
     setkey(planets, 'Date')
-    security <- openSecurity(paste("~/trading/currency/", commodityfile, ".csv", sep=''), mapricetype, maprice)
+    security <- openSecurity(paste("~/trading/currency/", securityfile, ".csv", sep=''), mapricetype, maprice)
     significance <- planetsVarsSignificance(planets[Date >= as.Date(tsdate) & Date <= as.Date(tedate)], security, threshold)
     keyranges <<- mixedsort(unique(significance[variable %in% planetsLonGCols]$key))
     setkey(significance, 'key', 'variable', 'V3', 'V4')
@@ -2056,7 +2056,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                      NNLONG = c("NNLONG"))
 
     planets[, wday := format(Date, "%w")]
-    pltitle <- paste("Significance Prediction", commodityfile, "MA", maprice, "- significance / prev=", iprev, "next=", inext, "mapredslow=", mapredslow)
+    pltitle <- paste("Significance Prediction", securityfile, "MA", maprice, "- significance / prev=", iprev, "next=", inext, "mapredslow=", mapredslow)
 
     planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate) & wday %in% c(1, 2, 3, 4, 5)]
     res1 <- processPredictions(planets.test=planets.test, security=security, significance=significance, panalogy=panalogy,
@@ -2161,7 +2161,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     write.csv(res$planets[, c('DateMT4', 'predVal'), with=F], file=paste("~/trading/predict/", predfile, ".csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
   }
 
-  relativeTrendFitness <- function(x, commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
+  relativeTrendFitness <- function(x, securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
     # build the parameters based on GA indexes
     mapricetypes <- c('SMA', 'EMA', 'WMA', 'ZLEMA')
     sigtypes <- c('count',  'percent')
@@ -2185,14 +2185,14 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     energyweight <- x[17]
 
     cat("\n---------------------------------------------------------------------------------\n")
-    cat("testPlanetsSignificanceRelative('testSolution', commodityfile=", shQuote(commodityfile), ", planetsfile=", shQuote(planetsfile), sep="")
+    cat("testPlanetsSignificanceRelative('testSolution', securityfile=", shQuote(securityfile), ", planetsfile=", shQuote(planetsfile), sep="")
     cat(", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate), sep="")
     cat(", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate), sep="")
     cat(", iprev=", iprev, ", inext=", inext, ", mapredslow=", mapredslow, ", maprice=", maprice, sep="")
     cat(", mapredtype=", shQuote(mapredtype), ", mapricetype=", shQuote(mapricetype), ", sigtype=", shQuote(sigtype), sep="")
     cat(", predtype=", shQuote(predtype), ", cordir=", cordir, ", degsplit=", degsplit, ", spsplit=", spsplit, ", threshold=", threshold, sep="")
     cat(", uselon=", uselon, ", usesp=", usesp, ", useasp=", useasp, ", energymode=", energymode, ", energyweight=", energyweight, ")\n", sep="")
-    res <- relativeTrend(commodityfile=commodityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
+    res <- relativeTrend(securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
                          csdate=csdate, cedate=cedate, iprev=iprev, inext=inext, mapredslow=mapredslow, maprice=maprice, mapredtype=mapredtype,
                          mapricetype=mapricetype, sigtype=sigtype, predtype=predtype, cordir=cordir, degsplit=degsplit, spsplit=spsplit, threshold=threshold,
                          uselon=uselon, usesp=usesp, useasp=useasp, energymode=energymode, energyweight=energyweight, dateformat, verbose=F)
@@ -2200,8 +2200,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(res$fitness)
   }
 
-  optimizeRelativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
-    pdf(paste("~/chart_", commodityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
+  optimizeRelativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
+    pdf(paste("~/chart_", securityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
     minvals <- c(0, 0, 2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 0, 0, 0, 0, 0)
     maxvals <- c(1, 1, 6, 10, 4, 4, 1, 2, 0, 3, 70, 30, 1, 0, 0, 9, 1)
     varnames <- c('iprev', 'inext', 'mapredslow', 'maprice', 'mapredtype', 'mapricetype', 'sigtype', 'predtype', 'cordir',
@@ -2210,7 +2210,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     ga("real-valued", fitness=relativeTrendFitness, names=varnames,
        monitor=gaMonitor, maxiter=200, run=50, popSize=200, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.2,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_blxCrossover, population=gaint_Population,
-       commodityfile=commodityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
+       securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
        csdate=csdate, cedate=cedate, dateformat)
 
     dev.off()
