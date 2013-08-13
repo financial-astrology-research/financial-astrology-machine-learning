@@ -2038,7 +2038,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     mapredfunc <- get(get('mapredtype'))
     planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""), orbs, aspects, degsplit, spsplit)
     setkey(planets, 'Date')
-    security <- openSecurity(paste("~/trading/currency/", securityfile, ".csv", sep=''), mapricetype, maprice)
+    security <- openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, maprice)
     significance <- planetsVarsSignificance(planets[Date >= as.Date(tsdate) & Date <= as.Date(tedate)], security, threshold)
     keyranges <<- mixedsort(unique(significance[variable %in% planetsLonGCols]$key))
     setkey(significance, 'key', 'variable', 'V3', 'V4')
