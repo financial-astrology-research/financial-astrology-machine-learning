@@ -313,23 +313,22 @@ openCurrency  <- function(currency_file) {
   currency
 }
 
-openSecurity <- function(currency_file, mapricetype, maprice) {
+openSecurity <- function(security_file, mapricetype, maprice, dateformat="%Y.%m.%d") {
   mapricefunc <- get(get('mapricetype'))
-  currency_file <- npath(currency_file)
-  currency <- read.table(currency_file, header = F, sep=",")
-  names(currency) <- c('Date', 'Time', 'Open', 'High', 'Low', 'Close', 'Volume')
-  currency <- currency[,-7]
-  currency$Mid <- (currency$High + currency$Low + currency$Close + currency$Open) / 4
-  currency$val <- currency$Mid - mapricefunc(currency$Mid, n=maprice)
-  currency <- subset(currency, !is.na(val))
-  if (all(currency$val == 0)) {
+  security_file <- npath(security_file)
+  security <- fread(security_file)
+  security[, Mid := (High + Low + Close + Open) / 4]
+  security[, val := Mid - mapricefunc(Mid, n=maprice)]
+  security <- security[!is.na(val)]
+
+  if (all(security$val == 0)) {
     stop("Undetermined security price direction")
   }
-  #currency$val <- currency$Close - currency$Mid
-  currency$Eff = cut(currency$val, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE)
-  currency$Date <- as.Date(as.character(currency$Date), format="%Y.%m.%d")
-  currency$Year <- as.character(format(currency$Date, "%Y"))
-  return(currency)
+  #security$val <- security$Close - security$Mid
+  security[, Eff := cut(val, c(-100, 0, 100), labels=c('down', 'up'), right=FALSE)]
+  security[, Date := as.Date(as.character(Date), format=dateformat)]
+  security[, Year := as.character(format(Date, "%Y"))]
+  return(security)
 }
 
 openCurrencyXts <- function(currency_file) {
@@ -735,57 +734,59 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
   }
 
   if (nrow(significance.day) > 0) {
-    for (curcol in names(energy)) {
-      if (energymode == 1) {
-        # add more energy to the planets with more aspects
-        significance.day[origin == curcol, c('V3', 'V4') := list(V3 * energy[[curcol]], V4 * energy[[curcol]])]
-      }
-      else if ( energymode == 2 ) {
-        # add more energy to the lower part based on bad aspects and to the upper part with good aspects
-        significance.day[origin == curcol & V3 > V4, V3 := V3 * energy.pos[[curcol]]]
-        significance.day[origin == curcol & V4 > V3, V4 := V4 * energy.pos[[curcol]]]
-        significance.day[origin == curcol & V3 < V4, V3 := V3 * energy.neg[[curcol]]]
-        significance.day[origin == curcol & V4 < V3, V4 := V4 * energy.neg[[curcol]]]
-      }
-      else if ( energymode == 3 ) {
-        # add more energy to the lower part based on good aspects and to the upper part with bad aspects
-        significance.day[origin == curcol & V3 > V4, V3 := V3 * energy.neg[[curcol]]]
-        significance.day[origin == curcol & V4 > V3, V4 := V4 * energy.neg[[curcol]]]
-        significance.day[origin == curcol & V3 < V4, V3 := V3 * energy.pos[[curcol]]]
-        significance.day[origin == curcol & V4 < V3, V4 := V4 * energy.pos[[curcol]]]
-      }
-      else if ( energymode == 4 ) {
-        # add more energy only to lower part based on bad aspects
-        significance.day[origin == curcol & V3 < V4, V3 := V3 * energy.neg[[curcol]]]
-        significance.day[origin == curcol & V4 < V3, V4 := V4 * energy.neg[[curcol]]]
-      }
-      else if ( energymode == 5 ) {
-        # add more energy only to lower part based on good aspects
-        significance.day[origin == curcol & V3 < V4, V3 := V3 * energy.pos[[curcol]]]
-        significance.day[origin == curcol & V4 < V3, V4 := V4 * energy.pos[[curcol]]]
-      }
-      else if ( energymode == 6 ) {
-        # add more energy only to upper part based on bad aspects
-        significance.day[origin == curcol & V3 > V4, V3 := V3 * energy.neg[[curcol]]]
-        significance.day[origin == curcol & V4 > V3, V4 := V4 * energy.neg[[curcol]]]
-      }
-      else if ( energymode == 7 ) {
-        # add more energy only to upper part based on good aspects
-        significance.day[origin == curcol & V3 > V4, V3 := V3 * energy.pos[[curcol]]]
-        significance.day[origin == curcol & V4 > V3, V4 := V4 * energy.pos[[curcol]]]
-      }
-      else if ( energymode == 8 ) {
-        # add more energy to lower part based in all aspects
-        significance.day[origin == curcol & V3 < V4, V3 := V3 * energy[[curcol]]]
-        significance.day[origin == curcol & V4 < V3, V4 := V4 * energy[[curcol]]]
-      }
-      else if ( energymode == 9 ) {
-        # add more energy to upper part based in all aspects
-        significance.day[origin == curcol & V3 > V4, V3 := V3 * energy[[curcol]]]
-        significance.day[origin == curcol & V4 > V3, V4 := V4 * energy[[curcol]]]
-      }
-      else {
-        stop("No valid energy mode was provided.")
+    if ( energymode > 0 ) {
+      for (curcol in names(energy)) {
+        if (energymode == 1) {
+          # add more energy to the planets with more aspects
+          significance.day[origin == curcol, c('V3', 'V4') := list(V3 * energy[[curcol]], V4 * energy[[curcol]])]
+        }
+        else if ( energymode == 2 ) {
+          # add more energy to the lower part based on bad aspects and to the upper part with good aspects
+          significance.day[origin == curcol & V3 > V4, V3 := V3 * energy.pos[[curcol]]]
+          significance.day[origin == curcol & V4 > V3, V4 := V4 * energy.pos[[curcol]]]
+          significance.day[origin == curcol & V3 < V4, V3 := V3 * energy.neg[[curcol]]]
+          significance.day[origin == curcol & V4 < V3, V4 := V4 * energy.neg[[curcol]]]
+        }
+        else if ( energymode == 3 ) {
+          # add more energy to the lower part based on good aspects and to the upper part with bad aspects
+          significance.day[origin == curcol & V3 > V4, V3 := V3 * energy.neg[[curcol]]]
+          significance.day[origin == curcol & V4 > V3, V4 := V4 * energy.neg[[curcol]]]
+          significance.day[origin == curcol & V3 < V4, V3 := V3 * energy.pos[[curcol]]]
+          significance.day[origin == curcol & V4 < V3, V4 := V4 * energy.pos[[curcol]]]
+        }
+        else if ( energymode == 4 ) {
+          # add more energy only to lower part based on bad aspects
+          significance.day[origin == curcol & V3 < V4, V3 := V3 * energy.neg[[curcol]]]
+          significance.day[origin == curcol & V4 < V3, V4 := V4 * energy.neg[[curcol]]]
+        }
+        else if ( energymode == 5 ) {
+          # add more energy only to lower part based on good aspects
+          significance.day[origin == curcol & V3 < V4, V3 := V3 * energy.pos[[curcol]]]
+          significance.day[origin == curcol & V4 < V3, V4 := V4 * energy.pos[[curcol]]]
+        }
+        else if ( energymode == 6 ) {
+          # add more energy only to upper part based on bad aspects
+          significance.day[origin == curcol & V3 > V4, V3 := V3 * energy.neg[[curcol]]]
+          significance.day[origin == curcol & V4 > V3, V4 := V4 * energy.neg[[curcol]]]
+        }
+        else if ( energymode == 7 ) {
+          # add more energy only to upper part based on good aspects
+          significance.day[origin == curcol & V3 > V4, V3 := V3 * energy.pos[[curcol]]]
+          significance.day[origin == curcol & V4 > V3, V4 := V4 * energy.pos[[curcol]]]
+        }
+        else if ( energymode == 8 ) {
+          # add more energy to lower part based in all aspects
+          significance.day[origin == curcol & V3 < V4, V3 := V3 * energy[[curcol]]]
+          significance.day[origin == curcol & V4 < V3, V4 := V4 * energy[[curcol]]]
+        }
+        else if ( energymode == 9 ) {
+          # add more energy to upper part based in all aspects
+          significance.day[origin == curcol & V3 > V4, V3 := V3 * energy[[curcol]]]
+          significance.day[origin == curcol & V4 > V3, V4 := V4 * energy[[curcol]]]
+        }
+        else {
+          stop("No valid energy mode was provided.")
+        }
       }
     }
 
@@ -2031,7 +2032,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   relativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, iprev, inext,
                             mapredslow, maprice, mapredtype, mapricetype, sigtype, predtype, cordir, degsplit, spsplit,
-                            threshold, uselon, usesp, useasp, energymode=energymode, energyweight=energyweight, verbose=F) {
+                            threshold, uselon, usesp, useasp, energymode, energyweight, dateformat, verbose=F) {
     looptm <- proc.time()
     mapricefunc <- get(get('mapricetype'))
     mapredfunc <- get(get('mapredtype'))
@@ -2151,12 +2152,16 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     pdf(paste("~/chart_", predfile, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
     res <- relativeTrend(...)
     planets.security <- merge(res$planets, res$security, by='Date')
-    print(as.data.frame(planets.security[, c('Date', 'predVal', 'Open', 'Close', 'Mid', 'predFactor', 'Eff'), with=F]))
+
+    if (list(...)$verbose) {
+      print(as.data.frame(planets.security[, c('Date', 'predVal', 'Open', 'Close', 'Mid', 'predFactor', 'Eff'), with=F]))
+    }
+
     dev.off()
     write.csv(res$planets[, c('DateMT4', 'predVal'), with=F], file=paste("~/trading/predict/", predfile, ".csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
   }
 
-  relativeTrendFitness <- function(x, commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate) {
+  relativeTrendFitness <- function(x, commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
     # build the parameters based on GA indexes
     mapricetypes <- c('SMA', 'EMA', 'WMA', 'ZLEMA')
     sigtypes <- c('count',  'percent')
@@ -2177,7 +2182,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     usesp <- x[14]
     useasp <- x[15]
     energymode <- x[16]
-    energyweight <- x[16]
+    energyweight <- x[17]
 
     cat("\n---------------------------------------------------------------------------------\n")
     cat("testPlanetsSignificanceRelative('testSolution', commodityfile=", shQuote(commodityfile), ", planetsfile=", shQuote(planetsfile), sep="")
@@ -2190,12 +2195,12 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     res <- relativeTrend(commodityfile=commodityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
                          csdate=csdate, cedate=cedate, iprev=iprev, inext=inext, mapredslow=mapredslow, maprice=maprice, mapredtype=mapredtype,
                          mapricetype=mapricetype, sigtype=sigtype, predtype=predtype, cordir=cordir, degsplit=degsplit, spsplit=spsplit, threshold=threshold,
-                         uselon=uselon, usesp=usesp, useasp=useasp, energymode=energymode, energyweight=energyweight, verbose=F)
+                         uselon=uselon, usesp=usesp, useasp=useasp, energymode=energymode, energyweight=energyweight, dateformat, verbose=F)
 
     return(res$fitness)
   }
 
-  optimizeRelativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate) {
+  optimizeRelativeTrend <- function(commodityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
     pdf(paste("~/chart_", commodityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
     minvals <- c(0, 0, 2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 0, 0, 0, 0, 0)
     maxvals <- c(1, 1, 6, 10, 4, 4, 1, 2, 0, 3, 70, 30, 1, 0, 0, 9, 1)
@@ -2206,7 +2211,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
        monitor=gaMonitor, maxiter=200, run=50, popSize=200, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.2,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_blxCrossover, population=gaint_Population,
        commodityfile=commodityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
-       csdate=csdate, cedate=cedate)
+       csdate=csdate, cedate=cedate, dateformat)
 
     dev.off()
   }
