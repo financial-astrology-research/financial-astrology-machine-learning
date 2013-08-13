@@ -2027,6 +2027,7 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
 testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   if (hasArg('sinkfile')) sink(npath(paste("~/trading/predict/", sinkfile, ".txt", sep='')), append=T)
   if (!hasArg('execfunc')) stop("Provide function to execute")
+  if (!hasArg('dateformat')) stop("A dateformat is needed.")
   ptm <- proc.time()
   planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG')
 
@@ -2038,7 +2039,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     mapredfunc <- get(get('mapredtype'))
     planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""), orbs, aspects, degsplit, spsplit)
     setkey(planets, 'Date')
-    security <- openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, maprice)
+    security <- openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, maprice, dateformat)
     significance <- planetsVarsSignificance(planets[Date >= as.Date(tsdate) & Date <= as.Date(tedate)], security, threshold)
     keyranges <<- mixedsort(unique(significance[variable %in% planetsLonGCols]$key))
     setkey(significance, 'key', 'variable', 'V3', 'V4')
@@ -2123,7 +2124,9 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
         planets.test.security <- merge(planets.test, security, by='Date')
         volatility <- mean(planets.test.security$Mid) / sd(planets.test.security$Mid)
         planets.test.security[, 'Mid' := data.Normalization(Mid, type="n3")]
-        p1 <- ggplot(planets.test, aes(Date, predVal)) + geom_line() + geom_line(data = planets.test.security, aes(x=Date, y=Mid), colour="red", show_guide=F) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() + scale_shape_identity()
+        interval <- abs(as.integer((min(planets.test.security$Date)-max(planets.test.security$Date))/100))
+        x_dates <- seq(min(planets.test.security$Date), max(planets.test.security$Date), by=interval)
+        p1 <- ggplot(planets.test, aes(Date, predVal)) + geom_line() + geom_line(data = planets.test.security, aes(x=Date, y=Mid), colour="red", show_guide=F) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() + scale_shape_identity() + scale_x_date(breaks=x_dates)
         print(p1)
         correlation <- round(cor(planets.test.security$predVal, planets.test.security$Mid,  use = "complete.obs", method='spearman'), digits=2)
         t1 <- with(planets.test.security, table(Eff==predFactor))
@@ -2147,8 +2150,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(list(fitness=fitness, correlation=correlation, volatility=volatility, planets=planets.test))
   }
 
-  testSolution <- function(...) {
-    predfile <- 'GBPUSD'
+  testSolution <- function(predfile, ...) {
     pdf(paste("~/chart_", predfile, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
     res <- relativeTrend(...)
     planets.security <- merge(res$planets, res$security, by='Date')
