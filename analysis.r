@@ -79,18 +79,18 @@ planetsLonGCols <- c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG',
 
 # Aspects and orbs
 aspects = c(0, 30, 45, 60, 90, 120, 135, 150, 180)
-orbs = list(SULON = c(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
-            MOLON = c(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
-            MELON = c(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
-            VELON = c(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
-            MALON = c(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
-            JULON = c(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
-            SALON = c(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
-            URLON = c(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
-            NELON = c(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
-            PLLON = c(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
-            NNLON = c(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
-            SNLON = c(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0))
+orbs = list(SULON = c(2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0),
+            MOLON = c(2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0),
+            MELON = c(2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0),
+            VELON = c(2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0),
+            MALON = c(2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0),
+            JULON = c(2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0),
+            SALON = c(2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0),
+            URLON = c(2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0),
+            NELON = c(2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0),
+            PLLON = c(2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0),
+            NNLON = c(2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0),
+            SNLON = c(2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0))
 
 zodDegrees <- seq(0, 360, by=2)
 
@@ -601,6 +601,7 @@ openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1, spby=60) {
   setkey(planets, 'Date')
   planets[, Date := as.Date(planets$Date, format="%Y-%m-%d")]
   planets[, DateMT4 := as.character(format(Date, "%Y.%m.%d"))]
+  planets[, Year := as.character(format(Date, "%Y"))]
 
   if (hasArg('cusorbs')) {
     orbs <- cusorbs
@@ -706,7 +707,7 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
                      URLONG = 1, NELONG = 1, PLLONG = 1, NNLONG = 1, SNLONG = 1)
   energy.neg <- list(SULONG = 1, MOLONG = 1, MELONG = 1, VELONG = 1, MALONG = 1, JULONG = 1, SALONG = 1,
                      URLONG = 1, NELONG = 1, PLLONG = 1, NNLONG = 1, SNLONG = 1)
-  aspweights <- list(a0 = 3, a30 = 1, a45 = 1, a60 = 2, a90 = 3, a120 = 2, a135 = 1, a150 = 2, a180 = 3)
+  aspweights <- list(a0 = 4, a30 = 1, a45 = 2, a60 = 2, a90 = 3, a120 = 2, a135 = 1, a150 = 2, a180 = 4)
 
   for (curcol in names(planets.day.asp)) {
     loncol1 <- paste(substr(curcol, 1, 5), 'G', sep='')
@@ -2057,13 +2058,29 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                      NNLONG = c("NNLONG"))
 
     planets[, wday := format(Date, "%w")]
-    pltitle <- paste("Significance Prediction", securityfile, "MA", maprice, "- significance / prev=", iprev, "next=", inext, "mapredslow=", mapredslow)
-
+    pltitle <- paste(securityfile, "maprice=", maprice, "mapricetype=", mapricetype, "mapredslow=", mapredslow, "mapredtype=", mapredtype,
+                     "iprev=", iprev, "inext=", inext, "\nsigtype=", sigtype, "predtype=", predtype, "degsplit=", degsplit, "spsplit=", spsplit,
+                     "threshold=", threshold, "energymode=", energymode, "energyweight=", energyweight, "\nuselon=", uselon,
+                     "usesp=", usesp, "useasp=", useasp)
     planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate) & wday %in% c(1, 2, 3, 4, 5)]
-    res1 <- processPredictions(planets.test=planets.test, security=security, significance=significance, panalogy=panalogy,
-                               iprev=iprev, inext=inext, sigtype=sigtype, predtype=predtype, mapredfunc=mapredfunc,
-                               mapredslow=mapredslow, cordir=cordir, pltitle=pltitle, uselon=uselon, usesp=usesp,
-                               useasp=useasp, energymode=energymode, energyweight=energyweight, verbose=verbose)
+    fitness <- list()
+    volatility <- list()
+    correlation <- list()
+
+    # compute predictions by year an calculate fitness by the mean to meter the solution stability
+    for (curyear in unique(planets.test$Year)) {
+      res <- processPredictions(planets.test=planets.test[Year == curyear], security=security, significance=significance, panalogy=panalogy,
+                                 iprev=iprev, inext=inext, sigtype=sigtype, predtype=predtype, mapredfunc=mapredfunc,
+                                 mapredslow=mapredslow, cordir=cordir, pltitle=pltitle, uselon=uselon, usesp=usesp,
+                                 useasp=useasp, energymode=energymode, energyweight=energyweight, verbose=verbose)
+      fitness[[length(fitness)+1]] <- res$fitness
+      volatility[[length(volatility)+1]] <- res$volatility
+      correlation[[length(correlation)+1]] <- res$correlation
+    }
+
+    avgfitness <- round(mean(unlist(fitness)))
+    avgvolatility <- mean(unlist(volatility))
+    avgcorrelation <- mean(unlist(correlation))
 
     planets.test2 <- planets[Date > as.Date(csdate) & Date <= as.Date(cedate) & wday %in% c(1, 2, 3, 4, 5)]
     res2 <- processPredictions(planets.test=planets.test2, security=security, significance=significance, panalogy=panalogy,
@@ -2073,8 +2090,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     cat("\nconfirmation test: volatility =", res2$volatility, " - correlation =", res2$correlation, " - fitness =", res2$fitness, "\n")
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
-    cat("volatility =", res1$volatility, " - correlation =", res1$correlation, " - ### = ", res1$fitness, "\n")
-    return(list(fitness=res1$fitness, planets=res1$planets, security=security))
+    cat("volatility =", avgvolatility, " - correlation =", avgcorrelation, " - ### = ", avgfitness, "\n")
+    return(list(fitness=avgfitness, planets=res2$planets, security=security))
   }
 
   processPredictions <- function(planets.test, security, significance, panalogy, iprev, inext, sigtype, predtype,
@@ -2124,8 +2141,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
         planets.test.security <- merge(planets.test, security, by='Date')
         volatility <- mean(planets.test.security$Mid) / sd(planets.test.security$Mid)
         planets.test.security[, 'Mid' := data.Normalization(Mid, type="n3")]
-        interval <- abs(as.integer((min(planets.test.security$Date)-max(planets.test.security$Date))/100))
-        x_dates <- seq(min(planets.test.security$Date), max(planets.test.security$Date), by=interval)
+        interval <- abs(as.integer((min(planets.test$Date)-max(planets.test$Date))/80))
+        x_dates <- seq(min(planets.test$Date), max(planets.test$Date), by=interval)
         p1 <- ggplot(planets.test, aes(Date, predVal)) + geom_line() + geom_line(data = planets.test.security, aes(x=Date, y=Mid), colour="red", show_guide=F) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() + scale_shape_identity() + scale_x_date(breaks=x_dates)
         print(p1)
         correlation <- round(cor(planets.test.security$predVal, planets.test.security$Mid,  use = "complete.obs", method='spearman'), digits=2)
@@ -2204,13 +2221,13 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   optimizeRelativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
     pdf(paste("~/chart_", securityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
-    minvals <- c(0, 0, 2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 0, 0, 0, 0, 0)
-    maxvals <- c(1, 1, 6, 10, 4, 4, 1, 2, 0, 3, 70, 30, 1, 0, 0, 9, 1)
+    minvals <- c(0, 0,  2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 0, 0, 0, 0, 0)
+    maxvals <- c(1, 1, 10, 20, 4, 4, 1, 2, 0, 3, 70, 30, 1, 0, 0, 9, 1)
     varnames <- c('iprev', 'inext', 'mapredslow', 'maprice', 'mapredtype', 'mapricetype', 'sigtype', 'predtype', 'cordir',
                   'degsplit', 'spsplit', 'threshold', 'uselon', 'usesp', 'useasp', 'energymode', 'energyweight')
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames,
-       monitor=gaMonitor, maxiter=200, run=50, popSize=200, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.2,
+       monitor=gaMonitor, maxiter=200, run=50, popSize=300, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.2,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_blxCrossover, population=gaint_Population,
        securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
        csdate=csdate, cedate=cedate, dateformat)
