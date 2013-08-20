@@ -117,6 +117,17 @@ npath <- function(path) {
   normalizePath(path.expand(path))
 }
 
+planetsConjPolarity <- list(SULONMOLON = 1, SULONMELON = 1, SULONVELON = 1, SULONMALON = 0, SULONJULON = 1, SULONSALON = 0, SULONURLON = 1,
+                            SULONNELON = 0, SULONPLLON = 0, SULONSNLON = 1, SULONNNLON = 1, MOLONMELON = 1, MOLONVELON = 1, MOLONMALON = 0,
+                            MOLONJULON = 1, MOLONSALON = 0, MOLONURLON = 0, MOLONNELON = 1, MOLONPLLON = 0, MOLONSNLON = 1, MOLONNNLON = 1,
+                            MELONVELON = 1, MELONMALON = 0, MELONJULON = 1, MELONSALON = 0, MELONURLON = 1, MELONNELON = 1, MELONPLLON = 0,
+                            MELONSNLON = 1, MELONNNLON = 1, VELONMALON = 0, VELONJULON = 1, VELONSALON = 0, VELONURLON = 1, VELONNELON = 1,
+                            VELONPLLON = 1, VELONSNLON = 1, VELONNNLON = 1, MALONJULON = 0, MALONSALON = 0, MALONURLON = 0, MALONNELON = 0,
+                            MALONPLLON = 0, MALONSNLON = 0, MALONNNLON = 0, JULONSALON = 0, JULONURLON = 1, JULONNELON = 1, JULONPLLON = 0,
+                            JULONSNLON = 1, JULONNNLON = 1, SALONURLON = 0, SALONNELON = 0, SALONPLLON = 0, SALONSNLON = 0, SALONNNLON = 0,
+                            URLONNELON = 0, URLONPLLON = 0, URLONSNLON = 0, URLONNNLON = 0, NELONPLLON = 0, NELONSNLON = 0, NELONNNLON = 0,
+                            PLLONSNLON = 0, PLLONNNLON = 0, SNLONNNLON = 0)
+
 # a function that returns the position of n-th largest
 maxn <- function(x, n) {
   order_x <- order(x, decreasing = TRUE)
@@ -721,13 +732,23 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
       aspweight <- 1
     }
 
-    if (aspname %in% c('a0', 'a30', 'a60', 'a120')) {
+    if (aspname %in% c('a30', 'a60', 'a120')) {
       energy.pos[[loncol1]] <- energy.pos[[loncol1]] + aspweight
       energy.pos[[loncol2]] <- energy.pos[[loncol2]] + aspweight
     }
-    if (aspname %in% c('a45', 'a90', 'a135', 'a150', 'a180')) {
+    else if (aspname %in% c('a45', 'a90', 'a135', 'a150', 'a180')) {
       energy.neg[[loncol1]] <- energy.neg[[loncol1]] + aspweight
       energy.neg[[loncol2]] <- energy.neg[[loncol2]] + aspweight
+    }
+    else if (aspname == 'a0') {
+      if (planetsConjPolarity[[curcol]] == 1) {
+        energy.pos[[loncol1]] <- energy.pos[[loncol1]] + aspweight
+        energy.pos[[loncol2]] <- energy.pos[[loncol2]] + aspweight
+      }
+      else if (planetsConjPolarity[[curcol]] == 0) {
+        energy.neg[[loncol1]] <- energy.neg[[loncol1]] + aspweight
+        energy.neg[[loncol2]] <- energy.neg[[loncol2]] + aspweight
+      }
     }
 
     energy[[loncol1]] <- energy[[loncol1]] + aspweight
