@@ -2055,7 +2055,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   relativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, iprev, inext,
                             mapredslow, maprice, mapredtype, mapricetype, sigtype, predtype, cordir, degsplit, spsplit,
-                            threshold, uselon, usesp, useasp, energymode, energyweight, dateformat, verbose=F) {
+                            threshold, uselon, usesp, useasp, energymode, energyweight, dateformat, alignmove=0, verbose=F) {
     looptm <- proc.time()
     mapricefunc <- get(get('mapricetype'))
     mapredfunc <- get(get('mapredtype'))
@@ -2091,9 +2091,9 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # compute predictions by year an calculate fitness by the mean to meter the solution stability
     for (curyear in unique(planets.test$Year)) {
       res <- processPredictions(planets.test=planets.test[Year == curyear], security=security, significance=significance, panalogy=panalogy,
-                                 iprev=iprev, inext=inext, sigtype=sigtype, predtype=predtype, mapredfunc=mapredfunc,
-                                 mapredslow=mapredslow, cordir=cordir, pltitle=pltitle, uselon=uselon, usesp=usesp,
-                                 useasp=useasp, energymode=energymode, energyweight=energyweight, verbose=verbose)
+                                 iprev=iprev, inext=inext, sigtype=sigtype, predtype=predtype, mapredfunc=mapredfunc, mapredslow=mapredslow,
+                                 cordir=cordir, pltitle=pltitle, uselon=uselon, usesp=usesp, useasp=useasp, energymode=energymode,
+                                 energyweight=energyweight, alignmove=alignmove, verbose=verbose)
       fitness[[length(fitness)+1]] <- res$fitness
       volatility[[length(volatility)+1]] <- res$volatility
       correlation[[length(correlation)+1]] <- res$correlation
@@ -2105,9 +2105,9 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     planets.test2 <- planets[Date > as.Date(csdate) & Date <= as.Date(cedate) & wday %in% c(1, 2, 3, 4, 5)]
     res2 <- processPredictions(planets.test=planets.test2, security=security, significance=significance, panalogy=panalogy,
-                               iprev=iprev, inext=inext, sigtype=sigtype, predtype=predtype, mapredfunc=mapredfunc,
-                               mapredslow=mapredslow, cordir=cordir, pltitle=pltitle, uselon=uselon, usesp=usesp,
-                               useasp=useasp, energymode=energymode, energyweight=energyweight, verbose=verbose)
+                               iprev=iprev, inext=inext, sigtype=sigtype, predtype=predtype, mapredfunc=mapredfunc, mapredslow=mapredslow,
+                               cordir=cordir, pltitle=pltitle, uselon=uselon, usesp=usesp, useasp=useasp, energymode=energymode,
+                               energyweight=energyweight, alignmove=alignmove, verbose=verbose)
 
     cat("\nconfirmation test: volatility =", res2$volatility, " - correlation =", res2$correlation, " - fitness =", res2$fitness, "\n")
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
@@ -2116,7 +2116,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   processPredictions <- function(planets.test, security, significance, panalogy, iprev, inext, sigtype, predtype,
-                                 mapredfunc, mapredslow, cordir, pltitle, uselon, usesp, useasp, energymode, energyweight, verbose) {
+                                 mapredfunc, mapredslow, cordir, pltitle, uselon, usesp, useasp, energymode, energyweight, alignmove, verbose) {
     predEff <- apply(planets.test, 1, function(x)
                      planetsDaySignificance(x, significance, panalogy, F, verbose, iprev, inext, sigtype, uselon,
                                             usesp, useasp, energymode, energyweight))
@@ -2144,7 +2144,14 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
         }
 
         #planets.test[, predVal := predEff]
-        planets.test[, predVal := mapredfunc(predEff, mapredslow)]
+        predEffSmoth <- mapredfunc(predEff, mapredslow)
+
+        if (alignmove != 0) {
+          # align prediction
+          predEffSmoth <- c(predEffSmoth[alignmove:length(predEffSmoth)], rep(NA, alignmove-1))
+        }
+
+        planets.test[, predVal := predEffSmoth]
         planets.test <- planets.test[!is.na(predVal)]
 
         if (predtype == 'absolute') {
@@ -2223,6 +2230,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     useasp <- x[15]
     energymode <- x[16]
     energyweight <- x[17]
+    alignmove <- x[18]
 
     cat("\n---------------------------------------------------------------------------------\n")
     cat("testPlanetsSignificanceRelative('testSolution', securityfile=", shQuote(securityfile), ", planetsfile=", shQuote(planetsfile), sep="")
@@ -2231,21 +2239,23 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     cat(", iprev=", iprev, ", inext=", inext, ", mapredslow=", mapredslow, ", maprice=", maprice, sep="")
     cat(", mapredtype=", shQuote(mapredtype), ", mapricetype=", shQuote(mapricetype), ", sigtype=", shQuote(sigtype), sep="")
     cat(", predtype=", shQuote(predtype), ", cordir=", cordir, ", degsplit=", degsplit, ", spsplit=", spsplit, ", threshold=", threshold, sep="")
-    cat(", uselon=", uselon, ", usesp=", usesp, ", useasp=", useasp, ", energymode=", energymode, ", energyweight=", energyweight, ")\n", sep="")
+    cat(", uselon=", uselon, ", usesp=", usesp, ", useasp=", useasp, ", energymode=", energymode, ", energyweight=", energyweight, sep="")
+    cat(", alignmove=", alignmove, ")\n", sep="")
     res <- relativeTrend(securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
                          csdate=csdate, cedate=cedate, iprev=iprev, inext=inext, mapredslow=mapredslow, maprice=maprice, mapredtype=mapredtype,
                          mapricetype=mapricetype, sigtype=sigtype, predtype=predtype, cordir=cordir, degsplit=degsplit, spsplit=spsplit, threshold=threshold,
-                         uselon=uselon, usesp=usesp, useasp=useasp, energymode=energymode, energyweight=energyweight, dateformat, verbose=F)
+                         uselon=uselon, usesp=usesp, useasp=useasp, energymode=energymode, energyweight=energyweight, dateformat=dateformat,
+                         alignmove=alignmove, verbose=F)
 
     return(res$fitness)
   }
 
   optimizeRelativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
     pdf(paste("~/chart_", securityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
-    minvals <- c(0, 0,  2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 0, 0, 0, 0, 0)
-    maxvals <- c(1, 1, 10, 20, 4, 4, 1, 2, 0, 3, 70, 30, 1, 0, 0, 9, 1)
+    minvals <- c(0, 0,  2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 0, 0, 0, 0, 0,  0)
+    maxvals <- c(1, 1, 10, 20, 4, 4, 1, 2, 0, 3, 70, 30, 1, 0, 0, 9, 1, 20)
     varnames <- c('iprev', 'inext', 'mapredslow', 'maprice', 'mapredtype', 'mapricetype', 'sigtype', 'predtype', 'cordir',
-                  'degsplit', 'spsplit', 'threshold', 'uselon', 'usesp', 'useasp', 'energymode', 'energyweight')
+                  'degsplit', 'spsplit', 'threshold', 'uselon', 'usesp', 'useasp', 'energymode', 'energyweight', 'alignmove')
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames,
        monitor=gaMonitor, maxiter=200, run=50, popSize=300, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.2,
