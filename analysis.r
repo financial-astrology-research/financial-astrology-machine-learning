@@ -17,6 +17,7 @@ library(splus2R)
 `%ni%` <- Negate(`%in%`)
 # no scientific notation
 options(scipen=100)
+options(width = 160)
 options(error=recover)
 
 planetsList <- list(c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", "MAR", "JU", "JUR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"),
@@ -324,21 +325,34 @@ openCurrency  <- function(currency_file) {
   currency
 }
 
-openSecurity <- function(security_file, mapricetype, maprice, dateformat="%Y.%m.%d") {
+openSecurity <- function(security_file, mapricetype, maprice, dateformat="%Y.%m.%d", pricetype="daily") {
   mapricefunc <- get(get('mapricetype'))
   security_file <- npath(security_file)
   security <- fread(security_file)
+  security[, Date := as.Date(as.character(Date), format=dateformat)]
+  security[, Year := as.character(format(Date, "%Y"))]
+  setkey(security, 'Date')
   security[, Mid := (High + Low + Close + Open) / 4]
-  security[, val := Mid - mapricefunc(Mid, n=maprice)]
-  security <- security[!is.na(val)]
+  security[, MidMAF := mapricefunc(Mid, n=maprice)]
+  security[, MidMAS := mapricefunc(Mid, n=maprice*2)]
+
+  if (pricetype == 'average') {
+    security[, val := MidMAF-MidMAS]
+  }
+  else if (pricetype == 'daily') {
+    security[, val := c(NA, diff(Mid, lag=1, differences=1))]
+  }
+  else {
+    stop("No valid price type was provided.")
+  }
 
   if (all(security$val == 0)) {
     stop("Undetermined security price direction")
   }
+
+  security <- security[!is.na(val)]
   #security$val <- security$Close - security$Mid
-  security[, Eff := cut(val, c(-100, 0, 100), labels=c('down', 'up'), right=FALSE)]
-  security[, Date := as.Date(as.character(Date), format=dateformat)]
-  security[, Year := as.character(format(Date, "%Y"))]
+  security[, Eff := cut(val, c(-1000, 0, 1000), labels=c('down', 'up'), right=FALSE)]
   return(security)
 }
 
@@ -2166,6 +2180,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       volatility <- 0
     }
     else {
+      # add raw prediction to data table
+      planets.test[, predraw := predEff]
       # normalize data
       predEff <- data.Normalization(predEff, type="n3")
 
@@ -2180,7 +2196,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
           predEff <- predEff * -1
         }
 
-        #planets.test[, predVal := predEff]
+        #planets.test[, predval := predEff]
         predEffSmoth <- mapredfunc(predEff, mapredslow)
 
         if (alignmove != 0) {
@@ -2188,29 +2204,31 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
           predEffSmoth <- c(predEffSmoth[alignmove:length(predEffSmoth)], rep(NA, alignmove-1))
         }
 
-        planets.test[, predVal := predEffSmoth]
-        planets.test <- planets.test[!is.na(predVal)]
+        planets.test[, predval := predEffSmoth]
+        planets.test <- planets.test[!is.na(predval)]
 
         if (predtype == 'absolute') {
-          planets.test[, predEff := predVal]
+          planets.test[, predEff := predval]
         }
         else if (predtype == 'relative') {
-          planets.test[, predEff := c(NA, diff(predVal, 1, 1))]
+          planets.test[, predEff := c(NA, diff(predval, lag=1, differences=1))]
           planets.test <- planets.test[!is.na(predEff)]
         }
         else {
           stop("No valid prediction type was provided.")
         }
 
-        planets.test[, predFactor := cut(predEff, c(-1, 0, 1), labels=c('down', 'up'), right=FALSE)]
+        planets.test[, predFactor := cut(predEff, c(-10, 0, 10), labels=c('down', 'up'), right=FALSE)]
         planets.test.security <- merge(planets.test, security, by='Date')
         volatility <- mean(planets.test.security$Mid) / sd(planets.test.security$Mid)
         planets.test.security[, 'Mid' := data.Normalization(Mid, type="n3")]
+        planets.test.security[, 'MidMAF' := data.Normalization(MidMAF, type="n3")]
+        planets.test.security[, 'MidMAS' := data.Normalization(MidMAS, type="n3")]
         interval <- abs(as.integer((min(planets.test$Date)-max(planets.test$Date))/80))
         x_dates <- seq(min(planets.test$Date), max(planets.test$Date), by=interval)
-        p1 <- ggplot(planets.test, aes(Date, predVal)) + geom_line() + geom_line(data = planets.test.security, aes(x=Date, y=Mid), colour="red", show_guide=F) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() + scale_shape_identity() + scale_x_date(breaks=x_dates)
+        p1 <- ggplot(planets.test, aes(Date, predval)) + geom_line() + geom_line(data = planets.test.security, aes(Date, Mid), colour="red", show_guide=F) + geom_line(data = planets.test.security, aes(Date, MidMAF), colour="blue", show_guide=F) + geom_line(data = planets.test.security, aes(Date, MidMAS), colour="green", show_guide=F) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() + scale_shape_identity() + scale_x_date(breaks=x_dates)
         print(p1)
-        correlation <- round(cor(planets.test.security$predVal, planets.test.security$Mid,  use = "complete.obs", method='spearman'), digits=2)
+        correlation <- round(cor(planets.test.security$predval, planets.test.security$Mid,  use = "complete.obs", method='spearman'), digits=2)
         t1 <- with(planets.test.security, table(Eff==predFactor))
         print(t1)
 
@@ -2238,11 +2256,12 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets.security <- merge(res$planets, res$security, by='Date')
 
     if (list(...)$verbose) {
-      print(as.data.frame(planets.security[, c('Date', 'predVal', 'Open', 'Close', 'Mid', 'predFactor', 'Eff'), with=F]))
+      cols <- c('Date', 'Open', 'Close', 'Mid', 'MidMAF', 'MidMAS', 'val', 'predraw', 'predval', 'predEff', 'predFactor', 'Eff')
+      print(as.data.frame(planets.security[, cols, with=F]))
     }
 
     dev.off()
-    write.csv(res$planets[, c('DateMT4', 'predVal'), with=F], file=paste("~/trading/predict/", predfile, ".csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
+    write.csv(res$planets[, c('DateMT4', 'predval'), with=F], file=paste("~/trading/predict/", predfile, ".csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
   }
 
   relativeTrendFitness <- function(x, securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
