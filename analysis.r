@@ -2106,13 +2106,13 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   relativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, iprev, inext,
                             mapredslow, maprice, mapredtype, mapricetype, sigtype, predtype, cordir, degsplit, spsplit,
-                            threshold, uselon, usesp, useasp, energymode, energyweight, dateformat, alignmove=0, verbose=F) {
+                            threshold, uselon, usesp, useasp, energymode, energyweight, dateformat, alignmove=0, pricetype, verbose=F) {
     looptm <- proc.time()
     mapricefunc <- get(get('mapricetype'))
     mapredfunc <- get(get('mapredtype'))
     planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""), orbs, aspects, degsplit, spsplit)
     setkey(planets, 'Date')
-    security <- openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, maprice, dateformat)
+    security <- openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, maprice, dateformat, pricetype)
     significance <- planetsVarsSignificance(planets[Date >= as.Date(tsdate) & Date <= as.Date(tedate)], security, threshold)
     keyranges <<- mixedsort(unique(significance[variable %in% planetsLonGCols]$key))
     setkey(significance, 'key', 'variable', 'V3', 'V4')
@@ -2133,7 +2133,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     pltitle <- paste(securityfile, "maprice=", maprice, "mapricetype=", mapricetype, "mapredslow=", mapredslow, "mapredtype=", mapredtype,
                      "iprev=", iprev, "inext=", inext, "\nsigtype=", sigtype, "predtype=", predtype, "degsplit=", degsplit, "spsplit=", spsplit,
                      "threshold=", threshold, "energymode=", energymode, "energyweight=", energyweight, "\nuselon=", uselon,
-                     "usesp=", usesp, "useasp=", useasp)
+                     "usesp=", usesp, "useasp=", useasp, "alignmove=", alignmove, "pricetype=", pricetype)
     planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate) & wday %in% c(1, 2, 3, 4, 5)]
     fitness <- list()
     volatility <- list()
@@ -2269,6 +2269,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     mapricetypes <- c('SMA', 'EMA', 'WMA', 'ZLEMA')
     sigtypes <- c('count',  'percent')
     predtypes <- c('absolute',  'relative')
+    pricetypes <- c('average',  'daily')
     iprev <- x[1]
     inext <- x[2]
     mapredslow <- x[3]
@@ -2287,6 +2288,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     energymode <- x[16]
     energyweight <- x[17]
     alignmove <- x[18]
+    pricetype <- pricetypes[[x[19]]]
 
     cat("\n---------------------------------------------------------------------------------\n")
     cat("testPlanetsSignificanceRelative('testSolution', securityfile=", shQuote(securityfile), ", planetsfile=", shQuote(planetsfile), sep="")
@@ -2296,22 +2298,22 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     cat(", mapredtype=", shQuote(mapredtype), ", mapricetype=", shQuote(mapricetype), ", sigtype=", shQuote(sigtype), sep="")
     cat(", predtype=", shQuote(predtype), ", cordir=", cordir, ", degsplit=", degsplit, ", spsplit=", spsplit, ", threshold=", threshold, sep="")
     cat(", uselon=", uselon, ", usesp=", usesp, ", useasp=", useasp, ", energymode=", energymode, ", energyweight=", energyweight, sep="")
-    cat(", alignmove=", alignmove, ")\n", sep="")
+    cat(", alignmove=", alignmove, ", pricetype=", shQuote(pricetype), ", dateformat=", shQuote(dateformat), ", verbose=F", ")\n", sep="")
     res <- relativeTrend(securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
                          csdate=csdate, cedate=cedate, iprev=iprev, inext=inext, mapredslow=mapredslow, maprice=maprice, mapredtype=mapredtype,
                          mapricetype=mapricetype, sigtype=sigtype, predtype=predtype, cordir=cordir, degsplit=degsplit, spsplit=spsplit, threshold=threshold,
                          uselon=uselon, usesp=usesp, useasp=useasp, energymode=energymode, energyweight=energyweight, dateformat=dateformat,
-                         alignmove=alignmove, verbose=F)
+                         alignmove=alignmove, pricetype=pricetype, verbose=F)
 
     return(res$fitness)
   }
 
   optimizeRelativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
     pdf(paste("~/chart_", securityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
-    minvals <- c(0, 0,  2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 0, 0, 0, 0,  0,  0)
-    maxvals <- c(1, 1, 10, 20, 4, 4, 1, 2, 0, 3, 70, 30, 1, 0, 0, 9, 11, 20)
+    minvals <- c(0, 0,  2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 0, 0, 0, 0,  0,  0, 1)
+    maxvals <- c(1, 1, 10, 20, 4, 4, 1, 2, 0, 3, 70, 30, 1, 0, 0, 9, 11, 20, 2)
     varnames <- c('iprev', 'inext', 'mapredslow', 'maprice', 'mapredtype', 'mapricetype', 'sigtype', 'predtype', 'cordir',
-                  'degsplit', 'spsplit', 'threshold', 'uselon', 'usesp', 'useasp', 'energymode', 'energyweight', 'alignmove')
+                  'degsplit', 'spsplit', 'threshold', 'uselon', 'usesp', 'useasp', 'energymode', 'energyweight', 'alignmove', 'pricetype')
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames,
        monitor=gaMonitor, maxiter=200, run=50, popSize=300, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.2,
