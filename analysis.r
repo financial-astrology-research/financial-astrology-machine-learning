@@ -718,19 +718,56 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
                      URLONG = 1, NELONG = 1, PLLONG = 1, NNLONG = 1, SNLONG = 1)
   energy.neg <- list(SULONG = 1, MOLONG = 1, MELONG = 1, VELONG = 1, MALONG = 1, JULONG = 1, SALONG = 1,
                      URLONG = 1, NELONG = 1, PLLONG = 1, NNLONG = 1, SNLONG = 1)
-  aspweights <- list(a0 = 4, a30 = 1, a45 = 2, a60 = 2, a90 = 3, a120 = 2, a135 = 1, a150 = 2, a180 = 4)
 
   for (curcol in names(planets.day.asp)) {
     loncol1 <- paste(substr(curcol, 1, 5), 'G', sep='')
     loncol2 <- paste(substr(curcol, 6, 10), 'G', sep='')
     aspname <- planets.day.asp[[curcol]]
 
-    if (energyweight == 1) {
-      aspweight <- aspweights[[aspname]]
+    if (energyweight == 0) {
+      aspweights <- list(a0 = 1, a30 = 1, a45 = 1, a60 = 1, a90 = 1, a120 = 1, a135 = 1, a150 = 1, a180 = 1)
+    }
+    else if (energyweight == 1) {
+      aspweights <- list(a0 = 4, a30 = 1, a45 = 2, a60 = 2, a90 = 3, a120 = 2, a135 = 1, a150 = 2, a180 = 4)
+    }
+    else if (energyweight == 2) {
+      aspweights <- list(a0 = 4, a30 = 1, a45 = 1, a60 = 2, a90 = 3, a120 = 3, a135 = 1, a150 = 2, a180 = 4)
+    }
+    else if (energyweight == 3) {
+      aspweights <- list(a0 = 4, a30 = 1, a45 = 1, a60 = 2, a90 = 2, a120 = 3, a135 = 1, a150 = 2, a180 = 4)
+    }
+    else if (energyweight == 4) {
+      aspweights <- list(a0 = 5, a30 = 1, a45 = 1, a60 = 3, a90 = 3, a120 = 4, a135 = 1, a150 = 1, a180 = 5)
+    }
+    else if (energyweight == 5) {
+      aspweights <- list(a0 = 6, a30 = 1, a45 = 1, a60 = 3, a90 = 3, a120 = 4, a135 = 1, a150 = 1, a180 = 5)
+    }
+    else if (energyweight == 6) {
+      aspweights <- list(a0 = 7, a30 = 1, a45 = 1, a60 = 3, a90 = 3, a120 = 5, a135 = 1, a150 = 1, a180 = 7)
+    }
+    else if (energyweight == 7) {
+      # David Williams
+      aspweights <- list(a0 = 10, a30 = 2, a45 = 2, a60 = 4, a90 = 4, a120 = 6, a135 = 2, a150 = 2, a180 = 8)
+    }
+    else if (energyweight == 8) {
+      aspweights <- list(a0 = 10, a30 = 2, a45 = 4, a60 = 5, a90 = 5, a120 = 5, a135 = 4, a150 = 2, a180 = 8)
+    }
+    else if (energyweight == 9) {
+      aspweights <- list(a0 = 10, a30 = 2, a45 = 2, a60 = 4, a90 = 4, a120 = 6, a135 = 2, a150 = 2, a180 = 10)
+    }
+    else if (energyweight == 10) {
+      aspweights <- list(a0 = 10, a30 = 2, a45 = 2, a60 = 4, a90 = 7, a120 = 5, a135 = 2, a150 = 2, a180 = 8)
+    }
+    else if (energyweight == 11) {
+      # Demetrio Santos
+      aspweights <- list(a0 = 10, a30 = 2, a45 = 2, a60 = 3, a90 = 6, a120 = 4, a135 = 2, a150 = 2, a180 = 10)
     }
     else {
-      aspweight <- 1
+      stop("No valid energy mode was provided.")
     }
+
+    # determine aspect weight
+    aspweight <- aspweights[[aspname]]
 
     if (aspname %in% c('a30', 'a60', 'a120')) {
       energy.pos[[loncol1]] <- energy.pos[[loncol1]] + aspweight
@@ -2252,8 +2289,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   optimizeRelativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
     pdf(paste("~/chart_", securityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
-    minvals <- c(0, 0,  2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 0, 0, 0, 0, 0,  0)
-    maxvals <- c(1, 1, 10, 20, 4, 4, 1, 2, 0, 3, 70, 30, 1, 0, 0, 9, 1, 20)
+    minvals <- c(0, 0,  2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 0, 0, 0, 0,  0,  0)
+    maxvals <- c(1, 1, 10, 20, 4, 4, 1, 2, 0, 3, 70, 30, 1, 0, 0, 9, 11, 20)
     varnames <- c('iprev', 'inext', 'mapredslow', 'maprice', 'mapredtype', 'mapricetype', 'sigtype', 'predtype', 'cordir',
                   'degsplit', 'spsplit', 'threshold', 'uselon', 'usesp', 'useasp', 'energymode', 'energyweight', 'alignmove')
 
