@@ -336,11 +336,14 @@ openSecurity <- function(security_file, mapricetype, maprice, dateformat="%Y.%m.
   security[, MidMAF := mapricefunc(Mid, n=maprice)]
   security[, MidMAS := mapricefunc(Mid, n=maprice*2)]
 
-  if (pricetype == 'average') {
+  if (pricetype == 'averages') {
     security[, val := MidMAF-MidMAS]
   }
   else if (pricetype == 'daily') {
     security[, val := c(NA, diff(Mid, lag=1, differences=1))]
+  }
+  else if (pricetype == 'priceaverage') {
+    security[, val := Mid-MidMAF]
   }
   else {
     stop("No valid price type was provided.")
@@ -2280,7 +2283,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     mapricetypes <- c('SMA', 'EMA', 'WMA', 'ZLEMA')
     sigtypes <- c('count',  'percent')
     predtypes <- c('absolute',  'relative')
-    pricetypes <- c('average',  'daily')
+    pricetypes <- c('averages',  'daily', 'priceaverage')
     iprev <- x[1]
     inext <- x[2]
     mapredslow <- x[3]
