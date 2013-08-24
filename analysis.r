@@ -2155,12 +2155,15 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     avgcorrelation <- mean(unlist(correlation))
 
     planets.test2 <- planets[Date > as.Date(csdate) & Date <= as.Date(cedate) & wday %in% c(1, 2, 3, 4, 5)]
-    res2 <- processPredictions(planets.test=planets.test2, security=security, significance=significance, panalogy=panalogy,
-                               iprev=iprev, inext=inext, sigtype=sigtype, predtype=predtype, mapredfunc=mapredfunc, mapredslow=mapredslow,
-                               cordir=cordir, pltitle=pltitle, uselon=uselon, usesp=usesp, useasp=useasp, energymode=energymode,
-                               energyweight=energyweight, alignmove=alignmove, verbose=verbose)
 
-    cat("\nconfirmation test: volatility =", res2$volatility, " - correlation =", res2$correlation, " - fitness =", res2$fitness, "\n")
+    for (curyear in unique(planets.test2$Year)) {
+      res2 <- processPredictions(planets.test=planets.test2[Year == curyear], security=security, significance=significance, panalogy=panalogy,
+                                 iprev=iprev, inext=inext, sigtype=sigtype, predtype=predtype, mapredfunc=mapredfunc, mapredslow=mapredslow,
+                                 cordir=cordir, pltitle=pltitle, uselon=uselon, usesp=usesp, useasp=useasp, energymode=energymode,
+                                 energyweight=energyweight, alignmove=alignmove, verbose=verbose)
+      cat("\nconfirmation test: volatility =", res2$volatility, " - correlation =", res2$correlation, " - fitness =", res2$fitness, "\n")
+    }
+
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
     cat("volatility =", avgvolatility, " - correlation =", avgcorrelation, " - ### = ", avgfitness, "\n")
     return(list(fitness=avgfitness, planets=res2$planets, security=security))
@@ -2226,9 +2229,17 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
         planets.test.security[, 'MidMAS' := data.Normalization(MidMAS, type="n3")]
         interval <- abs(as.integer((min(planets.test$Date)-max(planets.test$Date))/80))
         x_dates <- seq(min(planets.test$Date), max(planets.test$Date), by=interval)
-        p1 <- ggplot(planets.test, aes(Date, predval)) + geom_line() + geom_line(data = planets.test.security, aes(Date, Mid), colour="red", show_guide=F) + geom_line(data = planets.test.security, aes(Date, MidMAF), colour="blue", show_guide=F) + geom_line(data = planets.test.security, aes(Date, MidMAS), colour="green", show_guide=F) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() + scale_shape_identity() + scale_x_date(breaks=x_dates)
+
+        if (nrow(planets.test.security) == 0) {
+          p1 <- ggplot(planets.test, aes(Date, predval)) + geom_line() + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() + scale_shape_identity() + scale_x_date(breaks=x_dates)
+          correlation <- NA
+        }
+        else {
+          p1 <- ggplot(planets.test, aes(Date, predval)) + geom_line() + geom_line(data = planets.test.security, aes(Date, Mid), colour="red", show_guide=F) + geom_line(data = planets.test.security, aes(Date, MidMAF), colour="blue", show_guide=F) + geom_line(data = planets.test.security, aes(Date, MidMAS), colour="green", show_guide=F) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() + scale_shape_identity() + scale_x_date(breaks=x_dates)
+          correlation <- round(cor(planets.test.security$predval, planets.test.security$Mid,  use = "complete.obs", method='spearman'), digits=2)
+        }
+
         print(p1)
-        correlation <- round(cor(planets.test.security$predval, planets.test.security$Mid,  use = "complete.obs", method='spearman'), digits=2)
         t1 <- with(planets.test.security, table(Eff==predFactor))
         print(t1)
 
@@ -2242,7 +2253,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
           fitness <- -t1[['FALSE']]
         }
         else {
-          stop("Predictions table verification is out of data.")
+          fitness <- NA
         }
       }
     }
@@ -2310,13 +2321,13 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   optimizeRelativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
     pdf(paste("~/chart_", securityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
-    minvals <- c(0, 0,  2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 0, 0, 0, 0,  0,  0, 1)
+    minvals <- c(0, 0,  2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 1, 0, 0, 0,  0,  0, 1)
     maxvals <- c(1, 1, 10, 20, 4, 4, 1, 2, 0, 3, 70, 30, 1, 0, 0, 9, 11, 20, 2)
     varnames <- c('iprev', 'inext', 'mapredslow', 'maprice', 'mapredtype', 'mapricetype', 'sigtype', 'predtype', 'cordir',
                   'degsplit', 'spsplit', 'threshold', 'uselon', 'usesp', 'useasp', 'energymode', 'energyweight', 'alignmove', 'pricetype')
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames,
-       monitor=gaMonitor, maxiter=200, run=50, popSize=300, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.2,
+       monitor=gaMonitor, maxiter=200, run=50, popSize=400, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.2,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_blxCrossover, population=gaint_Population,
        securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
        csdate=csdate, cedate=cedate, dateformat)
