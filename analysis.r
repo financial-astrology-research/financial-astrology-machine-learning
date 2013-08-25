@@ -2150,11 +2150,14 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       correlation[[length(correlation)+1]] <- res$correlation
     }
 
-    avgfitness <- round(mean(unlist(fitness)))
+    fitness <- unlist(fitness)
+    meanfitness <- round(mean(fitness))
+    meansdfitness <- meanfitness * (1 - sd(fitness) / meanfitness)
     avgvolatility <- mean(unlist(volatility))
     avgcorrelation <- mean(unlist(correlation))
 
     planets.test2 <- planets[Date > as.Date(csdate) & Date <= as.Date(cedate) & wday %in% c(1, 2, 3, 4, 5)]
+    cat("\n--- Confirmation tests ---\n")
 
     for (curyear in unique(planets.test2$Year)) {
       res2 <- processPredictions(planets.test=planets.test2[Year == curyear], security=security, significance=significance, panalogy=panalogy,
@@ -2164,9 +2167,9 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       cat("\nconfirmation test: volatility =", res2$volatility, " - correlation =", res2$correlation, " - fitness =", res2$fitness, "\n")
     }
 
-    cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
-    cat("volatility =", avgvolatility, " - correlation =", avgcorrelation, " - ### = ", avgfitness, "\n")
-    return(list(fitness=avgfitness, planets=res2$planets, security=security))
+    cat("\n\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
+    cat("volatility =", avgvolatility, " - correlation =", avgcorrelation, " - meanfitness =", meanfitness, " - ### = ", meansdfitness, "\n")
+    return(list(fitness=meanfitness, planets=res2$planets, security=security))
   }
 
   processPredictions <- function(planets.test, security, significance, panalogy, iprev, inext, sigtype, predtype,
