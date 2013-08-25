@@ -334,11 +334,11 @@ openSecurity <- function(security_file, mapricetype, maprice, dateformat="%Y.%m.
   setkey(security, 'Date')
   security[, Mid := (High + Low + Close + Open) / 4]
 
-  if (pricemadir == 1) {
+  if (pricemadir == 1 | pricemadir == 2) {
     security[, MidMAF := mapricefunc(Mid, n=maprice)]
     security[, MidMAS := mapricefunc(Mid, n=maprice*2)]
   }
-  else if (pricemadir == 2) {
+  else if (pricemadir == 3 | pricemadir == 4) {
     security[, MidMAF := rev(mapricefunc(rev(Mid), n=maprice))]
     security[, MidMAS := rev(mapricefunc(rev(Mid), n=maprice*2))]
   }
@@ -347,23 +347,13 @@ openSecurity <- function(security_file, mapricetype, maprice, dateformat="%Y.%m.
   }
 
   if (pricetype == 'averages') {
-    if (pricemadir == 1) {
-      security[, val := MidMAF-MidMAS]
-    }
-    else if (pricemadir == 2) {
-      security[, val := MidMAS-MidMAF]
-    }
+    security[, val := MidMAF-MidMAS]
   }
   else if (pricetype == 'daily') {
     security[, val := c(NA, diff(Mid, lag=1, differences=1))]
   }
   else if (pricetype == 'priceaverage') {
-    if (pricemadir == 1) {
-      security[, val := Mid-MidMAF]
-    }
-    else if (pricemadir == 2) {
-      security[, val := MidMAF-Mid]
-    }
+    security[, val := Mid-MidMAF]
   }
   else {
     stop("No valid price type was provided.")
@@ -375,7 +365,13 @@ openSecurity <- function(security_file, mapricetype, maprice, dateformat="%Y.%m.
 
   security <- security[!is.na(val)]
   #security$val <- security$Close - security$Mid
-  security[, Eff := cut(val, c(-1000, 0, 1000), labels=c('down', 'up'), right=FALSE)]
+  if (pricemadir == 1 | pricemadir == 3) {
+    security[, Eff := cut(val, c(-1000, 0, 1000), labels=c('down', 'up'), right=FALSE)]
+  }
+  else if (pricemadir == 2 | pricemadir == 4) {
+    security[, Eff := cut(val, c(-1000, 0, 1000), labels=c('up', 'down'), right=FALSE)]
+  }
+
   return(security)
 }
 
@@ -2348,7 +2344,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   optimizeRelativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
     pdf(paste("~/chart_", securityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
     minvals <- c(0, 0,  2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 1, 0, 0, 0,  0,  0, 1, 1)
-    maxvals <- c(1, 1, 10, 20, 4, 4, 1, 2, 0, 3, 70, 30, 1, 0, 0, 9, 11, 20, 3, 2)
+    maxvals <- c(1, 1, 10, 20, 4, 4, 1, 2, 0, 3, 70, 30, 1, 0, 0, 9, 11, 20, 3, 4)
     varnames <- c('iprev', 'inext', 'mapredslow', 'maprice', 'mapredtype', 'mapricetype', 'sigtype', 'predtype', 'cordir',
                   'degsplit', 'spsplit', 'threshold', 'uselon', 'usesp', 'useasp', 'energymode', 'energyweight', 'alignmove',
                   'pricetype', 'pricemadir')
