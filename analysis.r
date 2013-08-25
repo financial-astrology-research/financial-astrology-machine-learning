@@ -2351,13 +2351,13 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   optimizeRelativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
     pdf(paste("~/chart_", securityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
     minvals <- c(0, 0,  2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 1, 0, 0, 0,  0,  0, 1, 1)
-    maxvals <- c(1, 1, 10, 20, 4, 4, 1, 2, 1, 3, 70, 30, 1, 0, 0, 9, 11, 20, 3, 4)
+    maxvals <- c(1, 1, 10, 20, 4, 4, 2, 2, 1, 3, 70, 30, 1, 0, 0, 9, 11, 20, 3, 4)
     varnames <- c('iprev', 'inext', 'mapredslow', 'maprice', 'mapredtype', 'mapricetype', 'sigtype', 'predtype', 'cordir',
                   'degsplit', 'spsplit', 'threshold', 'uselon', 'usesp', 'useasp', 'energymode', 'energyweight', 'alignmove',
                   'pricetype', 'pricemadir')
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames,
-       monitor=gaMonitor, maxiter=200, run=50, popSize=400, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.2,
+       monitor=gaMonitor, maxiter=200, run=50, popSize=500, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.2,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_blxCrossover, population=gaint_Population,
        securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
        csdate=csdate, cedate=cedate, dateformat)
