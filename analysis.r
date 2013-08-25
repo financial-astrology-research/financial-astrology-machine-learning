@@ -882,6 +882,10 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
       }
     }
 
+    # recalculate the percent energy to take in account the aspect energy changes
+    significance.day[, c('V1', 'V2') := list((V3/(V3+V4))*100, (V4/(V3+V4))*100)]
+    significance.day[, pdiff := V2-V1]
+
     if (sigtype == 'count') {
       trend <- as.integer(significance.day[, sum(V4)-sum(V3)])
     }
