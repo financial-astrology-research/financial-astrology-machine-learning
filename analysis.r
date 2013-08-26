@@ -2193,7 +2193,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     cat("\n\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
     cat("volatility =", avgvolatility, " - correlation =", avgcorrelation, " - meanfitness =", meanfitness, " - ### = ", meansdfitness, "\n")
-    return(list(fitness=meanfitness, planets=res2$planets, security=security))
+    return(list(fitness=meansdfitness, planets=res2$planets, security=security))
   }
 
   processPredictions <- function(planets.test, security, significance, panalogy, iprev, inext, sigtype, predtype,
