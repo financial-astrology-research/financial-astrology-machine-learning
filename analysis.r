@@ -2231,9 +2231,13 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
         #planets.test[, predval := predEff]
         predEffSmoth <- mapredfunc(predEff, mapredslow)
 
-        if (alignmove != 0) {
-          # align prediction
-          predEffSmoth <- c(predEffSmoth[alignmove:length(predEffSmoth)], rep(NA, alignmove-1))
+        if (alignmove > 0) {
+          # align prediction to the left
+          predEffSmoth <- c(predEffSmoth[(alignmove+1):length(predEffSmoth)], rep(NA, alignmove))
+        }
+        else if (alignmove < 0) {
+          # align prediction to the right
+          predEffSmoth <- c(rep(NA, abs(alignmove)), predEffSmoth[1:(length(predEffSmoth)-abs(alignmove))])
         }
 
         planets.test[, predval := predEffSmoth]
@@ -2355,14 +2359,14 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     pdf(paste("~/chart_", securityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
     longcolsmin <- rep(0, length(planetsLonGCols))
     longcolsmax <- rep(1, length(planetsLonGCols))
-    minvals <- c(0, 0,  2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 1, 0, 0, 0,  0,  0, 1, 1, longcolsmin)
-    maxvals <- c(1, 1, 10, 20, 4, 4, 2, 2, 1, 3, 70, 30, 1, 0, 0, 9, 11, 20, 3, 4, longcolsmax)
+    minvals <- c(0, 0,  2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 1, 0, 0, 0,  0, -10, 1, 1, longcolsmin)
+    maxvals <- c(1, 1, 10, 20, 4, 4, 2, 2, 1, 3, 70, 30, 1, 0, 0, 9, 11,  10, 3, 4, longcolsmax)
     varnames <- c('iprev', 'inext', 'mapredslow', 'maprice', 'mapredtype', 'mapricetype', 'sigtype', 'predtype', 'cordir',
                   'degsplit', 'spsplit', 'threshold', 'uselon', 'usesp', 'useasp', 'energymode', 'energyweight', 'alignmove',
                   'pricetype', 'pricemadir', planetsLonGCols)
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames,
-       monitor=gaMonitor, maxiter=200, run=50, popSize=500, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.2,
+       monitor=gaMonitor, maxiter=200, run=50, popSize=400, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.2,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_blxCrossover, population=gaint_Population,
        securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
        csdate=csdate, cedate=cedate, dateformat)
