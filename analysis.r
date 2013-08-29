@@ -717,8 +717,11 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
   #init <- as.numeric( sub("\\((.+),.*", "\\1", planets.day[curcol]))
   #keyranges <- apply(matrix(seq(init, init+8), ncol=2, byrow=T), 1, function(x) return(paste('(', x[1], ',', x[2], ']', sep='')))
   for (curcol in cols) {
+    # ignore variable is indicated in ignorecols
+    if (curcol %in% ignorecols) next
     res <- data.frame()
     curidx <- which(keyranges==planets.day[[curcol]])
+
     if (length(curidx) > 0) {
       indexes <- c(curidx)
       if (iprev != 0) indexes <- c(indexes, seq(curidx, curidx-iprev))
@@ -727,7 +730,7 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
       indexes <- unique(indexes)
       degroups <- keyranges[indexes]
       # search by analogy & direct variable
-      if (!is.null(planetsAnalogy[[curcol]]) & curcol %ni% ignorecols) {
+      if (!is.null(planetsAnalogy[[curcol]])) {
         res <- significance[key %in% degroups & variable %in% planetsAnalogy[[curcol]]]
       }
     }
