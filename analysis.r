@@ -2128,6 +2128,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   if (!hasArg('dateformat')) stop("A dateformat is needed.")
   ptm <- proc.time()
   planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG', 'SNLONG')
+  itest <- 1
 
   relativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, iprev, inext,
                             mapredslow, maprice, mapredtype, mapricetype, sigtype, predtype, cordir, degsplit, spsplit,
@@ -2339,6 +2340,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     ignorecols = planetsLonGCols[which(x[21:32] == 0)]
 
     cat("\n---------------------------------------------------------------------------------\n")
+    cat("Solution #", itest, "\n", sep='')
     cat("testPlanetsSignificanceRelative('testSolution', securityfile=", shQuote(securityfile), ", planetsfile=", shQuote(planetsfile), sep="")
     cat(", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate), sep="")
     cat(", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate), sep="")
@@ -2354,6 +2356,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                          uselon=uselon, usesp=usesp, useasp=useasp, energymode=energymode, energyweight=energyweight, dateformat=dateformat,
                          alignmove=alignmove, pricetype=pricetype, pricemadir=pricemadir, ignorecols=ignorecols, verbose=F)
 
+    itest <<- itest+1
     return(res$fitness)
   }
 
