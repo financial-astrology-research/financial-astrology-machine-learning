@@ -79,7 +79,7 @@ planetsBaseCols <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL",
 planetsLonGCols <- c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG')
 
 # Aspects and orbs
-aspects = c(0, 30, 45, 60, 90, 120, 135, 150, 180)
+aspects = c(0, 30, 45, 60, 72, 90, 120, 135, 150, 180)
 orbs = list(SULON = c(2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0),
             MOLON = c(2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0),
             MELON = c(2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0),
@@ -697,8 +697,8 @@ planetsVarsSignificance <- function(planets, currency, threshold) {
   return(significance)
 }
 
-planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, answer=T, verbose=F, iprev=0, inext=0,
-                                   sigtype='count', uselon=1, usesp=1, useasp=1, energymode=0, energyweight=0, ignorecols=c()) {
+planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, answer=T, verbose=F, iprev=0, inext=0, sigtype='count', uselon=1,
+                                   usesp=1, useasp=1, energymode=0, energyweight=0, ignorecols=c(), ignoreasps=c()) {
   significance.day <- data.frame()
   cols <- c()
 
@@ -719,6 +719,7 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
   for (curcol in cols) {
     # ignore variable is indicated in ignorecols
     if (curcol %in% ignorecols) next
+
     res <- data.frame()
     curidx <- which(keyranges==planets.day[[curcol]])
 
@@ -756,55 +757,58 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
                      URLONG = 1, NELONG = 1, PLLONG = 1, NNLONG = 1, SNLONG = 1)
 
   if (energyweight == 0) {
-    aspweights <- list(a0 = 1, a30 = 1, a45 = 1, a60 = 1, a90 = 1, a120 = 1, a135 = 1, a150 = 1, a180 = 1)
+    aspweights <- list(a0 = 1, a30 = 1, a45 = 1, a60 = 1, a72 = 1, a90 = 1, a120 = 1, a135 = 1, a150 = 1, a180 = 1)
   }
   else if (energyweight == 1) {
-    aspweights <- list(a0 = 4, a30 = 1, a45 = 2, a60 = 2, a90 = 3, a120 = 2, a135 = 1, a150 = 2, a180 = 4)
+    aspweights <- list(a0 = 4, a30 = 1, a45 = 2, a60 = 2, a72 = 1, a90 = 3, a120 = 2, a135 = 1, a150 = 2, a180 = 4)
   }
   else if (energyweight == 2) {
-    aspweights <- list(a0 = 4, a30 = 1, a45 = 1, a60 = 2, a90 = 3, a120 = 3, a135 = 1, a150 = 2, a180 = 4)
+    aspweights <- list(a0 = 4, a30 = 1, a45 = 1, a60 = 2, a72 = 1, a90 = 3, a120 = 3, a135 = 1, a150 = 2, a180 = 4)
   }
   else if (energyweight == 3) {
-    aspweights <- list(a0 = 4, a30 = 1, a45 = 1, a60 = 2, a90 = 2, a120 = 3, a135 = 1, a150 = 2, a180 = 4)
+    aspweights <- list(a0 = 4, a30 = 1, a45 = 1, a60 = 2, a72 = 1, a90 = 2, a120 = 3, a135 = 1, a150 = 2, a180 = 4)
   }
   else if (energyweight == 4) {
-    aspweights <- list(a0 = 5, a30 = 1, a45 = 1, a60 = 3, a90 = 3, a120 = 4, a135 = 1, a150 = 1, a180 = 5)
+    aspweights <- list(a0 = 5, a30 = 1, a45 = 1, a60 = 3, a72 = 1, a90 = 3, a120 = 4, a135 = 1, a150 = 1, a180 = 5)
   }
   else if (energyweight == 5) {
-    aspweights <- list(a0 = 6, a30 = 1, a45 = 1, a60 = 3, a90 = 3, a120 = 4, a135 = 1, a150 = 1, a180 = 5)
+    aspweights <- list(a0 = 6, a30 = 1, a45 = 1, a60 = 3, a72 = 1, a90 = 3, a120 = 4, a135 = 1, a150 = 1, a180 = 5)
   }
   else if (energyweight == 6) {
-    aspweights <- list(a0 = 7, a30 = 1, a45 = 1, a60 = 3, a90 = 3, a120 = 5, a135 = 1, a150 = 1, a180 = 7)
+    aspweights <- list(a0 = 7, a30 = 1, a45 = 1, a60 = 3, a72 = 1, a90 = 3, a120 = 5, a135 = 1, a150 = 1, a180 = 7)
   }
   else if (energyweight == 7) {
     # David Williams
-    aspweights <- list(a0 = 10, a30 = 2, a45 = 2, a60 = 4, a90 = 4, a120 = 6, a135 = 2, a150 = 2, a180 = 8)
+    aspweights <- list(a0 = 10, a30 = 2, a45 = 2, a60 = 4, a72 = 1, a90 = 4, a120 = 6, a135 = 2, a150 = 2, a180 = 8)
   }
   else if (energyweight == 8) {
-    aspweights <- list(a0 = 10, a30 = 2, a45 = 4, a60 = 5, a90 = 5, a120 = 5, a135 = 4, a150 = 2, a180 = 8)
+    aspweights <- list(a0 = 10, a30 = 2, a45 = 4, a60 = 5, a72 = 1, a90 = 5, a120 = 5, a135 = 4, a150 = 2, a180 = 8)
   }
   else if (energyweight == 9) {
-    aspweights <- list(a0 = 10, a30 = 2, a45 = 2, a60 = 4, a90 = 4, a120 = 6, a135 = 2, a150 = 2, a180 = 10)
+    aspweights <- list(a0 = 10, a30 = 2, a45 = 2, a60 = 4, a72 = 1, a90 = 4, a120 = 6, a135 = 2, a150 = 2, a180 = 10)
   }
   else if (energyweight == 10) {
-    aspweights <- list(a0 = 10, a30 = 2, a45 = 2, a60 = 4, a90 = 7, a120 = 5, a135 = 2, a150 = 2, a180 = 8)
+    aspweights <- list(a0 = 10, a30 = 2, a45 = 2, a60 = 4, a72 = 1, a90 = 7, a120 = 5, a135 = 2, a150 = 2, a180 = 8)
   }
   else if (energyweight == 11) {
     # Demetrio Santos
-    aspweights <- list(a0 = 10, a30 = 2, a45 = 2, a60 = 3, a90 = 6, a120 = 4, a135 = 2, a150 = 2, a180 = 10)
+    aspweights <- list(a0 = 10, a30 = 2, a45 = 2, a60 = 3, a72 = 1, a90 = 6, a120 = 4, a135 = 2, a150 = 2, a180 = 10)
   }
   else {
     stop("No valid energy mode was provided.")
   }
 
   for (curcol in names(planets.day.asp)) {
+    aspname <- planets.day.asp[[curcol]]
+    # ignore aspect is indicated in ignoreasps
+    if (aspname %in% ignoreasps) next
+
     loncol1 <- paste(substr(curcol, 1, 5), 'G', sep='')
     loncol2 <- paste(substr(curcol, 6, 10), 'G', sep='')
-    aspname <- planets.day.asp[[curcol]]
     # determine aspect weight
     aspweight <- aspweights[[aspname]]
 
-    if (aspname %in% c('a30', 'a60', 'a120')) {
+    if (aspname %in% c('a30', 'a60', 'a72', 'a120')) {
       energy.pos[[loncol1]] <- energy.pos[[loncol1]] + aspweight
       energy.pos[[loncol2]] <- energy.pos[[loncol2]] + aspweight
     }
@@ -2123,7 +2127,10 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
 }
 
 testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
-  if (hasArg('sinkfile')) sink(npath(paste("~/trading/predict/", sinkfile, ".txt", sep='')), append=T)
+  if (hasArg('sinkfile')) {
+    sinkpathfile <- npath(paste("~/trading/predict/", sinkfile, ".txt", sep=''))
+    sink(sinkpathfile, append=T)
+  }
   if (!hasArg('execfunc')) stop("Provide function to execute")
   if (!hasArg('dateformat')) stop("A dateformat is needed.")
   ptm <- proc.time()
@@ -2133,7 +2140,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   relativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, iprev, inext,
                             mapredslow, maprice, mapredtype, mapricetype, sigtype, predtype, cordir, degsplit, spsplit,
                             threshold, uselon, usesp, useasp, energymode, energyweight, dateformat, alignmove=0, pricetype,
-                            pricemadir, ignorecols=ignorecols, verbose=F) {
+                            pricemadir, ignorecols=ignorecols, ignoreasps=ignoreasps, verbose=F) {
     looptm <- proc.time()
     mapricefunc <- get(get('mapricetype'))
     mapredfunc <- get(get('mapredtype'))
@@ -2158,10 +2165,11 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                      NNLONG = c("SNLONG"))
 
     planets[, wday := format(Date, "%w")]
-    pltitle <- paste(securityfile, "maprice=", maprice, "mapricetype=", mapricetype, "mapredslow=", mapredslow, "mapredtype=", mapredtype,
+    pltitle <- paste(securityfile, " / #", itest, "maprice=", maprice, "mapricetype=", mapricetype, "mapredslow=", mapredslow, "mapredtype=", mapredtype,
                      "iprev=", iprev, "inext=", inext, "\nsigtype=", sigtype, "predtype=", predtype, "degsplit=", degsplit, "spsplit=", spsplit,
                      "threshold=", threshold, "energymode=", energymode, "energyweight=", energyweight, "\nuselon=", uselon, "usesp=", usesp,
-                     "useasp=", useasp, "alignmove=", alignmove, "pricetype=", pricetype, "pricemadir=", pricemadir)
+                     "useasp=", useasp, "alignmove=", alignmove, "pricetype=", pricetype, "pricemadir=", pricemadir,
+                     "\nignorecols=c(", paste(shQuote(ignorecols), collapse=","), ")", "\nignoreasps=c(", paste(shQuote(ignoreasps), collapse=","), ")")
     planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate) & wday %in% c(1, 2, 3, 4, 5)]
     fitness <- list()
     volatility <- list()
@@ -2172,7 +2180,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       res <- processPredictions(planets.test=planets.test[Year == curyear], security=security, significance=significance, panalogy=panalogy,
                                  iprev=iprev, inext=inext, sigtype=sigtype, predtype=predtype, mapredfunc=mapredfunc, mapredslow=mapredslow,
                                  cordir=cordir, pltitle=pltitle, uselon=uselon, usesp=usesp, useasp=useasp, energymode=energymode,
-                                 energyweight=energyweight, alignmove=alignmove, ignorecols=ignorecols, verbose=verbose)
+                                 energyweight=energyweight, alignmove=alignmove, ignorecols=ignorecols, ignoreasps=ignoreasps, verbose=verbose)
       fitness[[length(fitness)+1]] <- res$fitness
       volatility[[length(volatility)+1]] <- res$volatility
       correlation[[length(correlation)+1]] <- res$correlation
@@ -2191,7 +2199,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       res2 <- processPredictions(planets.test=planets.test2[Year == curyear], security=security, significance=significance, panalogy=panalogy,
                                  iprev=iprev, inext=inext, sigtype=sigtype, predtype=predtype, mapredfunc=mapredfunc, mapredslow=mapredslow,
                                  cordir=cordir, pltitle=pltitle, uselon=uselon, usesp=usesp, useasp=useasp, energymode=energymode,
-                                 energyweight=energyweight, alignmove=alignmove, ignorecols=ignorecols, verbose=verbose)
+                                 energyweight=energyweight, alignmove=alignmove, ignorecols=ignorecols, ignoreasps=ignoreasps, verbose=verbose)
       cat("\nconfirmation test: volatility =", res2$volatility, " - correlation =", res2$correlation, " - fitness =", res2$fitness, "\n")
     }
 
@@ -2202,10 +2210,10 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   processPredictions <- function(planets.test, security, significance, panalogy, iprev, inext, sigtype, predtype,
                                  mapredfunc, mapredslow, cordir, pltitle, uselon, usesp, useasp, energymode, energyweight,
-                                 alignmove, ignorecols, verbose) {
+                                 alignmove, ignorecols, ignoreasps, verbose) {
     predEff <- apply(planets.test, 1, function(x)
                      planetsDaySignificance(x, significance, panalogy, F, verbose, iprev, inext, sigtype, uselon,
-                                            usesp, useasp, energymode, energyweight, ignorecols))
+                                            usesp, useasp, energymode, energyweight, ignorecols, ignoreasps))
 
     # in case that all predictions are 0 we skip this solution
     if (all(predEff == 0)) {
@@ -2338,6 +2346,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     pricetype <- pricetypes[[x[19]]]
     pricemadir <- x[20]
     ignorecols = planetsLonGCols[which(x[21:32] == 0)]
+    ignoreasps = paste('a', aspects[which(x[33:42] == 0)], sep='')
 
     cat("\n---------------------------------------------------------------------------------\n")
     cat("Solution #", itest, "\n", sep='')
@@ -2349,12 +2358,13 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     cat(", predtype=", shQuote(predtype), ", cordir=", cordir, ", degsplit=", degsplit, ", spsplit=", spsplit, ", threshold=", threshold, sep="")
     cat(", uselon=", uselon, ", usesp=", usesp, ", useasp=", useasp, ", energymode=", energymode, ", energyweight=", energyweight, sep="")
     cat(", alignmove=", alignmove, ", pricetype=", shQuote(pricetype), ", dateformat=", shQuote(dateformat), ", verbose=F", sep="")
-    cat(", pricemadir=", pricemadir, ", ignorecols=c(", paste(shQuote(ignorecols), collapse=","), "))\n", sep="")
+    cat(", pricemadir=", pricemadir, ", ignorecols=c(", paste(shQuote(ignorecols), collapse=","), ")", sep="")
+    cat(", ignoreasps=c(", paste(shQuote(ignoreasps), collapse=","), "))\n", sep="")
     res <- relativeTrend(securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
                          csdate=csdate, cedate=cedate, iprev=iprev, inext=inext, mapredslow=mapredslow, maprice=maprice, mapredtype=mapredtype,
                          mapricetype=mapricetype, sigtype=sigtype, predtype=predtype, cordir=cordir, degsplit=degsplit, spsplit=spsplit, threshold=threshold,
                          uselon=uselon, usesp=usesp, useasp=useasp, energymode=energymode, energyweight=energyweight, dateformat=dateformat,
-                         alignmove=alignmove, pricetype=pricetype, pricemadir=pricemadir, ignorecols=ignorecols, verbose=F)
+                         alignmove=alignmove, pricetype=pricetype, pricemadir=pricemadir, ignorecols=ignorecols, ignoreasps=ignoreasps, verbose=F)
 
     itest <<- itest+1
     return(res$fitness)
@@ -2364,8 +2374,10 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     pdf(paste("~/chart_", securityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
     longcolsmin <- rep(0, length(planetsLonGCols))
     longcolsmax <- rep(1, length(planetsLonGCols))
-    minvals <- c(0, 0,  2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 1, 0, 0, 0,  0, -10, 1, 1, longcolsmin)
-    maxvals <- c(1, 1, 10, 20, 4, 4, 2, 2, 1, 3, 70, 30, 1, 0, 0, 9, 11,  10, 3, 4, longcolsmax)
+    aspcolsmin <- rep(0, length(aspects))
+    aspcolsmax <- rep(1, length(aspects))
+    minvals <- c(0, 0,  2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 1, 0, 0, 0,  0, -10, 1, 1, longcolsmin, aspcolsmin)
+    maxvals <- c(1, 1, 10, 20, 4, 4, 2, 2, 1, 3, 70, 30, 1, 0, 0, 9, 11,  10, 3, 4, longcolsmax, aspcolsmax)
     varnames <- c('iprev', 'inext', 'mapredslow', 'maprice', 'mapredtype', 'mapricetype', 'sigtype', 'predtype', 'cordir',
                   'degsplit', 'spsplit', 'threshold', 'uselon', 'usesp', 'useasp', 'energymode', 'energyweight', 'alignmove',
                   'pricetype', 'pricemadir', planetsLonGCols)
