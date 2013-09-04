@@ -748,7 +748,8 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
   significance.day <- data.table(significance.day)
   patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
   activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
-  planets.day.asp <- planets.day[planets.day != "anon" & names(planets.day) %in% activecols]
+  # ignore anon aspects and ignoreasps ot that ones that are not in activecols
+  planets.day.asp <- planets.day[planets.day != "anon" & planets.day %ni% ignoreasps & names(planets.day) %in% activecols]
   energy <- list(SULONG = 1, MOLONG = 1, MELONG = 1, VELONG = 1, MALONG = 1, JULONG = 1, SALONG = 1,
                  URLONG = 1, NELONG = 1, PLLONG = 1, NNLONG = 1, SNLONG = 1)
   energy.pos <- list(SULONG = 1, MOLONG = 1, MELONG = 1, VELONG = 1, MALONG = 1, JULONG = 1, SALONG = 1,
@@ -800,9 +801,6 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
 
   for (curcol in names(planets.day.asp)) {
     aspname <- planets.day.asp[[curcol]]
-    # ignore aspect is indicated in ignoreasps
-    if (aspname %in% ignoreasps) next
-
     loncol1 <- paste(substr(curcol, 1, 5), 'G', sep='')
     loncol2 <- paste(substr(curcol, 6, 10), 'G', sep='')
     # determine aspect weight
