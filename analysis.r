@@ -2186,7 +2186,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     fitness <- unlist(fitness)
     meanfitness <- round(mean(fitness))
-    meansdfitness <- meanfitness * (1 - sd(fitness) / meanfitness)
+    sdfitness <- sd(fitness)
     avgvolatility <- mean(unlist(volatility))
     avgcorrelation <- mean(unlist(correlation))
 
@@ -2202,8 +2202,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     }
 
     cat("\n\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
-    cat("volatility =", avgvolatility, " - correlation =", avgcorrelation, " - meanfitness =", meanfitness, " - ### = ", meansdfitness, "\n")
-    return(list(fitness=meansdfitness, planets=res2$planets, security=security))
+    cat("volatility =", avgvolatility, " - correlation =", avgcorrelation, " - sd =", sdfitness, " - ### = ", meanfitness, "\n")
+    return(list(fitness=meanfitness, planets=res2$planets, security=security))
   }
 
   processPredictions <- function(planets.test, security, significance, panalogy, iprev, inext, sigtype, predtype,
