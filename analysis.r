@@ -93,6 +93,7 @@ orbs = list(SULON = c(2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0
             NNLON = c(2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0),
             SNLON = c(2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0))
 
+aspOrbsCols <- as.character(apply(expand.grid(aspects, planetsBaseCols[1:(length(planetsBaseCols)-1)]), 1, function(x) paste(x[2], x[1], sep='')))
 zodDegrees <- seq(0, 360, by=2)
 
 # planets columns names
@@ -2140,10 +2141,24 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   relativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, iprev, inext,
                             mapredslow, maprice, mapredtype, mapricetype, sigtype, predtype, cordir, degsplit, spsplit,
                             threshold, uselon, usesp, useasp, energymode, energyweight, dateformat, alignmove=0, pricetype,
-                            pricemadir, ignorecols=ignorecols, ignoreasps=ignoreasps, verbose=F) {
+                            pricemadir, ignorecols=ignorecols, ignoreasps=ignoreasps, cusorbs=cusorbs, verbose=F) {
     looptm <- proc.time()
     mapricefunc <- get(get('mapricetype'))
     mapredfunc <- get(get('mapredtype'))
+
+    orbs <- list(SULON = cusorbs[1:10],
+                 MOLON = cusorbs[11:20],
+                 MELON = cusorbs[21:30],
+                 VELON = cusorbs[31:40],
+                 MALON = cusorbs[41:50],
+                 JULON = cusorbs[51:60],
+                 SALON = cusorbs[61:70],
+                 URLON = cusorbs[71:80],
+                 NELON = cusorbs[81:90],
+                 PLLON = cusorbs[91:100],
+                 NNLON = cusorbs[101:110],
+                 SNLON = cusorbs[101:110])
+
     planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""), orbs, aspects, degsplit, spsplit)
     setkey(planets, 'Date')
     security <- openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, maprice, dateformat, pricetype, pricemadir)
@@ -2347,6 +2362,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     pricemadir <- x[20]
     ignorecols = planetsLonGCols[which(x[21:32] == 0)]
     ignoreasps = paste('a', aspects[which(x[33:42] == 0)], sep='')
+    cusorbs = x[43:152]
 
     cat("\n---------------------------------------------------------------------------------\n")
     cat("Solution #", itest, "\n", sep='')
@@ -2359,12 +2375,14 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     cat(", uselon=", uselon, ", usesp=", usesp, ", useasp=", useasp, ", energymode=", energymode, ", energyweight=", energyweight, sep="")
     cat(", alignmove=", alignmove, ", pricetype=", shQuote(pricetype), ", dateformat=", shQuote(dateformat), ", verbose=F", sep="")
     cat(", pricemadir=", pricemadir, ", ignorecols=c(", paste(shQuote(ignorecols), collapse=","), ")", sep="")
-    cat(", ignoreasps=c(", paste(shQuote(ignoreasps), collapse=","), "))\n", sep="")
+    cat(", ignoreasps=c(", paste(shQuote(ignoreasps), collapse=","), "), cusorbs=c(", paste(cusorbs, collapse=","), "))\n", sep="")
+
     res <- relativeTrend(securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
                          csdate=csdate, cedate=cedate, iprev=iprev, inext=inext, mapredslow=mapredslow, maprice=maprice, mapredtype=mapredtype,
-                         mapricetype=mapricetype, sigtype=sigtype, predtype=predtype, cordir=cordir, degsplit=degsplit, spsplit=spsplit, threshold=threshold,
-                         uselon=uselon, usesp=usesp, useasp=useasp, energymode=energymode, energyweight=energyweight, dateformat=dateformat,
-                         alignmove=alignmove, pricetype=pricetype, pricemadir=pricemadir, ignorecols=ignorecols, ignoreasps=ignoreasps, verbose=F)
+                         mapricetype=mapricetype, sigtype=sigtype, predtype=predtype, cordir=cordir, degsplit=degsplit, spsplit=spsplit,
+                         threshold=threshold, uselon=uselon, usesp=usesp, useasp=useasp, energymode=energymode, energyweight=energyweight,
+                         dateformat=dateformat, alignmove=alignmove, pricetype=pricetype, pricemadir=pricemadir, ignorecols=ignorecols,
+                         ignoreasps=ignoreasps, cusorbs=cusorbs, verbose=F)
 
     itest <<- itest+1
     return(res$fitness)
@@ -2376,11 +2394,13 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     longcolsmax <- rep(1, length(planetsLonGCols))
     aspcolsmin <- rep(0, length(aspects))
     aspcolsmax <- rep(1, length(aspects))
-    minvals <- c(0, 0,  2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 1, 0, 0, 0,  0, -10, 1, 1, longcolsmin, aspcolsmin)
-    maxvals <- c(1, 1, 10, 20, 4, 4, 2, 2, 1, 3, 70, 30, 1, 0, 0, 9, 11,  10, 3, 4, longcolsmax, aspcolsmax)
+    orbsmin <- rep(0, length(aspects)*11)
+    orbsmax <- rep(6, length(aspects)*11)
+    minvals <- c(0, 0,  2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 1, 0, 0, 0,  0, -10, 1, 1, longcolsmin, aspcolsmin, orbsmin)
+    maxvals <- c(1, 1, 10, 20, 4, 4, 2, 2, 1, 3, 70, 30, 1, 0, 0, 9, 11,  10, 3, 4, longcolsmax, aspcolsmax, orbsmax)
     varnames <- c('iprev', 'inext', 'mapredslow', 'maprice', 'mapredtype', 'mapricetype', 'sigtype', 'predtype', 'cordir',
                   'degsplit', 'spsplit', 'threshold', 'uselon', 'usesp', 'useasp', 'energymode', 'energyweight', 'alignmove',
-                  'pricetype', 'pricemadir', planetsLonGCols)
+                  'pricetype', 'pricemadir', planetsLonGCols, aspOrbsCols)
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames,
        monitor=gaMonitor, maxiter=200, run=50, popSize=400, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.2,
