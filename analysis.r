@@ -800,6 +800,8 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
   }
 
   for (curcol in names(planets.day.asp)) {
+    # ignore aspects between nodes that happens ever
+    if (curcol == 'SNLONNNLON') next
     aspname <- planets.day.asp[[curcol]]
     loncol1 <- paste(substr(curcol, 1, 5), 'G', sep='')
     loncol2 <- paste(substr(curcol, 6, 10), 'G', sep='')
