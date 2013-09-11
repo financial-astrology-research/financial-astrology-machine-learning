@@ -2192,6 +2192,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     # compute predictions by year an calculate fitness by the mean to meter the solution stability
     for (curyear in unique(planets.test$Year)) {
+      setattr(planets.test, ".internal.selfref", NULL)
       res <- processPredictions(planets.test=planets.test[Year == curyear], security=security, significance=significance, panalogy=panalogy,
                                  iprev=iprev, inext=inext, sigtype=sigtype, predtype=predtype, mapredfunc=mapredfunc, mapredslow=mapredslow,
                                  cordir=cordir, pltitle=pltitle, uselon=uselon, usesp=usesp, useasp=useasp, energymode=energymode,
