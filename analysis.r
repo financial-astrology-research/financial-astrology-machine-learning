@@ -2159,6 +2159,12 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                  NNLON = cusorbs[101:110],
                  SNLON = cusorbs[101:110])
 
+    # Display the orbs list
+    cat("\n\t Aspects\n")
+    dput(aspects)
+    cat("\n\t Orbs\n")
+    dput(orbs)
+
     planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""), orbs, aspects, degsplit, spsplit)
     setkey(planets, 'Date')
     security <- openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, maprice, dateformat, pricetype, pricemadir)
