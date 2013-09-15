@@ -17,7 +17,7 @@ library(splus2R)
 `%ni%` <- Negate(`%in%`)
 # no scientific notation
 options(scipen=100)
-options(width = 160)
+options(width=160)
 options(error=recover)
 
 planetsList <- list(c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", "MAR", "JU", "JUR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"),
@@ -2160,10 +2160,11 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                  SNLON = cusorbs[101:110])
 
     # Display the orbs list
-    cat("\n\t Aspects\n")
-    dput(aspects)
-    cat("\n\t Orbs\n")
-    dput(orbs)
+    cat("\n\t Aspects Orbs\n")
+    cat("----------", aspects, "\n", sep='  ')
+    for (col in names(orbs)) {
+      cat(col, ":", orbs[[col]], "\n", sep='   ')
+    }
 
     planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""), orbs, aspects, degsplit, spsplit)
     setkey(planets, 'Date')
