@@ -2200,7 +2200,11 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     cat("\n")
     print(orbsmatrix)
     cat("\n")
+    print(apply(orbsmatrix, 2, function(x) round(mean(x), digits=1)))
+    cat("\n")
     print(aspectspolaritymatrix)
+    cat("\n")
+    print(apply(aspectspolaritymatrix, 2, function(x) round(mean(x), digits=1)))
 
     planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""), orbsmatrix, aspects, degsplit, spsplit)
     setkey(planets, 'Date')
