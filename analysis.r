@@ -1365,8 +1365,6 @@ generateSamples <- function(ds, n) {
   samples
 }
 
-#dput(as.character(selcols))
-
 gaint_Population <- function (object, ...) {
   min <- object@min
   max <- object@max
@@ -1381,16 +1379,42 @@ gaint_Population <- function (object, ...) {
 gaint_raMutation <- function(object, parent) {
   mutate <- parent <- as.vector(object@population[parent, ])
   n <- length(parent)
-  j <- sample(1:n, size = 1)
-  mutate[j] <- sample(object@min[j]:object@max[j], 1)
+  j <- sample(1:n, size = 3)
+  # mutate three parameters
+  mutate[j[1]] <- sample(object@min[j[1]]:object@max[j[1]], 1)
+  mutate[j[2]] <- sample(object@min[j[2]]:object@max[j[2]], 1)
+  mutate[j[3]] <- sample(object@min[j[3]]:object@max[j[3]], 1)
   return(mutate)
 }
 
 gaint_rwSelection <- function (object, ...) {
   prob <- abs(object@fitness)/sum(abs(object@fitness))
   sel <- sample(1:object@popSize, size = object@popSize, prob = pmin(pmax(0, prob), 1, na.rm = TRUE), replace = TRUE)
-  out <- list(population = object@population[sel, , drop = FALSE],
-              fitness = object@fitness[sel])
+  out <- list(population = object@population[sel, , drop = FALSE], fitness = object@fitness[sel])
+  return(out)
+}
+
+gaint_spCrossover <- function (object, parents, ...) {
+  fitness <- object@fitness[parents]
+  parents <- object@population[parents, , drop = FALSE]
+  n <- ncol(parents)
+  children <- matrix(NA, nrow = 2, ncol = n)
+  fitnessChildren <- rep(NA, 2)
+  crossOverPoint <- sample(0:n, size = 1)
+  if (crossOverPoint == 0) {
+    children[1:2, ] <- parents[2:1, ]
+    fitnessChildren[1:2] <- fitness[2:1]
+  }
+  else if (crossOverPoint == n) {
+    children <- parents
+    fitnessChildren <- fitness
+  }
+  else {
+    children[1, ] <- c(parents[1, 1:crossOverPoint], parents[2, (crossOverPoint + 1):n])
+    children[2, ] <- c(parents[2, 1:crossOverPoint], parents[1, (crossOverPoint + 1):n])
+    fitnessChildren <- NA
+  }
+  out <- list(children = children, fitness = fitnessChildren)
   return(out)
 }
 
@@ -2460,7 +2484,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames,
        monitor=gaMonitor, maxiter=200, run=50, popSize=400, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.2,
-       selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_blxCrossover, population=gaint_Population,
+       selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
        securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
        csdate=csdate, cedate=cedate, dateformat)
 
