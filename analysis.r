@@ -121,7 +121,7 @@ deforbs <- c(2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
              2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
              2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
              2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0)
-deforbsmatrix = matrix(orbs, nrow = 12, ncol = 10, dimnames = list(planetsLonCols, aspectscols))
+deforbsmatrix = matrix(deforbs, nrow = 12, ncol = 10, dimnames = list(planetsLonCols, aspectscols))
 
 defaspectspolarity <- c(1, 1, 0, 1, 1, 0, 1, 0, 0, 0,
                         1, 1, 0, 1, 1, 0, 1, 0, 0, 0,
