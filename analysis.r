@@ -703,17 +703,18 @@ historyAspectsCorrelation <- function(trans, trans.hist, cor_method, kplanets, k
 openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1, spby=60) {
   planets.file <- npath(planets.file)
   planets <- fread(planets.file, sep="\t", na.strings="", verbose = F)
-  setkey(planets, 'Date')
   planets[, Date := as.Date(planets$Date, format="%Y-%m-%d")]
   planets[, DateMT4 := as.character(format(Date, "%Y.%m.%d"))]
   planets[, Year := as.character(format(Date, "%Y"))]
+  setkey(planets, 'Date')
 
   # calculate longitudinal differences
   for (i in 1:length(planetsCombLon)) {
     combname <- paste(planetsCombLon[[i]][1], planetsCombLon[[i]][2], sep='')
+    combnameorb <- paste(planetsCombLon[[i]][1], planetsCombLon[[i]][2], 'ORB', sep='')
     col1 <- planetsCombLon[[i]][1]
     col2 <- planetsCombLon[[i]][2]
-    planets[, c(combname) := paste('a', diffDeg(get(planetsCombLon[[i]][1]), get(planetsCombLon[[i]][2]), col1, col2, cusorbs, aspects), sep='')]
+    planets[, c(combname, combnameorb) := diffDeg(get(planetsCombLon[[i]][1]), get(planetsCombLon[[i]][2]), col1, col2, cusorbs, aspects)]
   }
 
   for (loncol in planetsLonCols) {
@@ -1771,13 +1772,16 @@ aggregatePredictTransTable <- function(predict.table, threshold) {
 
 diffDeg <- function(x, y, xname, yname, cusorbs, aspects) {
   vals <- abs(((x-y+180) %% 360) - 180)
+  vals2 <- abs(((x-y+180) %% 360) - 180)
   for (i in 1:length(aspects)) {
     aspname <- paste('a', aspects[i], sep='')
     comborb <- cusorbs[xname, aspname] + cusorbs[yname, aspname]
+    vals2[vals2 >= aspects[i]-comborb & vals2 <= aspects[i]+comborb] <- round(abs(aspects[i]-vals2[vals2 >= aspects[i]-comborb & vals2 <= aspects[i]+comborb]), digits = 2)
     vals[vals >= aspects[i]-comborb & vals <= aspects[i]+comborb] <- aspects[i]
   }
   vals[vals %ni% aspects] <- 'non'
-  return(vals)
+  vals2[vals %ni% aspects] <- NA
+  return(list(paste('a', vals, sep=''), vals2))
 }
 
 #ev <- evtree(choice ~ ., data = BBBClub, minbucket = 10, maxdepth = 2)
