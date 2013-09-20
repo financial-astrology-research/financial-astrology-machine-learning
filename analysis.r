@@ -2231,7 +2231,6 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   if (!hasArg('dateformat')) stop("A dateformat is needed.")
   ptm <- proc.time()
   planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG', 'SNLONG')
-  itest <- 1
 
   relativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, iprev, inext,
                             mapredslow, maprice, mapredtype, mapricetype, sigtype, predtype, cordir, degsplit, spsplit,
@@ -2240,21 +2239,19 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     looptm <- proc.time()
     mapricefunc <- get(get('mapricetype'))
     mapredfunc <- get(get('mapredtype'))
+    fitness <- list()
+    volatility <- list()
+    correlation <- list()
+    fitness2 <- list()
+    volatility2 <- list()
+    correlation2 <- list()
 
     # build matrix
     orbsmatrix <- matrix(cusorbs, nrow = length(planetsLonCols), ncol = length(aspectscols), byrow = TRUE,
                          dimnames = list(planetsLonCols, aspectscols))
+
     aspectspolaritymatrix <- matrix(aspectspolarity, nrow = length(planetsCombLonCols), ncol = length(aspects), byrow = TRUE,
                                     dimnames = list(planetsCombLonCols, aspectscols))
-
-    cat("\n")
-    print(orbsmatrix)
-    cat("\n")
-    print(apply(orbsmatrix, 2, function(x) round(mean(x), digits=1)))
-    cat("\n")
-    print(aspectspolaritymatrix)
-    cat("\n")
-    print(apply(aspectspolaritymatrix, 2, function(x) round(mean(x), digits=1)))
 
     planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""), orbsmatrix, aspects, degsplit, spsplit)
     setkey(planets, 'Date')
@@ -2277,15 +2274,12 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                      NNLONG = c("SNLONG"))
 
     planets[, wday := format(Date, "%w")]
-    pltitle <- paste(securityfile, " / #", itest, "maprice=", maprice, "mapricetype=", mapricetype, "mapredslow=", mapredslow, "mapredtype=", mapredtype,
+    pltitle <- paste(securityfile, " / ", "maprice=", maprice, "mapricetype=", mapricetype, "mapredslow=", mapredslow, "mapredtype=", mapredtype,
                      "iprev=", iprev, "inext=", inext, "\nsigtype=", sigtype, "predtype=", predtype, "degsplit=", degsplit, "spsplit=", spsplit,
                      "threshold=", threshold, "energymode=", energymode, "energyweight=", energyweight, "\nuselon=", uselon, "usesp=", usesp,
                      "useasp=", useasp, "alignmove=", alignmove, "pricetype=", pricetype, "pricemadir=", pricemadir,
                      "\nignorecols=c(", paste(shQuote(ignorecols), collapse=","), ")", "\nignoreasps=c(", paste(shQuote(ignoreasps), collapse=","), ")")
     planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate) & wday %in% c(1, 2, 3, 4, 5)]
-    fitness <- list()
-    volatility <- list()
-    correlation <- list()
 
     # compute predictions by year an calculate fitness by the mean to meter the solution stability
     for (curyear in unique(planets.test$Year)) {
@@ -2307,15 +2301,48 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     avgcorrelation <- mean(unlist(correlation))
 
     planets.test2 <- planets[Date > as.Date(csdate) & Date <= as.Date(cedate) & wday %in% c(1, 2, 3, 4, 5)]
-    cat("\n--- Confirmation tests ---\n")
 
     for (curyear in unique(planets.test2$Year)) {
+      setattr(planets.test2, ".internal.selfref", NULL)
       res2 <- processPredictions(planets.test=planets.test2[Year == curyear], security=security, significance=significance, panalogy=panalogy,
                                  iprev=iprev, inext=inext, sigtype=sigtype, predtype=predtype, mapredfunc=mapredfunc, mapredslow=mapredslow,
                                  cordir=cordir, pltitle=pltitle, uselon=uselon, usesp=usesp, useasp=useasp, energymode=energymode,
                                  energyweight=energyweight, alignmove=alignmove, ignorecols=ignorecols, ignoreasps=ignoreasps,
                                  aspectspolarity=aspectspolaritymatrix, verbose=verbose)
-      cat("\nconfirmation test: volatility =", res2$volatility, " - correlation =", res2$correlation, " - fitness =", res2$fitness, "\n")
+      fitness2[[length(fitness2)+1]] <- res2$fitness
+      volatility2[[length(volatility2)+1]] <- res2$volatility
+      correlation2[[length(correlation2)+1]] <- res2$correlation
+    }
+
+
+    cat("\n---------------------------------------------------------------------------------\n")
+    cat("testPlanetsSignificanceRelative('testSolution', securityfile=", shQuote(securityfile), ", planetsfile=", shQuote(planetsfile), sep="")
+    cat(", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate), sep="")
+    cat(", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate), sep="")
+    cat(", iprev=", iprev, ", inext=", inext, ", mapredslow=", mapredslow, ", maprice=", maprice, sep="")
+    cat(", mapredtype=", shQuote(mapredtype), ", mapricetype=", shQuote(mapricetype), ", sigtype=", shQuote(sigtype), sep="")
+    cat(", predtype=", shQuote(predtype), ", cordir=", cordir, ", degsplit=", degsplit, ", spsplit=", spsplit, ", threshold=", threshold, sep="")
+    cat(", uselon=", uselon, ", usesp=", usesp, ", useasp=", useasp, ", energymode=", energymode, ", energyweight=", energyweight, sep="")
+    cat(", alignmove=", alignmove, ", pricetype=", shQuote(pricetype), ", dateformat=", shQuote(dateformat), ", verbose=F", sep="")
+    cat(", pricemadir=", pricemadir, ", ignorecols=c(", paste(shQuote(ignorecols), collapse=","), ")", sep="")
+    cat(", ignoreasps=c(", paste(shQuote(ignoreasps), collapse=","), "), cusorbs=c(", paste(cusorbs, collapse=","), ")", sep="")
+    cat(", aspectspolarity=c(", paste(aspectspolarity, collapse=","), "))\n", sep="")
+    cat("\n")
+    print(orbsmatrix)
+    cat("\n")
+    print(apply(orbsmatrix, 2, function(x) round(mean(x), digits=1)))
+    cat("\n")
+    print(aspectspolaritymatrix)
+    cat("\n")
+    print(apply(aspectspolaritymatrix, 2, function(x) round(mean(x), digits=1)))
+    cat("\n")
+
+    for (j in 1:length(fitness)) {
+      cat("\t Optimization test: volatility =", volatility[[j]], " - correlation =", correlation[[j]], " - fitness =", fitness[[j]], "\n")
+    }
+
+    for (j in 1:length(fitness2)) {
+      cat("\t Confirmation test: volatility =", volatility2[[j]], " - correlation =", correlation2[[j]], " - fitness =", fitness2[[j]], "\n")
     }
 
     cat("\n\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
@@ -2399,8 +2426,9 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
         }
 
         print(p1)
+
+        # calculate accuracy
         t1 <- with(planets.test.security, table(Eff==predFactor))
-        print(t1)
 
         if (all(c('TRUE', 'FALSE') %in% names(t1))) {
           fitness <- t1[['TRUE']]-t1[['FALSE']]
@@ -2417,7 +2445,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       }
     }
 
-    return(list(fitness=fitness, correlation=correlation, volatility=volatility, planets=planets.test))
+    return(list(fitness=fitness, correlation=correlation, volatility=volatility, planets=planets.test, t1=t1))
   }
 
   testSolution <- function(predfile, ...) {
@@ -2465,20 +2493,6 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     cusorbs = x[43:162]
     aspectspolarity <- x[163:(163+length(defaspectspolarity)-1)]
 
-    cat("\n---------------------------------------------------------------------------------\n")
-    cat("Solution #", itest, "\n", sep='')
-    cat("testPlanetsSignificanceRelative('testSolution', securityfile=", shQuote(securityfile), ", planetsfile=", shQuote(planetsfile), sep="")
-    cat(", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate), sep="")
-    cat(", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate), sep="")
-    cat(", iprev=", iprev, ", inext=", inext, ", mapredslow=", mapredslow, ", maprice=", maprice, sep="")
-    cat(", mapredtype=", shQuote(mapredtype), ", mapricetype=", shQuote(mapricetype), ", sigtype=", shQuote(sigtype), sep="")
-    cat(", predtype=", shQuote(predtype), ", cordir=", cordir, ", degsplit=", degsplit, ", spsplit=", spsplit, ", threshold=", threshold, sep="")
-    cat(", uselon=", uselon, ", usesp=", usesp, ", useasp=", useasp, ", energymode=", energymode, ", energyweight=", energyweight, sep="")
-    cat(", alignmove=", alignmove, ", pricetype=", shQuote(pricetype), ", dateformat=", shQuote(dateformat), ", verbose=F", sep="")
-    cat(", pricemadir=", pricemadir, ", ignorecols=c(", paste(shQuote(ignorecols), collapse=","), ")", sep="")
-    cat(", ignoreasps=c(", paste(shQuote(ignoreasps), collapse=","), "), cusorbs=c(", paste(cusorbs, collapse=","), ")", sep="")
-    cat(", aspectspolarity=c(", paste(aspectspolarity, collapse=","), "))\n", sep="")
-
     res <- relativeTrend(securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
                          csdate=csdate, cedate=cedate, iprev=iprev, inext=inext, mapredslow=mapredslow, maprice=maprice, mapredtype=mapredtype,
                          mapricetype=mapricetype, sigtype=sigtype, predtype=predtype, cordir=cordir, degsplit=degsplit, spsplit=spsplit,
@@ -2486,11 +2500,11 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                          dateformat=dateformat, alignmove=alignmove, pricetype=pricetype, pricemadir=pricemadir, ignorecols=ignorecols,
                          ignoreasps=ignoreasps, cusorbs=cusorbs, aspectspolarity=aspectspolarity, verbose=F)
 
-    itest <<- itest+1
     return(res$fitness)
   }
 
   optimizeRelativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
+    cat("---------------------------- Initialize optimization ----------------------------------\n\n")
     pdf(paste("~/chart_", securityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
     longcolsmin <- rep(0, length(planetsLonGCols))
     longcolsmax <- rep(1, length(planetsLonGCols))
