@@ -1387,11 +1387,11 @@ gaint_Population <- function (object, ...) {
 
   for (i in 1:nrow(population)) {
     # override by default polarities
-    if (pdefpolarity <= runif(1) ) {
+    if (pdefpolarity > runif(1)) {
       population[i, nvars2.s:nvars2.e] <- deforbs
     }
     # override by default orbs
-    if (pdeforb <= runif(1) ) {
+    if (pdeforb > runif(1)) {
       population[i, nvars3.s:nvars3.e] <- defaspectspolarity
     }
   }
