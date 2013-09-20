@@ -2445,7 +2445,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       }
     }
 
-    return(list(fitness=fitness, correlation=correlation, volatility=volatility, planets=planets.test, t1=t1))
+    return(list(fitness=fitness, correlation=correlation, volatility=volatility, planets=planets.test))
   }
 
   testSolution <- function(predfile, ...) {
