@@ -9,7 +9,6 @@ library(fields)
 library(reshape2)
 library(randomForest)
 library(rpart)
-library(evtree)
 library(GA)
 library(gtools)
 library(clusterSim)
@@ -741,6 +740,7 @@ planetsVarsSignificance <- function(planets, currency, threshold) {
     setnames(t1, curcol, 'key')
     t1[, key := as.character(key)]
     t1 <- t1[pdiff >= threshold | pdiff <= -threshold]
+    setattr(significance, ".internal.selfref", NULL)
     significance <- rbind(significance, t1)
   }
 
