@@ -1367,13 +1367,35 @@ generateSamples <- function(ds, n) {
 }
 
 gaint_Population <- function (object, ...) {
+  pdefpolarity <- 0.3
+  pdeforb <- 0.3
   min <- object@min
   max <- object@max
   nvars <- length(min)
+  nvars1.s <- 1
+  nvars1.e <- nvars-length(defaspectspolarity)-length(deforbs)
+  nvars2.s <- nvars1.e+1
+  nvars2.e <- nvars1.e+length(deforbs)
+  nvars3.s <- nvars2.e+1
+  nvars3.e <- nvars2.e+length(defaspectspolarity)
+
+
   population <- matrix(NA, nrow = object@popSize, ncol = nvars)
   for (j in 1:nvars) {
     population[, j] <- sample(min[j]:max[j], object@popSize, replace=TRUE)
   }
+
+  for (i in 1:nrow(population)) {
+    # override by default polarities
+    if (pdefpolarity <= runif(1) ) {
+      population[i, nvars2.s:nvars2.e] <- deforbs
+    }
+    # override by default orbs
+    if (pdeforb <= runif(1) ) {
+      population[i, nvars3.s:nvars3.e] <- defaspectspolarity
+    }
+  }
+
   return(population)
 }
 
@@ -2220,7 +2242,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     mapredfunc <- get(get('mapredtype'))
 
     # build matrix
-    orbsmatrix <- matrix(c(cusorbs, cusorbs[101:110]), nrow = length(planetsLonCols), ncol = length(aspectscols), byrow = TRUE,
+    orbsmatrix <- matrix(cusorbs, nrow = length(planetsLonCols), ncol = length(aspectscols), byrow = TRUE,
                          dimnames = list(planetsLonCols, aspectscols))
     aspectspolaritymatrix <- matrix(aspectspolarity, nrow = length(planetsCombLonCols), ncol = length(aspects), byrow = TRUE,
                                     dimnames = list(planetsCombLonCols, aspectscols))
@@ -2440,8 +2462,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     pricemadir <- x[20]
     ignorecols = planetsLonGCols[which(x[21:32] == 0)]
     ignoreasps = paste('a', aspects[which(x[33:42] == 0)], sep='')
-    cusorbs = x[43:152]
-    aspectspolarity <- x[153:(153+(length(aspects)*length(planetsCombLonCols)-1))]
+    cusorbs = x[43:162]
+    aspectspolarity <- x[163:(163+length(defaspectspolarity)-1)]
 
     cat("\n---------------------------------------------------------------------------------\n")
     cat("Solution #", itest, "\n", sep='')
@@ -2474,10 +2496,10 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     longcolsmax <- rep(1, length(planetsLonGCols))
     aspcolsmin <- rep(0, length(aspects))
     aspcolsmax <- rep(1, length(aspects))
-    orbsmin <- rep(0, length(aspects)*11)
-    orbsmax <- rep(6, length(aspects)*11)
-    polaritymin <- rep(0, length(aspects) * length(planetsCombLonCols))
-    polaritymax <- rep(1, length(aspects) * length(planetsCombLonCols))
+    orbsmin <- rep(0, length(deforbs))
+    orbsmax <- rep(6, length(deforbs))
+    polaritymin <- rep(0, length(defaspectspolarity))
+    polaritymax <- rep(1, length(defaspectspolarity))
 
     minvals <- c(0, 0,  2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 1, 0, 0, 0,  0, -10, 1, 1, longcolsmin, aspcolsmin, orbsmin, polaritymin)
     maxvals <- c(1, 1, 10, 20, 4, 4, 2, 2, 1, 3, 70, 30, 1, 0, 0, 9, 11,  10, 3, 4, longcolsmax, aspcolsmax, orbsmax, polaritymax)
@@ -2486,8 +2508,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                   'degsplit', 'spsplit', 'threshold', 'uselon', 'usesp', 'useasp', 'energymode', 'energyweight', 'alignmove',
                   'pricetype', 'pricemadir', planetsLonGCols, aspOrbsCols, planetsAspCombCols)
 
-    ga("real-valued", fitness=relativeTrendFitness, names=varnames,
-       monitor=gaMonitor, maxiter=200, run=50, popSize=400, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.2,
+    ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=TRUE,
+       monitor=gaMonitor, maxiter=200, run=50, popSize=500, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.2,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
        securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
        csdate=csdate, cedate=cedate, dateformat)
