@@ -1402,11 +1402,21 @@ gaint_Population <- function (object, ...) {
 gaint_raMutation <- function(object, parent) {
   mutate <- parent <- as.vector(object@population[parent, ])
   n <- length(parent)
-  j <- sample(1:n, size = 3)
-  # mutate three parameters
-  mutate[j[1]] <- sample(object@min[j[1]]:object@max[j[1]], 1)
-  mutate[j[2]] <- sample(object@min[j[2]]:object@max[j[2]], 1)
-  mutate[j[3]] <- sample(object@min[j[3]]:object@max[j[3]], 1)
+  randn <- runif(1)
+
+  # with 30% probability alter 1%, 30% alter 2% and 40% alter 0.5%
+  if (0.3 > randn) {
+    j <- sample(1:n, size = round(n*0.01))
+  }
+  else if (0.7 < randn) {
+    j <- sample(1:n, size = round(n*0.02))
+  }
+  else {
+    j <- sample(1:n, size = round(n*0.005))
+  }
+
+  # mutate the parameters
+  mutate[j] <- sapply(j, function(x) sample(object@min[x[1]]:object@max[x[1]], 1))
   return(mutate)
 }
 
@@ -2523,7 +2533,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                   'pricetype', 'pricemadir', planetsLonGCols, aspOrbsCols, planetsAspCombCols)
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=TRUE,
-       monitor=gaMonitor, maxiter=200, run=50, popSize=500, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.2,
+       monitor=gaMonitor, maxiter=200, run=50, popSize=500, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.3,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
        securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
        csdate=csdate, cedate=cedate, dateformat)
