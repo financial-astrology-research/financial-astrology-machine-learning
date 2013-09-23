@@ -96,7 +96,7 @@ planetsGridLonCols <- as.character(apply(planetsGridLon, 1, function(x) paste(x[
 planetsGridAspCols <- as.character(apply(expand.grid(planetsGridLonCols, aspects), 1, function(x) paste(x[1], '_', as.numeric(x[2]), sep='')))
 planetsAspCombCols <- as.character(apply(expand.grid(planetsCombLonCols, aspects), 1, function(x) paste(x[1], '_', as.numeric(x[2]), sep='')))
 planetsGridZodCols <- as.character(apply(expand.grid(planetsLonCols, zodDegrees), 1, function(x) paste(x[1], '_', as.numeric(x[2]), sep='')))
-aspectsWeightCols <- paste(aspects, 'W', sep='')
+aspectsEnergyCols <- paste(aspects, 'W', sep='')
 
 # aspects types
 aspectTypesList <- list(c('A', 'AE', 'SE', 'S'),
@@ -190,7 +190,7 @@ defaspectspolarity <- c(1, 1, 0, 1, 1, 0, 1, 0, 0, 0,
                         0, 1, 0, 1, 1, 0, 1, 0, 0, 0,
                         0, 1, 0, 1, 1, 0, 1, 0, 0, 0)
 
-defaspectsweights <- c(10, 2, 2, 4, 1, 4, 6, 2, 2, 8)
+defaspectsenergy <- c(10, 2, 2, 4, 1, 4, 6, 2, 2, 8)
 
 # a function that returns the position of n-th largest
 maxn <- function(x, n) {
@@ -730,6 +730,10 @@ openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1, spby=60) {
   return(planets)
 }
 
+energyGrowth <- function(energy, distance, speed) {
+  return(energy * (1 - speed) ^ abs(distance))
+}
+
 planetsVarsSignificance <- function(planets, currency, threshold) {
   planets  <- merge(planets, currency, by='Date')
   spcols <- paste(planetsSpCols, 'G', sep='')
@@ -753,7 +757,7 @@ planetsVarsSignificance <- function(planets, currency, threshold) {
 }
 
 planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, answer=T, verbose=F, iprev=0, inext=0, sigtype='count', uselon=1,
-                                   usesp=1, useasp=1, energymode=0, ignorecols=c(), ignoreasps=c(), aspectspolarity, aspectsweight) {
+                                   usesp=1, useasp=1, energymode=0, ignorecols=c(), ignoreasps=c(), aspectspolarity, aspectsenergy, energygrowthsp) {
   significance.day <- data.frame()
   cols <- c()
 
@@ -819,22 +823,26 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
     loncol1 <- paste(substr(curcol, 1, 5), 'G', sep='')
     loncol2 <- paste(substr(curcol, 6, 10), 'G', sep='')
     # determine aspect weight
-    aspweight <- aspectsweight['weight', aspname]
+    aspectenergy <- aspectsenergy['weight', aspname]
+    # compute the given energy based on the aspect orb distance
+    curcolorb <- paste(curcol, 'ORB', sep='')
+    distance <- as.numeric(planets.day[[curcolorb]])
+    aspectenergy <- energyGrowth(aspectenergy, distance, energygrowthsp)
 
     if (aspectspolarity[curcol, aspname] == 1) {
-      energy.pos[[loncol1]] <- energy.pos[[loncol1]] + aspweight
-      energy.pos[[loncol2]] <- energy.pos[[loncol2]] + aspweight
+      energy.pos[[loncol1]] <- energy.pos[[loncol1]] + aspectenergy
+      energy.pos[[loncol2]] <- energy.pos[[loncol2]] + aspectenergy
     }
     else if (aspectspolarity[curcol, aspname] == 0) {
-      energy.neg[[loncol1]] <- energy.neg[[loncol1]] + aspweight
-      energy.neg[[loncol2]] <- energy.neg[[loncol2]] + aspweight
+      energy.neg[[loncol1]] <- energy.neg[[loncol1]] + aspectenergy
+      energy.neg[[loncol2]] <- energy.neg[[loncol2]] + aspectenergy
     }
     else {
       stop(paste("No valid polarity was provided - ", curcol, aspname))
     }
 
-    energy[[loncol1]] <- energy[[loncol1]] + aspweight
-    energy[[loncol2]] <- energy[[loncol2]] + aspweight
+    energy[[loncol1]] <- energy[[loncol1]] + aspectenergy
+    energy[[loncol2]] <- energy[[loncol2]] + aspectenergy
   }
 
   if (nrow(significance.day) > 0) {
@@ -1330,18 +1338,18 @@ generateSamples <- function(ds, n) {
 gaint_Population <- function (object, ...) {
   pdefpolarity <- 0.3
   pdeforb <- 0.3
-  pdefaspweight <- 0.3
+  pdefaspectenergy <- 0.3
   min <- object@min
   max <- object@max
   nvars <- length(min)
   nvars1.s <- 1
-  nvars1.e <- nvars-length(defaspectspolarity)-length(deforbs)-length(defaspectsweights)
+  nvars1.e <- nvars-length(defaspectspolarity)-length(deforbs)-length(defaspectsenergy)
   nvars2.s <- nvars1.e+1
   nvars2.e <- nvars1.e+length(deforbs)
   nvars3.s <- nvars2.e+1
   nvars3.e <- nvars2.e+length(defaspectspolarity)
   nvars4.s <- nvars3.e+1
-  nvars4.e <- nvars3.e+length(defaspectsweights)
+  nvars4.e <- nvars3.e+length(defaspectsenergy)
 
   population <- matrix(NA, nrow = object@popSize, ncol = nvars)
   for (j in 1:nvars) {
@@ -1358,8 +1366,8 @@ gaint_Population <- function (object, ...) {
       population[i, nvars3.s:nvars3.e] <- defaspectspolarity
     }
     # override by default aspects weight
-    if (pdefaspweight > runif(1)) {
-      population[i, nvars4.s:nvars4.e] <- defaspectsweights
+    if (pdefaspectenergy > runif(1)) {
+      population[i, nvars4.s:nvars4.e] <- defaspectsenergy
     }
   }
 
@@ -2211,8 +2219,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   relativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, iprev, inext,
                             mapredslow, maprice, mapredtype, mapricetype, sigtype, predtype, cordir, degsplit, spsplit,
-                            threshold, uselon, usesp, useasp, energymode, dateformat, alignmove=0, pricetype, pricemadir,
-                            ignorecols=ignorecols, ignoreasps=ignoreasps, cusorbs=cusorbs, aspectspolarity, aspectsweight, verbose=F) {
+                            threshold, uselon, usesp, useasp, energymode, energygrowthsp, dateformat, alignmove=0, pricetype, pricemadir,
+                            ignorecols=ignorecols, ignoreasps=ignoreasps, cusorbs=cusorbs, aspectspolarity, aspectsenergy, verbose=F) {
     looptm <- proc.time()
     mapricefunc <- get(get('mapricetype'))
     mapredfunc <- get(get('mapredtype'))
@@ -2230,7 +2238,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     aspectspolaritymatrix <- matrix(aspectspolarity, nrow = length(planetsCombLonCols), ncol = length(aspects), byrow = TRUE,
                                     dimnames = list(planetsCombLonCols, aspectscols))
 
-    aspectsweightmatrix <- matrix(aspectsweight, nrow = 1, ncol = length(aspectsweight), byrow = TRUE,
+    aspectsenergymatrix <- matrix(aspectsenergy, nrow = 1, ncol = length(aspectsenergy), byrow = TRUE,
                                   dimnames = list(c('weight'), aspectscols))
 
     planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""), orbsmatrix, aspects, degsplit, spsplit)
@@ -2256,11 +2264,11 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets[, wday := format(Date, "%w")]
     pltitle <- paste(securityfile, " / ", "maprice=", maprice, "mapricetype=", mapricetype, "mapredslow=", mapredslow, "mapredtype=", mapredtype,
                      "iprev=", iprev, "inext=", inext, "\nsigtype=", sigtype, "predtype=", predtype, "degsplit=", degsplit, "spsplit=", spsplit,
-                     "threshold=", threshold, "energymode=", energymode, "uselon=", uselon, "\nusesp=", usesp,
+                     "threshold=", threshold, "energymode=", energymode, "energygrowthsp=", energygrowthsp, "uselon=", uselon, "\nusesp=", usesp,
                      "useasp=", useasp, "alignmove=", alignmove, "pricetype=", pricetype, "pricemadir=", pricemadir,
                      "\n ignorecols=c(", paste(shQuote(ignorecols), collapse=","), ")",
                      "\n ignoreasps=c(", paste(shQuote(ignoreasps), collapse=","), ")",
-                     "\n aspectsweight=c(", paste(aspectsweight, collapse=","), ")")
+                     "\n aspectsenergy=c(", paste(aspectsenergy, collapse=","), ")")
     planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate) & wday %in% c(1, 2, 3, 4, 5)]
 
     # compute predictions by year an calculate fitness by the mean to meter the solution stability
@@ -2269,8 +2277,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       res <- processPredictions(planets.test=planets.test[Year == curyear], security=security, significance=significance, panalogy=panalogy,
                                  iprev=iprev, inext=inext, sigtype=sigtype, predtype=predtype, mapredfunc=mapredfunc, mapredslow=mapredslow,
                                  cordir=cordir, pltitle=pltitle, uselon=uselon, usesp=usesp, useasp=useasp, energymode=energymode,
-                                 alignmove=alignmove, ignorecols=ignorecols, ignoreasps=ignoreasps, aspectspolarity=aspectspolaritymatrix,
-                                 aspectsweight=aspectsweightmatrix, verbose=verbose)
+                                 energygrowthsp=energygrowthsp, alignmove=alignmove, ignorecols=ignorecols, ignoreasps=ignoreasps,
+                                 aspectspolarity=aspectspolaritymatrix, aspectsenergy=aspectsenergymatrix, verbose=verbose)
       fitness[[length(fitness)+1]] <- res$fitness
       volatility[[length(volatility)+1]] <- res$volatility
       correlation[[length(correlation)+1]] <- res$correlation
@@ -2289,8 +2297,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       res2 <- processPredictions(planets.test=planets.test2[Year == curyear], security=security, significance=significance, panalogy=panalogy,
                                  iprev=iprev, inext=inext, sigtype=sigtype, predtype=predtype, mapredfunc=mapredfunc, mapredslow=mapredslow,
                                  cordir=cordir, pltitle=pltitle, uselon=uselon, usesp=usesp, useasp=useasp, energymode=energymode,
-                                 alignmove=alignmove, ignorecols=ignorecols, ignoreasps=ignoreasps, aspectspolarity=aspectspolaritymatrix,
-                                 aspectsweight=aspectsweightmatrix, verbose=verbose)
+                                 energygrowthsp=energygrowthsp, alignmove=alignmove, ignorecols=ignorecols, ignoreasps=ignoreasps,
+                                 aspectspolarity=aspectspolaritymatrix, aspectsenergy=aspectsenergymatrix, verbose=verbose)
       fitness2[[length(fitness2)+1]] <- res2$fitness
       volatility2[[length(volatility2)+1]] <- res2$volatility
       correlation2[[length(correlation2)+1]] <- res2$correlation
@@ -2304,11 +2312,11 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     cat(", iprev=", iprev, ", inext=", inext, ", mapredslow=", mapredslow, ", maprice=", maprice, sep="")
     cat(", mapredtype=", shQuote(mapredtype), ", mapricetype=", shQuote(mapricetype), ", sigtype=", shQuote(sigtype), sep="")
     cat(", predtype=", shQuote(predtype), ", cordir=", cordir, ", degsplit=", degsplit, ", spsplit=", spsplit, ", threshold=", threshold, sep="")
-    cat(", uselon=", uselon, ", usesp=", usesp, ", useasp=", useasp, ", energymode=", energymode, sep="")
+    cat(", uselon=", uselon, ", usesp=", usesp, ", useasp=", useasp, ", energymode=", energymode, ", energygrowthsp=", energygrowthsp, sep="")
     cat(", alignmove=", alignmove, ", pricetype=", shQuote(pricetype), ", dateformat=", shQuote(dateformat), ", verbose=F", sep="")
     cat(", pricemadir=", pricemadir, ", ignorecols=c(", paste(shQuote(ignorecols), collapse=","), ")", sep="")
     cat(", ignoreasps=c(", paste(shQuote(ignoreasps), collapse=","), "), cusorbs=c(", paste(cusorbs, collapse=","), ")", sep="")
-    cat(", aspectsweight=c(", paste(aspectsweight, collapse=","), ")", sep="")
+    cat(", aspectsenergy=c(", paste(aspectsenergy, collapse=","), ")", sep="")
     cat(", aspectspolarity=c(", paste(aspectspolarity, collapse=","), "))\n", sep="")
     cat("\n")
     print(orbsmatrix)
@@ -2319,7 +2327,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     cat("\n")
     print(apply(aspectspolaritymatrix, 2, function(x) round(mean(x), digits=1)))
     cat("\n")
-    print(aspectsweightmatrix)
+    print(aspectsenergymatrix)
     cat("\n")
 
     for (j in 1:length(fitness)) {
@@ -2336,11 +2344,11 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   processPredictions <- function(planets.test, security, significance, panalogy, iprev, inext, sigtype, predtype, mapredfunc, mapredslow,
-                                 cordir, pltitle, uselon, usesp, useasp, energymode, alignmove, ignorecols, ignoreasps, aspectspolarity,
-                                 aspectsweight, verbose) {
+                                 cordir, pltitle, uselon, usesp, useasp, energymode, energygrowthsp, alignmove, ignorecols, ignoreasps,
+                                 aspectspolarity, aspectsenergy, verbose) {
     predEff <- apply(planets.test, 1, function(x)
-                     planetsDaySignificance(x, significance, panalogy, F, verbose, iprev, inext, sigtype, uselon,
-                                            usesp, useasp, energymode, ignorecols, ignoreasps, aspectspolarity, aspectsweight))
+                     planetsDaySignificance(x, significance, panalogy, F, verbose, iprev, inext, sigtype, uselon, usesp, useasp, energymode,
+                                            ignorecols, ignoreasps, aspectspolarity, aspectsenergy, energygrowthsp))
 
     # in case that all predictions are 0 we skip this solution
     if (all(predEff == 0)) {
@@ -2469,23 +2477,24 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     usesp <- x[14]
     useasp <- x[15]
     energymode <- x[16]
-    alignmove <- x[17]
-    pricetype <- pricetypes[[x[18]]]
-    pricemadir <- x[19]
-    ignorecols = planetsLonGCols[which(x[20:31] == 0)]
-    ignoreasps = paste('a', aspects[which(x[32:41] == 0)], sep='')
-    cusorbs = x[42:161]
-    api.e <- 162+length(defaspectspolarity)
-    aspectspolarity <- x[162:(api.e-1)]
-    awi.e <- api.e+length(defaspectsweights)
-    aspectsweight <- x[api.e:(awi.e-1)]
+    energygrowthsp <- x[17]/10
+    alignmove <- x[18]
+    pricetype <- pricetypes[[x[19]]]
+    pricemadir <- x[20]
+    ignorecols = planetsLonGCols[which(x[21:32] == 0)]
+    ignoreasps = paste('a', aspects[which(x[33:42] == 0)], sep='')
+    cusorbs = x[43:162]
+    api.e <- 163+length(defaspectspolarity)
+    aspectspolarity <- x[163:(api.e-1)]
+    awi.e <- api.e+length(defaspectsenergy)
+    aspectsenergy <- x[api.e:(awi.e-1)]
 
     res <- relativeTrend(securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
                          csdate=csdate, cedate=cedate, iprev=iprev, inext=inext, mapredslow=mapredslow, maprice=maprice, mapredtype=mapredtype,
                          mapricetype=mapricetype, sigtype=sigtype, predtype=predtype, cordir=cordir, degsplit=degsplit, spsplit=spsplit,
-                         threshold=threshold, uselon=uselon, usesp=usesp, useasp=useasp, energymode=energymode, dateformat=dateformat,
-                         alignmove=alignmove, pricetype=pricetype, pricemadir=pricemadir, ignorecols=ignorecols, ignoreasps=ignoreasps,
-                         cusorbs=cusorbs, aspectspolarity=aspectspolarity, aspectsweight=aspectsweight, verbose=F)
+                         threshold=threshold, uselon=uselon, usesp=usesp, useasp=useasp, energymode=energymode, energygrowthsp=energygrowthsp,
+                         dateformat=dateformat, alignmove=alignmove, pricetype=pricetype, pricemadir=pricemadir, ignorecols=ignorecols,
+                         ignoreasps=ignoreasps, cusorbs=cusorbs, aspectspolarity=aspectspolarity, aspectsenergy=aspectsenergy, verbose=F)
 
     return(res$fitness)
   }
@@ -2501,15 +2510,15 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     orbsmax <- rep(6, length(deforbs))
     polaritymin <- rep(0, length(defaspectspolarity))
     polaritymax <- rep(1, length(defaspectspolarity))
-    aspweightmin <- rep(1, length(defaspectsweights))
-    aspweightmax <- rep(20, length(defaspectsweights))
+    aspectenergymin <- rep(1, length(defaspectsenergy))
+    aspectenergymax <- rep(20, length(defaspectsenergy))
 
-    minvals <- c(0, 0,  2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 1, 0, 0, 0, -10, 1, 1, longcolsmin, aspcolsmin, orbsmin, polaritymin, aspweightmin)
-    maxvals <- c(1, 1, 10, 20, 4, 4, 2, 2, 1, 3, 70, 30, 1, 0, 0, 9,  10, 3, 4, longcolsmax, aspcolsmax, orbsmax, polaritymax, aspweightmax)
+    minvals <- c(0, 0,  2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 1, 0, 0, 0, 0, -10, 1, 1, longcolsmin, aspcolsmin, orbsmin, polaritymin, aspectenergymin)
+    maxvals <- c(1, 1, 10, 20, 4, 4, 2, 2, 1, 3, 70, 30, 1, 0, 0, 9, 9,  10, 3, 4, longcolsmax, aspcolsmax, orbsmax, polaritymax, aspectenergymax)
 
     varnames <- c('iprev', 'inext', 'mapredslow', 'maprice', 'mapredtype', 'mapricetype', 'sigtype', 'predtype', 'cordir',
-                  'degsplit', 'spsplit', 'threshold', 'uselon', 'usesp', 'useasp', 'energymode', 'alignmove',
-                  'pricetype', 'pricemadir', planetsLonGCols, aspOrbsCols, planetsAspCombCols, aspectsWeightCols)
+                  'degsplit', 'spsplit', 'threshold', 'uselon', 'usesp', 'useasp', 'energymode', 'energygrowthsp', 'alignmove',
+                  'pricetype', 'pricemadir', planetsLonGCols, aspOrbsCols, planetsAspCombCols, aspectsEnergyCols)
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=TRUE,
        monitor=gaMonitor, maxiter=200, run=50, popSize=500, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.3,
