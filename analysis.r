@@ -2482,8 +2482,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     pricemadir <- x[20]
     ignorecols = planetsLonGCols[which(x[21:32] == 0)]
     cusorbs = x[33:152]
-    api.e <- 152+length(defaspectspolarity)
-    aspectspolarity <- x[152:(api.e-1)]
+    api.e <- 153+length(defaspectspolarity)
+    aspectspolarity <- x[153:(api.e-1)]
     awi.e <- api.e+length(defaspectsenergy)
     aspectsenergy <- x[api.e:(awi.e-1)]/10
 
@@ -2502,8 +2502,6 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     pdf(paste("~/chart_", securityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
     longcolsmin <- rep(0, length(planetsLonGCols))
     longcolsmax <- rep(1, length(planetsLonGCols))
-    aspcolsmin <- rep(0, length(aspects))
-    aspcolsmax <- rep(1, length(aspects))
     orbsmin <- rep(0, length(deforbs))
     orbsmax <- rep(6, length(deforbs))
     polaritymin <- rep(0, length(defaspectspolarity))
@@ -2511,8 +2509,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     aspectenergymin <- rep(0, length(defaspectsenergy))
     aspectenergymax <- rep(20, length(defaspectsenergy))
 
-    minvals <- c(0, 0,  2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 1, 0, 0, 0, 0, -10, 1, 1, longcolsmin, aspcolsmin, orbsmin, polaritymin, aspectenergymin)
-    maxvals <- c(1, 1, 10, 20, 4, 4, 2, 2, 1, 3, 70, 30, 1, 0, 0, 9, 9,  10, 3, 4, longcolsmax, aspcolsmax, orbsmax, polaritymax, aspectenergymax)
+    minvals <- c(0, 0,  2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 1, 0, 0, 0, 0, -10, 1, 1, longcolsmin, orbsmin, polaritymin, aspectenergymin)
+    maxvals <- c(1, 1, 10, 20, 4, 4, 2, 2, 1, 3, 70, 30, 1, 0, 0, 9, 9,  10, 3, 4, longcolsmax, orbsmax, polaritymax, aspectenergymax)
 
     varnames <- c('iprev', 'inext', 'mapredslow', 'maprice', 'mapredtype', 'mapricetype', 'sigtype', 'predtype', 'cordir',
                   'degsplit', 'spsplit', 'threshold', 'uselon', 'usesp', 'useasp', 'energymode', 'energygrowthsp', 'alignmove',
