@@ -743,7 +743,7 @@ planetsVarsSignificance <- function(planets, currency, threshold) {
 
   for (curcol in cols) {
     idx <- length(significance)+1
-    t1 <- planets[, cbind(as.list(prop.table(table(Eff))), as.list(table(Eff))), by=curcol]
+    t1 <- planets[, cbind(as.list(prop.table(as.numeric(table(Eff)))), as.list(as.numeric(table(Eff)))), by=curcol]
     t1[, c('pdiff', 'variable') := list(V2-V1, curcol)]
     setnames(t1, curcol, 'key')
     t1[, key := as.character(key)]
