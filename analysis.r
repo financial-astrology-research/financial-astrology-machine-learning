@@ -804,7 +804,6 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
     }
   }
 
-  significance.day <- data.table(significance.day)
   patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
   activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
   # ignore anon aspects or non active
@@ -845,53 +844,58 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
     energy[[loncol2]] <- energy[[loncol2]] + aspectenergy
   }
 
+  # convert to data.table to speed up the energy calculations
+  significance.day <- data.table(significance.day)
+
   if (nrow(significance.day) > 0) {
-    if ( energymode > 0 ) {
+    if (energymode > 0) {
       for (curcol in names(energy)) {
+        setattr(significance.day, ".internal.selfref", NULL)
+
         if (energymode == 1) {
           # add more energy to the planets with more aspects
           significance.day[origin == curcol, c('V3', 'V4') := list(V3 * energy[[curcol]], V4 * energy[[curcol]])]
         }
-        else if ( energymode == 2 ) {
+        else if (energymode == 2) {
           # add more energy to the lower part based on bad aspects and to the upper part with good aspects
           significance.day[origin == curcol & V3 > V4, V3 := V3 * energy.pos[[curcol]]]
           significance.day[origin == curcol & V4 > V3, V4 := V4 * energy.pos[[curcol]]]
           significance.day[origin == curcol & V3 < V4, V3 := V3 * energy.neg[[curcol]]]
           significance.day[origin == curcol & V4 < V3, V4 := V4 * energy.neg[[curcol]]]
         }
-        else if ( energymode == 3 ) {
+        else if (energymode == 3) {
           # add more energy to the lower part based on good aspects and to the upper part with bad aspects
           significance.day[origin == curcol & V3 > V4, V3 := V3 * energy.neg[[curcol]]]
           significance.day[origin == curcol & V4 > V3, V4 := V4 * energy.neg[[curcol]]]
           significance.day[origin == curcol & V3 < V4, V3 := V3 * energy.pos[[curcol]]]
           significance.day[origin == curcol & V4 < V3, V4 := V4 * energy.pos[[curcol]]]
         }
-        else if ( energymode == 4 ) {
+        else if (energymode == 4) {
           # add more energy only to lower part based on bad aspects
           significance.day[origin == curcol & V3 < V4, V3 := V3 * energy.neg[[curcol]]]
           significance.day[origin == curcol & V4 < V3, V4 := V4 * energy.neg[[curcol]]]
         }
-        else if ( energymode == 5 ) {
+        else if (energymode == 5) {
           # add more energy only to lower part based on good aspects
           significance.day[origin == curcol & V3 < V4, V3 := V3 * energy.pos[[curcol]]]
           significance.day[origin == curcol & V4 < V3, V4 := V4 * energy.pos[[curcol]]]
         }
-        else if ( energymode == 6 ) {
+        else if (energymode == 6) {
           # add more energy only to upper part based on bad aspects
           significance.day[origin == curcol & V3 > V4, V3 := V3 * energy.neg[[curcol]]]
           significance.day[origin == curcol & V4 > V3, V4 := V4 * energy.neg[[curcol]]]
         }
-        else if ( energymode == 7 ) {
+        else if (energymode == 7) {
           # add more energy only to upper part based on good aspects
           significance.day[origin == curcol & V3 > V4, V3 := V3 * energy.pos[[curcol]]]
           significance.day[origin == curcol & V4 > V3, V4 := V4 * energy.pos[[curcol]]]
         }
-        else if ( energymode == 8 ) {
+        else if (energymode == 8) {
           # add more energy to lower part based in all aspects
           significance.day[origin == curcol & V3 < V4, V3 := V3 * energy[[curcol]]]
           significance.day[origin == curcol & V4 < V3, V4 := V4 * energy[[curcol]]]
         }
-        else if ( energymode == 9 ) {
+        else if (energymode == 9) {
           # add more energy to upper part based in all aspects
           significance.day[origin == curcol & V3 > V4, V3 := V3 * energy[[curcol]]]
           significance.day[origin == curcol & V4 > V3, V4 := V4 * energy[[curcol]]]
@@ -2516,7 +2520,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                   'degsplit', 'spsplit', 'threshold', 'uselon', 'usesp', 'useasp', 'energymode', 'energygrowthsp', 'alignmove',
                   'pricetype', 'pricemadir', planetsLonGCols, aspOrbsCols, planetsAspCombCols, aspectsEnergyCols)
 
-    ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=FALSE,
+    ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=TRUE,
        monitor=gaMonitor, maxiter=200, run=50, popSize=400, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.3,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
        securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
