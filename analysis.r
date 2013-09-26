@@ -1341,7 +1341,7 @@ gaint_Population <- function (object, ...) {
   max <- object@max
   nvars <- length(min)
   nvars1.s <- 1
-  nvars1.e <- nvars-length(defaspectspolarity)-length(deforbs)-length(defaspectsenergy)
+  nvars1.e <- nvars-length(defaspectspolarity)-length(deforbs)-length(defaspectsenergy)-length(defplanetsenergy)
   nvars2.s <- nvars1.e+1
   nvars2.e <- nvars1.e+length(deforbs)
   nvars3.s <- nvars2.e+1
@@ -2517,7 +2517,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     polaritymax <- rep(1, length(defaspectspolarity))
     aspectenergymin <- rep(0, length(defaspectsenergy))
     aspectenergymax <- rep(20, length(defaspectsenergy))
-    planetenergymin <- rep(0, length(defplanetsenergy))
+    planetenergymin <- rep(5, length(defplanetsenergy))
     planetenergymax <- rep(20, length(defplanetsenergy))
 
     minvals <- c(0, 0,  2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 0, 0, -10, 1, 1, longcolsmin, orbsmin, polaritymin, aspectenergymin, planetenergymin)
