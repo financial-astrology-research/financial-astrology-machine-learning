@@ -1336,6 +1336,7 @@ gaint_Population <- function (object, ...) {
   pdefpolarity <- 0.3
   pdeforb <- 0.3
   pdefaspectenergy <- 0.3
+  pdefplanetenergy <- 0.3
   min <- object@min
   max <- object@max
   nvars <- length(min)
@@ -1347,6 +1348,8 @@ gaint_Population <- function (object, ...) {
   nvars3.e <- nvars2.e+length(defaspectspolarity)
   nvars4.s <- nvars3.e+1
   nvars4.e <- nvars3.e+length(defaspectsenergy)
+  nvars5.s <- nvars4.e+1
+  nvars5.e <- nvars4.e+length(defplanetsenergy)
 
   population <- matrix(NA, nrow = object@popSize, ncol = nvars)
   for (j in 1:nvars) {
@@ -1362,9 +1365,13 @@ gaint_Population <- function (object, ...) {
     if (pdeforb > runif(1)) {
       population[i, nvars3.s:nvars3.e] <- defaspectspolarity
     }
-    # override by default aspects weight
+    # override by default aspects energy
     if (pdefaspectenergy > runif(1)) {
       population[i, nvars4.s:nvars4.e] <- defaspectsenergy
+    }
+    # override by default planets energy
+    if (pdefplanetenergy > runif(1)) {
+      population[i, nvars5.s:nvars5.e] <- defplanetsenergy
     }
   }
 
