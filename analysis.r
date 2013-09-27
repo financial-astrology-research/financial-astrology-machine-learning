@@ -2527,7 +2527,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                   'degsplit', 'spsplit', 'threshold', 'energymode', 'energygrowthsp', 'alignmove', 'pricetype', 'pricemadir',
                   planetsLonGCols, aspOrbsCols, planetsAspCombCols, aspectsEnergyCols, planetsEnergyCols)
 
-    ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=FALSE,
+    ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=TRUE,
        monitor=gaMonitor, maxiter=200, run=50, popSize=400, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.3,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
        securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
