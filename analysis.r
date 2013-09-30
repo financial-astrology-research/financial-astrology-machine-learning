@@ -847,17 +847,38 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
 
         if (energymode == 1) {
           # add more energy to the lower part based on bad aspects and to the upper part with good aspects
-          significance.day[origin == curcol & V3 > V4, V3 := V3 * energy.pos[[curcol]]]
-          significance.day[origin == curcol & V4 > V3, V4 := V4 * energy.pos[[curcol]]]
-          significance.day[origin == curcol & V3 < V4, V3 := V3 * energy.neg[[curcol]]]
-          significance.day[origin == curcol & V4 < V3, V4 := V4 * energy.neg[[curcol]]]
+          # energy influence by count
+
+          if (sigtype == 'count') {
+            significance.day[origin == curcol & V3 > V4, V3 := V3 * energy.pos[[curcol]]]
+            significance.day[origin == curcol & V4 > V3, V4 := V4 * energy.pos[[curcol]]]
+            significance.day[origin == curcol & V3 < V4, V3 := V3 * energy.neg[[curcol]]]
+            significance.day[origin == curcol & V4 < V3, V4 := V4 * energy.neg[[curcol]]]
+          }
+          else if (sigtype == 'percent') {
+            # energy influence by percent
+            significance.day[origin == curcol & V1 > V2, V1 := V1 * energy.pos[[curcol]]]
+            significance.day[origin == curcol & V2 > V1, V2 := V2 * energy.pos[[curcol]]]
+            significance.day[origin == curcol & V1 < V2, V1 := V1 * energy.neg[[curcol]]]
+            significance.day[origin == curcol & V2 < V1, V2 := V2 * energy.neg[[curcol]]]
+          }
         }
         else if (energymode == 2) {
           # add more energy to the lower part based on good aspects and to the upper part with bad aspects
-          significance.day[origin == curcol & V3 > V4, V3 := V3 * energy.neg[[curcol]]]
-          significance.day[origin == curcol & V4 > V3, V4 := V4 * energy.neg[[curcol]]]
-          significance.day[origin == curcol & V3 < V4, V3 := V3 * energy.pos[[curcol]]]
-          significance.day[origin == curcol & V4 < V3, V4 := V4 * energy.pos[[curcol]]]
+          # energy influence by count
+          if (sigtype == 'count') {
+            significance.day[origin == curcol & V3 > V4, V3 := V3 * energy.neg[[curcol]]]
+            significance.day[origin == curcol & V4 > V3, V4 := V4 * energy.neg[[curcol]]]
+            significance.day[origin == curcol & V3 < V4, V3 := V3 * energy.pos[[curcol]]]
+            significance.day[origin == curcol & V4 < V3, V4 := V4 * energy.pos[[curcol]]]
+          }
+          else if (sigtype == 'percent') {
+            # energy influence by percent
+            significance.day[origin == curcol & V1 > V2, V1 := V1 * energy.neg[[curcol]]]
+            significance.day[origin == curcol & V2 > V1, V2 := V2 * energy.neg[[curcol]]]
+            significance.day[origin == curcol & V1 < V2, V1 := V1 * energy.pos[[curcol]]]
+            significance.day[origin == curcol & V2 < V1, V2 := V2 * energy.pos[[curcol]]]
+          }
         }
         else {
           stop("No valid energy mode was provided.")
@@ -865,15 +886,11 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
       }
     }
 
-    # recalculate the percent energy to take in account the aspect energy changes
-    significance.day[, c('V1', 'V2') := list((V3/(V3+V4))*100, (V4/(V3+V4))*100)]
-    significance.day[, pdiff := V2-V1]
-
     if (sigtype == 'count') {
       trend <- as.integer(significance.day[, sum(V4)-sum(V3)])
     }
     else if (sigtype == 'percent') {
-      trend <- as.integer(significance.day[, sum(pdiff)])
+      trend <- as.integer(significance.day[, (sum(V2)-sum(V1)) * 10])
     }
     else {
       stop("No valid trend type was provided.")
@@ -2442,7 +2459,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     maprice <- x[4]
     mapredtype <- mapricetypes[[x[5]]]
     mapricetype <- mapricetypes[[x[6]]]
-    sigtype <- sigtypes[[x[7]]]
+    sigtype <- 'percent'
     predtype <- predtypes[[x[8]]]
     cordir <- x[9]
     degsplit <- x[10]
@@ -2482,11 +2499,11 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     polaritymin <- rep(0, length(defaspectspolarity))
     polaritymax <- rep(1, length(defaspectspolarity))
     aspectenergymin <- rep(0, length(defaspectsenergy))
-    aspectenergymax <- rep(20, length(defaspectsenergy))
+    aspectenergymax <- rep(10, length(defaspectsenergy))
     planetenergymin <- rep(5, length(defplanetsenergy))
-    planetenergymax <- rep(20, length(defplanetsenergy))
+    planetenergymax <- rep(10, length(defplanetsenergy))
 
-    minvals <- c(0, 0,  2,  2, 1, 1, 1, 1, 0, 1,  2,  0, 0, 0, -10, 1, 1, longcolsmin, orbsmin, polaritymin, aspectenergymin, planetenergymin)
+    minvals <- c(0, 0,  2,  2, 1, 1, 2, 1, 0, 1,  2,  0, 0, 0, -10, 1, 1, longcolsmin, orbsmin, polaritymin, aspectenergymin, planetenergymin)
     maxvals <- c(1, 1, 10, 20, 4, 4, 2, 2, 1, 3, 70, 30, 2, 9,  10, 3, 4, longcolsmax, orbsmax, polaritymax, aspectenergymax, planetenergymax)
 
     varnames <- c('iprev', 'inext', 'mapredslow', 'maprice', 'mapredtype', 'mapricetype', 'sigtype', 'predtype', 'cordir',
