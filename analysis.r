@@ -714,6 +714,7 @@ openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1, spby=60) {
 
   # calculate longitudinal differences
   for (i in 1:length(planetsCombLon)) {
+    setattr(planets, ".internal.selfref", NULL)
     combname <- paste(planetsCombLon[[i]][1], planetsCombLon[[i]][2], sep='')
     combnameorb <- paste(planetsCombLon[[i]][1], planetsCombLon[[i]][2], 'ORB', sep='')
     col1 <- planetsCombLon[[i]][1]
@@ -744,13 +745,13 @@ planetsVarsSignificance <- function(planets, currency, threshold) {
   significance <- data.table()
 
   for (curcol in cols) {
+    setattr(significance, ".internal.selfref", NULL)
     idx <- length(significance)+1
     t1 <- planets[, cbind(as.list(prop.table(as.numeric(table(Eff)))), as.list(as.numeric(table(Eff)))), by=curcol]
     t1[, c('pdiff', 'variable') := list(V2-V1, curcol)]
     setnames(t1, curcol, 'key')
     t1[, key := as.character(key)]
     t1 <- t1[pdiff >= threshold | pdiff <= -threshold]
-    setattr(significance, ".internal.selfref", NULL)
     significance <- rbind(significance, t1)
   }
 
@@ -769,6 +770,7 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
   #init <- as.numeric( sub("\\((.+),.*", "\\1", planets.day[curcol]))
   #keyranges <- apply(matrix(seq(init, init+8), ncol=2, byrow=T), 1, function(x) return(paste('(', x[1], ',', x[2], ']', sep='')))
   for (curcol in cols) {
+    #setattr(significance, ".internal.selfref", NULL)
     # ignore variable is indicated in ignorecols
     if (curcol %in% ignorecols) next
 
