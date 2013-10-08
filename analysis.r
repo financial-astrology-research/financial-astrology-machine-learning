@@ -2465,7 +2465,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planetenergymin <- rep(5, length(defplanetsenergy))
     planetenergymax <- rep(10, length(defplanetsenergy))
 
-    minvals <- c(0, 0,  2,  2, 1, 1, 1, 0, 1,  0, 0, 0, -10, 1, 1, longcolsmin, orbsmin, polaritymin, aspectenergymin, planetenergymin)
+    minvals <- c(0, 0,  2,  2, 1, 1, 1, 0, 1,  0, 1, 0, -10, 1, 1, longcolsmin, orbsmin, polaritymin, aspectenergymin, planetenergymin)
     maxvals <- c(1, 1, 10, 20, 4, 4, 2, 1, 3, 30, 2, 9,  10, 3, 4, longcolsmax, orbsmax, polaritymax, aspectenergymax, planetenergymax)
 
     varnames <- c('iprev', 'inext', 'mapredslow', 'maprice', 'mapredtype', 'mapricetype', 'predtype', 'cordir',
