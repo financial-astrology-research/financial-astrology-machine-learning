@@ -892,7 +892,7 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
       trend <- as.integer(significance.day[, sum(V4)-sum(V3)])
     }
     else if (sigtype == 'percent') {
-      trend <- as.integer(significance.day[, (sum(V2)-sum(V1)) * 100])
+      trend <- as.integer(significance.day[, (sum(V2)-sum(V1)) * 10])
     }
     else {
       stop("No valid trend type was provided.")
