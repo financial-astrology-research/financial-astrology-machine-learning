@@ -111,7 +111,7 @@ npath <- function(path) {
 }
 
 deforbs <- c(6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0)
-deforbsmatrix = matrix(deforbs, nrow = 1, ncol = 10, dimnames = list('energy', aspectscols))
+deforbsmatrix = matrix(deforbs, nrow = 1, ncol = 10, dimnames = list('orbs', aspectscols))
 
 defaspectspolarity <- c(1, 1, 0, 1, 1, 0, 1, 0, 0, 0,
                         1, 1, 0, 1, 1, 0, 1, 0, 0, 0,
@@ -2184,7 +2184,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     # build matrix
     orbsmatrix <- matrix(cusorbs, nrow = 1, ncol = length(aspectscols), byrow = TRUE,
-                         dimnames = list('energy', aspectscols))
+                         dimnames = list('orbs', aspectscols))
 
     aspectspolaritymatrix <- matrix(aspectspolarity, nrow = length(planetsCombLonCols), ncol = length(aspects), byrow = TRUE,
                                     dimnames = list(planetsCombLonCols, aspectscols))
@@ -2275,8 +2275,6 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     cat(", aspectspolarity=c(", paste(aspectspolarity, collapse=","), "))\n", sep="")
     cat("\n")
     print(orbsmatrix)
-    cat("\n")
-    print(apply(orbsmatrix, 2, function(x) round(mean(x), digits=1)))
     cat("\n")
     print(aspectspolaritymatrix)
     cat("\n")
