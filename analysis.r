@@ -110,19 +110,8 @@ npath <- function(path) {
   normalizePath(path.expand(path))
 }
 
-deforbs <- c(2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
-             2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
-             2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
-             2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
-             2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
-             2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
-             2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
-             2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
-             2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
-             2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
-             2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
-             2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0)
-deforbsmatrix = matrix(deforbs, nrow = 12, ncol = 10, dimnames = list(planetsLonCols, aspectscols))
+deforbs <- c(6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0)
+deforbsmatrix = matrix(deforbs, nrow = 1, ncol = 10, dimnames = list('energy', aspectscols))
 
 defaspectspolarity <- c(1, 1, 0, 1, 1, 0, 1, 0, 0, 0,
                         1, 1, 0, 1, 1, 0, 1, 0, 0, 0,
@@ -1769,7 +1758,7 @@ diffDeg <- function(x, y, xname, yname, cusorbs, aspects) {
   vals2 <- abs(((x-y+180) %% 360) - 180)
   for (i in 1:length(aspects)) {
     aspname <- paste('a', aspects[i], sep='')
-    comborb <- cusorbs[xname, aspname] + cusorbs[yname, aspname]
+    comborb <- cusorbs['energy', aspname]
     vals2[vals2 >= aspects[i]-comborb & vals2 <= aspects[i]+comborb] <- round(abs(aspects[i]-vals2[vals2 >= aspects[i]-comborb & vals2 <= aspects[i]+comborb]), digits = 2)
     vals[vals >= aspects[i]-comborb & vals <= aspects[i]+comborb] <- aspects[i]
   }
@@ -2194,8 +2183,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     correlation2 <- list()
 
     # build matrix
-    orbsmatrix <- matrix(cusorbs, nrow = length(planetsLonCols), ncol = length(aspectscols), byrow = TRUE,
-                         dimnames = list(planetsLonCols, aspectscols))
+    orbsmatrix <- matrix(cusorbs, nrow = 1, ncol = length(aspectscols), byrow = TRUE,
+                         dimnames = list('energy', aspectscols))
 
     aspectspolaritymatrix <- matrix(aspectspolarity, nrow = length(planetsCombLonCols), ncol = length(aspects), byrow = TRUE,
                                     dimnames = list(planetsCombLonCols, aspectscols))
@@ -2445,9 +2434,10 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     pricetype <- pricetypes[[x[14]]]
     pricemadir <- x[15]
     ignorecols = planetsLonGCols[which(x[16:27] == 0)]
-    cusorbs = x[28:147]
-    api.e <- 148+length(defaspectspolarity)
-    aspectspolarity <- x[148:(api.e-1)]
+    co.e <- 28+length(deforbs)
+    cusorbs = x[28:(co.e-1)]
+    api.e <- co.e+length(defaspectspolarity)
+    aspectspolarity <- x[co.e:(api.e-1)]
     ae.e <- api.e+length(defaspectsenergy)
     aspectsenergy <- x[api.e:(ae.e-1)]/10
     pe.e <- ae.e+length(defplanetsenergy)
@@ -2469,7 +2459,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     longcolsmin <- rep(0, length(planetsLonGCols))
     longcolsmax <- rep(1, length(planetsLonGCols))
     orbsmin <- rep(0, length(deforbs))
-    orbsmax <- rep(6, length(deforbs))
+    orbsmax <- rep(10, length(deforbs))
     polaritymin <- rep(0, length(defaspectspolarity))
     polaritymax <- rep(1, length(defaspectspolarity))
     aspectenergymin <- rep(0, length(defaspectsenergy))
