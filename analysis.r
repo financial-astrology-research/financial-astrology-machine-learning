@@ -1758,7 +1758,7 @@ diffDeg <- function(x, y, xname, yname, cusorbs, aspects) {
   vals2 <- abs(((x-y+180) %% 360) - 180)
   for (i in 1:length(aspects)) {
     aspname <- paste('a', aspects[i], sep='')
-    comborb <- cusorbs['energy', aspname]
+    comborb <- cusorbs['orbs', aspname]
     vals2[vals2 >= aspects[i]-comborb & vals2 <= aspects[i]+comborb] <- round(abs(aspects[i]-vals2[vals2 >= aspects[i]-comborb & vals2 <= aspects[i]+comborb]), digits = 2)
     vals[vals >= aspects[i]-comborb & vals <= aspects[i]+comborb] <- aspects[i]
   }
