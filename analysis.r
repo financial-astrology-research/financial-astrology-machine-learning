@@ -110,7 +110,7 @@ npath <- function(path) {
   normalizePath(path.expand(path))
 }
 
-deforbs <- c(6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0)
+deforbs <- c(4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0)
 deforbsmatrix = matrix(deforbs, nrow = 1, ncol = 10, dimnames = list('orbs', aspectscols))
 
 defaspectspolarity <- c(1, 1, 0, 1, 1, 0, 1, 0, 0, 0,
@@ -2413,15 +2413,14 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   relativeTrendFitness <- function(x, securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
     # build the parameters based on GA indexes
     mapricetypes <- c('SMA', 'EMA', 'WMA', 'ZLEMA')
-    sigtypes <- c('count',  'percent')
     predtypes <- c('absolute',  'relative')
     pricetypes <- c('averages',  'daily', 'priceaverage')
     iprev <- x[1]
     inext <- x[2]
     mapredslow <- x[3]
     maprice <- x[4]
-    mapredtype <- mapricetypes[[x[5]]]
-    mapricetype <- mapricetypes[[x[6]]]
+    mapredtype <- 'SMA'
+    mapricetype <- 'SMA'
     predtype <- predtypes[[x[7]]]
     cordir <- x[8]
     degsplit <- x[9]
@@ -2456,13 +2455,13 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     pdf(paste("~/chart_", securityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
     longcolsmin <- rep(0, length(planetsLonGCols))
     longcolsmax <- rep(1, length(planetsLonGCols))
-    orbsmin <- rep(0, length(deforbs))
-    orbsmax <- rep(10, length(deforbs))
+    orbsmin <- rep(1, length(deforbs))
+    orbsmax <- rep(12, length(deforbs))
     polaritymin <- rep(0, length(defaspectspolarity))
     polaritymax <- rep(1, length(defaspectspolarity))
     aspectenergymin <- rep(0, length(defaspectsenergy))
-    aspectenergymax <- rep(10, length(defaspectsenergy))
-    planetenergymin <- rep(5, length(defplanetsenergy))
+    aspectenergymax <- rep(20, length(defaspectsenergy))
+    planetenergymin <- rep(0, length(defplanetsenergy))
     planetenergymax <- rep(10, length(defplanetsenergy))
 
     minvals <- c(0, 0,  2,  2, 1, 1, 1, 0, 1,  0, 1, 0, -10, 1, 1, longcolsmin, orbsmin, polaritymin, aspectenergymin, planetenergymin)
