@@ -825,7 +825,7 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
       }
     }
 
-    trend <- as.integer(significance.day[, (sum(V2)-sum(V1)) * 10])
+    trend <- as.integer(significance.day[, (sum(V2)-sum(V1)) * 100])
 
     if (verbose) {
       # TODO: print the energy lists as tables
@@ -2426,7 +2426,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planetenergymax <- rep(30, length(defplanetsenergy))
 
     minvals <- c( 2,  2, 1, 1, 0, 1,  0, 1, 0, -10, 1, longcolsmin, orbsmin, polaritymin, aspectenergymin, planetenergymin)
-    maxvals <- c(10, 20, 4, 2, 1, 9, 30, 2, 9,  10, 4, longcolsmax, orbsmax, polaritymax, aspectenergymax, planetenergymax)
+    maxvals <- c(10, 20, 4, 2, 1, 3, 20, 2, 9,  10, 4, longcolsmax, orbsmax, polaritymax, aspectenergymax, planetenergymax)
 
     varnames <- c('mapredslow', 'maprice', 'mapricetype', 'predtype', 'cordir', 'degsplit', 'threshold', 'energymode', 'energygrowthsp',
                   'alignmove', 'pricemadir', planetsLonGCols, aspOrbsCols, planetsAspCombCols, aspectsEnergyCols, planetsEnergyCols)
