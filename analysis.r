@@ -2421,9 +2421,9 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     polaritymin <- rep(0, length(defaspectspolarity))
     polaritymax <- rep(1, length(defaspectspolarity))
     aspectenergymin <- rep(0, length(defaspectsenergy))
-    aspectenergymax <- rep(20, length(defaspectsenergy))
+    aspectenergymax <- rep(30, length(defaspectsenergy))
     planetenergymin <- rep(0, length(defplanetsenergy))
-    planetenergymax <- rep(20, length(defplanetsenergy))
+    planetenergymax <- rep(30, length(defplanetsenergy))
 
     minvals <- c( 2,  2, 1, 1, 0, 1,  0, 1, 0, -10, 1, longcolsmin, orbsmin, polaritymin, aspectenergymin, planetenergymin)
     maxvals <- c(10, 20, 4, 2, 1, 9, 30, 2, 9,  10, 4, longcolsmax, orbsmax, polaritymax, aspectenergymax, planetenergymax)
