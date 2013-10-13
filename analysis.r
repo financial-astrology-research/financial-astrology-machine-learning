@@ -729,7 +729,9 @@ planetsVarsSignificance <- function(planets, currency, threshold) {
     setnames(t1, curcol, 'key')
     t1[, key := as.character(key)]
     t1 <- t1[pdiff >= threshold | pdiff <= -threshold]
-    significance <- rbind(significance, t1)
+    if (nrow(t1) > 0) {
+      significance <- rbind(significance, t1)
+    }
   }
 
   significance <- subset(significance, key != 'anon')
