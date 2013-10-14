@@ -746,7 +746,7 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
   for (curcol in cols) {
     #setattr(significance, ".internal.selfref", NULL)
     # ignore variable is indicated in ignorecols
-    if (curcol %in% ignorecols) next
+    #if (curcol %in% ignorecols) next
     res <- significance[key == planets.day[[curcol]] & variable == curcol]
     if (nrow(res) > 0) {
       res <- cbind(res, origin=curcol)
