@@ -820,29 +820,31 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
     energy[[loncol2]] <- energy[[loncol2]] + aspectenergydis
   }
 
-  if (energymode > 0) {
-    for (curcol in names(energy)) {
-      setattr(significance.day, ".internal.selfref", NULL)
+  if (nrow(significance.day) > 0) {
+    if (energymode > 0) {
+      for (curcol in names(energy)) {
+        setattr(significance.day, ".internal.selfref", NULL)
 
-      if (energymode == 1) {
-        # add more energy to the lower part based on bad aspects and to the upper part with good aspects
-        # energy influence by count
+        if (energymode == 1) {
+          # add more energy to the lower part based on bad aspects and to the upper part with good aspects
+          # energy influence by count
 
-        significance.day[origin == curcol & V1 > V2, V1 := V1 * energy.pos[[curcol]]]
-        significance.day[origin == curcol & V2 > V1, V2 := V2 * energy.pos[[curcol]]]
-        significance.day[origin == curcol & V1 < V2, V1 := V1 * energy.neg[[curcol]]]
-        significance.day[origin == curcol & V2 < V1, V2 := V2 * energy.neg[[curcol]]]
-      }
-      else if (energymode == 2) {
-        # add more energy to the lower part based on good aspects and to the upper part with bad aspects
-        # energy influence by count
-        significance.day[origin == curcol & V1 > V2, V1 := V1 * energy.neg[[curcol]]]
-        significance.day[origin == curcol & V2 > V1, V2 := V2 * energy.neg[[curcol]]]
-        significance.day[origin == curcol & V1 < V2, V1 := V1 * energy.pos[[curcol]]]
-        significance.day[origin == curcol & V2 < V1, V2 := V2 * energy.pos[[curcol]]]
-      }
-      else {
-        stop("No valid energy mode was provided.")
+          significance.day[origin == curcol & V1 > V2, V1 := V1 * energy.pos[[curcol]]]
+          significance.day[origin == curcol & V2 > V1, V2 := V2 * energy.pos[[curcol]]]
+          significance.day[origin == curcol & V1 < V2, V1 := V1 * energy.neg[[curcol]]]
+          significance.day[origin == curcol & V2 < V1, V2 := V2 * energy.neg[[curcol]]]
+        }
+        else if (energymode == 2) {
+          # add more energy to the lower part based on good aspects and to the upper part with bad aspects
+          # energy influence by count
+          significance.day[origin == curcol & V1 > V2, V1 := V1 * energy.neg[[curcol]]]
+          significance.day[origin == curcol & V2 > V1, V2 := V2 * energy.neg[[curcol]]]
+          significance.day[origin == curcol & V1 < V2, V1 := V1 * energy.pos[[curcol]]]
+          significance.day[origin == curcol & V2 < V1, V2 := V2 * energy.pos[[curcol]]]
+        }
+        else {
+          stop("No valid energy mode was provided.")
+        }
       }
     }
   }
@@ -2457,7 +2459,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     varnames <- c('mapredslow', 'maprice', 'mapricetype', 'predtype', 'cordir', 'degsplit', 'threshold', 'energymode', 'energygrowthsp', 'energyret',
                   'alignmove', 'pricemadir', planetsLonGCols, aspOrbsCols, planetsAspCombCols, aspectsEnergyCols, planetsEnergyCols)
 
-    ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=TRUE,
+    ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=FALSE,
        monitor=gaMonitor, maxiter=200, run=50, popSize=400, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.3,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
        securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
