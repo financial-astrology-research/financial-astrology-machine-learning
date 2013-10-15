@@ -2130,7 +2130,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   relativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, mapredslow, maprice,
                             mapricetype, predtype, cordir, degsplit, threshold, energymode, energygrowthsp, dateformat, alignmove=0,
-                            pricemadir, ignorecols=ignorecols, cusorbs=cusorbs, aspectspolarity, aspectsenergy, planetsenergy, verbose=F) {
+                            pricemadir, ignorecols=ignorecols, cusorbs=cusorbs, aspectspolarity, aspectsenergy, planetsenergy, verbose=F, doplot=F) {
     looptm <- proc.time()
     mapricefunc <- get(get('mapricetype'))
     mapredfunc <- get('SMA')
@@ -2189,7 +2189,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                                  predtype=predtype, mapredfunc=mapredfunc, mapredslow=mapredslow, cordir=cordir, pltitle=pltitle,
                                  energymode=energymode, energygrowthsp=energygrowthsp, alignmove=alignmove, ignorecols=ignorecols,
                                  aspectspolarity=aspectspolaritymatrix, aspectsenergy=aspectsenergymatrix,
-                                 planetsenergy=planetsenergymatrix, verbose=verbose)
+                                 planetsenergy=planetsenergymatrix, verbose=verbose, doplot=doplot)
       fitness[[length(fitness)+1]] <- res$fitness
       volatility[[length(volatility)+1]] <- res$volatility
       correlation[[length(correlation)+1]] <- res$correlation
@@ -2209,12 +2209,11 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                                  predtype=predtype, mapredfunc=mapredfunc, mapredslow=mapredslow, cordir=cordir, pltitle=pltitle,
                                  energymode=energymode, energygrowthsp=energygrowthsp, alignmove=alignmove, ignorecols=ignorecols,
                                  aspectspolarity=aspectspolaritymatrix, aspectsenergy=aspectsenergymatrix,
-                                 planetsenergy=planetsenergymatrix, verbose=verbose)
+                                 planetsenergy=planetsenergymatrix, verbose=verbose, doplot=doplot)
       fitness2[[length(fitness2)+1]] <- res2$fitness
       volatility2[[length(volatility2)+1]] <- res2$volatility
       correlation2[[length(correlation2)+1]] <- res2$correlation
     }
-
 
     cat("\n---------------------------------------------------------------------------------\n")
     cat("testPlanetsSignificanceRelative('testSolution', securityfile=", shQuote(securityfile), ", planetsfile=", shQuote(planetsfile), sep="")
@@ -2224,12 +2223,12 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     cat(", mapricetype=", shQuote(mapricetype), sep="")
     cat(", predtype=", shQuote(predtype), ", cordir=", cordir, ", pricemadir=", pricemadir, ", degsplit=", degsplit, ", threshold=", threshold, sep="")
     cat(", energymode=", energymode, ", energygrowthsp=", energygrowthsp, ", alignmove=", alignmove, sep="")
-    cat(", dateformat=", shQuote(dateformat), ", verbose=F", sep="")
     cat(", ignorecols=c(", paste(shQuote(ignorecols), collapse=","), ")", sep="")
     cat(", cusorbs=c(", paste(cusorbs, collapse=","), ")", sep="")
     cat(", aspectsenergy=c(", paste(aspectsenergy, collapse=","), ")", sep="")
     cat(", planetsenergy=c(", paste(planetsenergy, collapse=","), ")", sep="")
-    cat(", aspectspolarity=c(", paste(aspectspolarity, collapse=","), "))\n", sep="")
+    cat(", aspectspolarity=c(", paste(aspectspolarity, collapse=","), ")", sep="")
+    cat(", dateformat=", shQuote(dateformat), ", verbose=F", ", doplot=T", ")\n", sep="")
     cat("\n")
     print(orbsmatrix)
     cat("\n")
@@ -2257,7 +2256,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   processPredictions <- function(planets.test, security, significance, panalogy, predtype, mapredfunc, mapredslow,
                                  cordir, pltitle, energymode, energygrowthsp, alignmove, ignorecols, aspectspolarity,
-                                 aspectsenergy, planetsenergy, verbose) {
+                                 aspectsenergy, planetsenergy, verbose, doplot) {
     predEff <- apply(planets.test, 1, function(x)
                      planetsDaySignificance(x, significance, panalogy, F, verbose, energymode,
                                             ignorecols, aspectspolarity, aspectsenergy, planetsenergy, energygrowthsp))
@@ -2322,19 +2321,25 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
         x_dates <- seq(min(planets.test$Date), max(planets.test$Date), by=interval)
 
         if (nrow(planets.test.security) == 0) {
-          p1 <- ggplot(planets.test, aes(Date, predval)) + geom_line() + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() + scale_shape_identity() + scale_x_date(breaks=x_dates)
           correlation <- NA
         }
         else {
-          p1 <- ggplot(planets.test, aes(Date, predval)) + geom_line() + geom_line(data = planets.test.security, aes(Date, Mid), colour="red", show_guide=F) + geom_line(data = planets.test.security, aes(Date, MidMAF), colour="blue", show_guide=F) + geom_line(data = planets.test.security, aes(Date, MidMAS), colour="green", show_guide=F) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() + scale_shape_identity() + scale_x_date(breaks=x_dates)
           correlation <- round(cor(planets.test.security$predval, planets.test.security$Mid,  use = "complete.obs", method='spearman'), digits=2)
         }
 
-        print(p1)
+        # if plot is enabled
+        if (doplot) {
+          if (nrow(planets.test.security) == 0) {
+            p1 <- ggplot(planets.test, aes(Date, predval)) + geom_line() + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() + scale_shape_identity() + scale_x_date(breaks=x_dates)
+          }
+          else {
+            p1 <- ggplot(planets.test, aes(Date, predval)) + geom_line() + geom_line(data = planets.test.security, aes(Date, Mid), colour="red", show_guide=F) + geom_line(data = planets.test.security, aes(Date, MidMAF), colour="blue", show_guide=F) + geom_line(data = planets.test.security, aes(Date, MidMAS), colour="green", show_guide=F) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() + scale_shape_identity() + scale_x_date(breaks=x_dates)
+          }
+          print(p1)
+        }
 
         # calculate accuracy
         t1 <- with(planets.test.security, table(Eff==predFactor))
-
         if (all(c('TRUE', 'FALSE') %in% names(t1))) {
           fitness <- t1[['TRUE']]-t1[['FALSE']]
         }
@@ -2354,7 +2359,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   testSolution <- function(predfile, ...) {
-    pdf(paste("~/chart_", predfile, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
+    if (list(...)$doplot) pdf(paste("~/chart_", predfile, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
     res <- relativeTrend(...)
     planets.security <- merge(res$planets, res$security, by='Date')
 
@@ -2363,7 +2368,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       print(as.data.frame(planets.security[, cols, with=F]))
     }
 
-    dev.off()
+    if (list(...)$doplot) dev.off()
     write.csv(res$planets[, c('DateMT4', 'predval'), with=F], file=paste("~/trading/predict/", predfile, ".csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
   }
 
@@ -2399,14 +2404,13 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                          mapricetype=mapricetype, predtype=predtype, cordir=cordir, degsplit=degsplit, threshold=threshold,
                          energymode=energymode, energygrowthsp=energygrowthsp, dateformat=dateformat, alignmove=alignmove,
                          pricemadir=pricemadir, ignorecols=ignorecols, cusorbs=cusorbs, aspectspolarity=aspectspolarity,
-                         aspectsenergy=aspectsenergy, planetsenergy=planetsenergy, verbose=F)
+                         aspectsenergy=aspectsenergy, planetsenergy=planetsenergy, verbose=F, doplot=F)
 
     return(res$fitness)
   }
 
   optimizeRelativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
     cat("---------------------------- Initialize optimization ----------------------------------\n\n")
-    pdf(paste("~/chart_", securityfile, "_", planetsfile, "_", vsdate, "-", vedate, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
     longcolsmin <- rep(0, length(planetsLonGCols))
     longcolsmax <- rep(1, length(planetsLonGCols))
     orbsmin <- rep(1, length(deforbs))
@@ -2424,13 +2428,11 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     varnames <- c('mapredslow', 'maprice', 'mapricetype', 'predtype', 'cordir', 'degsplit', 'threshold', 'energymode', 'energygrowthsp',
                   'alignmove', 'pricemadir', planetsLonGCols, aspOrbsCols, planetsAspCombCols, aspectsEnergyCols, planetsEnergyCols)
 
-    ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=FALSE,
+    ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=TRUE,
        monitor=gaMonitor, maxiter=200, run=50, popSize=400, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.3,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
        securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
        csdate=csdate, cedate=cedate, dateformat)
-
-    dev.off()
   }
 
   execfunc <- get(get('execfunc'))
