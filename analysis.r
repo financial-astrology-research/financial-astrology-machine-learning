@@ -740,19 +740,15 @@ planetsVarsSignificance <- function(planets, currency, threshold) {
 
 planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, answer=T, verbose=F, energymode=0, ignorecols=c(),
                                    aspectspolarity, aspectsenergy, planetsenergy, energygrowthsp) {
-  significance.day <- data.frame()
   cols <- planetsLonGCols
-  #init <- as.numeric( sub("\\((.+),.*", "\\1", planets.day[curcol]))
-  for (curcol in cols) {
-    #setattr(significance, ".internal.selfref", NULL)
-    # ignore variable is indicated in ignorecols
-    #if (curcol %in% ignorecols) next
-    res <- significance[key == planets.day[[curcol]] & variable == curcol]
+  planetsDaySignificanceFilter <- function(curcol) {
+    res <- significance[key %in% planets.day[[curcol]] & variable %in% planetsAnalogy[[curcol]]]
     if (nrow(res) > 0) {
-      res <- cbind(res, origin=curcol)
-      significance.day <- rbind(significance.day, res)
+      return(cbind(res, origin=curcol))
     }
   }
+
+  significance.day <- do.call(rbind, lapply(cols, planetsDaySignificanceFilter))
 
   patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
   activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
@@ -793,9 +789,6 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
     energy[[loncol1]] <- energy[[loncol1]] + aspectenergydis
     energy[[loncol2]] <- energy[[loncol2]] + aspectenergydis
   }
-
-  # convert to data.table to speed up the energy calculations
-  significance.day <- data.table(significance.day)
 
   if (nrow(significance.day) > 0) {
     if (energymode > 0) {
@@ -2431,7 +2424,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     varnames <- c('mapredslow', 'maprice', 'mapricetype', 'predtype', 'cordir', 'degsplit', 'threshold', 'energymode', 'energygrowthsp',
                   'alignmove', 'pricemadir', planetsLonGCols, aspOrbsCols, planetsAspCombCols, aspectsEnergyCols, planetsEnergyCols)
 
-    ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=TRUE,
+    ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=FALSE,
        monitor=gaMonitor, maxiter=200, run=50, popSize=400, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.3,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
        securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
