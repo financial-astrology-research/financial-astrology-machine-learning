@@ -750,6 +750,11 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
 
   significance.day <- do.call(rbind, lapply(cols, planetsDaySignificanceFilter))
 
+  # no significant positions for this day
+  if (is.null(significance.day)) {
+    return(0)
+  }
+
   patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
   activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
   # ignore anon aspects or non active
@@ -790,70 +795,68 @@ planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, an
     energy[[loncol2]] <- energy[[loncol2]] + aspectenergydis
   }
 
-  if (nrow(significance.day) > 0) {
-    if (energymode > 0) {
-      for (curcol in names(energy)) {
-        setattr(significance.day, ".internal.selfref", NULL)
+  if (energymode > 0) {
+    for (curcol in names(energy)) {
+      setattr(significance.day, ".internal.selfref", NULL)
 
-        if (energymode == 1) {
-          # add more energy to the lower part based on bad aspects and to the upper part with good aspects
-          # energy influence by count
+      if (energymode == 1) {
+        # add more energy to the lower part based on bad aspects and to the upper part with good aspects
+        # energy influence by count
 
-            significance.day[origin == curcol & V1 > V2, V1 := V1 * energy.pos[[curcol]]]
-            significance.day[origin == curcol & V2 > V1, V2 := V2 * energy.pos[[curcol]]]
-            significance.day[origin == curcol & V1 < V2, V1 := V1 * energy.neg[[curcol]]]
-            significance.day[origin == curcol & V2 < V1, V2 := V2 * energy.neg[[curcol]]]
-        }
-        else if (energymode == 2) {
-          # add more energy to the lower part based on good aspects and to the upper part with bad aspects
-          # energy influence by count
-            significance.day[origin == curcol & V1 > V2, V1 := V1 * energy.neg[[curcol]]]
-            significance.day[origin == curcol & V2 > V1, V2 := V2 * energy.neg[[curcol]]]
-            significance.day[origin == curcol & V1 < V2, V1 := V1 * energy.pos[[curcol]]]
-            significance.day[origin == curcol & V2 < V1, V2 := V2 * energy.pos[[curcol]]]
-        }
-        else {
-          stop("No valid energy mode was provided.")
-        }
+        significance.day[origin == curcol & V1 > V2, V1 := V1 * energy.pos[[curcol]]]
+        significance.day[origin == curcol & V2 > V1, V2 := V2 * energy.pos[[curcol]]]
+        significance.day[origin == curcol & V1 < V2, V1 := V1 * energy.neg[[curcol]]]
+        significance.day[origin == curcol & V2 < V1, V2 := V2 * energy.neg[[curcol]]]
       }
-    }
-
-    trend <- as.integer(significance.day[, (sum(V2)-sum(V1)) * 100])
-
-    if (verbose) {
-      # TODO: print the energy lists as tables
-      cat("=============================================================\n")
-      cat("Date:", planets.day[['Date']], "\n")
-      print(significance.day)
-      cat("Aspect Table\n")
-      print(planets.day.asp)
-      cat("Total Aspects:\n")
-      print(t(energy))
-      cat("Positive Aspects:\n")
-      print(t(energy.pos))
-      cat("Negative Aspects:\n")
-      print(t(energy.neg))
-      cat("\n")
-      print(planets.day[planetsSpCols])
-      cat("\n")
-      cat("###  =", trend, "\n")
-    }
-
-    # the result could return as answer (factor) or numeric (kind of probability)
-    if (answer) {
-      if (trend > 0) {
-        return('up')
-      }
-      else if (trend < 0) {
-        return('down')
+      else if (energymode == 2) {
+        # add more energy to the lower part based on good aspects and to the upper part with bad aspects
+        # energy influence by count
+        significance.day[origin == curcol & V1 > V2, V1 := V1 * energy.neg[[curcol]]]
+        significance.day[origin == curcol & V2 > V1, V2 := V2 * energy.neg[[curcol]]]
+        significance.day[origin == curcol & V1 < V2, V1 := V1 * energy.pos[[curcol]]]
+        significance.day[origin == curcol & V2 < V1, V2 := V2 * energy.pos[[curcol]]]
       }
       else {
-        return('none')
+        stop("No valid energy mode was provided.")
       }
     }
-    else {
-      return(trend)
+  }
+
+  trend <- as.integer(significance.day[, (sum(V2)-sum(V1)) * 100])
+
+  if (verbose) {
+    # TODO: print the energy lists as tables
+    cat("=============================================================\n")
+    cat("Date:", planets.day[['Date']], "\n")
+    print(significance.day)
+    cat("Aspect Table\n")
+    print(planets.day.asp)
+    cat("Total Aspects:\n")
+    print(t(energy))
+    cat("Positive Aspects:\n")
+    print(t(energy.pos))
+    cat("Negative Aspects:\n")
+    print(t(energy.neg))
+    cat("\n")
+    print(planets.day[planetsSpCols])
+    cat("\n")
+    cat("###  =", trend, "\n")
+  }
+
+  # the result could return as answer (factor) or numeric (kind of probability)
+  if (answer) {
+    if (trend > 0) {
+      return('up')
     }
+    else if (trend < 0) {
+      return('down')
+    }
+    else {
+      return('none')
+    }
+  }
+  else {
+    return(trend)
   }
 
   return(0)
