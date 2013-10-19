@@ -738,160 +738,6 @@ planetsVarsSignificance <- function(planets, currency, threshold) {
   return(significance)
 }
 
-planetsDaySignificance <- function(planets.day, significance, panalogy, answer=T, verbose=F, energymode=0,
-                                   aspectspolarity, aspectsenergy, planetsenergy, energygrowthsp, energyret) {
-  cols <- planetsLonGCols
-  planetsDaySignificanceFilter <- function(curcol) {
-    if (!is.na(panalogy['analogy', curcol])) {
-      res <- significance[key %in% planets.day[[curcol]] & variable %in% panalogy['analogy', curcol]]
-      if (nrow(res) > 0) {
-        return(cbind(res, origin=curcol))
-      }
-    }
-  }
-
-  significance.day <- do.call(rbind, lapply(cols, planetsDaySignificanceFilter))
-  browser()
-
-  # no significant positions for this day
-  if (is.null(significance.day)) {
-    return(0)
-  }
-
-  patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
-  activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
-  # ignore anon aspects or non active
-  planets.day.asp <- planets.day[planets.day != "anon" & names(planets.day) %in% activecols]
-  energy <- list(SULONG = 1, MOLONG = 1, MELONG = 1, VELONG = 1, MALONG = 1, JULONG = 1, SALONG = 1,
-                 URLONG = 1, NELONG = 1, PLLONG = 1, NNLONG = 1, SNLONG = 1)
-  energy.pos <- list(SULONG = 1, MOLONG = 1, MELONG = 1, VELONG = 1, MALONG = 1, JULONG = 1, SALONG = 1,
-                     URLONG = 1, NELONG = 1, PLLONG = 1, NNLONG = 1, SNLONG = 1)
-  energy.neg <- list(SULONG = 1, MOLONG = 1, MELONG = 1, VELONG = 1, MALONG = 1, JULONG = 1, SALONG = 1,
-                     URLONG = 1, NELONG = 1, PLLONG = 1, NNLONG = 1, SNLONG = 1)
-
-  for (curcol in names(planets.day.asp)) {
-    # ignore aspects between nodes that happens ever
-    if (curcol == 'SNLONNNLON') next
-    aspname <- planets.day.asp[[curcol]]
-    col1 <- paste(substr(curcol, 1, 2), sep='')
-    col2 <- paste(substr(curcol, 6, 7), sep='')
-    # longitude col names
-    loncol1 <- paste(col1, 'LONG', sep='')
-    loncol2 <- paste(col2, 'LONG', sep='')
-    # speed col names
-    spcol1 <- paste(col1, 'SP', sep='')
-    spcol2 <- paste(col2, 'SP', sep='')
-
-    # calculate energy for planets considerint the retrograde motion
-    planetret1 <- 1
-    planetret2 <- 1
-    if (as.numeric(planets.day[spcol1]) < 0) {
-      planetret1 <- energyret
-    }
-    if (as.numeric(planets.day[spcol2]) < 0) {
-      planetret2 <- energyret
-    }
-    planetenergy1 <- planetsenergy['energy', loncol1] * planetret1
-    planetenergy2 <- planetsenergy['energy', loncol2] * planetret2
-
-    # determine aspect energy based on aspect and involved planets
-    aspectenergy <- aspectsenergy['energy', aspname] * (planetenergy1 + planetenergy2)
-    # get the polarity and in case the energy is negative then invert polarity
-    aspectpolarity <- aspectspolarity[curcol, aspname]
-    if (aspectenergy < 0) {
-      aspectpolarity <- abs(aspectpolarity - 1)
-    }
-
-    # compute the given energy based on the aspect orb distance
-    curcolorb <- paste(curcol, 'ORB', sep='')
-    distance <- as.numeric(planets.day[[curcolorb]])
-    aspectenergydis <- energyGrowth(abs(aspectenergy), distance, energygrowthsp)
-
-    if (aspectpolarity == 1) {
-      energy.pos[[loncol1]] <- energy.pos[[loncol1]] + aspectenergydis
-      energy.pos[[loncol2]] <- energy.pos[[loncol2]] + aspectenergydis
-    }
-    else if (aspectpolarity == 0) {
-      energy.neg[[loncol1]] <- energy.neg[[loncol1]] + aspectenergydis
-      energy.neg[[loncol2]] <- energy.neg[[loncol2]] + aspectenergydis
-    }
-    else {
-      stop(paste("No valid polarity was provided - ", curcol, aspname))
-    }
-
-    energy[[loncol1]] <- energy[[loncol1]] + aspectenergydis
-    energy[[loncol2]] <- energy[[loncol2]] + aspectenergydis
-  }
-
-  if (nrow(significance.day) > 0) {
-    if (energymode > 0) {
-      for (curcol in names(energy)) {
-        setattr(significance.day, ".internal.selfref", NULL)
-
-        if (energymode == 1) {
-          # add more energy to the lower part based on bad aspects and to the upper part with good aspects
-          # energy influence by count
-
-          significance.day[origin == curcol & V1 > V2, V1 := V1 * energy.pos[[curcol]]]
-          significance.day[origin == curcol & V2 > V1, V2 := V2 * energy.pos[[curcol]]]
-          significance.day[origin == curcol & V1 < V2, V1 := V1 * energy.neg[[curcol]]]
-          significance.day[origin == curcol & V2 < V1, V2 := V2 * energy.neg[[curcol]]]
-        }
-        else if (energymode == 2) {
-          # add more energy to the lower part based on good aspects and to the upper part with bad aspects
-          # energy influence by count
-          significance.day[origin == curcol & V1 > V2, V1 := V1 * energy.neg[[curcol]]]
-          significance.day[origin == curcol & V2 > V1, V2 := V2 * energy.neg[[curcol]]]
-          significance.day[origin == curcol & V1 < V2, V1 := V1 * energy.pos[[curcol]]]
-          significance.day[origin == curcol & V2 < V1, V2 := V2 * energy.pos[[curcol]]]
-        }
-        else {
-          stop("No valid energy mode was provided.")
-        }
-      }
-    }
-  }
-
-  trend <- as.integer(significance.day[, (sum(V2)-sum(V1)) * 100])
-
-  if (verbose) {
-    # TODO: print the energy lists as tables
-    cat("=============================================================\n")
-    cat("Date:", planets.day[['Date']], "\n")
-    print(significance.day)
-    cat("Aspect Table\n")
-    print(planets.day.asp)
-    cat("Total Aspects:\n")
-    print(t(energy))
-    cat("Positive Aspects:\n")
-    print(t(energy.pos))
-    cat("Negative Aspects:\n")
-    print(t(energy.neg))
-    cat("\n")
-    print(planets.day[planetsSpCols])
-    cat("\n")
-    cat("###  =", trend, "\n")
-  }
-
-  # the result could return as answer (factor) or numeric (kind of probability)
-  if (answer) {
-    if (trend > 0) {
-      return('up')
-    }
-    else if (trend < 0) {
-      return('down')
-    }
-    else {
-      return('none')
-    }
-  }
-  else {
-    return(trend)
-  }
-
-  return(0)
-}
-
 openPlanetsZod <- function(planets.file, currency, sdate, edate, threshold, planetsLonCols, planetsGridZodCols, aspects, cusorbs) {
   planets.file <- npath(planets.file)
   planets <- fread(planets.file, sep="\t", na.strings="", verbose = F)
@@ -2160,6 +2006,157 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   if (!hasArg('dateformat')) stop("A dateformat is needed.")
   ptm <- proc.time()
   planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG', 'SNLONG')
+
+  planetsDaySignificance <- function(planets.day, significance, panalogy, answer=T, verbose=F, energymode=0,
+                                     aspectspolarity, aspectsenergy, planetsenergy, energygrowthsp, energyret) {
+    cols <- planetsLonGCols
+    planetsDaySignificanceFilter <- function(curcol) {
+      if (!is.na(panalogy['analogy', curcol])) {
+        res <- significance[key %in% planets.day[[curcol]] & variable %in% panalogy['analogy', curcol]]
+        if (nrow(res) > 0) {
+          return(cbind(res, origin=curcol))
+        }
+      }
+    }
+
+    significance.day <- do.call(rbind, lapply(cols, planetsDaySignificanceFilter))
+
+    # no significant positions for this day
+    if (is.null(significance.day)) {
+      return(0)
+    }
+
+    patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
+    activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
+    # ignore anon aspects or non active
+    planets.day.asp <- planets.day[planets.day != "anon" & names(planets.day) %in% activecols]
+    energy <- list(SULONG = 1, MOLONG = 1, MELONG = 1, VELONG = 1, MALONG = 1, JULONG = 1, SALONG = 1,
+                   URLONG = 1, NELONG = 1, PLLONG = 1, NNLONG = 1, SNLONG = 1)
+    energy.pos <- list(SULONG = 1, MOLONG = 1, MELONG = 1, VELONG = 1, MALONG = 1, JULONG = 1, SALONG = 1,
+                       URLONG = 1, NELONG = 1, PLLONG = 1, NNLONG = 1, SNLONG = 1)
+    energy.neg <- list(SULONG = 1, MOLONG = 1, MELONG = 1, VELONG = 1, MALONG = 1, JULONG = 1, SALONG = 1,
+                       URLONG = 1, NELONG = 1, PLLONG = 1, NNLONG = 1, SNLONG = 1)
+
+    for (curcol in names(planets.day.asp)) {
+      # ignore aspects between nodes that happens ever
+      if (curcol == 'SNLONNNLON') next
+      aspname <- planets.day.asp[[curcol]]
+      col1 <- paste(substr(curcol, 1, 2), sep='')
+      col2 <- paste(substr(curcol, 6, 7), sep='')
+      # longitude col names
+      loncol1 <- paste(col1, 'LONG', sep='')
+      loncol2 <- paste(col2, 'LONG', sep='')
+      # speed col names
+      spcol1 <- paste(col1, 'SP', sep='')
+      spcol2 <- paste(col2, 'SP', sep='')
+
+      # calculate energy for planets considerint the retrograde motion
+      planetret1 <- 1
+      planetret2 <- 1
+      if (as.numeric(planets.day[spcol1]) < 0) {
+        planetret1 <- energyret
+      }
+      if (as.numeric(planets.day[spcol2]) < 0) {
+        planetret2 <- energyret
+      }
+      planetenergy1 <- planetsenergy['energy', loncol1] * planetret1
+      planetenergy2 <- planetsenergy['energy', loncol2] * planetret2
+
+      # determine aspect energy based on aspect and involved planets
+      aspectenergy <- aspectsenergy['energy', aspname] * (planetenergy1 + planetenergy2)
+      # get the polarity and in case the energy is negative then invert polarity
+      aspectpolarity <- aspectspolarity[curcol, aspname]
+      if (aspectenergy < 0) {
+        aspectpolarity <- abs(aspectpolarity - 1)
+      }
+
+      # compute the given energy based on the aspect orb distance
+      curcolorb <- paste(curcol, 'ORB', sep='')
+      distance <- as.numeric(planets.day[[curcolorb]])
+      aspectenergydis <- energyGrowth(abs(aspectenergy), distance, energygrowthsp)
+
+      if (aspectpolarity == 1) {
+        energy.pos[[loncol1]] <- energy.pos[[loncol1]] + aspectenergydis
+        energy.pos[[loncol2]] <- energy.pos[[loncol2]] + aspectenergydis
+      }
+      else if (aspectpolarity == 0) {
+        energy.neg[[loncol1]] <- energy.neg[[loncol1]] + aspectenergydis
+        energy.neg[[loncol2]] <- energy.neg[[loncol2]] + aspectenergydis
+      }
+      else {
+        stop(paste("No valid polarity was provided - ", curcol, aspname))
+      }
+
+      energy[[loncol1]] <- energy[[loncol1]] + aspectenergydis
+      energy[[loncol2]] <- energy[[loncol2]] + aspectenergydis
+    }
+
+    if (energymode > 0) {
+      for (curcol in names(energy)) {
+        setattr(significance.day, ".internal.selfref", NULL)
+
+        if (energymode == 1) {
+          # add more energy to the lower part based on bad aspects and to the upper part with good aspects
+          # energy influence by count
+
+          significance.day[origin == curcol & V1 > V2, V1 := V1 * energy.pos[[curcol]]]
+          significance.day[origin == curcol & V2 > V1, V2 := V2 * energy.pos[[curcol]]]
+          significance.day[origin == curcol & V1 < V2, V1 := V1 * energy.neg[[curcol]]]
+          significance.day[origin == curcol & V2 < V1, V2 := V2 * energy.neg[[curcol]]]
+        }
+        else if (energymode == 2) {
+          # add more energy to the lower part based on good aspects and to the upper part with bad aspects
+          # energy influence by count
+          significance.day[origin == curcol & V1 > V2, V1 := V1 * energy.neg[[curcol]]]
+          significance.day[origin == curcol & V2 > V1, V2 := V2 * energy.neg[[curcol]]]
+          significance.day[origin == curcol & V1 < V2, V1 := V1 * energy.pos[[curcol]]]
+          significance.day[origin == curcol & V2 < V1, V2 := V2 * energy.pos[[curcol]]]
+        }
+        else {
+          stop("No valid energy mode was provided.")
+        }
+      }
+    }
+
+    trend <- as.integer(significance.day[, (sum(V2)-sum(V1)) * 100])
+
+    if (verbose) {
+      # TODO: print the energy lists as tables
+      cat("=============================================================\n")
+      cat("Date:", planets.day[['Date']], "\n")
+      print(significance.day)
+      cat("Aspect Table\n")
+      print(planets.day.asp)
+      cat("Total Aspects:\n")
+      print(t(energy))
+      cat("Positive Aspects:\n")
+      print(t(energy.pos))
+      cat("Negative Aspects:\n")
+      print(t(energy.neg))
+      cat("\n")
+      print(planets.day[planetsSpCols])
+      cat("\n")
+      cat("###  =", trend, "\n")
+    }
+
+    # the result could return as answer (factor) or numeric (kind of probability)
+    if (answer) {
+      if (trend > 0) {
+        return('up')
+      }
+      else if (trend < 0) {
+        return('down')
+      }
+      else {
+        return('none')
+      }
+    }
+    else {
+      return(trend)
+    }
+
+    return(0)
+  }
 
   relativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, mapredslow, maprice,
                             mapricetype, predtype, cordir, degsplit, threshold, energymode, energygrowthsp, energyret, dateformat, alignmove=0,
