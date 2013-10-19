@@ -738,17 +738,20 @@ planetsVarsSignificance <- function(planets, currency, threshold) {
   return(significance)
 }
 
-planetsDaySignificance <- function(planets.day, significance, planetsAnalogy, answer=T, verbose=F, energymode=0, ignorecols=c(),
+planetsDaySignificance <- function(planets.day, significance, panalogy, answer=T, verbose=F, energymode=0,
                                    aspectspolarity, aspectsenergy, planetsenergy, energygrowthsp, energyret) {
   cols <- planetsLonGCols
   planetsDaySignificanceFilter <- function(curcol) {
-    res <- significance[key %in% planets.day[[curcol]] & variable %in% planetsAnalogy[[curcol]]]
-    if (nrow(res) > 0) {
-      return(cbind(res, origin=curcol))
+    if (!is.na(panalogy['analogy', curcol])) {
+      res <- significance[key %in% planets.day[[curcol]] & variable %in% panalogy['analogy', curcol]]
+      if (nrow(res) > 0) {
+        return(cbind(res, origin=curcol))
+      }
     }
   }
 
   significance.day <- do.call(rbind, lapply(cols, planetsDaySignificanceFilter))
+  browser()
 
   # no significant positions for this day
   if (is.null(significance.day)) {
@@ -2160,7 +2163,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   relativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, mapredslow, maprice,
                             mapricetype, predtype, cordir, degsplit, threshold, energymode, energygrowthsp, energyret, dateformat, alignmove=0,
-                            pricemadir, ignorecols=ignorecols, cusorbs=cusorbs, aspectspolarity, aspectsenergy, planetsenergy, verbose=F, doplot=F) {
+                            pricemadir, panalogy=panalogy, cusorbs=cusorbs, aspectspolarity, aspectsenergy, planetsenergy, verbose=F, doplot=F) {
     looptm <- proc.time()
     mapricefunc <- get(get('mapricetype'))
     mapredfunc <- get('SMA')
@@ -2184,30 +2187,22 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planetsenergymatrix <- matrix(planetsenergy, nrow = 1, ncol = length(planetsenergy), byrow = TRUE,
                                   dimnames = list(c('energy'), planetsLonGCols))
 
+    # for the first 5 planets use don't use analogy
+    panalogy <- c(planetsLonGCols[1:5], panalogy)
+    panalogymatrix <- matrix(panalogy, nrow = 1, ncol = length(panalogy), byrow = TRUE,
+                                  dimnames = list(c('analogy'), planetsLonGCols))
+
     planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""), orbsmatrix, aspects, degsplit)
     setkey(planets, 'Date')
     security <- openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, maprice, dateformat, pricemadir)
     significance <- planetsVarsSignificance(planets[Date >= as.Date(tsdate) & Date <= as.Date(tedate)], security, threshold)
     setkey(significance, 'key', 'variable', 'V3', 'V4')
 
-    panalogy <- list(SULONG = c("SULONG"),
-                     MOLONG = c("MOLONG"),
-                     MELONG = c("MELONG"),
-                     VELONG = c("VELONG"),
-                     MALONG = c("MALONG"),
-                     JULONG = c("JULONG"),
-                     SALONG = c("SALONG"),
-                     URLONG = c("URLONG"),
-                     NELONG = c("NELONG"),
-                     PLLONG = c("PLLONG"),
-                     NNLONG = c("NNLONG"),
-                     NNLONG = c("SNLONG"))
-
     planets[, wday := format(Date, "%w")]
     pltitle <- paste(securityfile, " / ", "maprice=", maprice, "mapricetype=", mapricetype, "mapredslow=", mapredslow,
                      "predtype=", predtype, "degsplit=", degsplit, "threshold=", threshold, "energymode=", energymode,
                      "\nenergygrowthsp=", energygrowthsp, "alignmove=", alignmove,
-                     "pricemadir=", pricemadir, "\n ignorecols=c(", paste(shQuote(ignorecols), collapse=","), ")",
+                     "pricemadir=", pricemadir, "\n panalogy=c(", paste(shQuote(panalogy), collapse=","), ")",
                      "\n aspectsenergy=c(", paste(aspectsenergy, collapse=","), ")",
                      "\n planetsenergy=c(", paste(planetsenergy, collapse=","), ")")
     planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate) & wday %in% c(1, 2, 3, 4, 5)]
@@ -2215,9 +2210,9 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # compute predictions by year an calculate fitness by the mean to meter the solution stability
     for (curyear in unique(planets.test$Year)) {
       setattr(planets.test, ".internal.selfref", NULL)
-      res <- processPredictions(planets.test=planets.test[Year == curyear], security=security, significance=significance, panalogy=panalogy,
+      res <- processPredictions(planets.test=planets.test[Year == curyear], security=security, significance=significance, panalogy=panalogymatrix,
                                  predtype=predtype, mapredfunc=mapredfunc, mapredslow=mapredslow, cordir=cordir, pltitle=pltitle,
-                                 energymode=energymode, energygrowthsp=energygrowthsp, energyret=energyret, alignmove=alignmove, ignorecols=ignorecols,
+                                 energymode=energymode, energygrowthsp=energygrowthsp, energyret=energyret, alignmove=alignmove,
                                  aspectspolarity=aspectspolaritymatrix, aspectsenergy=aspectsenergymatrix,
                                  planetsenergy=planetsenergymatrix, verbose=verbose, doplot=doplot)
       fitness[[length(fitness)+1]] <- res$fitness
@@ -2235,9 +2230,9 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     for (curyear in unique(planets.test2$Year)) {
       setattr(planets.test2, ".internal.selfref", NULL)
-      res2 <- processPredictions(planets.test=planets.test2[Year == curyear], security=security, significance=significance, panalogy=panalogy,
+      res2 <- processPredictions(planets.test=planets.test2[Year == curyear], security=security, significance=significance, panalogy=panalogymatrix,
                                  predtype=predtype, mapredfunc=mapredfunc, mapredslow=mapredslow, cordir=cordir, pltitle=pltitle,
-                                 energymode=energymode, energygrowthsp=energygrowthsp, energyret=energyret, alignmove=alignmove, ignorecols=ignorecols,
+                                 energymode=energymode, energygrowthsp=energygrowthsp, energyret=energyret, alignmove=alignmove,
                                  aspectspolarity=aspectspolaritymatrix, aspectsenergy=aspectsenergymatrix,
                                  planetsenergy=planetsenergymatrix, verbose=verbose, doplot=doplot)
       fitness2[[length(fitness2)+1]] <- res2$fitness
@@ -2253,7 +2248,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     cat(", mapricetype=", shQuote(mapricetype), sep="")
     cat(", predtype=", shQuote(predtype), ", cordir=", cordir, ", pricemadir=", pricemadir, ", degsplit=", degsplit, ", threshold=", threshold, sep="")
     cat(", energymode=", energymode, ", energygrowthsp=", energygrowthsp, ", energyret=", energyret, ", alignmove=", alignmove, sep="")
-    cat(", ignorecols=c(", paste(shQuote(ignorecols), collapse=","), ")", sep="")
+    cat(", panalogy=c(", paste(shQuote(panalogy), collapse=","), ")", sep="")
     cat(", cusorbs=c(", paste(cusorbs, collapse=","), ")", sep="")
     cat(", aspectsenergy=c(", paste(aspectsenergy, collapse=","), ")", sep="")
     cat(", planetsenergy=c(", paste(planetsenergy, collapse=","), ")", sep="")
@@ -2270,6 +2265,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     cat("\n")
     print(planetsenergymatrix)
     cat("\n")
+    print(panalogymatrix)
+    cat("\n")
 
     for (j in 1:length(fitness)) {
       cat("\t Optimization test: volatility =", volatility[[j]], " - correlation =", correlation[[j]], " - fitness =", fitness[[j]], "\n")
@@ -2285,10 +2282,10 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   processPredictions <- function(planets.test, security, significance, panalogy, predtype, mapredfunc, mapredslow,
-                                 cordir, pltitle, energymode, energygrowthsp, energyret, alignmove, ignorecols, aspectspolarity,
+                                 cordir, pltitle, energymode, energygrowthsp, energyret, alignmove, aspectspolarity,
                                  aspectsenergy, planetsenergy, verbose, doplot) {
     predEff <- apply(planets.test, 1, function(x)
-                     planetsDaySignificance(x, significance, panalogy, F, verbose, energymode, ignorecols, aspectspolarity, aspectsenergy,
+                     planetsDaySignificance(x, significance, panalogy, F, verbose, energymode, aspectspolarity, aspectsenergy,
                                             planetsenergy, energygrowthsp, energyret))
 
     # in case that all predictions are 0 we skip this solution
@@ -2407,6 +2404,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     mapricetypes <- c('SMA', 'EMA', 'WMA', 'ZLEMA')
     predtypes <- c('absolute',  'relative')
     pricetypes <- c('averages',  'daily', 'priceaverage')
+    analogytypes <- c(NA, 'SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG')
 
     mapredslow <- x[1]
     maprice <- x[2]
@@ -2420,9 +2418,10 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     energyret <- x[10]/10
     alignmove <- x[11]
     pricemadir <- x[12]
-    ignorecols = planetsLonGCols[which(x[13:24] == 0)]
-    co.e <- 25+length(deforbs)
-    cusorbs = x[25:(co.e-1)]
+    pa.e <- 13+length(planetsBaseCols)-5
+    panalogy <- analogytypes[x[13:(pa.e-1)]]
+    co.e <- pa.e+length(deforbs)
+    cusorbs = x[pa.e:(co.e-1)]
     api.e <- co.e+length(defaspectspolarity)
     aspectspolarity <- x[co.e:(api.e-1)]
     ae.e <- api.e+length(defaspectsenergy)
@@ -2434,7 +2433,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                          csdate=csdate, cedate=cedate, mapredslow=mapredslow, maprice=maprice, mapricetype=mapricetype, predtype=predtype,
                          cordir=cordir, degsplit=degsplit, threshold=threshold, energymode=energymode, energygrowthsp=energygrowthsp,
                          energyret=energyret, dateformat=dateformat, alignmove=alignmove,
-                         pricemadir=pricemadir, ignorecols=ignorecols, cusorbs=cusorbs, aspectspolarity=aspectspolarity,
+                         pricemadir=pricemadir, panalogy=panalogy, cusorbs=cusorbs, aspectspolarity=aspectspolarity,
                          aspectsenergy=aspectsenergy, planetsenergy=planetsenergy, verbose=F, doplot=F)
 
     return(res$fitness)
@@ -2442,8 +2441,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   optimizeRelativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
     cat("---------------------------- Initialize optimization ----------------------------------\n\n")
-    longcolsmin <- rep(0, length(planetsLonGCols))
-    longcolsmax <- rep(1, length(planetsLonGCols))
+    panalogymin <- rep(1, length(planetsBaseCols)-5)
+    panalogymax <- rep(6, length(planetsBaseCols)-5)
     orbsmin <- rep(1, length(deforbs))
     orbsmax <- rep(12, length(deforbs))
     polaritymin <- rep(0, length(defaspectspolarity))
@@ -2453,13 +2452,14 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planetenergymin <- rep(0, length(defplanetsenergy))
     planetenergymax <- rep(30, length(defplanetsenergy))
 
-    minvals <- c( 2,  2, 1, 1, 0, 1,  0, 1, 0, -20, -10, 1, longcolsmin, orbsmin, polaritymin, aspectenergymin, planetenergymin)
-    maxvals <- c(10, 20, 4, 2, 1, 3, 20, 2, 9,  20,  10, 4, longcolsmax, orbsmax, polaritymax, aspectenergymax, planetenergymax)
+    minvals <- c( 2,  2, 1, 1, 0, 1,  0, 1, 0, -20, -10, 1, panalogymin, orbsmin, polaritymin, aspectenergymin, planetenergymin)
+    maxvals <- c(10, 20, 4, 2, 1, 3, 20, 2, 9,  20,  10, 4, panalogymax, orbsmax, polaritymax, aspectenergymax, planetenergymax)
 
+    panalogyCols <- planetsLonGCols[5:length(planetsLonGCols)]
     varnames <- c('mapredslow', 'maprice', 'mapricetype', 'predtype', 'cordir', 'degsplit', 'threshold', 'energymode', 'energygrowthsp', 'energyret',
-                  'alignmove', 'pricemadir', planetsLonGCols, aspOrbsCols, planetsAspCombCols, aspectsEnergyCols, planetsEnergyCols)
+                  'alignmove', 'pricemadir', panalogyCols, aspOrbsCols, planetsAspCombCols, aspectsEnergyCols, planetsEnergyCols)
 
-    ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=TRUE,
+    ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=FALSE,
        monitor=gaMonitor, maxiter=200, run=50, popSize=400, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.3,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
        securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
