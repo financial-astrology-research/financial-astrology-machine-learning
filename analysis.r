@@ -2417,7 +2417,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     energyret <- x[10]/10
     alignmove <- x[11]
     pricemadir <- x[12]
-    pa.e <- 13+length(planetsBaseCols)-5
+    pa.e <- 13+length(planetsBaseCols)
     panalogy <- analogytypes[x[13:(pa.e-1)]]
     co.e <- pa.e+length(deforbs)
     cusorbs = x[pa.e:(co.e-1)]
@@ -2440,8 +2440,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   optimizeRelativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
     cat("---------------------------- Initialize optimization ----------------------------------\n\n")
-    panalogymin <- rep(1, length(planetsBaseCols)-5)
-    panalogymax <- rep(6, length(planetsBaseCols)-5)
+    panalogymin <- rep(1, length(planetsBaseCols))
+    panalogymax <- rep(6, length(planetsBaseCols))
     orbsmin <- rep(1, length(deforbs))
     orbsmax <- rep(12, length(deforbs))
     polaritymin <- rep(0, length(defaspectspolarity))
