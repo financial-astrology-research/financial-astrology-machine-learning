@@ -2040,7 +2040,6 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     for (curcol in names(planets.day.asp)) {
       # ignore aspects between nodes that happens ever
       if (curcol == 'SNLONNNLON') next
-      aspname <- planets.day.asp[[curcol]]
       col1 <- paste(substr(curcol, 1, 2), sep='')
       col2 <- paste(substr(curcol, 6, 7), sep='')
       # longitude col names
@@ -2062,6 +2061,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       planetenergy1 <- planetsenergy['energy', loncol1] * planetret1
       planetenergy2 <- planetsenergy['energy', loncol2] * planetret2
 
+      aspname <- planets.day.asp[[curcol]]
       # determine aspect energy based on aspect and involved planets
       aspectenergy <- aspectsenergy['energy', aspname] * (planetenergy1 + planetenergy2)
       # get the polarity and in case the energy is negative then invert polarity
@@ -2185,7 +2185,9 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                                   dimnames = list(c('energy'), planetsLonGCols))
 
     # for the first 5 planets use don't use analogy
-    panalogy <- c(planetsLonGCols[1:5], panalogy)
+    if (length(panalogy) < length(planetsLonGCols)) {
+      panalogy <- c(planetsLonGCols[1:5], panalogy)
+    }
     panalogymatrix <- matrix(panalogy, nrow = 1, ncol = length(panalogy), byrow = TRUE,
                                   dimnames = list(c('analogy'), planetsLonGCols))
 
