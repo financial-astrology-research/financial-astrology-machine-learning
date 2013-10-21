@@ -716,9 +716,9 @@ energyGrowth <- function(energy, distance, speed) {
 
 planetsVarsSignificance <- function(planets, currency, threshold) {
   planets  <- merge(planets, currency, by='Date')
-  spcols <- paste(planetsSpCols, 'G', sep='')
-  loncols <- paste(planetsLonCols, 'G', sep='')
-  cols <- c(loncols, spcols, planetsCombLonCols)
+  #spcols <- paste(planetsSpCols, 'G', sep='')
+  #cols <- c(loncols, spcols, planetsCombLonCols)
+  cols <- paste(planetsLonCols, 'G', sep='')
   significance <- data.table()
 
   for (curcol in cols) {
@@ -728,6 +728,7 @@ planetsVarsSignificance <- function(planets, currency, threshold) {
     t1[, c('pdiff', 'variable') := list(V2-V1, curcol)]
     setnames(t1, curcol, 'key')
     t1[, key := as.character(key)]
+    t1[, keyidx := paste(key, curcol, sep='')]
     t1 <- t1[pdiff >= threshold | pdiff <= -threshold]
     if (nrow(t1) > 0) {
       significance <- rbind(significance, t1)
@@ -2010,17 +2011,16 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   planetsDaySignificance <- function(planets.day, significance, panalogy, answer=T, verbose=F, energymode=0,
                                      aspectspolarity, aspectsenergy, planetsenergy, energygrowthsp, energyret) {
     cols <- planetsLonGCols
+    #significance.day <- significance[keyidx == sigidxs]
     planetsDaySignificanceFilter <- function(curcol) {
-      if (!is.na(panalogy['analogy', curcol])) {
-        res <- significance[key %in% planets.day[[curcol]] & variable %in% panalogy['analogy', curcol]]
-        if (nrow(res) > 0) {
-          return(cbind(res, origin=curcol))
-        }
+      sigidx <- paste(planets.day[curcol], panalogy['analogy', curcol], sep='')
+      res <- significance[keyidx == sigidx]
+      if (nrow(res) > 0) {
+        cbind(res, origin=curcol)
       }
     }
 
     significance.day <- do.call(rbind, lapply(cols, planetsDaySignificanceFilter))
-
     # no significant positions for this day
     if (is.null(significance.day)) {
       return(0)
@@ -2195,7 +2195,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     setkey(planets, 'Date')
     security <- openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, maprice, dateformat, pricemadir)
     significance <- planetsVarsSignificance(planets[Date >= as.Date(tsdate) & Date <= as.Date(tedate)], security, threshold)
-    setkey(significance, 'key', 'variable', 'V3', 'V4')
+    setkey(significance, 'keyidx', 'key', 'variable', 'V3', 'V4')
 
     planets[, wday := format(Date, "%w")]
     pltitle <- paste(securityfile, " / ", "maprice=", maprice, "mapricetype=", mapricetype, "mapredslow=", mapredslow,
