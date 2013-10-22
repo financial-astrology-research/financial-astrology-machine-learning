@@ -722,8 +722,17 @@ planetsVarsSignificance <- function(planets, currency, threshold) {
   significance <- data.table(melt(planets, id.var=c('Date', 'Eff'), measure.var=cols))
   significance <- significance[, cbind(as.list(prop.table(as.numeric(table(Eff)))), as.list(as.numeric(table(Eff)))), by=c('variable', 'value')]
   setnames(significance, c('variable', 'key', 'V1', 'V2', 'V3', 'V4'))
-  significance[, c('pdiff', 'keyidx') := list(V2-V1, paste(key, variable, sep=''))]
+  # helper to build significance table analogy for each planet
+  significancePanalogy <- function(curcol) {
+    planet.significance <- data.table(significance)
+    planet.significance[, origin := curcol]
+  }
+  # build significance analogy for all planets
+  significance <- do.call(rbind, lapply(cols, significancePanalogy))
+  significance[, c('pdiff', 'keyidx') := list(V2-V1, paste(key, variable, origin, sep='_'))]
   significance <- significance[pdiff >= threshold | pdiff <= -threshold]
+  significance <- significance[!is.na(key)]
+  setkey(significance, 'keyidx', 'V1', 'V2')
   return(significance)
 }
 
@@ -1999,16 +2008,10 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   planetsDaySignificance <- function(planets.day, significance, panalogy, answer=T, verbose=F, energymode=0,
                                      aspectspolarity, aspectsenergy, planetsenergy, energygrowthsp, energyret) {
     cols <- planetsLonGCols
-    #significance.day <- significance[keyidx == sigidxs]
-    planetsDaySignificanceFilter <- function(curcol) {
-      sigidx <- paste(planets.day[curcol], panalogy['analogy', curcol], sep='')
-      res <- significance[keyidx == sigidx]
-      if (nrow(res) > 0) {
-        cbind(res, origin=curcol)
-      }
-    }
-
-    significance.day <- do.call(rbind, lapply(cols, planetsDaySignificanceFilter))
+    sigidxs <- paste(planets.day[cols], panalogy['analogy', cols], cols, sep='_')
+    significance.day <- significance[keyidx %in% sigidxs]
+    setkey(significance.day, 'origin', 'V1', 'V2')
+    #significance.day <- do.call(rbind, lapply(cols, planetsDaySignificanceFilter))
     # no significant positions for this day
     if (is.null(significance.day)) {
       return(0)
@@ -2183,7 +2186,6 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     setkey(planets, 'Date')
     security <- openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, maprice, dateformat, pricemadir)
     significance <- planetsVarsSignificance(planets[Date >= as.Date(tsdate) & Date <= as.Date(tedate)], security, threshold)
-    setkey(significance, 'keyidx', 'key', 'variable', 'V3', 'V4')
 
     planets[, wday := format(Date, "%w")]
     pltitle <- paste(securityfile, " / ", "maprice=", maprice, "mapricetype=", mapricetype, "mapredslow=", mapredslow,
