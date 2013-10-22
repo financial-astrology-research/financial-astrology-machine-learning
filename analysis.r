@@ -719,23 +719,11 @@ planetsVarsSignificance <- function(planets, currency, threshold) {
   #spcols <- paste(planetsSpCols, 'G', sep='')
   #cols <- c(loncols, spcols, planetsCombLonCols)
   cols <- paste(planetsLonCols, 'G', sep='')
-  significance <- data.table()
-
-  for (curcol in cols) {
-    setattr(significance, ".internal.selfref", NULL)
-    idx <- length(significance)+1
-    t1 <- planets[, cbind(as.list(prop.table(as.numeric(table(Eff)))), as.list(as.numeric(table(Eff)))), by=curcol]
-    t1[, c('pdiff', 'variable') := list(V2-V1, curcol)]
-    setnames(t1, curcol, 'key')
-    t1[, key := as.character(key)]
-    t1[, keyidx := paste(key, curcol, sep='')]
-    t1 <- t1[pdiff >= threshold | pdiff <= -threshold]
-    if (nrow(t1) > 0) {
-      significance <- rbind(significance, t1)
-    }
-  }
-
-  significance <- subset(significance, key != 'anon')
+  significance <- data.table(melt(planets, id.var=c('Date', 'Eff'), measure.var=cols))
+  significance <- significance[, cbind(as.list(prop.table(as.numeric(table(Eff)))), as.list(as.numeric(table(Eff)))), by=c('variable', 'value')]
+  setnames(significance, c('variable', 'key', 'V1', 'V2', 'V3', 'V4'))
+  significance[, c('pdiff', 'keyidx') := list(V2-V1, paste(key, variable, sep=''))]
+  significance <- significance[pdiff >= threshold | pdiff <= -threshold]
   return(significance)
 }
 
