@@ -182,6 +182,12 @@ defaspectspolarity <- c(1, 1, 0, 1, 1, 0, 1, 0, 0, 0,
 
 defaspectsenergy <- c(20, 5, 5, 10, 5, 15, 10, 5, 5, 20)
 defplanetsenergy <- c(5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5)
+defpanalogy <- list(c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12),
+                    c(1, 2, 3, 4, 5, 1, 1, 1, 1, 1, 1, 1),
+                    c(1, 2, 3, 4, 5, 3, 3, 3, 3, 3, 3, 3),
+                    c(1, 2, 3, 4, 5, 4, 4, 4, 4, 4, 4, 4),
+                    c(1, 2, 3, 4, 5, 6, 7, 0, 0, 0, 0, 0),
+                    c(1, 2, 3, 4, 5, 0, 0, 0, 0, 0, 0, 0))
 
 # a function that returns the position of n-th largest
 maxn <- function(x, n) {
@@ -1117,6 +1123,7 @@ generateSamples <- function(ds, n) {
 }
 
 gaint_Population <- function (object, ...) {
+  pdefpanalogy <- 0.5
   pdefpolarity <- 0.3
   pdeforb <- 0.3
   pdefaspectenergy <- 0.3
@@ -1124,16 +1131,17 @@ gaint_Population <- function (object, ...) {
   min <- object@min
   max <- object@max
   nvars <- length(min)
-  nvars1.s <- 1
-  nvars1.e <- nvars-length(defaspectspolarity)-length(deforbs)-length(defaspectsenergy)-length(defplanetsenergy)
+  nvars1.e <- nvars-length(defpanalogy[[1]])-length(defaspectspolarity)-length(deforbs)-length(defaspectsenergy)-length(defplanetsenergy)
   nvars2.s <- nvars1.e+1
-  nvars2.e <- nvars1.e+length(deforbs)
+  nvars2.e <- nvars1.e+length(defpanalogy[[1]])
   nvars3.s <- nvars2.e+1
-  nvars3.e <- nvars2.e+length(defaspectspolarity)
+  nvars3.e <- nvars2.e+length(deforbs)
   nvars4.s <- nvars3.e+1
-  nvars4.e <- nvars3.e+length(defaspectsenergy)
+  nvars4.e <- nvars3.e+length(defaspectspolarity)
   nvars5.s <- nvars4.e+1
-  nvars5.e <- nvars4.e+length(defplanetsenergy)
+  nvars5.e <- nvars4.e+length(defaspectsenergy)
+  nvars6.s <- nvars5.e+1
+  nvars6.e <- nvars5.e+length(defplanetsenergy)
 
   population <- matrix(NA, nrow = object@popSize, ncol = nvars)
   for (j in 1:nvars) {
@@ -1141,21 +1149,25 @@ gaint_Population <- function (object, ...) {
   }
 
   for (i in 1:nrow(population)) {
+    # override by default panalogy
+    if (pdefpanalogy > runif(1)) {
+      population[i, nvars2.s:nvars2.e] <- defpanalogy[[sample(1:length(defpanalogy), 1)]]
+    }
     # override by default polarities
     if (pdefpolarity > runif(1)) {
-      population[i, nvars2.s:nvars2.e] <- deforbs
+      population[i, nvars3.s:nvars3.e] <- deforbs
     }
     # override by default orbs
     if (pdeforb > runif(1)) {
-      population[i, nvars3.s:nvars3.e] <- defaspectspolarity
+      population[i, nvars4.s:nvars4.e] <- defaspectspolarity
     }
     # override by default aspects energy
     if (pdefaspectenergy > runif(1)) {
-      population[i, nvars4.s:nvars4.e] <- defaspectsenergy
+      population[i, nvars5.s:nvars5.e] <- defaspectsenergy
     }
     # override by default planets energy
     if (pdefplanetenergy > runif(1)) {
-      population[i, nvars5.s:nvars5.e] <- defplanetsenergy
+      population[i, nvars6.s:nvars6.e] <- defplanetsenergy
     }
   }
 
@@ -2180,7 +2192,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       panalogy <- c(planetsLonGCols[1:5], panalogy)
     }
     panalogymatrix <- matrix(panalogy, nrow = 1, ncol = length(panalogy), byrow = TRUE,
-                                  dimnames = list(c('analogy'), planetsLonGCols))
+                             dimnames = list(c('analogy'), planetsLonGCols))
 
     planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""), orbsmatrix, aspects, degsplit)
     setkey(planets, 'Date')
