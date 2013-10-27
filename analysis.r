@@ -12,7 +12,7 @@ library(rpart)
 library(GA)
 library(gtools)
 library(clusterSim)
-library(splus2R)
+#library(splus2R)
 `%ni%` <- Negate(`%in%`)
 # no scientific notation
 options(scipen=100)
@@ -738,6 +738,7 @@ planetsVarsSignificance <- function(planets, currency, threshold) {
   significance[, c('pdiff', 'keyidx') := list(V2-V1, paste(key, variable, origin, sep='_'))]
   significance <- significance[pdiff >= threshold | pdiff <= -threshold]
   significance <- significance[!is.na(key)]
+  significance[, Eff := cut(pdiff, c(-1000, 0, 1000), labels=c('down', 'up'), right=FALSE)]
   setkey(significance, 'keyidx', 'V1', 'V2')
   return(significance)
 }
@@ -2017,8 +2018,9 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   ptm <- proc.time()
   planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG', 'SNLONG')
 
-  planetsDaySignificance <- function(planets.day, significance, panalogy, answer=T, verbose=F, energymode=0,
+  planetsDaySignificance <- function(planets.day, significance, panalogy, answer=T, verbose=F,
                                      aspectspolarity, aspectsenergy, planetsenergy, energygrowthsp, energyret) {
+    curdate <- planets.day[['Date']]
     cols <- planetsLonGCols
     sigidxs <- paste(planets.day[cols], panalogy['analogy', cols], cols, sep='_')
     significance.day <- significance[keyidx %in% sigidxs]
@@ -2033,16 +2035,10 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
     # ignore anon aspects or non active
     planets.day.asp <- planets.day[planets.day != "anon" & names(planets.day) %in% activecols]
-    energy <- list(SULONG = 1, MOLONG = 1, MELONG = 1, VELONG = 1, MALONG = 1, JULONG = 1, SALONG = 1,
-                   URLONG = 1, NELONG = 1, PLLONG = 1, NNLONG = 1, SNLONG = 1)
-    energy.pos <- list(SULONG = 1, MOLONG = 1, MELONG = 1, VELONG = 1, MALONG = 1, JULONG = 1, SALONG = 1,
-                       URLONG = 1, NELONG = 1, PLLONG = 1, NNLONG = 1, SNLONG = 1)
-    energy.neg <- list(SULONG = 1, MOLONG = 1, MELONG = 1, VELONG = 1, MALONG = 1, JULONG = 1, SALONG = 1,
-                       URLONG = 1, NELONG = 1, PLLONG = 1, NNLONG = 1, SNLONG = 1)
 
-    for (curcol in names(planets.day.asp)) {
+    energyAspects <- function(curcol) {
       # ignore aspects between nodes that happens ever
-      if (curcol == 'SNLONNNLON') next
+      if (curcol == 'SNLONNNLON') return
       col1 <- paste(substr(curcol, 1, 2), sep='')
       col2 <- paste(substr(curcol, 6, 7), sep='')
       # longitude col names
@@ -2079,49 +2075,26 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       aspectenergydis <- energyGrowth(abs(aspectenergy), distance, energygrowthsp)
 
       if (aspectpolarity == 1) {
-        energy.pos[[loncol1]] <- energy.pos[[loncol1]] + aspectenergydis
-        energy.pos[[loncol2]] <- energy.pos[[loncol2]] + aspectenergydis
+        effect <- 'up'
       }
       else if (aspectpolarity == 0) {
-        energy.neg[[loncol1]] <- energy.neg[[loncol1]] + aspectenergydis
-        energy.neg[[loncol2]] <- energy.neg[[loncol2]] + aspectenergydis
+        effect <- 'down'
       }
       else {
         stop(paste("No valid polarity was provided - ", curcol, aspname))
       }
 
-      energy[[loncol1]] <- energy[[loncol1]] + aspectenergydis
-      energy[[loncol2]] <- energy[[loncol2]] + aspectenergydis
+      return(data.frame(rbind(cbind(loncol1, aspectenergydis, effect),
+                              cbind(loncol2, aspectenergydis, effect)), stringsAsFactors=F))
     }
 
-    if (energymode > 0) {
-      for (curcol in names(energy)) {
-        setattr(significance.day, ".internal.selfref", NULL)
-
-        if (energymode == 1) {
-          # add more energy to the lower part based on bad aspects and to the upper part with good aspects
-          # energy influence by count
-
-          significance.day[origin == curcol & V1 > V2, V1 := V1 * energy.pos[[curcol]]]
-          significance.day[origin == curcol & V2 > V1, V2 := V2 * energy.pos[[curcol]]]
-          significance.day[origin == curcol & V1 < V2, V1 := V1 * energy.neg[[curcol]]]
-          significance.day[origin == curcol & V2 < V1, V2 := V2 * energy.neg[[curcol]]]
-        }
-        else if (energymode == 2) {
-          # add more energy to the lower part based on good aspects and to the upper part with bad aspects
-          # energy influence by count
-          significance.day[origin == curcol & V1 > V2, V1 := V1 * energy.neg[[curcol]]]
-          significance.day[origin == curcol & V2 > V1, V2 := V2 * energy.neg[[curcol]]]
-          significance.day[origin == curcol & V1 < V2, V1 := V1 * energy.pos[[curcol]]]
-          significance.day[origin == curcol & V2 < V1, V2 := V2 * energy.pos[[curcol]]]
-        }
-        else {
-          stop("No valid energy mode was provided.")
-        }
-      }
-    }
-
-    trend <- as.integer(significance.day[, (sum(V2)-sum(V1)) * 100])
+    # build energy aspects table
+    energy <- data.table(do.call(rbind, lapply(names(planets.day.asp), energyAspects)))
+    setnames(energy, c('origin', 'aspectenergydis', 'effect'))
+    energy <- energy[, sum(as.numeric(as.character(aspectenergydis))), by=c('origin', 'effect')]
+    energy <- dcast(energy, origin ~ effect, value.var='V1')
+    significance.day <- merge(significance.day, energy, by=c('origin'))
+    significance.day[, Date := curdate]
 
     if (verbose) {
       # TODO: print the energy lists as tables
@@ -2142,23 +2115,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       cat("###  =", trend, "\n")
     }
 
-    # the result could return as answer (factor) or numeric (kind of probability)
-    if (answer) {
-      if (trend > 0) {
-        return('up')
-      }
-      else if (trend < 0) {
-        return('down')
-      }
-      else {
-        return('none')
-      }
-    }
-    else {
-      return(trend)
-    }
-
-    return(0)
+    return(significance.day)
   }
 
   relativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, mapredslow, maprice,
@@ -2285,9 +2242,30 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   processPredictions <- function(planets.test, security, significance, panalogy, predtype, mapredfunc, mapredslow,
                                  cordir, pltitle, energymode, energygrowthsp, energyret, alignmove, aspectspolarity,
                                  aspectsenergy, planetsenergy, verbose, doplot) {
-    predEff <- apply(planets.test, 1, function(x)
-                     planetsDaySignificance(x, significance, panalogy, F, verbose, energymode, aspectspolarity, aspectsenergy,
-                                            planetsenergy, energygrowthsp, energyret))
+    significance.days <- do.call(rbind, apply(planets.test, 1, function(x)
+                                              planetsDaySignificance(x, significance, panalogy, F, verbose, aspectspolarity,
+                                                                     aspectsenergy, planetsenergy, energygrowthsp, energyret)))
+    # Replace NAs for safe energy multiplication
+    significance.days[is.na(down), down := 1]
+    significance.days[is.na(up), up := 1]
+
+    if (energymode == 1) {
+      # add more energy to the lower part based on bad aspects and to the upper part with good aspects
+      # energy influence by count
+      significance.days[Eff == 'up', c('V2', 'V1') := list(V2 * up, V1 * down)]
+      significance.days[Eff == 'down', c('V2', 'V1') := list(V2 * down, V1 * up)]
+    }
+    else if (energymode == 2) {
+      # add more energy to the lower part based on good aspects and to the upper part with bad aspects
+      # energy influence by count
+      significance.days[Eff == 'down', c('V2', 'V1') := list(V2 * up, V1 * down)]
+      significance.days[Eff == 'up', c('V2', 'V1') := list(V2 * down, V1 * up)]
+    }
+    else {
+      stop("No valid energy mode was provided.")
+    }
+
+    predEff <- significance.days[, (sum(V2)-sum(V1)) * 10, by='Date']$V1
 
     # in case that all predictions are 0 we skip this solution
     if (all(predEff == 0)) {
