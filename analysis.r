@@ -2075,25 +2075,30 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       aspectenergydis <- energyGrowth(abs(aspectenergy), distance, energygrowthsp)
 
       if (aspectpolarity == 1) {
-        effect <- 'up'
+        up <- aspectenergydis
+        down <- 0
+        res <- data.frame(rbind(cbind(loncol1, up, down),
+                                cbind(loncol2, up, down)), stringsAsFactors=F)
       }
       else if (aspectpolarity == 0) {
-        effect <- 'down'
+        up <- 0
+        down <- aspectenergydis
+        res <- data.frame(rbind(cbind(loncol1, up, down),
+                                cbind(loncol2, up, down)), stringsAsFactors=F)
       }
       else {
         stop(paste("No valid polarity was provided - ", curcol, aspname))
       }
 
-      return(data.frame(rbind(cbind(loncol1, aspectenergydis, effect),
-                              cbind(loncol2, aspectenergydis, effect)), stringsAsFactors=F))
+      return(res)
     }
 
     # build energy aspects table
     energy <- data.table(do.call(rbind, lapply(names(planets.day.asp), energyAspects)))
-    setnames(energy, c('origin', 'aspectenergydis', 'effect'))
-    energy <- energy[, sum(as.numeric(as.character(aspectenergydis))), by=c('origin', 'effect')]
-    energy <- dcast(energy, origin ~ effect, value.var='V1')
-    significance.day <- merge(significance.day, energy, by=c('origin'))
+    setnames(energy, 'loncol1', 'origin')
+    energy.sum <- energy[, list(sum(as.numeric(up)), sum(as.numeric(down))), by=origin]
+    setnames(energy.sum, c('origin', 'up', 'down'))
+    significance.day <- merge(significance.day, energy.sum, by=c('origin'))
     significance.day[, Date := curdate]
 
     if (verbose) {
@@ -2165,14 +2170,37 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                      "\n planetsenergy=c(", paste(planetsenergy, collapse=","), ")")
     planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate) & wday %in% c(1, 2, 3, 4, 5)]
 
+    # calculate predictions
+    planets.pred <- planets[Date > as.Date(vsdate) & Date <= as.Date(cedate) & wday %in% c(1, 2, 3, 4, 5)]
+    significance.days <- do.call(rbind, apply(planets.pred, 1, function(x)
+                                              planetsDaySignificance(x, significance, panalogymatrix, F, verbose, aspectspolaritymatrix,
+                                                                     aspectsenergymatrix, planetsenergymatrix, energygrowthsp, energyret)))
+
+    if (energymode == 1) {
+      # add more energy to the lower part based on bad aspects and to the upper part with good aspects
+      # energy influence by count
+      significance.days[Eff == 'up', c('V2', 'V1') := list(V2 * up, V1 * down)]
+      significance.days[Eff == 'down', c('V2', 'V1') := list(V2 * down, V1 * up)]
+    }
+    else if (energymode == 2) {
+      # add more energy to the lower part based on good aspects and to the upper part with bad aspects
+      # energy influence by count
+      significance.days[Eff == 'down', c('V2', 'V1') := list(V2 * up, V1 * down)]
+      significance.days[Eff == 'up', c('V2', 'V1') := list(V2 * down, V1 * up)]
+    }
+    else {
+      stop("No valid energy mode was provided.")
+    }
+
+    predEff <- significance.days[, (sum(V2)-sum(V1)) * 10, by='Date']
+    predEff[, Date := as.Date(Date, format="%Y-%m-%d")]
+
     # compute predictions by year an calculate fitness by the mean to meter the solution stability
     for (curyear in unique(planets.test$Year)) {
       setattr(planets.test, ".internal.selfref", NULL)
-      res <- processPredictions(planets.test=planets.test[Year == curyear], security=security, significance=significance, panalogy=panalogymatrix,
-                                 predtype=predtype, mapredfunc=mapredfunc, mapredslow=mapredslow, cordir=cordir, pltitle=pltitle,
-                                 energymode=energymode, energygrowthsp=energygrowthsp, energyret=energyret, alignmove=alignmove,
-                                 aspectspolarity=aspectspolaritymatrix, aspectsenergy=aspectsenergymatrix,
-                                 planetsenergy=planetsenergymatrix, verbose=verbose, doplot=doplot)
+      res <- processPredictions(planets.test=planets.test[Year == curyear], predEff=predEff, security=security, predtype=predtype,
+                                mapredfunc=mapredfunc, mapredslow=mapredslow, cordir=cordir, pltitle=pltitle, alignmove=alignmove,
+                                verbose=verbose, doplot=doplot)
       fitness[[length(fitness)+1]] <- res$fitness
       volatility[[length(volatility)+1]] <- res$volatility
       correlation[[length(correlation)+1]] <- res$correlation
@@ -2188,11 +2216,9 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     for (curyear in unique(planets.test2$Year)) {
       setattr(planets.test2, ".internal.selfref", NULL)
-      res2 <- processPredictions(planets.test=planets.test2[Year == curyear], security=security, significance=significance, panalogy=panalogymatrix,
-                                 predtype=predtype, mapredfunc=mapredfunc, mapredslow=mapredslow, cordir=cordir, pltitle=pltitle,
-                                 energymode=energymode, energygrowthsp=energygrowthsp, energyret=energyret, alignmove=alignmove,
-                                 aspectspolarity=aspectspolaritymatrix, aspectsenergy=aspectsenergymatrix,
-                                 planetsenergy=planetsenergymatrix, verbose=verbose, doplot=doplot)
+      res2 <- processPredictions(planets.test=planets.test2[Year == curyear], predEff=predEff, security=security, predtype=predtype,
+                                 mapredfunc=mapredfunc, mapredslow=mapredslow, cordir=cordir, pltitle=pltitle, alignmove=alignmove,
+                                 verbose=verbose, doplot=doplot)
       fitness2[[length(fitness2)+1]] <- res2$fitness
       volatility2[[length(volatility2)+1]] <- res2$volatility
       correlation2[[length(correlation2)+1]] <- res2$correlation
@@ -2239,33 +2265,11 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(list(fitness=meanfitness, planets=res2$planets, security=security))
   }
 
-  processPredictions <- function(planets.test, security, significance, panalogy, predtype, mapredfunc, mapredslow,
-                                 cordir, pltitle, energymode, energygrowthsp, energyret, alignmove, aspectspolarity,
-                                 aspectsenergy, planetsenergy, verbose, doplot) {
-    significance.days <- do.call(rbind, apply(planets.test, 1, function(x)
-                                              planetsDaySignificance(x, significance, panalogy, F, verbose, aspectspolarity,
-                                                                     aspectsenergy, planetsenergy, energygrowthsp, energyret)))
-    # Replace NAs for safe energy multiplication
-    significance.days[is.na(down), down := 1]
-    significance.days[is.na(up), up := 1]
+  processPredictions <- function(planets.test, predEff, security, predtype, mapredfunc, mapredslow,
+                                 cordir, pltitle, alignmove, verbose, doplot) {
 
-    if (energymode == 1) {
-      # add more energy to the lower part based on bad aspects and to the upper part with good aspects
-      # energy influence by count
-      significance.days[Eff == 'up', c('V2', 'V1') := list(V2 * up, V1 * down)]
-      significance.days[Eff == 'down', c('V2', 'V1') := list(V2 * down, V1 * up)]
-    }
-    else if (energymode == 2) {
-      # add more energy to the lower part based on good aspects and to the upper part with bad aspects
-      # energy influence by count
-      significance.days[Eff == 'down', c('V2', 'V1') := list(V2 * up, V1 * down)]
-      significance.days[Eff == 'up', c('V2', 'V1') := list(V2 * down, V1 * up)]
-    }
-    else {
-      stop("No valid energy mode was provided.")
-    }
-
-    predEff <- significance.days[, (sum(V2)-sum(V1)) * 10, by='Date']$V1
+    planets.test.pred <- merge(planets.test, predEff, by='Date')
+    predEff <- planets.test.pred$V1
 
     # in case that all predictions are 0 we skip this solution
     if (all(predEff == 0)) {
