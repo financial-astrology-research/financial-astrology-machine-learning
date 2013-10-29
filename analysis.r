@@ -687,7 +687,7 @@ historyAspectsCorrelation <- function(trans, trans.hist, cor_method, kplanets, k
   data.table(predtable)
 }
 
-openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1, spby=60) {
+openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1) {
   planets.file <- npath(planets.file)
   planets <- fread(planets.file, sep="\t", na.strings="", verbose = F)
   planets[, Date := as.Date(planets$Date, format="%Y-%m-%d")]
@@ -696,23 +696,34 @@ openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1, spby=60) {
   setkey(planets, 'Date')
 
   # calculate longitudinal differences
-  for (i in 1:length(planetsCombLon)) {
-    setattr(planets, ".internal.selfref", NULL)
-    combname <- paste(planetsCombLon[[i]][1], planetsCombLon[[i]][2], sep='')
-    combnameorb <- paste(planetsCombLon[[i]][1], planetsCombLon[[i]][2], 'ORB', sep='')
-    col1 <- planetsCombLon[[i]][1]
-    col2 <- planetsCombLon[[i]][2]
-    planets[, c(combname, combnameorb) := diffDeg(get(planetsCombLon[[i]][1]), get(planetsCombLon[[i]][2]), col1, col2, cusorbs, aspects)]
+  planetsAspects <- function(curcol) {
+    col1 <- paste(substr(curcol, 1, 5), sep='')
+    col2 <- paste(substr(curcol, 6, 10), sep='')
+    combnameorb <- paste(col1, col2, 'ORB', sep='')
+    planets[, c(curcol) := abs(((get(col1) - get(col2) + 180) %% 360) - 180)]
+    planets[, c(combnameorb) := get(curcol)]
+
+    for (i in 1:length(aspects)) {
+      aspname <- paste('a', aspects[i], sep='')
+      comborb <- cusorbs['orbs', aspname]
+      rstart <- aspects[i]-comborb
+      rend <- aspects[i]+comborb
+      planets[get(combnameorb) >= rstart & get(combnameorb) <= rend, c(combnameorb) := round(aspects[i] - get(combnameorb), digits = 2)]
+      planets[get(curcol) >= rstart & get(curcol) <= rend, c(curcol) := aspects[i]]
+    }
+
+    planets[get(curcol) %ni% aspects, c(curcol) := NA]
+    namecurcol <- paste('a', planets[[curcol]], sep='')
+    planets[, c(curcol) := namecurcol]
   }
 
-  for (loncol in planetsLonCols) {
-    planets[, c(paste(loncol, 'G', sep='')) := cut(get(loncol), seq(0, 360, by=lonby))]
+  # group by longitude
+  planetsLonGroup <- function(curcol) {
+    planets[, c(paste(curcol, 'G', sep='')) := cut(get(curcol), seq(0, 360, by=lonby))]
   }
 
-  for (spcol in planetsSpCols) {
-    planets[, c(paste(spcol, 'G', sep='')) := cut(get(spcol), breaks=spby)]
-  }
-
+  sapply(planetsCombLonCols, planetsAspects)
+  sapply(planetsLonCols, planetsLonGroup)
   return(planets)
 }
 
@@ -1602,20 +1613,6 @@ aggregatePredictTransTable <- function(predict.table, threshold) {
   predict.table.aggr[, predEff := lapply(prop, function(x) ifelse(x > threshold, 'down', ifelse(x < -threshold, 'up', NA)))]
 }
 
-diffDeg <- function(x, y, xname, yname, cusorbs, aspects) {
-  vals <- abs(((x-y+180) %% 360) - 180)
-  vals2 <- abs(((x-y+180) %% 360) - 180)
-  for (i in 1:length(aspects)) {
-    aspname <- paste('a', aspects[i], sep='')
-    comborb <- cusorbs['orbs', aspname]
-    vals2[vals2 >= aspects[i]-comborb & vals2 <= aspects[i]+comborb] <- round(abs(aspects[i]-vals2[vals2 >= aspects[i]-comborb & vals2 <= aspects[i]+comborb]), digits = 2)
-    vals[vals >= aspects[i]-comborb & vals <= aspects[i]+comborb] <- aspects[i]
-  }
-  vals[vals %ni% aspects] <- 'non'
-  vals2[vals %ni% aspects] <- NA
-  return(list(paste('a', vals, sep=''), vals2))
-}
-
 #ev <- evtree(choice ~ ., data = BBBClub, minbucket = 10, maxdepth = 2)
 #rp <- as.party(rpart(choice ~ ., data = BBBClub, minbucket = 10))
 #ct <- ctree(choice ~ ., data = BBBClub, minbucket = 10, mincrit = 0.99)
@@ -2034,7 +2031,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
     activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
     # ignore anon aspects or non active
-    planets.day.asp <- planets.day[planets.day != "anon" & names(planets.day) %in% activecols]
+    planets.day.asp <- planets.day[planets.day != "aNA" & names(planets.day) %in% activecols]
 
     energyAspects <- function(curcol) {
       # ignore aspects between nodes that happens ever
