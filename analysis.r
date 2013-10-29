@@ -696,7 +696,7 @@ openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1) {
   setkey(planets, 'Date')
 
   # calculate longitudinal differences
-  planetsAspects <- function(curcol) {
+  for (curcol in planetsCombLonCols) {
     col1 <- paste(substr(curcol, 1, 5), sep='')
     col2 <- paste(substr(curcol, 6, 10), sep='')
     combnameorb <- paste(col1, col2, 'ORB', sep='')
@@ -718,12 +718,10 @@ openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1) {
   }
 
   # group by longitude
-  planetsLonGroup <- function(curcol) {
+  for (curcol in planetsLonCols) {
     planets[, c(paste(curcol, 'G', sep='')) := cut(get(curcol), seq(0, 360, by=lonby))]
   }
 
-  sapply(planetsCombLonCols, planetsAspects)
-  sapply(planetsLonCols, planetsLonGroup)
   return(planets)
 }
 
