@@ -75,7 +75,6 @@ aspectTypesCols <- c('SUT', 'MOT', 'MET', 'VET', 'MAT', 'JUT', 'SAT', 'URT', 'NE
 
 # planets cols
 planetsBaseCols <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "SN", "NN")
-planetsLonGCols <- c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG')
 
 # Aspects and orbs
 aspects = c(0, 30, 45, 60, 72, 90, 120, 135, 150, 180)
@@ -86,6 +85,7 @@ zodDegrees <- seq(0, 360, by=2)
 
 # planets columns names
 planetsLonCols <- paste(planetsBaseCols, 'LON', sep='')
+planetsLonGCols <- paste(planetsLonCols, 'G', sep='')
 planetsLatCols <- paste(planetsBaseCols, 'LAT', sep='')
 planetsSpCols <- paste(planetsBaseCols, 'SP', sep='')
 planetsSpGCols <- paste(planetsSpCols, "G", sep="")
@@ -717,10 +717,11 @@ openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1) {
     planets[, c(curcol) := namecurcol]
   }
 
-  # group by longitude
-  for (curcol in planetsLonCols) {
-    planets[, c(paste(curcol, 'G', sep='')) := cut(get(curcol), seq(0, 360, by=lonby))]
+  calculateLonGroups <- function(x, lonby) {
+    return(cut(x, seq(0, 360, by=lonby)))
   }
+
+  planets[, c(planetsLonGCols) := lapply(.SD, calculateLonGroups, lonby=lonby), .SDcols=planetsLonCols]
 
   return(planets)
 }
