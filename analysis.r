@@ -697,9 +697,9 @@ openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1) {
 
   # calculate longitudinal differences
   for (curcol in planetsCombLonCols) {
-    col1 <- paste(substr(curcol, 1, 5), sep='')
-    col2 <- paste(substr(curcol, 6, 10), sep='')
-    combnameorb <- paste(col1, col2, 'ORB', sep='')
+    col1 <- substr(curcol, 1, 5)
+    col2 <- substr(curcol, 6, 10)
+    combnameorb <- paste(curcol, 'ORB', sep='')
     planets[, c(curcol) := abs(((get(col1) - get(col2) + 180) %% 360) - 180)]
     planets[, c(combnameorb) := get(curcol)]
 
@@ -708,14 +708,19 @@ openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1) {
       comborb <- cusorbs['orbs', aspname]
       rstart <- aspects[i]-comborb
       rend <- aspects[i]+comborb
-      planets[get(combnameorb) >= rstart & get(combnameorb) <= rend, c(combnameorb) := round(aspects[i] - get(combnameorb), digits = 2)]
       planets[get(curcol) >= rstart & get(curcol) <= rend, c(curcol) := aspects[i]]
+      planets[get(combnameorb) >= rstart & get(combnameorb) <= rend, c(combnameorb) := round(aspects[i] - get(combnameorb), digits = 2)]
     }
-
-    planets[get(curcol) %ni% aspects, c(curcol) := NA]
-    namecurcol <- paste('a', planets[[curcol]], sep='')
-    planets[, c(curcol) := namecurcol]
   }
+
+  calculateAspectNames <- function(x) {
+    xaspnames  <- paste('a', x, sep='')
+    # set to NA not in orb aspects
+    xaspnames[xaspnames %ni% aspectscols] <- NA
+    return(xaspnames)
+  }
+
+  planets[, c(planetsCombLonCols) := lapply(.SD, calculateAspectNames), .SDcols=planetsCombLonCols]
 
   calculateLonGroups <- function(x, lonby) {
     return(cut(x, seq(0, 360, by=lonby)))
@@ -2030,7 +2035,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
     activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
     # ignore anon aspects or non active
-    planets.day.asp <- planets.day[planets.day != "aNA" & names(planets.day) %in% activecols]
+    planets.day.asp <- planets.day[!is.na(planets.day) & names(planets.day) %in% activecols]
 
     energyAspects <- function(curcol) {
       # ignore aspects between nodes that happens ever
