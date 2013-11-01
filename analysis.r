@@ -2193,9 +2193,12 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     # calculate predictions
     planets.pred <- planets[Date > as.Date(vsdate) & Date <= as.Date(cedate) & wday %in% c(1, 2, 3, 4, 5)]
-    significance.days <- do.call(rbind, apply(planets.pred, 1, function(x)
-                                              planetsDaySignificance(x, significance, panalogymatrix, F, verbose, aspectspolaritymatrix,
-                                                                     aspectsenergymatrix, planetsenergymatrix, energygrowthsp, energyret)))
+    # helper function to process planetsDaySignificance
+    processPlanesDaySignificance <- function(x) {
+      planetsDaySignificance(x, significance, panalogymatrix, F, verbose, aspectspolaritymatrix, aspectsenergymatrix,
+                             planetsenergymatrix, energygrowthsp, energyret)
+    }
+    significance.days <- rbindlist(apply(planets.pred, 1, processPlanesDaySignificance))
 
     if (energymode == 1) {
       # add more energy to the lower part based on bad aspects and to the upper part with good aspects
