@@ -2057,7 +2057,8 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # ignore anon aspects or non active
     planets.day.asp <- planets.day[!is.na(planets.day) & names(planets.day) %in% activecols]
 
-    energyAspects <- function(curcol) {
+    energyAspects <- function(idx) {
+      curcol <- names(planets.day.asp[idx])
       # ignore aspects between nodes that happens ever
       if (curcol == 'SNLONNNLON') return
       col1 <- paste(substr(curcol, 1, 2), sep='')
@@ -2081,7 +2082,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       planetenergy1 <- planetsenergy['energy', loncol1] * planetret1
       planetenergy2 <- planetsenergy['energy', loncol2] * planetret2
 
-      aspname <- planets.day.asp[[curcol]]
+      aspname <- planets.day.asp[idx]
       # determine aspect energy based on aspect and involved planets
       aspectenergy <- aspectsenergy['energy', aspname] * (planetenergy1 + planetenergy2)
       # get the polarity and in case the energy is negative then invert polarity
@@ -2115,7 +2116,7 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     }
 
     # build energy aspects table
-    energy <- data.table(do.call(rbind, lapply(names(planets.day.asp), energyAspects)))
+    energy <- rbindlist(lapply(1:length(planets.day.asp), energyAspects))
     setnames(energy, 'loncol1', 'origin')
     energy.sum <- energy[, list(sum(as.numeric(up)), sum(as.numeric(down))), by=origin]
     setnames(energy.sum, c('origin', 'up', 'down'))
