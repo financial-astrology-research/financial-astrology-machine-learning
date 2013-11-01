@@ -91,6 +91,7 @@ planetsSpCols <- paste(planetsBaseCols, 'SP', sep='')
 planetsSpGCols <- paste(planetsSpCols, "G", sep="")
 planetsCombLon <- combn(planetsLonCols, 2, simplify=F)
 planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
+planetsCombLonOrbCols <- paste(planetsCombLonCols, 'ORB', sep='')
 planetsGridLon <- expand.grid(planetsLonCols, planetsLonCols)
 planetsGridLonCols <- as.character(apply(planetsGridLon, 1, function(x) paste(x[1], 'r', x[2], sep='')))
 planetsGridAspCols <- as.character(apply(expand.grid(planetsGridLonCols, aspects), 1, function(x) paste(x[1], '_', as.numeric(x[2]), sep='')))
@@ -702,16 +703,33 @@ openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1) {
     combnameorb <- paste(curcol, 'ORB', sep='')
     planets[, c(curcol) := abs(((get(col1) - get(col2) + 180) %% 360) - 180)]
     planets[, c(combnameorb) := get(curcol)]
-
-    for (i in 1:length(aspects)) {
-      aspname <- paste('a', aspects[i], sep='')
-      comborb <- cusorbs['orbs', aspname]
-      rstart <- aspects[i]-comborb
-      rend <- aspects[i]+comborb
-      planets[get(curcol) >= rstart & get(curcol) <= rend, c(curcol) := aspects[i]]
-      planets[get(combnameorb) >= rstart & get(combnameorb) <= rend, c(combnameorb) := round(aspects[i] - get(combnameorb), digits = 2)]
-    }
   }
+
+  calculateAspects <- function(x) {
+    for (aspect in aspects) {
+      aspname <- paste('a', aspect, sep='')
+      comborb <- cusorbs['orbs', aspname]
+      rstart <- aspect-comborb
+      rend <- aspect+comborb
+      x[x >= rstart & x <= rend] <- aspect
+    }
+    return(x)
+  }
+
+  planets[, c(planetsCombLonCols) := lapply(.SD, calculateAspects), .SDcols=planetsCombLonCols]
+
+  calculateAspectOrbs <- function(x) {
+    for (aspect in aspects) {
+      aspname <- paste('a', aspect, sep='')
+      comborb <- cusorbs['orbs', aspname]
+      rstart <- aspect-comborb
+      rend <- aspect+comborb
+      x[x >= rstart & x <= rend] <- round(aspect - x[x >= rstart & x <= rend], digits = 2)
+    }
+    return(x)
+  }
+
+  planets[, c(planetsCombLonOrbCols) := lapply(.SD, calculateAspectOrbs), .SDcols=planetsCombLonOrbCols]
 
   calculateAspectNames <- function(x) {
     xaspnames  <- paste('a', x, sep='')
