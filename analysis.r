@@ -761,19 +761,21 @@ planetsVarsSignificance <- function(planets, currency, threshold) {
   significance <- data.table(melt(planets, id.var=c('Date', 'Eff'), measure.var=cols))
   significance <- significance[, cbind(as.list(prop.table(as.numeric(table(Eff)))), as.list(as.numeric(table(Eff)))), by=c('variable', 'value')]
   setnames(significance, c('variable', 'key', 'V1', 'V2', 'V3', 'V4'))
-  # helper to build significance table analogy for each planet
-  significancePanalogy <- function(curcol) {
+  significance.full <- data.table()
+
+  # build significance table analogy for each planet
+  for (curcol in cols) {
     planet.significance <- data.table(significance)
     planet.significance[, origin := curcol]
+    significance.full <- rbind(significance.full, planet.significance)
   }
-  # build significance analogy for all planets
-  significance <- do.call(rbind, lapply(cols, significancePanalogy))
-  significance[, c('pdiff', 'keyidx') := list(V2-V1, paste(key, variable, origin, sep='_'))]
-  significance <- significance[pdiff >= threshold | pdiff <= -threshold]
-  significance <- significance[!is.na(key)]
-  significance[, Eff := cut(pdiff, c(-1000, 0, 1000), labels=c('down', 'up'), right=FALSE)]
-  setkey(significance, 'keyidx', 'V1', 'V2')
-  return(significance)
+
+  significance.full[, c('pdiff', 'keyidx') := list(V2-V1, paste(key, variable, origin, sep='_'))]
+  significance.full <- significance.full[pdiff >= threshold | pdiff <= -threshold]
+  significance.full <- significance.full[!is.na(key)]
+  significance.full[, Eff := cut(pdiff, c(-1000, 0, 1000), labels=c('down', 'up'), right=FALSE)]
+  setkey(significance.full, 'keyidx', 'V1', 'V2')
+  return(significance.full)
 }
 
 openPlanetsZod <- function(planets.file, currency, sdate, edate, threshold, planetsLonCols, planetsGridZodCols, aspects, cusorbs) {
