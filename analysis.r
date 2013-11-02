@@ -2099,18 +2099,17 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       if (aspectpolarity == 1) {
         up <- aspectenergydis
         down <- 0
-        res <- data.frame(rbind(cbind(loncol1, up, down),
-                                cbind(loncol2, up, down)), stringsAsFactors=F)
       }
       else if (aspectpolarity == 0) {
         up <- 0
         down <- aspectenergydis
-        res <- data.frame(rbind(cbind(loncol1, up, down),
-                                cbind(loncol2, up, down)), stringsAsFactors=F)
       }
       else {
         stop(paste("No valid polarity was provided - ", curcol, aspname))
       }
+
+      res <- data.frame(rbind(cbind(loncol1, up, down),
+                              cbind(loncol2, up, down)), stringsAsFactors=F)
 
       return(res)
     }
