@@ -2056,8 +2056,10 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
     # ignore anon aspects or non active
     planets.day.asp <- planets.day[!is.na(planets.day) & names(planets.day) %in% activecols]
+    energy <- list()
 
-    energyAspects <- function(idx) {
+    # build energy aspects table
+    for (idx in 1:length(planets.day.asp)) {
       curcol <- names(planets.day.asp[idx])
       # ignore aspects between nodes that happens ever
       if (curcol == 'SNLONNNLON') return
@@ -2108,16 +2110,14 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
         stop(paste("No valid polarity was provided - ", curcol, aspname))
       }
 
-      res <- data.frame(rbind(cbind(loncol1, up, down),
-                              cbind(loncol2, up, down)), stringsAsFactors=F)
-
-      return(res)
+      energy[[length(energy)+1]] <- list(origin=loncol1, up=up, down=down)
+      energy[[length(energy)+1]] <- list(origin=loncol2, up=up, down=down)
     }
 
-    # build energy aspects table
-    energy <- rbindlist(lapply(1:length(planets.day.asp), energyAspects))
-    setnames(energy, 'loncol1', 'origin')
-    energy.sum <- energy[, list(sum(as.numeric(up)), sum(as.numeric(down))), by=origin]
+    # convert energy list to data table
+    energy <- rbindlist(energy)
+    setkey(energy, 'origin')
+    energy.sum <- energy[, list(sum(up), sum(down)), by=origin]
     setnames(energy.sum, c('origin', 'up', 'down'))
     significance.day <- merge(significance.day, energy.sum, by=c('origin'))
     significance.day[, Date := curdate]
