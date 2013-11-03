@@ -2,7 +2,6 @@ library(xts)
 library(timeDate)
 library(quantmod)
 library(ggplot2)
-#library(msProcess)
 library(plyr)
 library(data.table)
 library(fields)
@@ -12,7 +11,7 @@ library(rpart)
 library(GA)
 library(gtools)
 library(clusterSim)
-#library(splus2R)
+library(splus2R)
 `%ni%` <- Negate(`%in%`)
 # no scientific notation
 options(scipen=100)
@@ -2046,10 +2045,10 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     sigidxs <- paste(planets.day[cols], panalogy['analogy', cols], cols, sep='_')
     significance.day <- significance[keyidx %in% sigidxs]
     setkey(significance.day, 'origin', 'V1', 'V2')
-    #significance.day <- do.call(rbind, lapply(cols, planetsDaySignificanceFilter))
+
     # no significant positions for this day
     if (is.null(significance.day)) {
-      return(0)
+      return(data.table())
     }
 
     patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
@@ -2057,6 +2056,11 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # ignore anon aspects or non active
     planets.day.asp <- planets.day[!is.na(planets.day) & names(planets.day) %in% activecols]
     energy <- list()
+
+    # no significant positions for this day
+    if (length(planets.day.asp) == 0) {
+      return(data.table())
+    }
 
     # build energy aspects table
     for (idx in 1:length(planets.day.asp)) {
