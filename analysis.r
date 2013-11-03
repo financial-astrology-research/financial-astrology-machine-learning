@@ -17,7 +17,7 @@ library(xts)
 options(scipen=100)
 options(width=160)
 options(error=recover)
-enableJIT(0)
+enableJIT(3)
 
 `%ni%` <- Negate(`%in%`)
 
@@ -80,7 +80,6 @@ planetsBaseCols <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL",
 
 # Aspects and orbs
 aspects = c(0, 30, 45, 60, 72, 90, 120, 135, 150, 180)
-aspectscols = paste('a', aspects, sep='')
 
 aspOrbsCols <- as.character(apply(expand.grid(aspects, planetsBaseCols[1:(length(planetsBaseCols)-1)]), 1, function(x) paste(x[2], x[1], sep='')))
 zodDegrees <- seq(0, 360, by=2)
@@ -114,7 +113,7 @@ npath <- function(path) {
 }
 
 deforbs <- c(4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0)
-deforbsmatrix = matrix(deforbs, nrow = 1, ncol = 10, dimnames = list('orbs', aspectscols))
+deforbsmatrix = matrix(deforbs, nrow = 1, ncol = 10, dimnames = list('orbs', aspects))
 
 defaspectspolarity <- c(1, 1, 0, 1, 1, 0, 1, 0, 0, 0,
                         1, 1, 0, 1, 1, 0, 1, 0, 0, 0,
@@ -712,8 +711,7 @@ openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1) {
 
   calculateAspects <- function(x) {
     for (aspect in aspects) {
-      aspname <- paste('a', aspect, sep='')
-      comborb <- cusorbs['orbs', aspname]
+      comborb <- cusorbs['orbs', as.character(aspect)]
       rstart <- aspect-comborb
       rend <- aspect+comborb
       x[x >= rstart & x <= rend] <- aspect
@@ -725,8 +723,7 @@ openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1) {
 
   calculateAspectOrbs <- function(x) {
     for (aspect in aspects) {
-      aspname <- paste('a', aspect, sep='')
-      comborb <- cusorbs['orbs', aspname]
+      comborb <- cusorbs['orbs', as.character(aspect)]
       rstart <- aspect-comborb
       rend <- aspect+comborb
       x[x >= rstart & x <= rend] <- round(aspect - x[x >= rstart & x <= rend], digits = 2)
@@ -737,10 +734,9 @@ openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1) {
   planets[, c(planetsCombLonOrbCols) := lapply(.SD, calculateAspectOrbs), .SDcols=planetsCombLonOrbCols]
 
   calculateAspectNames <- function(x) {
-    xaspnames  <- paste('a', x, sep='')
     # set to NA not in orb aspects
-    xaspnames[xaspnames %ni% aspectscols] <- NA
-    return(xaspnames)
+    x[x %ni% aspects] <- NA
+    return(x)
   }
 
   planets[, c(planetsCombLonCols) := lapply(.SD, calculateAspectNames), .SDcols=planetsCombLonCols]
@@ -2034,6 +2030,9 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
   sink()
 }
 
+# returns string w/o leading or trailing whitespace
+trim <- function (x) gsub("^\\s+|\\s+$", "", x)
+
 cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   if (hasArg('sinkfile')) {
     sinkpathfile <- npath(paste("~/trading/predict/", sinkfile, ".txt", sep=''))
@@ -2046,6 +2045,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   planetsDaySignificance <- function(planets.day, significance, panalogy, answer=T, verbose=F,
                                      aspectspolarity, aspectsenergy, planetsenergy, energygrowthsp, energyret) {
+    #planets.day <- trim(planets.day)
     curdate <- planets.day[['Date']]
     cols <- planetsLonGCols
     sigidxs <- paste(planets.day[cols], panalogy['analogy', cols], cols, sep='_')
@@ -2094,11 +2094,11 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       planetenergy1 <- planetsenergy['energy', loncol1] * planetret1
       planetenergy2 <- planetsenergy['energy', loncol2] * planetret2
 
-      aspname <- planets.day.asp[idx]
+      aspect <- as.character(as.numeric(planets.day.asp[idx]))
       # determine aspect energy based on aspect and involved planets
-      aspectenergy <- aspectsenergy['energy', aspname] * (planetenergy1 + planetenergy2)
+      aspectenergy <- aspectsenergy['energy', aspect] * (planetenergy1 + planetenergy2)
       # get the polarity and in case the energy is negative then invert polarity
-      aspectpolarity <- aspectspolarity[curcol, aspname]
+      aspectpolarity <- aspectspolarity[curcol, aspect]
       if (aspectenergy < 0) {
         aspectpolarity <- abs(aspectpolarity - 1)
       }
@@ -2117,7 +2117,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
         down <- aspectenergydis
       }
       else {
-        stop(paste("No valid polarity was provided - ", curcol, aspname))
+        stop(paste("No valid polarity was provided - ", curcol, aspect))
       }
 
       energy[[length(energy)+1]] <- list(origin=loncol1, up=up, down=down)
@@ -2168,14 +2168,14 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     correlation2 <- list()
 
     # build matrix
-    orbsmatrix <- matrix(cusorbs, nrow = 1, ncol = length(aspectscols), byrow = TRUE,
-                         dimnames = list('orbs', aspectscols))
+    orbsmatrix <- matrix(cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE,
+                         dimnames = list('orbs', aspects))
 
     aspectspolaritymatrix <- matrix(aspectspolarity, nrow = length(planetsCombLonCols), ncol = length(aspects), byrow = TRUE,
-                                    dimnames = list(planetsCombLonCols, aspectscols))
+                                    dimnames = list(planetsCombLonCols, aspects))
 
     aspectsenergymatrix <- matrix(aspectsenergy, nrow = 1, ncol = length(aspectsenergy), byrow = TRUE,
-                                  dimnames = list(c('energy'), aspectscols))
+                                  dimnames = list(c('energy'), aspects))
 
     planetsenergymatrix <- matrix(planetsenergy, nrow = 1, ncol = length(planetsenergy), byrow = TRUE,
                                   dimnames = list(c('energy'), planetsLonGCols))
