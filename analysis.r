@@ -12,11 +12,14 @@ library(GA)
 library(gtools)
 library(clusterSim)
 library(splus2R)
-`%ni%` <- Negate(`%in%`)
+library(compiler)
 # no scientific notation
 options(scipen=100)
 options(width=160)
 options(error=recover)
+enableJIT(3)
+
+`%ni%` <- Negate(`%in%`)
 
 planetsList <- list(c("SU", "SUR", "MO", "MOR", "ME", "MER", "VE", "VER", "MA", "MAR", "JU", "JUR", "SA", "SAR", "UR", "URR", "NE", "NER", "PL", "PLR"),
                     # combined fast planets
@@ -688,6 +691,7 @@ historyAspectsCorrelation <- function(trans, trans.hist, cor_method, kplanets, k
 }
 
 openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1) {
+  Date=DateMT4=Year=NULL
   planets.file <- npath(planets.file)
   planets <- fread(planets.file, sep="\t", na.strings="", verbose = F)
   planets[, Date := as.Date(planets$Date, format="%Y-%m-%d")]
@@ -2028,7 +2032,7 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
   sink()
 }
 
-testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
+cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   if (hasArg('sinkfile')) {
     sinkpathfile <- npath(paste("~/trading/predict/", sinkfile, ".txt", sep=''))
     sink(sinkpathfile, append=T)
@@ -2491,6 +2495,9 @@ testPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   #dev.off()
   if (hasArg('sinkfile')) sink()
 }
+
+# compile the function to byte code
+testPlanetsSignificanceRelative <- cmpfun(cmpTestPlanetsSignificanceRelative)
 
 securityPeaksValleys <- function(security, span=50, plotfile="peaks_valleys") {
   planets <- openPlanets("~/trading/dplanets/planets_4.tsv", orbs, aspects, 5, 10)
