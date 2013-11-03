@@ -17,7 +17,7 @@ library(xts)
 options(scipen=100)
 options(width=160)
 options(error=recover)
-enableJIT(3)
+enableJIT(0)
 
 `%ni%` <- Negate(`%in%`)
 
@@ -705,8 +705,10 @@ openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1) {
     col2 <- substr(curcol, 6, 10)
     combnameorb <- paste(curcol, 'ORB', sep='')
     planets[, c(curcol) := abs(((get(col1) - get(col2) + 180) %% 360) - 180)]
-    planets[, c(combnameorb) := get(curcol)]
   }
+
+  exprcopy <- paste("c(planetsCombLonOrbCols) := list(", paste(planetsCombLonCols, collapse=","), ")", sep="")
+  planets[, eval(parse(text = exprcopy))]
 
   calculateAspects <- function(x) {
     for (aspect in aspects) {
