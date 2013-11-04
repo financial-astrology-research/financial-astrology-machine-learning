@@ -710,14 +710,20 @@ openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1) {
   planets[, eval(parse(text = exprcopy))]
 
   calculateAspects <- function(x) {
+    allidx <- rep(FALSE, length(x))
     for (aspect in aspects) {
       comborb <- cusorbs['orbs', as.character(aspect)]
       rstart <- aspect-comborb
       rend <- aspect+comborb
-      x[x >= rstart & x <= rend] <- aspect
+      idx <- x >= rstart & x <= rend
+      allidx[idx] <- TRUE
+      x[idx] <- aspect
     }
+    # put NA no aspects
+    x[!allidx] <- NA
     return(x)
   }
+
 
   planets[, c(planetsCombLonCols) := lapply(.SD, calculateAspects), .SDcols=planetsCombLonCols]
 
@@ -732,14 +738,6 @@ openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1) {
   }
 
   planets[, c(planetsCombLonOrbCols) := lapply(.SD, calculateAspectOrbs), .SDcols=planetsCombLonOrbCols]
-
-  calculateAspectNames <- function(x) {
-    # set to NA not in orb aspects
-    x[x %ni% aspects] <- NA
-    return(x)
-  }
-
-  planets[, c(planetsCombLonCols) := lapply(.SD, calculateAspectNames), .SDcols=planetsCombLonCols]
 
   calculateLonGroups <- function(x, lonby) {
     return(cut(x, seq(0, 360, by=lonby)))
