@@ -724,7 +724,6 @@ openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1) {
     return(x)
   }
 
-
   planets[, c(planetsCombLonCols) := lapply(.SD, calculateAspects), .SDcols=planetsCombLonCols]
 
   calculateAspectOrbs <- function(x) {
@@ -732,7 +731,8 @@ openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1) {
       comborb <- cusorbs['orbs', as.character(aspect)]
       rstart <- aspect-comborb
       rend <- aspect+comborb
-      x[x >= rstart & x <= rend] <- round(aspect - x[x >= rstart & x <= rend], digits = 2)
+      idx <- x >= rstart & x <= rend
+      x[idx] <- aspect - x[idx]
     }
     return(x)
   }
