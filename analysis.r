@@ -689,7 +689,7 @@ historyAspectsCorrelation <- function(trans, trans.hist, cor_method, kplanets, k
   data.table(predtable)
 }
 
-openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1) {
+openPlanets <- function(planets.file, cusorbs, lonby=1) {
   Date=DateMT4=Year=NULL
   planets.file <- npath(planets.file)
   planets <- fread(planets.file, sep="\t", na.strings="", verbose = F)
@@ -708,6 +708,13 @@ openPlanets <- function(planets.file, cusorbs, cusaspects, lonby=1) {
 
   exprcopy <- paste("c(planetsCombLonOrbCols) := list(", paste(planetsCombLonCols, collapse=","), ")", sep="")
   planets[, eval(parse(text = exprcopy))]
+  return(planets)
+}
+
+# calculate the planets aspects for a given solution
+processPlanetsAspects <- function(planetsorig, cusorbs, lonby=1) {
+  # clone original to ensure is no modified
+  planets <- copy(planetsorig)
 
   calculateAspects <- function(x) {
     allidx <- rep(FALSE, length(x))
@@ -2152,9 +2159,9 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(significance.day)
   }
 
-  relativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, mapredslow, maprice,
-                            mapricetype, predtype, cordir, degsplit, threshold, energymode, energygrowthsp, energyret, dateformat, alignmove=0,
-                            pricemadir, panalogy=panalogy, cusorbs=cusorbs, aspectspolarity, aspectsenergy, planetsenergy, verbose=F, doplot=F) {
+  relativeTrend <- function(planetsorig, planetsfile, securityfile, tsdate, tedate, vsdate, vedate, csdate, cedate, mapredslow, maprice,
+                            mapricetype, predtype, cordir, degsplit, threshold, energymode, energygrowthsp, energyret, dateformat, alignmove=0, pricemadir,
+                            panalogy=panalogy, cusorbs=cusorbs, aspectspolarity, aspectsenergy, planetsenergy, verbose=F, doplot=F) {
     looptm <- proc.time()
     mapricefunc <- get(get('mapricetype'))
     mapredfunc <- get('SMA')
@@ -2185,8 +2192,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     panalogymatrix <- matrix(panalogy, nrow = 1, ncol = length(panalogy), byrow = TRUE,
                              dimnames = list(c('analogy'), planetsLonGCols))
 
-    planets <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""), orbsmatrix, aspects, degsplit)
-    setkey(planets, 'Date')
+    # use a cloned planets to ensure original is no modified
+    planets <- processPlanetsAspects(planetsorig, orbsmatrix, degsplit)
     security <- openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, maprice, dateformat, pricemadir)
     significance <- planetsVarsSignificance(planets[Date >= as.Date(tsdate) & Date <= as.Date(tedate)], security, threshold)
 
@@ -2401,20 +2408,20 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   testSolution <- function(predfile, ...) {
-    if (list(...)$doplot) pdf(paste("~/chart_", predfile, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
-    res <- relativeTrend(...)
+    params <- list(...)
+    if (params$doplot) pdf(paste("~/chart_", predfile, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
+    planetsorig <- openPlanets(paste("~/trading/dplanets/", params$planetsfile, ".tsv", sep=""))
+    res <- relativeTrend(planetsorig, ...)
     planets.security <- merge(res$planets, res$security, by='Date')
-
-    if (list(...)$verbose) {
+    if (params$verbose) {
       cols <- c('Date', 'Open', 'Close', 'Mid', 'MidMAF', 'MidMAS', 'val', 'predraw', 'predval', 'predEff', 'predFactor', 'Eff')
       print(as.data.frame(planets.security[, cols, with=F]))
     }
-
-    if (list(...)$doplot) dev.off()
+    if (params$doplot) dev.off()
     write.csv(res$planets[, c('DateMT4', 'predval'), with=F], file=paste("~/trading/predict/", predfile, ".csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
   }
 
-  relativeTrendFitness <- function(x, securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
+  relativeTrendFitness <- function(x, planetsorig, securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
     # build the parameters based on GA indexes
     mapricetypes <- c('SMA', 'EMA', 'WMA', 'ZLEMA')
     predtypes <- c('absolute',  'relative')
@@ -2444,8 +2451,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     pe.e <- ae.e+length(defplanetsenergy)
     planetsenergy <- x[ae.e:(pe.e-1)]/10
 
-    res <- relativeTrend(securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
-                         csdate=csdate, cedate=cedate, mapredslow=mapredslow, maprice=maprice, mapricetype=mapricetype, predtype=predtype,
+    res <- relativeTrend(planetsorig=planetsorig, securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate,
+                         vedate=vedate, csdate=csdate, cedate=cedate, mapredslow=mapredslow, maprice=maprice, mapricetype=mapricetype, predtype=predtype,
                          cordir=cordir, degsplit=degsplit, threshold=threshold, energymode=energymode, energygrowthsp=energygrowthsp,
                          energyret=energyret, dateformat=dateformat, alignmove=alignmove,
                          pricemadir=pricemadir, panalogy=panalogy, cusorbs=cusorbs, aspectspolarity=aspectspolarity,
@@ -2474,11 +2481,13 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     varnames <- c('mapredslow', 'maprice', 'mapricetype', 'predtype', 'cordir', 'degsplit', 'threshold', 'energymode', 'energygrowthsp', 'energyret',
                   'alignmove', 'pricemadir', panalogyCols, aspOrbsCols, planetsAspCombCols, aspectsEnergyCols, planetsEnergyCols)
 
+    planetsorig <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""))
+
     ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=TRUE,
        monitor=gaMonitor, maxiter=200, run=50, popSize=500, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.3,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
-       securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
-       csdate=csdate, cedate=cedate, dateformat)
+       planetsorig=planetsorig, securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate,
+       vedate=vedate, csdate=csdate, cedate=cedate, dateformat)
   }
 
   execfunc <- get(get('execfunc'))
