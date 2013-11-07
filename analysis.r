@@ -712,7 +712,7 @@ openPlanets <- function(planets.file, cusorbs, lonby=1) {
 }
 
 # calculate the planets aspects for a given solution
-processPlanetsAspects <- function(planetsorig, cusorbs, lonby=1) {
+processPlanetsAspects <- function(planetsorig, cusorbs, degsplit=1) {
   # clone original to ensure is no modified
   planets <- copy(planetsorig)
 
@@ -746,11 +746,11 @@ processPlanetsAspects <- function(planetsorig, cusorbs, lonby=1) {
 
   planets[, c(planetsCombLonOrbCols) := lapply(.SD, calculateAspectOrbs), .SDcols=planetsCombLonOrbCols]
 
-  calculateLonGroups <- function(x, lonby) {
-    return(cut(x, seq(0, 360, by=lonby)))
+  calculateLonGroups <- function(x, degsplit) {
+    return(cut(x, seq(0, 360, by=degsplit)))
   }
 
-  planets[, c(planetsLonGCols) := lapply(.SD, calculateLonGroups, lonby=lonby), .SDcols=planetsLonCols]
+  planets[, c(planetsLonGCols) := lapply(.SD, calculateLonGroups, degsplit=degsplit), .SDcols=planetsLonCols]
 
   return(planets)
 }
