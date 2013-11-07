@@ -1958,6 +1958,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets[, Date := as.Date(planets$Date, format="%Y-%m-%d")]
     planets[, DateMT4 := as.character(format(Date, "%Y.%m.%d"))]
     planets[, Year := as.character(format(Date, "%Y"))]
+    planets[, wday := format(Date, "%w")]
     setkey(planets, 'Date')
 
     # calculate longitudinal differences
@@ -2055,14 +2056,11 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(significance.full)
   }
 
-  planetsDaySignificance <- function(planets.day, significance, panalogy, answer=T, verbose=F,
+  planetsDaySignificance <- function(planets.day, significance.days, panalogy, answer=T, verbose=F,
                                      aspectspolarity, aspectsenergy, planetsenergy, energygrowthsp, energyret) {
     #planets.day <- trim(planets.day)
     curdate <- planets.day[['Date']]
-    cols <- planetsLonGCols
-    sigidxs <- paste(planets.day[cols], panalogy['analogy', cols], cols, sep='_')
-    significance.day <- significance[keyidx %in% sigidxs]
-    setkey(significance.day, 'origin', 'V1', 'V2')
+    significance.day <- significance.days[Date==curdate]
 
     # no significant positions for this day
     if (is.null(significance.day)) {
@@ -2132,17 +2130,13 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
         stop(paste("No valid polarity was provided - ", curcol, aspect))
       }
 
-      energy[[length(energy)+1]] <- list(origin=loncol1, up=up, down=down)
-      energy[[length(energy)+1]] <- list(origin=loncol2, up=up, down=down)
+      energy[[length(energy)+1]] <- list(Date=curdate, origin=loncol1, up=up, down=down)
+      energy[[length(energy)+1]] <- list(Date=curdate, origin=loncol2, up=up, down=down)
     }
 
     # convert energy list to data table
     energy <- rbindlist(energy)
-    setkey(energy, 'origin')
-    energy.sum <- energy[, list(sum(up), sum(down)), by=origin]
-    setnames(energy.sum, c('origin', 'up', 'down'))
-    significance.day <- merge(significance.day, energy.sum, by=c('origin'))
-    significance.day[, Date := curdate]
+    setkeyv(energy, c('Date', 'origin'))
 
     if (verbose) {
       # TODO: print the energy lists as tables
@@ -2163,7 +2157,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       cat("###  =", trend, "\n")
     }
 
-    return(significance.day)
+    return(energy)
   }
 
   relativeTrend <- function(planetslist, planetsfile, securityfile, tsdate, tedate, vsdate, vedate, csdate, cedate, mapredslow, maprice,
@@ -2203,8 +2197,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets <- processPlanetsAspects(planetslist[[as.character(degsplit)]], orbsmatrix)
     security <- openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, maprice, dateformat, pricemadir)
     significance <- planetsVarsSignificance(planets[Date >= as.Date(tsdate) & Date <= as.Date(tedate)], security, threshold)
+    planets.pred <- planets[Date > as.Date(vsdate) & Date <= as.Date(cedate) & wday %in% c(1, 2, 3, 4, 5)]
 
-    planets[, wday := format(Date, "%w")]
     pltitle <- paste(securityfile, " / ", "maprice=", maprice, "mapricetype=", mapricetype, "mapredslow=", mapredslow,
                      "predtype=", predtype, "degsplit=", degsplit, "threshold=", threshold, "energymode=", energymode,
                      "\nenergygrowthsp=", energygrowthsp, "alignmove=", alignmove,
@@ -2213,14 +2207,32 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                      "\n planetsenergy=c(", paste(planetsenergy, collapse=","), ")")
     planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate) & wday %in% c(1, 2, 3, 4, 5)]
 
-    # calculate predictions
-    planets.pred <- planets[Date > as.Date(vsdate) & Date <= as.Date(cedate) & wday %in% c(1, 2, 3, 4, 5)]
+    # build significance days
+    buildDaySignificanceIdxs <- function(planets.day) {
+      curdate <- planets.day[['Date']]
+      sigidxs <- paste(planets.day[planetsLonGCols], panalogymatrix['analogy', planetsLonGCols], planetsLonGCols, sep='_')
+      datelist <- rep(curdate, length(sigidxs))
+      day.idxs <- list(Date=datelist, keyidx=sigidxs)
+      return(day.idxs)
+    }
+
+    significance.days.idxs <- rbindlist(apply(planets.pred, 1, buildDaySignificanceIdxs))
+    setkeyv(significance.days.idxs, c('Date', 'keyidx'))
+    significance.days <- merge(significance.days.idxs, significance, by='keyidx')
+    setkeyv(significance.days, 'Date', 'origin')
+
     # helper function to process planetsDaySignificance
     processPlanesDaySignificance <- function(x) {
-      planetsDaySignificance(x, significance, panalogymatrix, F, verbose, aspectspolaritymatrix, aspectsenergymatrix,
+      planetsDaySignificance(x, significance.days, panalogymatrix, F, verbose, aspectspolaritymatrix, aspectsenergymatrix,
                              planetsenergymatrix, energygrowthsp, energyret)
     }
-    significance.days <- rbindlist(apply(planets.pred, 1, processPlanesDaySignificance))
+
+    energy.days <- rbindlist(apply(planets.pred, 1, processPlanesDaySignificance))
+    energy.sum <- energy.days[, list(sum(up), sum(down)), by=list(Date, origin)]
+    setnames(energy.sum, c('Date', 'origin', 'up', 'down'))
+    setkeyv(energy.sum, c('Date', 'origin'))
+    significance.days <- merge(significance.days, energy.sum, by=c('Date', 'origin'))
+    setkeyv(significance.days, c('Date', 'Eff'))
 
     if (energymode == 1) {
       # add more energy to the lower part based on bad aspects and to the upper part with good aspects
