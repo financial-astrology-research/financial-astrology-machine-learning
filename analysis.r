@@ -689,99 +689,6 @@ historyAspectsCorrelation <- function(trans, trans.hist, cor_method, kplanets, k
   data.table(predtable)
 }
 
-openPlanets <- function(planets.file, cusorbs, lonby=1) {
-  Date=DateMT4=Year=NULL
-  planets.file <- npath(planets.file)
-  planets <- fread(planets.file, sep="\t", na.strings="", verbose = F)
-  planets[, Date := as.Date(planets$Date, format="%Y-%m-%d")]
-  planets[, DateMT4 := as.character(format(Date, "%Y.%m.%d"))]
-  planets[, Year := as.character(format(Date, "%Y"))]
-  setkey(planets, 'Date')
-
-  # calculate longitudinal differences
-  for (curcol in planetsCombLonCols) {
-    col1 <- substr(curcol, 1, 5)
-    col2 <- substr(curcol, 6, 10)
-    combnameorb <- paste(curcol, 'ORB', sep='')
-    planets[, c(curcol) := abs(((get(col1) - get(col2) + 180) %% 360) - 180)]
-  }
-
-  exprcopy <- paste("c(planetsCombLonOrbCols) := list(", paste(planetsCombLonCols, collapse=","), ")", sep="")
-  planets[, eval(parse(text = exprcopy))]
-  return(planets)
-}
-
-# calculate the planets aspects for a given solution
-processPlanetsAspects <- function(planetsorig, cusorbs, degsplit=1) {
-  # clone original to ensure is no modified
-  planets <- copy(planetsorig)
-
-  calculateAspects <- function(x) {
-    allidx <- rep(FALSE, length(x))
-    for (aspect in aspects) {
-      comborb <- cusorbs['orbs', as.character(aspect)]
-      rstart <- aspect-comborb
-      rend <- aspect+comborb
-      idx <- x >= rstart & x <= rend
-      allidx[idx] <- TRUE
-      x[idx] <- aspect
-    }
-    # put NA no aspects
-    x[!allidx] <- NA
-    return(x)
-  }
-
-  planets[, c(planetsCombLonCols) := lapply(.SD, calculateAspects), .SDcols=planetsCombLonCols]
-
-  calculateAspectOrbs <- function(x) {
-    for (aspect in aspects) {
-      comborb <- cusorbs['orbs', as.character(aspect)]
-      rstart <- aspect-comborb
-      rend <- aspect+comborb
-      idx <- x >= rstart & x <= rend
-      x[idx] <- aspect - x[idx]
-    }
-    return(x)
-  }
-
-  planets[, c(planetsCombLonOrbCols) := lapply(.SD, calculateAspectOrbs), .SDcols=planetsCombLonOrbCols]
-
-  calculateLonGroups <- function(x, degsplit) {
-    return(cut(x, seq(0, 360, by=degsplit)))
-  }
-
-  planets[, c(planetsLonGCols) := lapply(.SD, calculateLonGroups, degsplit=degsplit), .SDcols=planetsLonCols]
-
-  return(planets)
-}
-
-energyGrowth <- function(energy, distance, speed) {
-  return(energy * (1 - speed) ^ abs(distance))
-}
-
-planetsVarsSignificance <- function(planets, currency, threshold) {
-  planets  <- merge(planets, currency, by='Date')
-  cols <- paste(planetsLonCols, 'G', sep='')
-  significance <- data.table(melt(planets, id.var=c('Date', 'Eff'), measure.var=cols))
-  significance <- significance[, cbind(as.list(prop.table(as.numeric(table(Eff)))), as.list(as.numeric(table(Eff)))), by=c('variable', 'value')]
-  setnames(significance, c('variable', 'key', 'V1', 'V2', 'V3', 'V4'))
-
-  # build significance table analogy for each planet
-  planetTableAanalogy <- function(curcol) {
-    planet.significance <- copy(significance)
-    planet.significance[, origin := curcol]
-    return(planet.significance)
-  }
-
-  significance.full <- rbindlist(lapply(cols, planetTableAanalogy))
-  significance.full[, c('pdiff', 'keyidx') := list(V2-V1, paste(key, variable, origin, sep='_'))]
-  significance.full <- significance.full[pdiff >= threshold | pdiff <= -threshold]
-  significance.full <- significance.full[!is.na(key)]
-  significance.full[, Eff := cut(pdiff, c(-1000, 0, 1000), labels=c('down', 'up'), right=FALSE)]
-  setkey(significance.full, 'keyidx', 'V1', 'V2')
-  return(significance.full)
-}
-
 openPlanetsZod <- function(planets.file, currency, sdate, edate, threshold, planetsLonCols, planetsGridZodCols, aspects, cusorbs) {
   planets.file <- npath(planets.file)
   planets <- fread(planets.file, sep="\t", na.strings="", verbose = F)
@@ -2043,7 +1950,110 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
   if (!hasArg('execfunc')) stop("Provide function to execute")
   ptm <- proc.time()
-  planetsLonGCols = c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'JULONG', 'SALONG', 'URLONG', 'NELONG', 'PLLONG', 'NNLONG', 'SNLONG')
+
+  openPlanets <- function(planets.file) {
+    Date=DateMT4=Year=NULL
+    planets.file <- npath(planets.file)
+    planets <- fread(planets.file, sep="\t", na.strings="", verbose = F)
+    planets[, Date := as.Date(planets$Date, format="%Y-%m-%d")]
+    planets[, DateMT4 := as.character(format(Date, "%Y.%m.%d"))]
+    planets[, Year := as.character(format(Date, "%Y"))]
+    setkey(planets, 'Date')
+
+    # calculate longitudinal differences
+    for (curcol in planetsCombLonCols) {
+      col1 <- substr(curcol, 1, 5)
+      col2 <- substr(curcol, 6, 10)
+      combnameorb <- paste(curcol, 'ORB', sep='')
+      planets[, c(curcol) := abs(((get(col1) - get(col2) + 180) %% 360) - 180)]
+    }
+
+    exprcopy <- paste("c(planetsCombLonOrbCols) := list(", paste(planetsCombLonCols, collapse=","), ")", sep="")
+    planets[, eval(parse(text = exprcopy))]
+    return(planets)
+  }
+
+  # Open multiple planets tables for different degsplit
+  multipleOpenPlanets <- function(planetsfile, degsplits) {
+    planetslist <- list()
+    planetsorig <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""))
+    # calculate the lon deg splits
+    calculateLonGroups <- function(x, degsplit) {
+      return(cut(x, seq(0, 360, by=degsplit)))
+    }
+
+    for (degsplit in degsplits) {
+      planets <- copy(planetsorig)
+      planets[, c(planetsLonGCols) := lapply(.SD, calculateLonGroups, degsplit=degsplit), .SDcols=planetsLonCols]
+      planetslist[[as.character(degsplit)]] <- planets
+    }
+
+    return(planetslist)
+  }
+
+  # calculate the planets aspects for a given solution
+  processPlanetsAspects <- function(planetsorig, cusorbs) {
+    # clone original to ensure is no modified
+    planets <- copy(planetsorig)
+
+    calculateAspects <- function(x) {
+      allidx <- rep(FALSE, length(x))
+      for (aspect in aspects) {
+        comborb <- cusorbs['orbs', as.character(aspect)]
+        rstart <- aspect-comborb
+        rend <- aspect+comborb
+        idx <- x >= rstart & x <= rend
+        allidx[idx] <- TRUE
+        x[idx] <- aspect
+      }
+      # put NA no aspects
+      x[!allidx] <- NA
+      return(x)
+    }
+
+    planets[, c(planetsCombLonCols) := lapply(.SD, calculateAspects), .SDcols=planetsCombLonCols]
+
+    calculateAspectOrbs <- function(x) {
+      for (aspect in aspects) {
+        comborb <- cusorbs['orbs', as.character(aspect)]
+        rstart <- aspect-comborb
+        rend <- aspect+comborb
+        idx <- x >= rstart & x <= rend
+        x[idx] <- aspect - x[idx]
+      }
+      return(x)
+    }
+
+    planets[, c(planetsCombLonOrbCols) := lapply(.SD, calculateAspectOrbs), .SDcols=planetsCombLonOrbCols]
+    return(planets)
+  }
+
+  energyGrowth <- function(energy, distance, speed) {
+    return(energy * (1 - speed) ^ abs(distance))
+  }
+
+  planetsVarsSignificance <- function(planets, currency, threshold) {
+    planets  <- merge(planets, currency, by='Date')
+    cols <- paste(planetsLonCols, 'G', sep='')
+    significance <- data.table(melt(planets, id.var=c('Date', 'Eff'), measure.var=cols))
+    significance <- significance[, cbind(as.list(prop.table(as.numeric(table(Eff)))), as.list(as.numeric(table(Eff)))), by=c('variable', 'value')]
+    setnames(significance, c('variable', 'key', 'V1', 'V2', 'V3', 'V4'))
+
+    # build significance table analogy for each planet
+    planetTableAanalogy <- function(curcol) {
+      planet.significance <- copy(significance)
+      planet.significance[, origin := curcol]
+      return(planet.significance)
+    }
+
+    significance.full <- rbindlist(lapply(cols, planetTableAanalogy))
+    significance.full[, c('pdiff', 'keyidx') := list(V2-V1, paste(key, variable, origin, sep='_'))]
+    significance.full <- significance.full[pdiff >= threshold | pdiff <= -threshold]
+    significance.full <- significance.full[!is.na(key)]
+    significance.full[, Eff := cut(pdiff, c(-1000, 0, 1000), labels=c('down', 'up'), right=FALSE)]
+    setkey(significance.full, 'keyidx', 'V1', 'V2')
+    return(significance.full)
+  }
 
   planetsDaySignificance <- function(planets.day, significance, panalogy, answer=T, verbose=F,
                                      aspectspolarity, aspectsenergy, planetsenergy, energygrowthsp, energyret) {
@@ -2156,7 +2166,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(significance.day)
   }
 
-  relativeTrend <- function(planetsorig, planetsfile, securityfile, tsdate, tedate, vsdate, vedate, csdate, cedate, mapredslow, maprice,
+  relativeTrend <- function(planetslist, planetsfile, securityfile, tsdate, tedate, vsdate, vedate, csdate, cedate, mapredslow, maprice,
                             mapricetype, predtype, cordir, degsplit, threshold, energymode, energygrowthsp, energyret, dateformat, alignmove=0, pricemadir,
                             panalogy=panalogy, cusorbs=cusorbs, aspectspolarity, aspectsenergy, planetsenergy, verbose=F, doplot=F) {
     looptm <- proc.time()
@@ -2190,7 +2200,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                              dimnames = list(c('analogy'), planetsLonGCols))
 
     # use a cloned planets to ensure original is no modified
-    planets <- processPlanetsAspects(planetsorig, orbsmatrix, degsplit)
+    planets <- processPlanetsAspects(planetslist[[as.character(degsplit)]], orbsmatrix)
     security <- openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, maprice, dateformat, pricemadir)
     significance <- planetsVarsSignificance(planets[Date >= as.Date(tsdate) & Date <= as.Date(tedate)], security, threshold)
 
@@ -2404,7 +2414,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(list(fitness=fitness, correlation=correlation, volatility=volatility, planets=planets.test))
   }
 
-  relativeTrendFitness <- function(x, planetsorig, securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
+  relativeTrendFitness <- function(x, planetslist, securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
     # build the parameters based on GA indexes
     mapricetypes <- c('SMA', 'EMA', 'WMA', 'ZLEMA')
     predtypes <- c('absolute',  'relative')
@@ -2434,7 +2444,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     pe.e <- ae.e+length(defplanetsenergy)
     planetsenergy <- x[ae.e:(pe.e-1)]/10
 
-    res <- relativeTrend(planetsorig=planetsorig, securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate,
+    res <- relativeTrend(planetslist=planetslist, securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate,
                          vedate=vedate, csdate=csdate, cedate=cedate, mapredslow=mapredslow, maprice=maprice, mapricetype=mapricetype, predtype=predtype,
                          cordir=cordir, degsplit=degsplit, threshold=threshold, energymode=energymode, energygrowthsp=energygrowthsp,
                          energyret=energyret, dateformat=dateformat, alignmove=alignmove,
@@ -2446,6 +2456,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   optimizeRelativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
     cat("---------------------------- Initialize optimization ----------------------------------\n\n")
+    dsmin <- 1
+    dsmax <- 3
     panalogymin <- rep(1, length(planetsBaseCols))
     panalogymax <- rep(6, length(planetsBaseCols))
     orbsmin <- rep(1, length(deforbs))
@@ -2457,19 +2469,20 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planetenergymin <- rep(0, length(defplanetsenergy))
     planetenergymax <- rep(30, length(defplanetsenergy))
 
-    minvals <- c( 2,  2, 1, 1, 0, 1,  0, 1, 0, -20, -10, 1, panalogymin, orbsmin, polaritymin, aspectenergymin, planetenergymin)
-    maxvals <- c(10, 20, 4, 2, 1, 3, 20, 2, 9,  20,  10, 4, panalogymax, orbsmax, polaritymax, aspectenergymax, planetenergymax)
+    minvals <- c( 2,  2, 1, 1, 0, dsmin,  0, 1, 0, -20, -10, 1, panalogymin, orbsmin, polaritymin, aspectenergymin, planetenergymin)
+    maxvals <- c(10, 20, 4, 2, 1, dsmax, 20, 2, 9,  20,  10, 4, panalogymax, orbsmax, polaritymax, aspectenergymax, planetenergymax)
 
     panalogyCols <- planetsLonGCols[5:length(planetsLonGCols)]
     varnames <- c('mapredslow', 'maprice', 'mapricetype', 'predtype', 'cordir', 'degsplit', 'threshold', 'energymode', 'energygrowthsp', 'energyret',
                   'alignmove', 'pricemadir', panalogyCols, aspOrbsCols, planetsAspCombCols, aspectsEnergyCols, planetsEnergyCols)
 
-    planetsorig <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""))
+    degsplits <- seq(dsmin, dsmax)
+    planetslist <- multipleOpenPlanets(planetsfile, degsplits)
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=TRUE,
        monitor=gaMonitor, maxiter=200, run=50, popSize=500, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.3,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
-       planetsorig=planetsorig, securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate,
+       planetslist=planetslist, securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate,
        vedate=vedate, csdate=csdate, cedate=cedate, dateformat)
   }
 
@@ -2477,8 +2490,9 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     params <- list(...)
     if (!hasArg('dateformat')) stop("A dateformat is needed.")
     if (params$doplot) pdf(paste("~/chart_", predfile, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
-    planetsorig <- openPlanets(paste("~/trading/dplanets/", params$planetsfile, ".tsv", sep=""))
-    res <- relativeTrend(planetsorig, ...)
+    degsplits <- c(params$degsplit)
+    planetslist <- multipleOpenPlanets(params$planetsfile, degsplits)
+    res <- relativeTrend(planetslist, ...)
     planets.security <- merge(res$planets, res$security, by='Date')
     if (params$verbose) {
       cols <- c('Date', 'Open', 'Close', 'Mid', 'MidMAF', 'MidMAS', 'val', 'predraw', 'predval', 'predEff', 'predFactor', 'Eff')
@@ -2489,17 +2503,18 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   testRefactoring <- function() {
-    expected <- c(56, 3, 8)
+    expected <- c(56, -7, 7)
     retrieved <- c()
-    planetsorig <- openPlanets(paste("~/trading/dplanets/planets_7.tsv", sep=""))
+    degsplits <- seq(1, 3)
+    planetslist <- multipleOpenPlanets('planets_7', degsplits)
 
-    res <- relativeTrend(planetsorig, securityfile='stocks/F', planetsfile='planets_7', tsdate='1960-01-01', tedate='2004-12-31', vsdate='2005-01-01', vedate='2009-12-31', csdate='2010-01-01', cedate='2013-12-31', mapredslow=3, maprice=14, mapricetype='EMA', predtype='absolute', cordir=0, pricemadir=3, degsplit=3, threshold=0.17, energymode=2, energygrowthsp=0.2, energyret=-1.5, alignmove=-4, panalogy=c('NA','SULONG','MOLONG','MOLONG','VELONG','SULONG','VELONG','NA','MOLONG','SULONG','MOLONG','MOLONG'), cusorbs=c(3,1,3,8,6,4,6,2,5,6), aspectsenergy=c(2,0.5,0.5,1,0.5,1.5,1,0.5,0.5,2), planetsenergy=c(1.5,0.5,0.5,1.7,1.6,1.3,0.1,1.7,2,2.4,2.9,1.6), aspectspolarity=c(1,1,1,0,1,0,1,1,1,1,0,1,0,1,0,0,0,1,0,0,1,1,0,1,1,1,0,1,1,1,1,0,1,0,0,1,1,0,0,0,1,0,0,0,0,1,1,1,1,1,0,1,0,1,0,0,1,0,0,1,1,1,1,0,0,1,1,1,1,0,1,1,0,1,1,1,0,1,0,0,0,0,1,1,0,0,0,0,1,0,1,1,1,0,1,1,1,0,0,1,1,0,0,0,1,0,1,1,1,1,1,1,0,1,1,0,0,1,0,0,0,1,0,1,1,0,1,1,1,1,1,1,0,0,0,1,0,1,0,0,1,0,1,1,1,1,0,1,0,1,1,1,0,0,1,0,1,1,1,0,0,1,0,1,1,1,0,1,1,0,0,1,1,0,1,0,0,1,0,1,1,0,0,1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,0,1,1,0,0,1,1,0,1,0,1,1,1,0,0,0,1,1,1,0,0,1,0,0,0,0,1,1,1,1,1,0,0,0,1,0,0,1,0,0,1,1,1,1,0,0,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,0,0,1,1,0,1,0,1,1,1,1,1,0,0,1,0,1,1,0,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,1,0,1,0,0,1,0,0,1,1,1,1,1,0,1,1,0,1,1,0,0,1,0,0,1,1,0,1,0,1,1,0,0,1,0,0,1,1,0,0,1,1,1,1,1,1,1,1,0,0,1,1,0,1,0,1,1,1,0,0,0,1,0,1,0,1,0,0,0,0,1,1,0,0,1,1,0,1,1,0,0,1,0,0,0,0,1,1,1,1,0,0,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,0,1,0,1,1,0,0,1,1,1,0,0,1,1,0,1,1,1,1,1,1,1,1,1,0,0,0,1,0,0,0,0,1,0,0,1,0,1,0,0,1,1,0,1,1,1,1,0,0,1,1,1,0,1,0,1,1,1,1,0,1,1,1,0,1,0,1,0,1,1,0,0,0,0,1,0,0,1,1,0,0,1,0,0,1,1,1,1,1,1,0,0,0,0,1,0,1,0,1,1,1,1,0,0,1,1,1,1,0,0,0,1,0,0,0,0,0,0,0,1,0,1,1,1,1,1,1,0,1,0,1,1,1,0,1,1,0,1,0,0,1,1,0,0,0,1,0,1,1,1,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,1,0,0,0,1,1,1,0,1,1,0,0,0,1,0,1,0,0,1,1,1,0,1,1,1,0,0,0,0,1,1,0,1,1,1,1,0,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,1,0,1,1,0,0,1,0,0,1,0,1,1,0,0,1,1,0,0,0,0,1,1,1,1,0,1,0,1,0,1,0,1), dateformat='%Y-%m-%d', verbose=F, doplot=F)
+    res <- relativeTrend(planetslist, securityfile='stocks/F', planetsfile='planets_7', tsdate='1960-01-01', tedate='2004-12-31', vsdate='2005-01-01', vedate='2009-12-31', csdate='2010-01-01', cedate='2013-12-31', mapredslow=3, maprice=14, mapricetype='EMA', predtype='absolute', cordir=0, pricemadir=3, degsplit=3, threshold=0.17, energymode=2, energygrowthsp=0.2, energyret=-1.5, alignmove=-4, panalogy=c('NA','SULONG','MOLONG','MOLONG','VELONG','SULONG','VELONG','NA','MOLONG','SULONG','MOLONG','MOLONG'), cusorbs=c(3,1,3,8,6,4,6,2,5,6), aspectsenergy=c(2,0.5,0.5,1,0.5,1.5,1,0.5,0.5,2), planetsenergy=c(1.5,0.5,0.5,1.7,1.6,1.3,0.1,1.7,2,2.4,2.9,1.6), aspectspolarity=c(1,1,1,0,1,0,1,1,1,1,0,1,0,1,0,0,0,1,0,0,1,1,0,1,1,1,0,1,1,1,1,0,1,0,0,1,1,0,0,0,1,0,0,0,0,1,1,1,1,1,0,1,0,1,0,0,1,0,0,1,1,1,1,0,0,1,1,1,1,0,1,1,0,1,1,1,0,1,0,0,0,0,1,1,0,0,0,0,1,0,1,1,1,0,1,1,1,0,0,1,1,0,0,0,1,0,1,1,1,1,1,1,0,1,1,0,0,1,0,0,0,1,0,1,1,0,1,1,1,1,1,1,0,0,0,1,0,1,0,0,1,0,1,1,1,1,0,1,0,1,1,1,0,0,1,0,1,1,1,0,0,1,0,1,1,1,0,1,1,0,0,1,1,0,1,0,0,1,0,1,1,0,0,1,0,0,0,0,0,1,0,1,1,1,1,1,1,1,1,1,0,1,1,0,0,1,1,0,1,0,1,1,1,0,0,0,1,1,1,0,0,1,0,0,0,0,1,1,1,1,1,0,0,0,1,0,0,1,0,0,1,1,1,1,0,0,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,0,0,1,1,0,1,0,1,1,1,1,1,0,0,1,0,1,1,0,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,1,0,1,0,0,1,0,0,1,1,1,1,1,0,1,1,0,1,1,0,0,1,0,0,1,1,0,1,0,1,1,0,0,1,0,0,1,1,0,0,1,1,1,1,1,1,1,1,0,0,1,1,0,1,0,1,1,1,0,0,0,1,0,1,0,1,0,0,0,0,1,1,0,0,1,1,0,1,1,0,0,1,0,0,0,0,1,1,1,1,0,0,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,0,1,0,1,1,0,0,1,1,1,0,0,1,1,0,1,1,1,1,1,1,1,1,1,0,0,0,1,0,0,0,0,1,0,0,1,0,1,0,0,1,1,0,1,1,1,1,0,0,1,1,1,0,1,0,1,1,1,1,0,1,1,1,0,1,0,1,0,1,1,0,0,0,0,1,0,0,1,1,0,0,1,0,0,1,1,1,1,1,1,0,0,0,0,1,0,1,0,1,1,1,1,0,0,1,1,1,1,0,0,0,1,0,0,0,0,0,0,0,1,0,1,1,1,1,1,1,0,1,0,1,1,1,0,1,1,0,1,0,0,1,1,0,0,0,1,0,1,1,1,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,1,0,0,0,1,1,1,0,1,1,0,0,0,1,0,1,0,0,1,1,1,0,1,1,1,0,0,0,0,1,1,0,1,1,1,1,0,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,1,0,1,1,0,0,1,0,0,1,0,1,1,0,0,1,1,0,0,0,0,1,1,1,1,0,1,0,1,0,1,0,1), dateformat='%Y-%m-%d', verbose=F, doplot=F)
     retrieved <- c(retrieved, res$fitness)
 
-    res <- relativeTrend(planetsorig, securityfile='stocks/F', planetsfile='planets_7', tsdate='1960-01-01', tedate='2004-12-31', vsdate='2005-01-01', vedate='2009-12-31', csdate='2010-01-01', cedate='2013-12-31', mapredslow=6, maprice=10, mapricetype='SMA', predtype='absolute', cordir=1, pricemadir=2, degsplit=1, threshold=0.11, energymode=2, energygrowthsp=0.7, energyret=1.8, alignmove=2, panalogy=c('SULONG','MOLONG','MELONG','VELONG','MALONG','NA','NA','NA','NA','NA','NA','NA'), cusorbs=c(4,4,4,4,4,4,4,4,4,4), aspectsenergy=c(2.3,2.1,2.7,0.4,0.2,2.9,2.5,2.2,1.6,0.3), planetsenergy=c(0.6,0.2,0.2,2.7,1.1,1.2,0.5,0.2,1.4,2.7,2.6,0.7), aspectspolarity=c(1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0), dateformat='%Y-%m-%d', verbose=F, doplot=F)
+    res <- relativeTrend(planetslist, securityfile='stocks/F', planetsfile='planets_7', tsdate='1960-01-01', tedate='2004-12-31', vsdate='2005-01-01', vedate='2009-12-31', csdate='2010-01-01', cedate='2013-12-31', mapredslow=6, maprice=10, mapricetype='SMA', predtype='absolute', cordir=1, pricemadir=2, degsplit=1, threshold=0.11, energymode=2, energygrowthsp=0.7, energyret=1.8, alignmove=2, panalogy=c('SULONG','MOLONG','MELONG','VELONG','MALONG','NA','NA','NA','NA','NA','NA','NA'), cusorbs=c(4,4,4,4,4,4,4,4,4,4), aspectsenergy=c(2.3,2.1,2.7,0.4,0.2,2.9,2.5,2.2,1.6,0.3), planetsenergy=c(0.6,0.2,0.2,2.7,1.1,1.2,0.5,0.2,1.4,2.7,2.6,0.7), aspectspolarity=c(1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,1,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,0), dateformat='%Y-%m-%d', verbose=F, doplot=F)
     retrieved <- c(retrieved, res$fitness)
 
-    res <- relativeTrend(planetsorig, securityfile='stocks/F', planetsfile='planets_7', tsdate='1960-01-01', tedate='2004-12-31', vsdate='2005-01-01', vedate='2009-12-31', csdate='2010-01-01', cedate='2013-12-31', mapredslow=6, maprice=3, mapricetype='ZLEMA', predtype='relative', cordir=1, pricemadir=3, degsplit=2, threshold=0.09, energymode=2, energygrowthsp=0.3, energyret=1.9, alignmove=-3, panalogy=c('SULONG','MOLONG','MELONG','VELONG','MALONG','MELONG','MELONG','MELONG','MELONG','MELONG','MELONG','MELONG'), cusorbs=c(4,4,4,4,4,4,4,4,4,4), aspectsenergy=c(2.8,3,1.4,0.5,1.1,0.4,1.8,2.7,3,1.3), planetsenergy=c(0.6,0.6,0,0.7,2.3,2.4,1.4,3,0.4,1.5,1.3,0.5), aspectspolarity=c(1,1,0,0,0,0,1,0,0,1,1,1,1,1,1,0,1,1,0,1,0,1,1,1,1,0,1,1,1,0,0,0,1,1,1,0,1,1,1,1,1,0,0,1,0,0,0,1,1,1,1,0,0,1,0,0,0,0,1,0,1,1,1,1,0,1,1,0,0,0,1,1,1,1,1,0,1,1,0,0,1,0,0,1,1,0,0,1,1,0,1,0,1,1,1,1,1,0,1,0,0,0,0,1,1,1,0,0,0,0,0,1,1,1,1,0,0,0,0,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,0,1,0,1,0,1,0,0,0,1,0,1,0,0,0,0,1,0,1,0,1,1,0,0,0,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,1,1,0,1,0,1,0,1,0,1,0,0,0,1,1,0,0,1,0,0,1,0,0,0,0,0,1,0,1,1,0,0,0,0,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,0,1,0,1,0,1,0,1,1,0,1,1,1,1,0,1,0,1,1,0,1,1,0,1,0,0,0,1,1,1,0,1,0,1,0,1,0,1,0,1,1,1,0,0,0,0,0,0,1,1,1,0,1,0,0,0,1,0,0,0,0,0,0,1,1,0,0,1,1,1,1,0,1,0,1,0,1,1,0,0,0,1,0,1,0,1,0,0,0,0,0,0,1,1,1,0,0,1,0,0,0,1,0,1,1,0,1,0,0,0,0,0,1,1,1,1,1,0,0,1,1,1,0,0,0,1,0,1,1,1,1,0,0,1,0,0,0,1,0,1,1,1,0,0,0,0,0,1,1,0,0,0,0,0,0,0,1,0,0,1,1,0,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,0,0,1,0,1,0,0,1,0,0,0,1,0,0,0,1,1,0,0,1,1,0,1,0,0,0,1,1,1,1,1,0,1,0,1,1,0,1,1,0,1,1,0,0,0,1,1,0,0,0,0,1,0,1,1,1,0,0,0,0,1,0,0,0,1,0,1,1,1,0,0,0,0,1,1,1,1,1,0,1,1,0,1,1,0,0,0,0,1,0,0,1,1,0,0,1,0,0,1,1,0,0,1,0,0,1,1,1,0,0,1,0,0,0,1,0,0,0,0,1,1,0,1,0,1,1,0,0,0,0,1,0,0,1,1,0,0,0,1,0,1,1,1,1,0,1,1,0,0,0,0,0,0,1,1,1,1,0,1,0,1,1,1,1,0,0,1,1,1,0,0,1,0,0,1,1,1,1,1,1,1,0,0,0,1,0,1,1,1,1,0,1,0,1,1,0,0,1,0,0,1,0,0,0,0,0,1,1,1,1,1,1,0,0,1,0,0,1,0,0,0,0,1,0,1,1,1,0,0,0,0,1,0,0,0,1,0,0,1,0,1,0,1,0,0,0,1,0,0,1,0,1,0,0,0,1,1), dateformat='%Y-%m-%d', verbose=F, doplot=F)
+    res <- relativeTrend(planetslist, securityfile='stocks/F', planetsfile='planets_7', tsdate='1960-01-01', tedate='2004-12-31', vsdate='2005-01-01', vedate='2009-12-31', csdate='2010-01-01', cedate='2013-12-31', mapredslow=6, maprice=3, mapricetype='ZLEMA', predtype='relative', cordir=1, pricemadir=3, degsplit=2, threshold=0.09, energymode=2, energygrowthsp=0.3, energyret=1.9, alignmove=-3, panalogy=c('SULONG','MOLONG','MELONG','VELONG','MALONG','MELONG','MELONG','MELONG','MELONG','MELONG','MELONG','MELONG'), cusorbs=c(4,4,4,4,4,4,4,4,4,4), aspectsenergy=c(2.8,3,1.4,0.5,1.1,0.4,1.8,2.7,3,1.3), planetsenergy=c(0.6,0.6,0,0.7,2.3,2.4,1.4,3,0.4,1.5,1.3,0.5), aspectspolarity=c(1,1,0,0,0,0,1,0,0,1,1,1,1,1,1,0,1,1,0,1,0,1,1,1,1,0,1,1,1,0,0,0,1,1,1,0,1,1,1,1,1,0,0,1,0,0,0,1,1,1,1,0,0,1,0,0,0,0,1,0,1,1,1,1,0,1,1,0,0,0,1,1,1,1,1,0,1,1,0,0,1,0,0,1,1,0,0,1,1,0,1,0,1,1,1,1,1,0,1,0,0,0,0,1,1,1,0,0,0,0,0,1,1,1,1,0,0,0,0,1,1,0,0,0,0,1,0,1,1,1,1,1,1,1,0,1,0,1,0,1,0,0,0,1,0,1,0,0,0,0,1,0,1,0,1,1,0,0,0,1,0,1,0,0,0,0,1,0,1,1,0,1,0,0,1,1,0,1,0,1,0,1,0,1,0,0,0,1,1,0,0,1,0,0,1,0,0,0,0,0,1,0,1,1,0,0,0,0,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,0,1,0,1,0,1,0,1,1,0,1,1,1,1,0,1,0,1,1,0,1,1,0,1,0,0,0,1,1,1,0,1,0,1,0,1,0,1,0,1,1,1,0,0,0,0,0,0,1,1,1,0,1,0,0,0,1,0,0,0,0,0,0,1,1,0,0,1,1,1,1,0,1,0,1,0,1,1,0,0,0,1,0,1,0,1,0,0,0,0,0,0,1,1,1,0,0,1,0,0,0,1,0,1,1,0,1,0,0,0,0,0,1,1,1,1,1,0,0,1,1,1,0,0,0,1,0,1,1,1,1,0,0,1,0,0,0,1,0,1,1,1,0,0,0,0,0,1,1,0,0,0,0,0,0,0,1,0,0,1,1,0,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,0,0,1,0,1,0,0,1,0,0,0,1,0,0,0,1,1,0,0,1,1,0,1,0,0,0,1,1,1,1,1,0,1,0,1,1,0,1,1,0,1,1,0,0,0,1,1,0,0,0,0,1,0,1,1,1,0,0,0,0,1,0,0,0,1,0,1,1,1,0,0,0,0,1,1,1,1,1,0,1,1,0,1,1,0,0,0,0,1,0,0,1,1,0,0,1,0,0,1,1,0,0,1,0,0,1,1,1,0,0,1,0,0,0,1,0,0,0,0,1,1,0,1,0,1,1,0,0,0,0,1,0,0,1,1,0,0,0,1,0,1,1,1,1,0,1,1,0,0,0,0,0,0,1,1,1,1,0,1,0,1,1,1,1,0,0,1,1,1,0,0,1,0,0,1,1,1,1,1,1,1,0,0,0,1,0,1,1,1,1,0,1,0,1,1,0,0,1,0,0,1,0,0,0,0,0,1,1,1,1,1,1,0,0,1,0,0,1,0,0,0,0,1,0,1,1,1,0,0,0,0,1,0,0,0,1,0,0,1,0,1,0,1,0,0,0,1,0,0,1,0,1,0,0,0,1,1), dateformat='%Y-%m-%d', verbose=F, doplot=F)
     retrieved <- c(retrieved, res$fitness)
 
     if (all(expected==retrieved)) {
