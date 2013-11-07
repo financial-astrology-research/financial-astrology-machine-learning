@@ -761,21 +761,19 @@ energyGrowth <- function(energy, distance, speed) {
 
 planetsVarsSignificance <- function(planets, currency, threshold) {
   planets  <- merge(planets, currency, by='Date')
-  #spcols <- paste(planetsSpCols, 'G', sep='')
-  #cols <- c(loncols, spcols, planetsCombLonCols)
   cols <- paste(planetsLonCols, 'G', sep='')
   significance <- data.table(melt(planets, id.var=c('Date', 'Eff'), measure.var=cols))
   significance <- significance[, cbind(as.list(prop.table(as.numeric(table(Eff)))), as.list(as.numeric(table(Eff)))), by=c('variable', 'value')]
   setnames(significance, c('variable', 'key', 'V1', 'V2', 'V3', 'V4'))
-  significance.full <- data.table()
 
   # build significance table analogy for each planet
-  for (curcol in cols) {
-    planet.significance <- data.table(significance)
+  planetTableAanalogy <- function(curcol) {
+    planet.significance <- copy(significance)
     planet.significance[, origin := curcol]
-    significance.full <- rbind(significance.full, planet.significance)
+    return(planet.significance)
   }
 
+  significance.full <- rbindlist(lapply(cols, planetTableAanalogy))
   significance.full[, c('pdiff', 'keyidx') := list(V2-V1, paste(key, variable, origin, sep='_'))]
   significance.full <- significance.full[pdiff >= threshold | pdiff <= -threshold]
   significance.full <- significance.full[!is.na(key)]
