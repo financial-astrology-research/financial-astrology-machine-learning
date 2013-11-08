@@ -2163,6 +2163,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     fitness2 <- list()
     volatility2 <- list()
     correlation2 <- list()
+    rdates <- as.Date(c(tsdate, tedate, vsdate, vedate, csdate, cedate))
 
     # build matrix
     orbsmatrix <- matrix(cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE,
@@ -2189,6 +2190,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     security <- openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, maprice, dateformat, pricemadir)
     significance <- planetsVarsSignificance(planets[Date >= as.Date(tsdate) & Date <= as.Date(tedate)], security, threshold)
     planets.pred <- planets[Date > as.Date(vsdate) & Date <= as.Date(cedate) & wday %in% c(1, 2, 3, 4, 5)]
+    years.test <- format(seq(rdates[3], rdates[4], by='year'), '%Y')
+    years.confirm <- format(seq(rdates[5], rdates[6], by='year'), '%Y')
 
     pltitle <- paste(securityfile, " / ", "maprice=", maprice, "mapricetype=", mapricetype, "mapredslow=", mapredslow,
                      "predtype=", predtype, "degsplit=", degsplit, "threshold=", threshold, "energymode=", energymode,
@@ -2196,7 +2199,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                      "pricemadir=", pricemadir, "\n panalogy=c(", paste(shQuote(panalogy), collapse=","), ")",
                      "\n aspectsenergy=c(", paste(aspectsenergy, collapse=","), ")",
                      "\n planetsenergy=c(", paste(planetsenergy, collapse=","), ")")
-    planets.test <- planets[Date > as.Date(vsdate) & Date <= as.Date(vedate) & wday %in% c(1, 2, 3, 4, 5)]
 
     # build significance days
     buildDaySignificanceIdxs <- function(planets.day) {
@@ -2251,13 +2253,15 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       stop("No valid energy mode was provided.")
     }
 
-    predEff <- significance.days[, (sum(V2)-sum(V1)) * 10, by='Date']
-    predEff[, Date := as.Date(Date, format="%Y-%m-%d")]
+    prediction <- significance.days[, list(predRaw=(sum(V2)-sum(V1)) * 10), by='Date']
+    prediction[, Date := as.Date(Date, format="%Y-%m-%d")]
+    planets.pred <- merge(planets.pred, prediction, by='Date')
+    setkeyv(planets.pred, c('Date', 'Year'))
 
     # compute predictions by year an calculate fitness by the mean to meter the solution stability
-    for (curyear in unique(planets.test$Year)) {
-      setattr(planets.test, ".internal.selfref", NULL)
-      res <- processPredictions(planets.test=planets.test[Year == curyear], predEff=predEff, security=security, predtype=predtype,
+    for (curyear in years.test) {
+      setattr(planets.pred, ".internal.selfref", NULL)
+      res <- processPredictions(planets.test=planets.pred[Year==curyear], security=security, predtype=predtype,
                                 mapredfunc=mapredfunc, mapredslow=mapredslow, cordir=cordir, pltitle=pltitle, alignmove=alignmove,
                                 verbose=verbose, doplot=doplot)
       fitness[[length(fitness)+1]] <- res$fitness
@@ -2271,11 +2275,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     avgvolatility <- mean(unlist(volatility))
     avgcorrelation <- mean(unlist(correlation))
 
-    planets.test2 <- planets[Date > as.Date(csdate) & Date <= as.Date(cedate) & wday %in% c(1, 2, 3, 4, 5)]
 
-    for (curyear in unique(planets.test2$Year)) {
-      setattr(planets.test2, ".internal.selfref", NULL)
-      res2 <- processPredictions(planets.test=planets.test2[Year == curyear], predEff=predEff, security=security, predtype=predtype,
+    for (curyear in years.confirm) {
+      setattr(planets.pred, ".internal.selfref", NULL)
+      res2 <- processPredictions(planets.test=planets.pred[Year==curyear], security=security, predtype=predtype,
                                  mapredfunc=mapredfunc, mapredslow=mapredslow, cordir=cordir, pltitle=pltitle, alignmove=alignmove,
                                  verbose=verbose, doplot=doplot)
       fitness2[[length(fitness2)+1]] <- res2$fitness
@@ -2324,26 +2327,19 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(list(fitness=meanfitness, planets=res2$planets, security=security))
   }
 
-  processPredictions <- function(planets.test, predEff, security, predtype, mapredfunc, mapredslow,
-                                 cordir, pltitle, alignmove, verbose, doplot) {
-
-    planets.test.pred <- merge(planets.test, predEff, by='Date')
-    predEff <- planets.test.pred$V1
-
+  processPredictions <- function(planets.test, security, predtype, mapredfunc, mapredslow, cordir, pltitle, alignmove, verbose, doplot) {
     # in case that all predictions are 0 we skip this solution
-    if (all(predEff == 0)) {
+    if (all(planets.test$predRaw == 0)) {
       # very bad fitness to make this solution disappear
       fitness <- 0
       correlation <- 0
       volatility <- 0
     }
     else {
-      # add raw prediction to data table
-      planets.test[, predraw := predEff]
       # normalize data
-      predEff <- data.Normalization(predEff, type="n3")
+      planets.test[, predEff := data.Normalization(predRaw, type='n3')]
 
-      if (all(is.nan(predEff))) {
+      if (all(is.nan(planets.test$predEff))) {
         fitness <- 0
         correlation <- 0
         volatility <- 0
@@ -2351,11 +2347,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       else {
         # negative correlation
         if (cordir == 1) {
-          predEff <- predEff * -1
+          planets.test[, predEff := predEff * -1]
         }
 
-        #planets.test[, predval := predEff]
-        predEffSmoth <- mapredfunc(predEff, mapredslow)
+        predEffSmoth <- mapredfunc(planets.test$predEff, mapredslow)
 
         if (alignmove > 0) {
           # align prediction to the left
@@ -2516,7 +2511,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   testRefactoring <- function() {
-    expected <- c(56, -7, 7)
+    expected <- c(56, -2, 7)
     retrieved <- c()
     degsplits <- seq(1, 3)
     planetslist <- multipleOpenPlanets('planets_7', degsplits)
