@@ -2056,19 +2056,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(significance.full)
   }
 
-  planetsDaySignificance <- function(planets.day, significance.days, panalogy, answer=T, verbose=F,
-                                     aspectspolarity, aspectsenergy, planetsenergy, energygrowthsp, energyret) {
+  planetsDaySignificance <- function(planets.day, panalogy, answer=T, verbose=F, aspectspolarity, aspectsenergy, planetsenergy, energygrowthsp, energyret) {
     #planets.day <- trim(planets.day)
     curdate <- planets.day[['Date']]
-    significance.day <- significance.days[Date==curdate]
-
-    # no significant positions for this day
-    if (is.null(significance.day)) {
-      return(data.table())
-    }
-
-    patterns <- paste(strtrim(unique(significance.day$origin), 5), collapse='|', sep='')
-    activecols <- planetsCombLonCols[grep(patterns, planetsCombLonCols, perl=T)]
+    activecols <- planetsCombLonCols[grep(planets.day[['sigpatterns']], planetsCombLonCols, perl=T)]
     # ignore anon aspects or non active
     planets.day.asp <- planets.day[!is.na(planets.day) & names(planets.day) %in% activecols]
     energy <- list()
@@ -2221,12 +2212,22 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     significance.days <- merge(significance.days.idxs, significance, by='keyidx')
     setkeyv(significance.days, 'Date', 'origin')
 
+    # build daily significance patterns
+    buildDaySignificancePatterns <- function(origin) {
+      patterns <- paste(strtrim(origin, 5), collapse='|', sep='')
+      return(list(sigpatterns=patterns))
+    }
+
+    significance.patterns <- significance.days[, buildDaySignificancePatterns(origin), by=Date]
+    significance.patterns[, Date := as.Date(Date, format="%Y-%m-%d")]
+
     # helper function to process planetsDaySignificance
     processPlanesDaySignificance <- function(x) {
-      planetsDaySignificance(x, significance.days, panalogymatrix, F, verbose, aspectspolaritymatrix, aspectsenergymatrix,
+      planetsDaySignificance(x, panalogymatrix, F, verbose, aspectspolaritymatrix, aspectsenergymatrix,
                              planetsenergymatrix, energygrowthsp, energyret)
     }
 
+    planets.pred <- merge(planets.pred, significance.patterns, by='Date')
     energy.days <- rbindlist(apply(planets.pred, 1, processPlanesDaySignificance))
     energy.sum <- energy.days[, list(sum(up), sum(down)), by=list(Date, origin)]
     setnames(energy.sum, c('Date', 'origin', 'up', 'down'))
