@@ -2191,7 +2191,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     significance <- planetsVarsSignificance(planets[Date >= as.Date(tsdate) & Date <= as.Date(tedate)], security, threshold)
     planets.pred <- planets[Date > as.Date(vsdate) & Date <= as.Date(cedate) & wday %in% c(1, 2, 3, 4, 5)]
     years.test <- format(seq(rdates[3], rdates[4], by='year'), '%Y')
-    years.confirm <- format(seq(rdates[5], rdates[6], by='year'), '%Y')
+    years.conf <- format(seq(rdates[5], rdates[6], by='year'), '%Y')
 
     pltitle <- paste(securityfile, " / ", "maprice=", maprice, "mapricetype=", mapricetype, "mapredslow=", mapredslow,
                      "predtype=", predtype, "degsplit=", degsplit, "threshold=", threshold, "energymode=", energymode,
@@ -2258,33 +2258,16 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets.pred <- merge(planets.pred, prediction, by='Date')
     setkeyv(planets.pred, c('Date', 'Year'))
 
-    # compute predictions by year an calculate fitness by the mean to meter the solution stability
-    for (curyear in years.test) {
-      setattr(planets.pred, ".internal.selfref", NULL)
-      res <- processPredictions(planets.test=planets.pred[Year==curyear], security=security, predtype=predtype,
-                                mapredfunc=mapredfunc, mapredslow=mapredslow, cordir=cordir, pltitle=pltitle, alignmove=alignmove,
-                                verbose=verbose, doplot=doplot)
-      fitness[[length(fitness)+1]] <- res$fitness
-      volatility[[length(volatility)+1]] <- res$volatility
-      correlation[[length(correlation)+1]] <- res$correlation
+    processYearPredictions <- function(x) {
+      return(processPredictions(x, security, predtype, mapredfunc, mapredslow, cordir, pltitle, alignmove, verbose, doplot))
     }
 
-    fitness <- unlist(fitness)
-    meanfitness <- round(mean(fitness))
-    sdfitness <- sd(fitness)
-    avgvolatility <- mean(unlist(volatility))
-    avgcorrelation <- mean(unlist(correlation))
-
-
-    for (curyear in years.confirm) {
-      setattr(planets.pred, ".internal.selfref", NULL)
-      res2 <- processPredictions(planets.test=planets.pred[Year==curyear], security=security, predtype=predtype,
-                                 mapredfunc=mapredfunc, mapredslow=mapredslow, cordir=cordir, pltitle=pltitle, alignmove=alignmove,
-                                 verbose=verbose, doplot=doplot)
-      fitness2[[length(fitness2)+1]] <- res2$fitness
-      volatility2[[length(volatility2)+1]] <- res2$volatility
-      correlation2[[length(correlation2)+1]] <- res2$correlation
-    }
+    # compute test predictions by year
+    res.test <- planets.pred[Year %in% years.test, processYearPredictions(.SD), by=Year]
+    res.test.mean <- res.test[, lapply(.SD, function(x) round(mean(x), digits=2)), .SDcols=c('fitness', 'correlation', 'volatility')]
+    # compute confirmation predictions by year
+    res.conf <- planets.pred[Year %in% years.conf, processYearPredictions(.SD), by=Year]
+    res.conf.mean <- res.conf[, lapply(.SD, function(x) round(mean(x), digits=2)), .SDcols=c('fitness', 'correlation', 'volatility')]
 
     cat("\n---------------------------------------------------------------------------------\n")
     cat("testPlanetsSignificanceRelative('testSolution', securityfile=", shQuote(securityfile), ", planetsfile=", shQuote(planetsfile), sep="")
@@ -2314,22 +2297,23 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     print(panalogymatrix)
     cat("\n")
 
-    for (j in 1:length(fitness)) {
-      cat("\t Optimization test: volatility =", volatility[[j]], " - correlation =", correlation[[j]], " - fitness =", fitness[[j]], "\n")
+    printPredYearSummary <- function(x, type) {
+      cat("\t ", type, "test: volatility =", x['volatility'], " - correlation =", x['correlation'], " - fitness =", x['fitness'], "\n")
     }
 
-    for (j in 1:length(fitness2)) {
-      cat("\t Confirmation test: volatility =", volatility2[[j]], " - correlation =", correlation2[[j]], " - fitness =", fitness2[[j]], "\n")
-    }
+    # print yearly summary
+    apply(res.test, 1, printPredYearSummary, type="Optimization")
+    apply(res.conf, 1, printPredYearSummary, type="Optimization")
 
     cat("\n\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
-    cat("volatility =", avgvolatility, " - correlation =", avgcorrelation, " - sd =", sdfitness, " - ### = ", meanfitness, "\n")
-    return(list(fitness=meanfitness, planets=res2$planets, security=security))
+    cat("volatility =", res.test.mean$volatility, " - correlation =", res.test.mean$correlation, " - ### = ", res.test.mean$fitness, "\n")
+    return(list(fitness=round(res.test.mean$fitness), digits=0))
   }
 
   processPredictions <- function(planets.test, security, predtype, mapredfunc, mapredslow, cordir, pltitle, alignmove, verbose, doplot) {
+    planets.pred <- copy(planets.test)
     # in case that all predictions are 0 we skip this solution
-    if (all(planets.test$predRaw == 0)) {
+    if (all(planets.pred$predRaw == 0)) {
       # very bad fitness to make this solution disappear
       fitness <- 0
       correlation <- 0
@@ -2337,9 +2321,9 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     }
     else {
       # normalize data
-      planets.test[, predEff := data.Normalization(predRaw, type='n3')]
+      planets.pred[, predEff := data.Normalization(predRaw, type='n3')]
 
-      if (all(is.nan(planets.test$predEff))) {
+      if (all(is.nan(planets.pred$predEff))) {
         fitness <- 0
         correlation <- 0
         volatility <- 0
@@ -2347,10 +2331,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       else {
         # negative correlation
         if (cordir == 1) {
-          planets.test[, predEff := predEff * -1]
+          planets.pred[, predEff := predEff * -1]
         }
 
-        predEffSmoth <- mapredfunc(planets.test$predEff, mapredslow)
+        predEffSmoth <- mapredfunc(planets.pred$predEff, mapredslow)
 
         if (alignmove > 0) {
           # align prediction to the left
@@ -2361,49 +2345,49 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
           predEffSmoth <- c(rep(NA, abs(alignmove)), predEffSmoth[1:(length(predEffSmoth)-abs(alignmove))])
         }
 
-        planets.test[, predval := predEffSmoth]
-        planets.test <- planets.test[!is.na(predval)]
+        planets.pred[, predval := predEffSmoth]
+        planets.pred <- planets.pred[!is.na(predval)]
 
         if (predtype == 'absolute') {
-          planets.test[, predEff := predval]
+          planets.pred[, predEff := predval]
         }
         else if (predtype == 'relative') {
-          planets.test[, predEff := c(NA, diff(predval, lag=1, differences=1))]
-          planets.test <- planets.test[!is.na(predEff)]
+          planets.pred[, predEff := c(NA, diff(predval, lag=1, differences=1))]
+          planets.pred <- planets.pred[!is.na(predEff)]
         }
         else {
           stop("No valid prediction type was provided.")
         }
 
-        planets.test[, predFactor := cut(predEff, c(-10, 0, 10), labels=c('down', 'up'), right=FALSE)]
-        planets.test.security <- merge(planets.test, security, by='Date')
-        volatility <- mean(planets.test.security$Mid) / sd(planets.test.security$Mid)
-        planets.test.security[, 'Mid' := data.Normalization(Mid, type="n3")]
-        planets.test.security[, 'MidMAF' := data.Normalization(MidMAF, type="n3")]
-        planets.test.security[, 'MidMAS' := data.Normalization(MidMAS, type="n3")]
-        interval <- abs(as.integer((min(planets.test$Date)-max(planets.test$Date))/80))
-        x_dates <- seq(min(planets.test$Date), max(planets.test$Date), by=interval)
+        planets.pred[, predFactor := cut(predEff, c(-10, 0, 10), labels=c('down', 'up'), right=FALSE)]
+        planets.pred.security <- merge(planets.pred, security, by='Date')
+        volatility <- mean(planets.pred.security$Mid) / sd(planets.pred.security$Mid)
+        planets.pred.security[, 'Mid' := data.Normalization(Mid, type="n3")]
+        planets.pred.security[, 'MidMAF' := data.Normalization(MidMAF, type="n3")]
+        planets.pred.security[, 'MidMAS' := data.Normalization(MidMAS, type="n3")]
+        interval <- abs(as.integer((min(planets.pred$Date)-max(planets.pred$Date))/80))
+        x_dates <- seq(min(planets.pred$Date), max(planets.pred$Date), by=interval)
 
-        if (nrow(planets.test.security) == 0) {
+        if (nrow(planets.pred.security) == 0) {
           correlation <- NA
         }
         else {
-          correlation <- round(cor(planets.test.security$predval, planets.test.security$Mid,  use = "complete.obs", method='spearman'), digits=2)
+          correlation <- round(cor(planets.pred.security$predval, planets.pred.security$Mid,  use = "complete.obs", method='spearman'), digits=2)
         }
 
         # if plot is enabled
         if (doplot) {
-          if (nrow(planets.test.security) == 0) {
-            p1 <- ggplot(planets.test, aes(Date, predval)) + geom_line() + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() + scale_shape_identity() + scale_x_date(breaks=x_dates)
+          if (nrow(planets.pred.security) == 0) {
+            p1 <- ggplot(planets.pred, aes(Date, predval)) + geom_line() + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() + scale_shape_identity() + scale_x_date(breaks=x_dates)
           }
           else {
-            p1 <- ggplot(planets.test, aes(Date, predval)) + geom_line() + geom_line(data = planets.test.security, aes(Date, Mid), colour="red", show_guide=F) + geom_line(data = planets.test.security, aes(Date, MidMAF), colour="blue", show_guide=F) + geom_line(data = planets.test.security, aes(Date, MidMAS), colour="green", show_guide=F) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() + scale_shape_identity() + scale_x_date(breaks=x_dates)
+            p1 <- ggplot(planets.pred, aes(Date, predval)) + geom_line() + geom_line(data = planets.pred.security, aes(Date, Mid), colour="red", show_guide=F) + geom_line(data = planets.pred.security, aes(Date, MidMAF), colour="blue", show_guide=F) + geom_line(data = planets.pred.security, aes(Date, MidMAS), colour="green", show_guide=F) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() + scale_shape_identity() + scale_x_date(breaks=x_dates)
           }
           print(p1)
         }
 
         # calculate accuracy
-        t1 <- with(planets.test.security, table(Eff==predFactor))
+        t1 <- with(planets.pred.security, table(Eff==predFactor))
         if (all(c('TRUE', 'FALSE') %in% names(t1))) {
           fitness <- t1[['TRUE']]-t1[['FALSE']]
         }
@@ -2419,7 +2403,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       }
     }
 
-    return(list(fitness=fitness, correlation=correlation, volatility=volatility, planets=planets.test))
+    return(list(fitness=fitness, correlation=correlation, volatility=volatility))
   }
 
   relativeTrendFitness <- function(x, planetslist, securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, dateformat) {
@@ -2453,11 +2437,11 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planetsenergy <- x[ae.e:(pe.e-1)]/10
 
     res <- relativeTrend(planetslist=planetslist, securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate,
-                         vedate=vedate, csdate=csdate, cedate=cedate, mapredslow=mapredslow, maprice=maprice, mapricetype=mapricetype, predtype=predtype,
-                         cordir=cordir, degsplit=degsplit, threshold=threshold, energymode=energymode, energygrowthsp=energygrowthsp,
-                         energyret=energyret, dateformat=dateformat, alignmove=alignmove,
-                         pricemadir=pricemadir, panalogy=panalogy, cusorbs=cusorbs, aspectspolarity=aspectspolarity,
-                         aspectsenergy=aspectsenergy, planetsenergy=planetsenergy, verbose=F, doplot=F)
+                             vedate=vedate, csdate=csdate, cedate=cedate, mapredslow=mapredslow, maprice=maprice, mapricetype=mapricetype, predtype=predtype,
+                             cordir=cordir, degsplit=degsplit, threshold=threshold, energymode=energymode, energygrowthsp=energygrowthsp,
+                             energyret=energyret, dateformat=dateformat, alignmove=alignmove,
+                             pricemadir=pricemadir, panalogy=panalogy, cusorbs=cusorbs, aspectspolarity=aspectspolarity,
+                             aspectsenergy=aspectsenergy, planetsenergy=planetsenergy, verbose=F, doplot=F)
 
     return(res$fitness)
   }
@@ -2500,14 +2484,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     if (params$doplot) pdf(paste("~/chart_", predfile, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
     degsplits <- c(params$degsplit)
     planetslist <- multipleOpenPlanets(params$planetsfile, degsplits)
-    res <- relativeTrend(planetslist, ...)
-    planets.security <- merge(res$planets, res$security, by='Date')
-    if (params$verbose) {
-      cols <- c('Date', 'Open', 'Close', 'Mid', 'MidMAF', 'MidMAS', 'val', 'predraw', 'predval', 'predEff', 'predFactor', 'Eff')
-      print(as.data.frame(planets.security[, cols, with=F]))
-    }
+    relativeTrend(planetslist, ...)
     if (params$doplot) dev.off()
-    write.csv(res$planets[, c('DateMT4', 'predval'), with=F], file=paste("~/trading/predict/", predfile, ".csv", sep=''), eol="\r\n", quote=FALSE, row.names=FALSE)
   }
 
   testRefactoring <- function() {
