@@ -2244,20 +2244,22 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       stop("No valid energy mode was provided.")
     }
 
+    # calculate the prediction and merge with planets.pred table
     prediction <- significance.days[, list(predRaw=(sum(V2)-sum(V1)) * 10), by='Date']
     prediction[, Date := as.Date(Date, format="%Y-%m-%d")]
-    planets.pred <- merge(planets.pred, prediction, by='Date')
-    setkeyv(planets.pred, c('Date', 'Year'))
+    planets.pred <- planets.pred[prediction]
+    planets.pred <- security[planets.pred]
+    setkeyv(planets.pred, c('Date', 'Year.1'))
 
     processYearPredictions <- function(x) {
-      return(processPredictions(x, security, predtype, mapredfunc, mapredslow, cordir, pltitle, alignmove, verbose, doplot))
+      return(processPredictions(x, predtype, mapredfunc, mapredslow, cordir, pltitle, alignmove, verbose, doplot))
     }
 
     # compute test predictions by year
-    res.test <- planets.pred[Year %in% years.test, processYearPredictions(.SD), by=Year]
+    res.test <- planets.pred[Year.1 %in% years.test, processYearPredictions(.SD), by=Year.1]
     res.test.mean <- res.test[, lapply(.SD, function(x) round(mean(x), digits=2)), .SDcols=c('matches.d', 'correlation', 'volatility')]
     # compute confirmation predictions by year
-    res.conf <- planets.pred[Year %in% years.conf, processYearPredictions(.SD), by=Year]
+    res.conf <- planets.pred[Year.1 %in% years.conf, processYearPredictions(.SD), by=Year.1]
     res.conf.mean <- res.conf[, lapply(.SD, function(x) round(mean(x), digits=2)), .SDcols=c('matches.d', 'correlation', 'volatility')]
 
     cat("\n---------------------------------------------------------------------------------\n")
@@ -2315,13 +2317,16 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(list(fitness=fitness))
   }
 
-  processPredictions <- function(planets.test, security, predtype, mapredfunc, mapredslow, cordir, pltitle, alignmove, verbose, doplot) {
+  processPredictions <- function(planets.test, predtype, mapredfunc, mapredslow, cordir, pltitle, alignmove, verbose, doplot) {
     planets.pred <- copy(planets.test)
     zerores <- list(correlation=0, volatility=0, matches.t=0, matches.f=0, matches.d=0)
 
+    if (nrow(planets.pred) == 0) {
+      return(zerores)
+    }
+
     # in case that all predictions are 0 we skip this solution
     if (all(planets.pred$predRaw == 0)) {
-      # very bad matches to make this solution disappear
       return(zerores)
     }
 
@@ -2362,35 +2367,33 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       stop("No valid prediction type was provided.")
     }
 
+    pricecols <- c('Mid', 'MidMAF', 'MidMAS')
     planets.pred[, predFactor := cut(predEff, c(-10, 0, 10), labels=c('down', 'up'), right=FALSE)]
-    planets.pred.security <- merge(planets.pred, security, by='Date')
-    volatility <- mean(planets.pred.security$Mid) / sd(planets.pred.security$Mid)
-    planets.pred.security[, 'Mid' := data.Normalization(Mid, type="n3")]
-    planets.pred.security[, 'MidMAF' := data.Normalization(MidMAF, type="n3")]
-    planets.pred.security[, 'MidMAS' := data.Normalization(MidMAS, type="n3")]
-    interval <- abs(as.integer((min(planets.pred$Date)-max(planets.pred$Date))/80))
-    x_dates <- seq(min(planets.pred$Date), max(planets.pred$Date), by=interval)
-
-    if (nrow(planets.pred.security) == 0) {
-      correlation <- NA
+    if (all(is.na(planets.pred$Mid))) {
+      correlation <- 0
+      volatility <- 0
     }
     else {
-      correlation <- round(cor(planets.pred.security$predval, planets.pred.security$Mid,  use = "complete.obs", method='spearman'), digits=2)
+      correlation <- planets.pred[!is.na(Mid), cor(predval, Mid, use="pairwise", method='spearman')]
+      volatility <- planets.pred[!is.na(Mid), mean(Mid) / sd(Mid)]
     }
 
     # if plot is enabled
     if (doplot) {
-      if (nrow(planets.pred.security) == 0) {
+      interval <- abs(as.integer((min(planets.pred$Date)-max(planets.pred$Date))/80))
+      x_dates <- seq(min(planets.pred$Date), max(planets.pred$Date), by=interval)
+      if (all(is.na(planets.pred$Mid))) {
         p1 <- ggplot(planets.pred, aes(Date, predval)) + geom_line() + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() + scale_shape_identity() + scale_x_date(breaks=x_dates)
       }
       else {
-        p1 <- ggplot(planets.pred, aes(Date, predval)) + geom_line() + geom_line(data = planets.pred.security, aes(Date, Mid), colour="red", show_guide=F) + geom_line(data = planets.pred.security, aes(Date, MidMAF), colour="blue", show_guide=F) + geom_line(data = planets.pred.security, aes(Date, MidMAS), colour="green", show_guide=F) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() + scale_shape_identity() + scale_x_date(breaks=x_dates)
+        planets.pred[!is.na(Mid), c(pricecols) := lapply(.SD, function(x) data.Normalization(x, type="n3")), .SDcols=pricecols]
+        p1 <- ggplot(planets.pred, aes(Date, predval)) + geom_line() + geom_line(data = planets.pred, aes(Date, Mid), colour="red", show_guide=F) + geom_line(data = planets.pred, aes(Date, MidMAF), colour="blue", show_guide=F) + geom_line(data = planets.pred, aes(Date, MidMAS), colour="green", show_guide=F) + theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() + scale_shape_identity() + scale_x_date(breaks=x_dates)
       }
       print(p1)
     }
 
     # calculate accuracy
-    t1 <- with(planets.pred.security, table(Eff==predFactor))
+    t1 <- with(planets.pred, table(Eff==predFactor))
     if (all(c('TRUE', 'FALSE') %in% names(t1))) {
       matches.t <- t1[['TRUE']]
       matches.f <- t1[['FALSE']]
@@ -2404,8 +2407,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       matches.f <- t1[['FALSE']]
     }
     else {
-      matches.t <- 0
-      matches.f <- 0
+      matches.t <- as.integer(0)
+      matches.f <- as.integer(0)
     }
 
     # calculate the matches difference
