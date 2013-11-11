@@ -2386,21 +2386,21 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       interval <- abs(as.integer((min(planets.pred$Date)-max(planets.pred$Date))/80))
       x_dates <- seq(min(planets.pred$Date), max(planets.pred$Date), by=interval)
       if (all(is.na(planets.pred$Mid))) {
-        p1 <- ggplot(planets.pred, aes(Date, predval)) + geom_line() +
-        geom_line(data = planets.pred, aes(Date, predvalMAF), colour="brown", show_guide=F) +
-        geom_line(data = planets.pred, aes(Date, predvalMAS), colour="yellow", show_guide=F) +
+        p1 <- ggplot() + geom_path(data = planets.pred, aes(Date, predval), size=1) +
+        geom_path(data = planets.pred, aes(Date, predvalMAF), colour="brown", size=0.5, na.rm=T) +
+        geom_path(data = planets.pred, aes(Date, predvalMAS), colour="yellow", sizee=0.5, na.rm=T) +
         theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() +
         scale_shape_identity() + scale_x_date(breaks=x_dates)
       }
       else {
         pricecols <- c('Mid', 'MidMAF', 'MidMAS')
         planets.pred[!is.na(Mid), c(pricecols) := lapply(.SD, function(x) data.Normalization(x, type="n3")), .SDcols=pricecols]
-        p1 <- ggplot(planets.pred, aes(Date, predval)) + geom_line() +
-        geom_line(data = planets.pred, aes(Date, predvalMAF), colour="brown", show_guide=F) +
-        geom_line(data = planets.pred, aes(Date, predvalMAS), colour="yellow", show_guide=F) +
-        geom_line(data = planets.pred, aes(Date, Mid), colour="red", show_guide=F) +
-        geom_line(data = planets.pred, aes(Date, MidMAF), colour="blue", show_guide=F) +
-        geom_line(data = planets.pred, aes(Date, MidMAS), colour="green", show_guide=F) +
+        p1 <- ggplot() + geom_path(data=planets.pred, aes(Date, predval), size = 1) +
+        geom_path(data = planets.pred, aes(Date, predvalMAF), colour="brown", size=0.5, na.rm=T) +
+        geom_path(data = planets.pred, aes(Date, predvalMAS), colour="yellow", size=0.5, na.rm=T) +
+        geom_path(data = planets.pred, aes(Date, Mid), colour="red", size=1, na.rm=T) +
+        geom_path(data = planets.pred, aes(Date, MidMAF), colour="blue", size=0.5, na.rm=T) +
+        geom_path(data = planets.pred, aes(Date, MidMAS), colour="green", size=0.5, na.rm=T) +
         theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() +
         scale_shape_identity() + scale_x_date(breaks=x_dates)
       }
