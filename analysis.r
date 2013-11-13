@@ -1,5 +1,4 @@
 library(GA)
-library(clusterSim)
 library(compiler)
 library(data.table)
 library(ggplot2)
@@ -396,31 +395,26 @@ openSecurity <- function(security_file, mapricetype, maprice, dateformat="%Y.%m.
   setkey(security, 'Date')
   security[, Mid := (High + Low + Close + Open) / 4]
 
-  if (pricemadir == 1 | pricemadir == 2) {
+  if (pricemadir == 1) {
     security[, MidMAF := mapricefunc(Mid, n=maprice)]
     security[, MidMAS := mapricefunc(Mid, n=maprice*2)]
+    security[, val := MidMAF-MidMAS]
   }
-  else if (pricemadir == 3 | pricemadir == 4) {
+  else if (pricemadir == 2) {
     security[, MidMAF := rev(mapricefunc(rev(Mid), n=maprice))]
     security[, MidMAS := rev(mapricefunc(rev(Mid), n=maprice*2))]
+    security[, val := MidMAS-MidMAF]
   }
   else {
     stop("No valid pricemadir was provided.")
   }
 
-  security[, val := MidMAS-MidMAF]
   if (all(security$val == 0)) {
     stop("Undetermined security price direction")
   }
 
   security <- security[!is.na(val)]
-  #security$val <- security$Close - security$Mid
-  if (pricemadir == 1 | pricemadir == 3) {
-    security[, Eff := cut(val, c(-1000, 0, 1000), labels=c('down', 'up'), right=FALSE)]
-  }
-  else if (pricemadir == 2 | pricemadir == 4) {
-    security[, Eff := cut(val, c(-1000, 0, 1000), labels=c('up', 'down'), right=FALSE)]
-  }
+  security[, Eff := cut(val, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
 
   return(security)
 }
@@ -2187,9 +2181,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     pltitle <- paste(securityfile, " / ", "maprice=", maprice, "mapricetype=", mapricetype, "mapredslow=", mapredslow,
                      "predtype=", predtype, "degsplit=", degsplit, "threshold=", threshold, "energymode=", energymode,
                      "\nenergygrowthsp=", energygrowthsp, "alignmove=", alignmove,
-                     "pricemadir=", pricemadir, "\n panalogy=c(", paste(shQuote(panalogy), collapse=","), ")",
-                     "\n aspectsenergy=c(", paste(aspectsenergy, collapse=","), ")",
-                     "\n planetsenergy=c(", paste(planetsenergy, collapse=","), ")")
+                     "pricemadir=", pricemadir, " panalogy=c(", paste(shQuote(panalogy), collapse=","), ")",
+                     " aspectsenergy=c(", paste(aspectsenergy, collapse=","), ")",
+                     " planetsenergy=c(", paste(planetsenergy, collapse=","), ")")
+    pltitle <- paste(strwrap(pltitle, width=130), collapse="\n")
 
     # build significance days
     buildDaySignificanceIdxs <- function(planets.day) {
@@ -2330,13 +2325,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       return(zerores)
     }
 
-    # normalize data
-    planets.pred[, predEff := data.Normalization(predRaw, type='n3')]
-
-    if (all(is.nan(planets.pred$predEff))) {
-      return(zerores)
-    }
-
+    planets.pred[, predEff := predRaw]
     # negative correlation invert prediction
     if (cordir == 1) {
       planets.pred[, predEff := predEff * -1]
@@ -2370,7 +2359,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       stop("No valid prediction type was provided.")
     }
 
-    planets.pred[, predFactor := cut(predEff, c(-10, 0, 10), labels=c('down', 'up'), right=FALSE)]
+    planets.pred[, predFactor := cut(predEff, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
 
     if (all(is.na(planets.pred$Mid))) {
       correlation <- 0
@@ -2385,25 +2374,30 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     if (doplot) {
       interval <- abs(as.integer((min(planets.pred$Date)-max(planets.pred$Date))/80))
       x_dates <- seq(min(planets.pred$Date), max(planets.pred$Date), by=interval)
+
       if (all(is.na(planets.pred$Mid))) {
         p1 <- ggplot() + geom_path(data = planets.pred, aes(Date, predval), size=1) +
-        geom_path(data = planets.pred, aes(Date, predvalMAF), colour="brown", size=0.5, na.rm=T) +
-        geom_path(data = planets.pred, aes(Date, predvalMAS), colour="yellow", sizee=0.5, na.rm=T) +
-        theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() +
-        scale_shape_identity() + scale_x_date(breaks=x_dates)
+        geom_path(data = planets.pred, aes(Date, predvalMAF), colour="blue", size=0.7, na.rm=T) +
+        geom_path(data = planets.pred, aes(Date, predvalMAS), colour="red", sizee=0.7, na.rm=T)
       }
       else {
-        pricecols <- c('Mid', 'MidMAF', 'MidMAS')
-        planets.pred[!is.na(Mid), c(pricecols) := lapply(.SD, function(x) data.Normalization(x, type="n3")), .SDcols=pricecols]
-        p1 <- ggplot() + geom_path(data=planets.pred, aes(Date, predval), size = 1) +
-        geom_path(data = planets.pred, aes(Date, predvalMAF), colour="brown", size=0.5, na.rm=T) +
-        geom_path(data = planets.pred, aes(Date, predvalMAS), colour="yellow", size=0.5, na.rm=T) +
-        geom_path(data = planets.pred, aes(Date, Mid), colour="red", size=1, na.rm=T) +
-        geom_path(data = planets.pred, aes(Date, MidMAF), colour="blue", size=0.5, na.rm=T) +
-        geom_path(data = planets.pred, aes(Date, MidMAS), colour="green", size=0.5, na.rm=T) +
-        theme(axis.text.x = element_text(angle = 90, size = 7)) + ggtitle(pltitle) + scale_fill_grey() +
-        scale_shape_identity() + scale_x_date(breaks=x_dates)
+        # split security & prediction data with it's corresponding MAs
+        planets.sec.plot <- planets.pred[, c('Date', 'Mid', 'MidMAF', 'MidMAS'), with=F]
+        planets.sec.plot[, type := 'security']
+        setnames(planets.sec.plot, c('Date', 'val', 'valMAF', 'valMAS', 'type'))
+        planets.pred.plot <- planets.pred[, c('Date', 'predval', 'predvalMAF', 'predvalMAS'), with=F]
+        planets.pred.plot[, type := 'prediction']
+        setnames(planets.pred.plot, c('Date', 'val', 'valMAF', 'valMAS', 'type'))
+        planets.plot <- rbindlist(list(planets.pred.plot, planets.sec.plot))
+        # facet plot
+        p1 <- ggplot() + facet_grid(type ~ ., scale = "free") +
+        geom_path(data=planets.plot, aes(Date, val), size = 1, na.rm=T) +
+        geom_path(data = planets.plot, aes(Date, valMAF), colour="blue", size=0.7, na.rm=T) +
+        geom_path(data = planets.plot, aes(Date, valMAS), colour="red", size=0.7, na.rm=T)
       }
+
+      p1 <- p1 + theme(axis.text.x = element_text(angle = 90, size = 7), text=element_text(size=7)) +
+      ggtitle(pltitle) + scale_fill_grey() + scale_shape_identity() + scale_x_date(breaks=x_dates)
       print(p1)
     }
 
@@ -2488,7 +2482,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planetenergymax <- rep(30, length(defplanetsenergy))
 
     minvals <- c( 2,  2,  2, 1, 1, 0, dsmin,  0, 1, 0, -20, -10, 1, panalogymin, orbsmin, polaritymin, aspectenergymin, planetenergymin)
-    maxvals <- c(10, 15, 20, 4, 2, 1, dsmax, 30, 2, 9,  20,  10, 4, panalogymax, orbsmax, polaritymax, aspectenergymax, planetenergymax)
+    maxvals <- c(10, 15, 20, 2, 2, 1, dsmax, 30, 2, 9,  20,  10, 4, panalogymax, orbsmax, polaritymax, aspectenergymax, planetenergymax)
 
     panalogyCols <- planetsLonGCols[5:length(planetsLonGCols)]
     varnames <- c('mapredslow', 'mapredfact', 'maprice', 'mapricetype', 'predtype', 'cordir', 'degsplit', 'threshold', 'energymode', 'energygrowthsp',
