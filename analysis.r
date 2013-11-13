@@ -2169,6 +2169,20 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     panalogymatrix <- matrix(panalogy, nrow = 1, ncol = length(panalogy), byrow = TRUE,
                              dimnames = list(c('analogy'), planetsLonGCols))
 
+    sout <- paste("testPlanetsSignificanceRelative('testSolution', securityfile=", shQuote(securityfile), ", planetsfile=", shQuote(planetsfile),
+                  ", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate),
+                  ", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate),
+                  ", mapredslow=", mapredslow, ", mapredfact=", mapredfact, ", maprice=", maprice,
+                  ", mapricetype=", shQuote(mapricetype),
+                  ", predtype=", shQuote(predtype), ", cordir=", cordir, ", pricemadir=", pricemadir, ", degsplit=", degsplit, ", threshold=", threshold,
+                  ", energymode=", energymode, ", energygrowthsp=", energygrowthsp, ", energyret=", energyret, ", alignmove=", alignmove,
+                  ", panalogy=c(", paste(shQuote(panalogy), collapse=","), ")",
+                  ", cusorbs=c(", paste(cusorbs, collapse=","), ")",
+                  ", aspectsenergy=c(", paste(aspectsenergy, collapse=","), ")",
+                  ", planetsenergy=c(", paste(planetsenergy, collapse=","), ")",
+                  ", aspectspolarity=c(", paste(aspectspolarity, collapse=","), ")",
+                  ", dateformat=", shQuote(dateformat), ", verbose=F", ", doplot=T", ", fittype=", shQuote(fittype), ")\n", sep="")
+
     # use a cloned planets to ensure original is no modified
     planets <- processPlanetsAspects(planetslist[[as.character(degsplit)]], orbsmatrix)
     planets.train <- planets[Date > rdates[1] & Date <= rdates[2] & wday %in% c(1, 2, 3, 4, 5)]
@@ -2177,14 +2191,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     significance <- planetsVarsSignificance(planets.train, security, threshold)
     years.test <- format(seq(rdates[3], rdates[4], by='year'), '%Y')
     years.conf <- format(seq(rdates[5], rdates[6], by='year'), '%Y')
-
-    pltitle <- paste(securityfile, " / ", "maprice=", maprice, "mapricetype=", mapricetype, "mapredslow=", mapredslow,
-                     "predtype=", predtype, "degsplit=", degsplit, "threshold=", threshold, "energymode=", energymode,
-                     "\nenergygrowthsp=", energygrowthsp, "alignmove=", alignmove,
-                     "pricemadir=", pricemadir, " panalogy=c(", paste(shQuote(panalogy), collapse=","), ")",
-                     " aspectsenergy=c(", paste(aspectsenergy, collapse=","), ")",
-                     " planetsenergy=c(", paste(planetsenergy, collapse=","), ")")
-    pltitle <- paste(strwrap(pltitle, width=130), collapse="\n")
 
     # build significance days
     buildDaySignificanceIdxs <- function(planets.day) {
@@ -2245,6 +2251,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets.pred <- planets.pred[prediction]
     planets.pred <- security[planets.pred]
     setkeyv(planets.pred, c('Date', 'Year.1'))
+    pltitle <- paste(strwrap(sout, width=130), collapse="\n")
 
     processYearPredictions <- function(x) {
       return(processPredictions(x, predtype, mapredfunc, mapredslow, mapredfact, cordir, pltitle, alignmove, verbose, doplot))
@@ -2258,19 +2265,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     res.conf.mean <- res.conf[, lapply(.SD, function(x) round(mean(x), digits=2)), .SDcols=c('matches.d', 'correlation', 'volatility')]
 
     cat("\n---------------------------------------------------------------------------------\n")
-    cat("testPlanetsSignificanceRelative('testSolution', securityfile=", shQuote(securityfile), ", planetsfile=", shQuote(planetsfile), sep="")
-    cat(", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate), sep="")
-    cat(", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate), sep="")
-    cat(", mapredslow=", mapredslow, ", mapredfact=", mapredfact, ", maprice=", maprice, sep="")
-    cat(", mapricetype=", shQuote(mapricetype), sep="")
-    cat(", predtype=", shQuote(predtype), ", cordir=", cordir, ", pricemadir=", pricemadir, ", degsplit=", degsplit, ", threshold=", threshold, sep="")
-    cat(", energymode=", energymode, ", energygrowthsp=", energygrowthsp, ", energyret=", energyret, ", alignmove=", alignmove, sep="")
-    cat(", panalogy=c(", paste(shQuote(panalogy), collapse=","), ")", sep="")
-    cat(", cusorbs=c(", paste(cusorbs, collapse=","), ")", sep="")
-    cat(", aspectsenergy=c(", paste(aspectsenergy, collapse=","), ")", sep="")
-    cat(", planetsenergy=c(", paste(planetsenergy, collapse=","), ")", sep="")
-    cat(", aspectspolarity=c(", paste(aspectspolarity, collapse=","), ")", sep="")
-    cat(", dateformat=", shQuote(dateformat), ", verbose=F", ", doplot=T", ", fittype=", shQuote(fittype), ")\n", sep="")
+    print(sout)
     cat("\n")
     print(orbsmatrix)
     cat("\n")
