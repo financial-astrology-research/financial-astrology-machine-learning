@@ -2497,7 +2497,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   testRefactoring <- function() {
-    expected <- c(27, 1, -7)
+    expected <- c(27, 2, 11)
     retrieved <- c()
     degsplits <- seq(1, 3)
     planetslist <- multipleOpenPlanets('planets_7', degsplits)
