@@ -2253,8 +2253,25 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     setkeyv(planets.pred, c('Date', 'Year.1'))
     pltitle <- paste(strwrap(sout, width=130), collapse="\n")
 
+    # smoth the prediction serie
+    planets.pred[, predval := mapredfunc(predRaw, mapredslow)]
+    # negative correlation invert prediction
+    if (cordir == 1) {
+      planets.pred[, predval := predval * -1]
+    }
+    # apply alignment to left & right
+    if (alignmove > 0) {
+      planets.pred[, predval := c(predval[(alignmove+1):length(predval)], rep(NA, alignmove))]
+    }
+    else if (alignmove < 0) {
+      planets.pred[, predval := c(rep(NA, abs(alignmove)), predval[1:(length(predval)-abs(alignmove))])]
+    }
+    # remove NAs and apply MAs
+    planets.pred[!is.na(predval), predvalMAF := mapredfunc(predval, mapredfact)]
+    planets.pred[!is.na(predval), predvalMAS := mapredfunc(predval, mapredfact*2)]
+
     processYearPredictions <- function(x) {
-      return(processPredictions(x, predtype, mapredfunc, mapredslow, mapredfact, cordir, pltitle, alignmove, verbose, doplot))
+      return(processPredictions(x, predtype, pltitle, doplot))
     }
 
     # compute test predictions by year
@@ -2307,7 +2324,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(list(fitness=fitness))
   }
 
-  processPredictions <- function(planets.test, predtype, mapredfunc, mapredslow, mapredfact, cordir, pltitle, alignmove, verbose, doplot) {
+  processPredictions <- function(planets.test, predtype, pltitle, doplot) {
     planets.pred <- copy(planets.test)
     zerores <- list(correlation=0, volatility=0, matches.t=0, matches.f=0, matches.d=0)
 
@@ -2319,30 +2336,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     if (all(planets.pred$predRaw == 0)) {
       return(zerores)
     }
-
-    planets.pred[, predEff := predRaw]
-    # negative correlation invert prediction
-    if (cordir == 1) {
-      planets.pred[, predEff := predEff * -1]
-    }
-
-    predEffSmoth <- mapredfunc(planets.pred$predEff, mapredslow)
-
-    if (alignmove > 0) {
-      # align prediction to the left
-      predEffSmoth <- c(predEffSmoth[(alignmove+1):length(predEffSmoth)], rep(NA, alignmove))
-    }
-    else if (alignmove < 0) {
-      # align prediction to the right
-      predEffSmoth <- c(rep(NA, abs(alignmove)), predEffSmoth[1:(length(predEffSmoth)-abs(alignmove))])
-    }
-
-    planets.pred[, predval := predEffSmoth]
-    planets.pred <- planets.pred[!is.na(predval)]
-    # calculate MA of prediction
-    planets.pred[, predvalMAF := mapredfunc(predval, mapredfact)]
-    planets.pred[, predvalMAS := mapredfunc(predval, mapredfact*2)]
-    planets.pred <- planets.pred[!is.na(predvalMAS)]
 
     if (predtype == 'absolute') {
       planets.pred[, predEff := predval]
