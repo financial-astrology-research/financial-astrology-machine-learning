@@ -2348,7 +2348,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       planets.pred[, predEff := predval]
     }
     else if (predtype == 'relative') {
-      planets.pred[, predEff := predvalMAS-predvalMAF]
+      planets.pred[, predEff := predvalMAF-predvalMAS]
     }
     else {
       stop("No valid prediction type was provided.")
