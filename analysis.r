@@ -2469,8 +2469,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planetenergymin <- rep(0, length(defplanetsenergy))
     planetenergymax <- rep(30, length(defplanetsenergy))
 
-    minvals <- c( 2,  2,  2, 1, 1, 0, dsmin,  0, 1, 0, -20, -10, 1, panalogymin, orbsmin, polaritymin, aspectenergymin, planetenergymin)
-    maxvals <- c(10, 15, 20, 2, 2, 1, dsmax, 30, 2, 9,  20,  10, 4, panalogymax, orbsmax, polaritymax, aspectenergymax, planetenergymax)
+    minvals <- c( 2,  2,  2, 1, 1, 0, dsmin,  0, 1, 0, -20, -20, 1, panalogymin, orbsmin, polaritymin, aspectenergymin, planetenergymin)
+    maxvals <- c(10, 15, 20, 4, 2, 1, dsmax, 30, 2, 9,  20,  20, 2, panalogymax, orbsmax, polaritymax, aspectenergymax, planetenergymax)
 
     panalogyCols <- planetsLonGCols[5:length(planetsLonGCols)]
     varnames <- c('mapredslow', 'mapredfact', 'maprice', 'mapricetype', 'predtype', 'cordir', 'degsplit', 'threshold', 'energymode', 'energygrowthsp',
