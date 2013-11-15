@@ -2156,6 +2156,13 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     cat(" - matches.t =", x['matches.t'], " - matches.f =", x['matches.f'], " - matches.d =", x['matches.d'], "\n")
   }
 
+  # Plot the solution snippet
+  plotSolutionSnippet <- function(snippet) {
+    plot(0:20, type = "n", xaxt="n", yaxt="n", bty="n", xlab = "", ylab = "")
+    par(ps = 8, cex = 1, cex.main = 1)
+    text(10, 10, snippet, pos=3)
+  }
+
   relativeTrend <- function(planetslist, planetsfile, securityfile, tsdate, tedate, vsdate, vedate, csdate, cedate, mapredslow, mapredfact, maprice,
                             mapricetype, predtype, cordir, degsplit, threshold, energymode, energygrowthsp, energyret, dateformat, alignmove=0, pricemadir,
                             panalogy=panalogy, cusorbs=cusorbs, aspectspolarity, aspectsenergy, planetsenergy, verbose=F, doplot=F, fittype) {
@@ -2253,7 +2260,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets.pred <- planets.pred[prediction]
     planets.pred <- security[planets.pred]
     setkeyv(planets.pred, c('Date', 'Year.1'))
-    pltitle <- paste(strwrap(sout, width=190), collapse="\n")
+    snippet <- paste(strwrap(sout, width=170), collapse="\n")
 
     # smoth the prediction serie
     planets.pred[, predval := mapredfunc(predRaw, mapredslow)]
@@ -2287,11 +2294,11 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     # determine a factor prediction response
     planets.pred[, predFactor := cut(predEff, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
+    # plot solution snippet if doplot is enabled
+    if (doplot) plotSolutionSnippet(snippet)
     # helper function to process predictions by year
-    processYearPredictions <- function(x) {
-      return(processPredictions(x, predtype, pltitle, doplot))
-    }
-
+    pltitle <- paste('Yearly prediction VS price movement for ', securityfile)
+    processYearPredictions <- function(x) processPredictions(x, predtype, pltitle, doplot)
     # compute test predictions by year
     res.test <- planets.pred[Year.1 %in% years.test, processYearPredictions(.SD), by=Year.1]
     res.test.mean <- res.test[, lapply(.SD, function(x) round(mean(x), digits=2)), .SDcols=c('matches.d', 'correlation', 'volatility')]
@@ -2386,7 +2393,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
         geom_path(data = planets.plot, aes(Date, valMAS), colour="red", size=0.7, na.rm=T)
       }
 
-      p1 <- p1 + theme(axis.text.x = element_text(angle = 90, size = 7), text=element_text(size=7)) +
+      p1 <- p1 + theme(axis.text.x = element_text(angle = 90, size = 7), text=element_text(size=10)) +
       ggtitle(pltitle) + scale_fill_grey() + scale_shape_identity() + scale_x_date(breaks=x_dates)
       print(p1)
     }
