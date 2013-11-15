@@ -2152,7 +2152,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   # print a year solution summary
   printPredYearSummary <- function(x, type) {
-    cat("\t ", type, "test: volatility =", x['volatility'], " - correlation =", x['correlation'])
+    cat("\t ", type, "test: vol =", x['volatility'], " - cor =", x['correlation'])
     cat(" - matches.t =", x['matches.t'], " - matches.f =", x['matches.f'], " - matches.d =", x['matches.d'], "\n")
   }
 
@@ -2187,11 +2187,11 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                   ", mapricetype=", shQuote(mapricetype),
                   ", predtype=", shQuote(predtype), ", cordir=", cordir, ", pricemadir=", pricemadir, ", degsplit=", degsplit, ", threshold=", threshold,
                   ", energymode=", energymode, ", energygrowthsp=", energygrowthsp, ", energyret=", energyret, ", alignmove=", alignmove,
-                  ", panalogy=c(", paste(shQuote(panalogy), collapse=","), ")",
-                  ", cusorbs=c(", paste(cusorbs, collapse=","), ")",
-                  ", aspectsenergy=c(", paste(aspectsenergy, collapse=","), ")",
-                  ", planetsenergy=c(", paste(planetsenergy, collapse=","), ")",
-                  ", aspectspolarity=c(", paste(aspectspolarity, collapse=","), ")",
+                  ", panalogy=c(", paste(shQuote(panalogy), collapse=", "), ")",
+                  ", cusorbs=c(", paste(cusorbs, collapse=", "), ")",
+                  ", aspectsenergy=c(", paste(aspectsenergy, collapse=", "), ")",
+                  ", planetsenergy=c(", paste(planetsenergy, collapse=", "), ")",
+                  ", aspectspolarity=c(", paste(aspectspolarity, collapse=", "), ")",
                   ", dateformat=", shQuote(dateformat), ", verbose=F", ", doplot=T", ", fittype=", shQuote(fittype), ")\n", sep="")
 
     # use a cloned planets to ensure original is no modified
@@ -2253,7 +2253,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets.pred <- planets.pred[prediction]
     planets.pred <- security[planets.pred]
     setkeyv(planets.pred, c('Date', 'Year.1'))
-    pltitle <- paste(strwrap(sout, width=130), collapse="\n")
+    pltitle <- paste(strwrap(sout, width=190), collapse="\n")
 
     # smoth the prediction serie
     planets.pred[, predval := mapredfunc(predRaw, mapredslow)]
@@ -2300,7 +2300,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     res.conf.mean <- res.conf[, lapply(.SD, function(x) round(mean(x), digits=2)), .SDcols=c('matches.d', 'correlation', 'volatility')]
 
     cat("\n---------------------------------------------------------------------------------\n")
-    print(sout)
+    cat(sout)
     cat("\n")
     print(orbsmatrix)
     cat("\n")
@@ -2332,7 +2332,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     fitness <- round(fitness, digits=0)
     cat("\n\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
-    cat("\n\t Significance table trained with: ", nrow(planets.train), " days", "\n")
+    cat("\t Trained significance table with: ", nrow(planets.train), " days", "\n")
+    cat("\t Optimized and confirmed with: ", nrow(planets.pred), " days", "\n")
     with(res.test.mean, cat("volatility =", volatility, " - correlation =", correlation, " - matches.d =", matches.d, " - ### = ", fitness, "\n"))
     return(list(fitness=fitness))
   }
