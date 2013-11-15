@@ -2006,8 +2006,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       return(x)
     }
 
-    planets[, c(planetsCombLonCols) := lapply(.SD, calculateAspects), .SDcols=planetsCombLonCols]
-
     calculateAspectOrbs <- function(x) {
       for (aspect in aspects) {
         comborb <- cusorbs['orbs', as.character(aspect)]
@@ -2019,21 +2017,17 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       return(x)
     }
 
+    planets[, c(planetsCombLonCols) := lapply(.SD, calculateAspects), .SDcols=planetsCombLonCols]
     planets[, c(planetsCombLonOrbCols) := lapply(.SD, calculateAspectOrbs), .SDcols=planetsCombLonOrbCols]
     return(planets)
   }
 
+  # calculate the proportional energy of aspect based on the distance
   energyGrowth <- function(energy, distance, speed) {
     return(energy * (1 - speed) ^ abs(distance))
   }
 
   planetsVarsSignificance <- function(planets, currency, threshold) {
-    planets  <- merge(planets, currency, by='Date')
-    cols <- paste(planetsLonCols, 'G', sep='')
-    significance <- data.table(melt(planets, id.var=c('Date', 'Eff'), measure.var=cols))
-    significance <- significance[, cbind(as.list(prop.table(as.numeric(table(Eff)))), as.list(as.numeric(table(Eff)))), by=c('variable', 'value')]
-    setnames(significance, c('variable', 'key', 'V1', 'V2', 'V3', 'V4'))
-
     # build significance table analogy for each planet
     planetTableAanalogy <- function(curcol) {
       planet.significance <- copy(significance)
@@ -2041,6 +2035,11 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       return(planet.significance)
     }
 
+    planets  <- merge(planets, currency, by='Date')
+    cols <- paste(planetsLonCols, 'G', sep='')
+    significance <- data.table(melt(planets, id.var=c('Date', 'Eff'), measure.var=cols))
+    significance <- significance[, cbind(as.list(prop.table(as.numeric(table(Eff)))), as.list(as.numeric(table(Eff)))), by=c('variable', 'value')]
+    setnames(significance, c('variable', 'key', 'V1', 'V2', 'V3', 'V4'))
     significance.full <- rbindlist(lapply(cols, planetTableAanalogy))
     significance.full[, c('pdiff', 'keyidx') := list(V2-V1, paste(key, variable, origin, sep='_'))]
     significance.full <- significance.full[pdiff >= threshold | pdiff <= -threshold]
@@ -2145,6 +2144,18 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(energy)
   }
 
+  # build daily significance patterns
+  buildDaySignificancePatterns <- function(origin) {
+    patterns <- paste(strtrim(origin, 5), collapse='|', sep='')
+    return(list(sigpatterns=patterns))
+  }
+
+  # print a year solution summary
+  printPredYearSummary <- function(x, type) {
+    cat("\t ", type, "test: volatility =", x['volatility'], " - correlation =", x['correlation'])
+    cat(" - matches.t =", x['matches.t'], " - matches.f =", x['matches.f'], " - matches.d =", x['matches.d'], "\n")
+  }
+
   relativeTrend <- function(planetslist, planetsfile, securityfile, tsdate, tedate, vsdate, vedate, csdate, cedate, mapredslow, mapredfact, maprice,
                             mapricetype, predtype, cordir, degsplit, threshold, energymode, energygrowthsp, energyret, dateformat, alignmove=0, pricemadir,
                             panalogy=panalogy, cusorbs=cusorbs, aspectspolarity, aspectsenergy, planetsenergy, verbose=F, doplot=F, fittype) {
@@ -2191,8 +2202,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     significance <- planetsVarsSignificance(planets.train, security, threshold)
     years.test <- format(seq(rdates[3], rdates[4], by='year'), '%Y')
     years.conf <- format(seq(rdates[5], rdates[6], by='year'), '%Y')
-
-    # build significance days
+    # build daily significance indexes
     buildDaySignificanceIdxs <- function(planets.day) {
       curdate <- planets.day[['Date']]
       sigidxs <- paste(planets.day[planetsLonGCols], panalogymatrix['analogy', planetsLonGCols], planetsLonGCols, sep='_')
@@ -2205,23 +2215,15 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     setkeyv(significance.days.idxs, c('Date', 'keyidx'))
     significance.days <- merge(significance.days.idxs, significance, by='keyidx')
     setkeyv(significance.days, 'Date', 'origin')
-
-    # build daily significance patterns
-    buildDaySignificancePatterns <- function(origin) {
-      patterns <- paste(strtrim(origin, 5), collapse='|', sep='')
-      return(list(sigpatterns=patterns))
-    }
-
     significance.patterns <- significance.days[, buildDaySignificancePatterns(origin), by=Date]
     significance.patterns[, Date := as.Date(Date, format="%Y-%m-%d")]
-
+    planets.pred <- merge(planets.pred, significance.patterns, by='Date')
     # helper function to process planetsDaySignificance
     processPlanesDaySignificance <- function(x) {
       planetsDaySignificance(x, panalogymatrix, F, verbose, aspectspolaritymatrix, aspectsenergymatrix,
                              planetsenergymatrix, energygrowthsp, energyret)
     }
 
-    planets.pred <- merge(planets.pred, significance.patterns, by='Date')
     energy.days <- rbindlist(apply(planets.pred, 1, processPlanesDaySignificance))
     energy.sum <- energy.days[, list(sum(up), sum(down)), by=list(Date, origin)]
     setnames(energy.sum, c('Date', 'origin', 'up', 'down'))
@@ -2259,6 +2261,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     if (cordir == 1) {
       planets.pred[, predval := predval * -1]
     }
+
     # apply alignment to left & right
     if (alignmove > 0) {
       planets.pred[, predval := c(predval[(alignmove+1):length(predval)], rep(NA, alignmove))]
@@ -2266,10 +2269,25 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     else if (alignmove < 0) {
       planets.pred[, predval := c(rep(NA, abs(alignmove)), predval[1:(length(predval)-abs(alignmove))])]
     }
+
     # remove NAs and apply MAs
     planets.pred[!is.na(predval), predvalMAF := mapredfunc(predval, mapredfact)]
     planets.pred[!is.na(predval), predvalMAS := mapredfunc(predval, mapredfact*2)]
 
+    # calculate the predEff based on the prediction type
+    if (predtype == 'absolute') {
+      planets.pred[, predEff := predval]
+    }
+    else if (predtype == 'relative') {
+      planets.pred[, predEff := predvalMAF-predvalMAS]
+    }
+    else {
+      stop("No valid prediction type was provided.")
+    }
+
+    # determine a factor prediction response
+    planets.pred[, predFactor := cut(predEff, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
+    # helper function to process predictions by year
     processYearPredictions <- function(x) {
       return(processPredictions(x, predtype, pltitle, doplot))
     }
@@ -2296,11 +2314,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     cat("\n")
     print(panalogymatrix)
     cat("\n")
-
-    printPredYearSummary <- function(x, type) {
-      cat("\t ", type, "test: volatility =", x['volatility'], " - correlation =", x['correlation'])
-      cat(" - matches.t =", x['matches.t'], " - matches.f =", x['matches.f'], " - matches.d =", x['matches.d'], "\n")
-    }
 
     # print yearly summary
     apply(res.test, 1, printPredYearSummary, type="Optimization")
@@ -2336,18 +2349,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     if (all(planets.pred$predRaw == 0)) {
       return(zerores)
     }
-
-    if (predtype == 'absolute') {
-      planets.pred[, predEff := predval]
-    }
-    else if (predtype == 'relative') {
-      planets.pred[, predEff := predvalMAF-predvalMAS]
-    }
-    else {
-      stop("No valid prediction type was provided.")
-    }
-
-    planets.pred[, predFactor := cut(predEff, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
 
     if (all(is.na(planets.pred$Mid))) {
       correlation <- 0
