@@ -2301,10 +2301,23 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     processYearPredictions <- function(x) processPredictions(x, args$predtype, pltitle, args$doplot)
     # compute test predictions by year
     res.test <- planets.pred[Year.1 %in% years.test, processYearPredictions(.SD), by=Year.1]
-    res.test.mean <- res.test[, lapply(.SD, function(x) round(mean(x), digits=2)), .SDcols=c('matches.d', 'correlation', 'volatility')]
+    resMean <- function(x) round(mean(x), digits=2)
+    resAbsMean <- function(x) round(mean(abs(x)), digits=2)
+    res.test.mean <- res.test[, list(correlation=resAbsMean(correlation), volatility=resMean(volatility), matches.d=resMean(matches.d))]
     # compute confirmation predictions by year
     res.conf <- planets.pred[Year.1 %in% years.conf, processYearPredictions(.SD), by=Year.1]
-    res.conf.mean <- res.conf[, lapply(.SD, function(x) round(mean(x), digits=2)), .SDcols=c('matches.d', 'correlation', 'volatility')]
+    res.conf.mean <- res.conf[, list(correlation=resAbsMean(correlation), volatility=resMean(volatility), matches.d=resMean(matches.d))]
+
+    # use appropriate fitness type
+    if (args$fittype == 'correlation') {
+      fitness <- round(res.test.mean$correlation * 100, digits=0)
+    }
+    else if (args$fittype == 'matches') {
+      fitness <- round(res.test.mean$matches.d, digits=0)
+    }
+    else {
+      stop("No valid fittype provided")
+    }
 
     cat("\n---------------------------------------------------------------------------------\n")
     cat(sout)
@@ -2324,24 +2337,12 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     # print yearly summary
     apply(res.test, 1, printPredYearSummary, type="Optimization")
+    with(res.test.mean, cat("\tvolatility =", volatility, " - correlation =", correlation, " - matches.d =", matches.d, " - ### = ", fitness, "\n"))
     apply(res.conf, 1, printPredYearSummary, type="Confirmation")
-
-    # use appropriate fitness type
-    if (args$fittype == 'correlation') {
-      fitness <- res.test.mean$correlation * 100
-    }
-    else if (args$fittype == 'matches') {
-      fitness <- res.test.mean$matches.d
-    }
-    else {
-      stop("No valid fittype provided")
-    }
-
-    fitness <- round(fitness, digits=0)
+    with(res.conf.mean, cat("\tvolatility =", volatility, " - correlation =", correlation, " - matches.d =", matches.d, "\n"))
     cat("\n\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
     cat("\t Trained significance table with: ", nrow(planets.train), " days", "\n")
     cat("\t Optimized and confirmed with: ", nrow(planets.pred), " days", "\n")
-    with(res.test.mean, cat("volatility =", volatility, " - correlation =", correlation, " - matches.d =", matches.d, " - ### = ", fitness, "\n"))
     return(list(fitness=fitness))
   }
 
