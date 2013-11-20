@@ -2036,11 +2036,11 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     }
 
     planets  <- merge(planets, currency, by='Date')
-    cols <- paste(planetsLonCols, 'G', sep='')
-    significance <- data.table(melt(planets, id.var=c('Date', 'Eff'), measure.var=cols))
-    significance <- significance[, cbind(as.list(prop.table(as.numeric(table(Eff)))), as.list(as.numeric(table(Eff)))), by=c('variable', 'value')]
+    planets.long <- data.table(melt(planets, id.var=c('Date', 'Eff'), measure.var=planetsLonGCols))
+    # calculate the signficance for each long
+    significance <- planets.long[, cbind(as.list(prop.table(as.numeric(table(Eff)))), as.list(as.numeric(table(Eff)))), by=c('variable', 'value')]
     setnames(significance, c('variable', 'key', 'V1', 'V2', 'V3', 'V4'))
-    significance.full <- rbindlist(lapply(cols, planetTableAanalogy))
+    significance.full <- rbindlist(lapply(planetsLonGCols, planetTableAanalogy))
     significance.full[, c('pdiff', 'keyidx') := list(V2-V1, paste(key, variable, origin, sep='_'))]
     significance.full <- significance.full[pdiff >= threshold | pdiff <= -threshold]
     significance.full <- significance.full[!is.na(key)]
@@ -2219,7 +2219,21 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     significance.days.idxs <- rbindlist(apply(planets.pred, 1, buildDaySignificanceIdxs))
     setkeyv(significance.days.idxs, c('Date', 'keyidx'))
     significance.days <- merge(significance.days.idxs, significance, by='keyidx')
+    # merge significance with lon & sp
+    planets.lon <- data.table(melt(planets, id.var=c('Date'), measure.var=planetsLonCols))
+    planets.lon[, origin := gsub('LON', 'LONG', variable)]
+    planets.lon[, Date := as.character(Date, format="%Y-%m-%d")]
+    setnames(planets.lon, c('Date', 'variable', 'lon', 'origin'))
+    significance.days <- merge(significance.days, planets.lon, by=c('Date', 'origin'))
+    planets.sp <- data.table(melt(planets, id.var=c('Date'), measure.var=planetsSpCols))
+    planets.sp[, origin := gsub('SP', 'LONG', variable)]
+    planets.sp[, Date := as.character(Date, format="%Y-%m-%d")]
+    setnames(planets.sp, c('Date', 'variable', 'sp', 'origin'))
+    significance.days <- merge(significance.days, planets.sp, by=c('Date', 'origin'))
     setkeyv(significance.days, 'Date', 'origin')
+    significance.days[, zsign := round(lon/30, digits=0)]
+    # remove no used cols
+    significance.days[, c('variable.x', 'variable.y', 'variable') := NULL]
     significance.patterns <- significance.days[, buildDaySignificancePatterns(origin), by=Date]
     significance.patterns[, Date := as.Date(Date, format="%Y-%m-%d")]
     planets.pred <- merge(planets.pred, significance.patterns, by='Date')
