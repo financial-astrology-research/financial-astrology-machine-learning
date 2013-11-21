@@ -2158,6 +2158,22 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(energy)
   }
 
+  # process the significance rows energy
+  dailySignificanceEnergy <- function(significance.days, energyret) {
+    processSignificanceRow <- function(significance.row, energyret) {
+      if (significance.row$sp < 0) {
+        energy <- energyret
+      }
+      else {
+        energy <- 1.0
+      }
+      return(c(significance.row, energy=energy))
+    }
+    # process each significance row
+    significance.days <- significance.days[, processSignificanceRow(.SD, energyret), by=c('Date', 'origin')]
+    return(significance.days)
+  }
+
   # build daily significance patterns
   buildDaySignificancePatterns <- function(origin) {
     patterns <- paste(strtrim(origin, 5), collapse='|', sep='')
@@ -2223,6 +2239,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     years.conf <- format(seq(rdates[5], rdates[6], by='year'), '%Y')
     # get significance days
     significance.days <- buildDailySignificance(significance, planets.pred, panalogymatrix)
+    significance.days <- dailySignificanceEnergy(significance.days, args$energyret)
     significance.patterns <- significance.days[, buildDaySignificancePatterns(origin), by=Date]
     significance.patterns[, Date := as.Date(Date, format="%Y-%m-%d")]
     planets.pred <- merge(planets.pred, significance.patterns, by='Date')
