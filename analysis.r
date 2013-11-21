@@ -2049,6 +2049,39 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(significance.full)
   }
 
+  # build the daily signficance table
+  buildDailySignificance <- function(significance, planets.pred, panalogymatrix) {
+    # build daily significance indexes
+    buildDailySignificanceIdxs <- function(planets.day) {
+      curdate <- planets.day[['Date']]
+      sigidxs <- paste(planets.day[planetsLonGCols], panalogymatrix['analogy', planetsLonGCols], planetsLonGCols, sep='_')
+      datelist <- rep(curdate, length(sigidxs))
+      day.idxs <- list(Date=datelist, keyidx=sigidxs)
+      return(day.idxs)
+    }
+
+    significance.days.idxs <- rbindlist(apply(planets.pred, 1, buildDailySignificanceIdxs))
+    setkeyv(significance.days.idxs, c('Date', 'keyidx'))
+    significance.days <- merge(significance.days.idxs, significance, by='keyidx')
+    # build daily planets lon & sp tables
+    planets.lon <- data.table(melt(planets.pred, id.var=c('Date'), measure.var=planetsLonCols))
+    planets.lon[, origin := gsub('LON', 'LONG', variable)]
+    planets.lon[, Date := as.character(Date, format="%Y-%m-%d")]
+    setnames(planets.lon, c('Date', 'variable', 'lon', 'origin'))
+    planets.sp <- data.table(melt(planets.pred, id.var=c('Date'), measure.var=planetsSpCols))
+    planets.sp[, origin := gsub('SP', 'LONG', variable)]
+    planets.sp[, Date := as.character(Date, format="%Y-%m-%d")]
+    setnames(planets.sp, c('Date', 'variable', 'sp', 'origin'))
+    # merge significance with lon & sp
+    significance.days <- merge(significance.days, planets.lon, by=c('Date', 'origin'))
+    significance.days <- merge(significance.days, planets.sp, by=c('Date', 'origin'))
+    setkeyv(significance.days, 'Date', 'origin')
+    significance.days[, zsign := round(lon/30, digits=0)]
+    # remove no used cols
+    significance.days[, c('variable.x', 'variable.y', 'variable') := NULL]
+    return(significance.days)
+  }
+
   # process the daily aspects energy
   dayAspectsEnergy <- function(planets.day, panalogy, aspectspolarity, aspectsenergy, planetsenergy, energygrowthsp, energyret) {
     #planets.day <- trim(planets.day)
@@ -2188,33 +2221,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     significance <- with(args, planetsVarsSignificance(planets.train, security, threshold))
     years.test <- format(seq(rdates[3], rdates[4], by='year'), '%Y')
     years.conf <- format(seq(rdates[5], rdates[6], by='year'), '%Y')
-    # build daily significance indexes
-    buildDaySignificanceIdxs <- function(planets.day) {
-      curdate <- planets.day[['Date']]
-      sigidxs <- paste(planets.day[planetsLonGCols], panalogymatrix['analogy', planetsLonGCols], planetsLonGCols, sep='_')
-      datelist <- rep(curdate, length(sigidxs))
-      day.idxs <- list(Date=datelist, keyidx=sigidxs)
-      return(day.idxs)
-    }
-
-    significance.days.idxs <- rbindlist(apply(planets.pred, 1, buildDaySignificanceIdxs))
-    setkeyv(significance.days.idxs, c('Date', 'keyidx'))
-    significance.days <- merge(significance.days.idxs, significance, by='keyidx')
-    # merge significance with lon & sp
-    planets.lon <- data.table(melt(planets, id.var=c('Date'), measure.var=planetsLonCols))
-    planets.lon[, origin := gsub('LON', 'LONG', variable)]
-    planets.lon[, Date := as.character(Date, format="%Y-%m-%d")]
-    setnames(planets.lon, c('Date', 'variable', 'lon', 'origin'))
-    significance.days <- merge(significance.days, planets.lon, by=c('Date', 'origin'))
-    planets.sp <- data.table(melt(planets, id.var=c('Date'), measure.var=planetsSpCols))
-    planets.sp[, origin := gsub('SP', 'LONG', variable)]
-    planets.sp[, Date := as.character(Date, format="%Y-%m-%d")]
-    setnames(planets.sp, c('Date', 'variable', 'sp', 'origin'))
-    significance.days <- merge(significance.days, planets.sp, by=c('Date', 'origin'))
-    setkeyv(significance.days, 'Date', 'origin')
-    significance.days[, zsign := round(lon/30, digits=0)]
-    # remove no used cols
-    significance.days[, c('variable.x', 'variable.y', 'variable') := NULL]
+    # get significance days
+    significance.days <- buildDailySignificance(significance, planets.pred, panalogymatrix)
     significance.patterns <- significance.days[, buildDaySignificancePatterns(origin), by=Date]
     significance.patterns[, Date := as.Date(Date, format="%Y-%m-%d")]
     planets.pred <- merge(planets.pred, significance.patterns, by='Date')
