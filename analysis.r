@@ -2049,7 +2049,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(significance.full)
   }
 
-  planetsDaySignificance <- function(planets.day, panalogy, answer=T, verbose=F, aspectspolarity, aspectsenergy, planetsenergy, energygrowthsp, energyret) {
+  # process the daily aspects energy
+  dayAspectsEnergy <- function(planets.day, panalogy, aspectspolarity, aspectsenergy, planetsenergy, energygrowthsp, energyret) {
     #planets.day <- trim(planets.day)
     curdate <- planets.day[['Date']]
     activecols <- planetsCombLonCols[grep(planets.day[['sigpatterns']], planetsCombLonCols, perl=T)]
@@ -2121,26 +2122,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # convert energy list to data table
     energy <- rbindlist(energy)
     setkeyv(energy, c('Date', 'origin'))
-
-    if (verbose) {
-      # TODO: print the energy lists as tables
-      cat("=============================================================\n")
-      cat("Date:", planets.day[['Date']], "\n")
-      print(significance.day)
-      cat("Aspect Table\n")
-      print(planets.day.asp)
-      cat("Total Aspects:\n")
-      print(t(energy))
-      cat("Positive Aspects:\n")
-      print(t(energy.pos))
-      cat("Negative Aspects:\n")
-      print(t(energy.neg))
-      cat("\n")
-      print(planets.day[planetsSpCols])
-      cat("\n")
-      cat("###  =", trend, "\n")
-    }
-
     return(energy)
   }
 
@@ -2237,10 +2218,9 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     significance.patterns <- significance.days[, buildDaySignificancePatterns(origin), by=Date]
     significance.patterns[, Date := as.Date(Date, format="%Y-%m-%d")]
     planets.pred <- merge(planets.pred, significance.patterns, by='Date')
-    # helper function to process planetsDaySignificance
+    # helper function to process day aspects energy
     processPlanesDaySignificance <- function(x) {
-      planetsDaySignificance(x, panalogymatrix, F, args$verbose, aspectspolaritymatrix, aspectsenergymatrix, planetsenergymatrix,
-                             args$energygrowthsp, args$energyret)
+      dayAspectsEnergy(x, panalogymatrix, aspectspolaritymatrix, aspectsenergymatrix, planetsenergymatrix, args$energygrowthsp, args$energyret)
     }
 
     energy.days <- rbindlist(apply(planets.pred, 1, processPlanesDaySignificance))
