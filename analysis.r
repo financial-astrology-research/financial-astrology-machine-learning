@@ -2515,7 +2515,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     degsplits <- seq(dsmin, dsmax)
     planetslist <- multipleOpenPlanets(planetsfile, degsplits)
 
-    ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=FALSE,
+    ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=TRUE,
        monitor=gaMonitor, maxiter=200, run=50, popSize=500, min=minvals, max=maxvals, pcrossover = 0.7, pmutation = 0.3,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
        planetslist=planetslist, securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate,
