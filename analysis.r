@@ -2174,6 +2174,36 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(significance.days)
   }
 
+  # aggregate the daily energy and apply it with the daily significance energy
+  # to calculate the final prediction
+  calculatePrediction <- function(significance.days, energy.days, energymode) {
+    energy.sum <- energy.days[, list(sum(up), sum(down)), by=list(Date, origin)]
+    setnames(energy.sum, c('Date', 'origin', 'up', 'down'))
+    setkeyv(energy.sum, c('Date', 'origin'))
+    significance.days <- merge(significance.days, energy.sum, by=c('Date', 'origin'))
+    setkeyv(significance.days, c('Date', 'Eff'))
+
+    if (energymode == 1) {
+      # add more energy to the lower part based on bad aspects and to the upper part with good aspects
+      # energy influence by count
+      significance.days[Eff == 'up', c('V2', 'V1') := list(V2 * up, V1 * down)]
+      significance.days[Eff == 'down', c('V2', 'V1') := list(V2 * down, V1 * up)]
+    }
+    else if (energymode == 2) {
+      # add more energy to the lower part based on good aspects and to the upper part with bad aspects
+      # energy influence by count
+      significance.days[Eff == 'down', c('V2', 'V1') := list(V2 * up, V1 * down)]
+      significance.days[Eff == 'up', c('V2', 'V1') := list(V2 * down, V1 * up)]
+    }
+    else {
+      stop("No valid energy mode was provided.")
+    }
+
+    prediction <- significance.days[, list(predRaw=(sum(V2)-sum(V1)) * 10), by='Date']
+    prediction[, Date := as.Date(Date, format="%Y-%m-%d")]
+    return(prediction)
+  }
+
   # build daily significance patterns
   buildDaySignificancePatterns <- function(origin) {
     patterns <- paste(strtrim(origin, 5), collapse='|', sep='')
@@ -2249,31 +2279,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     }
 
     energy.days <- rbindlist(apply(planets.pred, 1, processPlanesDaySignificance))
-    energy.sum <- energy.days[, list(sum(up), sum(down)), by=list(Date, origin)]
-    setnames(energy.sum, c('Date', 'origin', 'up', 'down'))
-    setkeyv(energy.sum, c('Date', 'origin'))
-    significance.days <- merge(significance.days, energy.sum, by=c('Date', 'origin'))
-    setkeyv(significance.days, c('Date', 'Eff'))
-
-    if (args$energymode == 1) {
-      # add more energy to the lower part based on bad aspects and to the upper part with good aspects
-      # energy influence by count
-      significance.days[Eff == 'up', c('V2', 'V1') := list(V2 * up, V1 * down)]
-      significance.days[Eff == 'down', c('V2', 'V1') := list(V2 * down, V1 * up)]
-    }
-    else if (args$energymode == 2) {
-      # add more energy to the lower part based on good aspects and to the upper part with bad aspects
-      # energy influence by count
-      significance.days[Eff == 'down', c('V2', 'V1') := list(V2 * up, V1 * down)]
-      significance.days[Eff == 'up', c('V2', 'V1') := list(V2 * down, V1 * up)]
-    }
-    else {
-      stop("No valid energy mode was provided.")
-    }
-
-    # calculate the prediction and merge with planets.pred table
-    prediction <- significance.days[, list(predRaw=(sum(V2)-sum(V1)) * 10), by='Date']
-    prediction[, Date := as.Date(Date, format="%Y-%m-%d")]
+    # calculate prediction
+    prediction <- calculatePrediction(significance.days, energy.days, args$energymode)
     planets.pred <- planets.pred[prediction]
     planets.pred <- security[planets.pred]
     setkeyv(planets.pred, c('Date', 'Year.1'))
