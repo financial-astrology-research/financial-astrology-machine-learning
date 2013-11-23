@@ -2083,7 +2083,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   # process the daily aspects energy
-  dayAspectsEnergy <- function(planets.day, panalogy, aspectspolarity, aspectsenergy, planetsenergy, energygrowthsp, energyret) {
+  dayAspectsEnergy <- function(planets.day, panalogy, aspectspolarity, aspectsenergy, planetsenergy, energygrowthsp) {
     #planets.day <- trim(planets.day)
     curdate <- planets.day[['Date']]
     activecols <- planetsCombLonCols[grep(planets.day[['sigpatterns']], planetsCombLonCols, perl=T)]
@@ -2110,18 +2110,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       spcol1 <- paste(col1, 'SP', sep='')
       spcol2 <- paste(col2, 'SP', sep='')
 
-      # calculate energy for planets considerint the retrograde motion
-      planetret1 <- 1
-      planetret2 <- 1
-      if (as.numeric(planets.day[spcol1]) < 0) {
-        planetret1 <- energyret
-      }
-      if (as.numeric(planets.day[spcol2]) < 0) {
-        planetret2 <- energyret
-      }
-      planetenergy1 <- planetsenergy['energy', loncol1] * planetret1
-      planetenergy2 <- planetsenergy['energy', loncol2] * planetret2
-
+      planetenergy1 <- planetsenergy['energy', loncol1]
+      planetenergy2 <- planetsenergy['energy', loncol2]
       aspect <- as.character(as.numeric(planets.day.asp[idx]))
       # determine aspect energy based on aspect and involved planets
       aspectenergy <- aspectsenergy['energy', aspect] * (planetenergy1 + planetenergy2)
@@ -2169,8 +2159,13 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       }
       return(c(significance.row, energy=energy))
     }
+
     # process each significance row
     significance.days <- significance.days[, processSignificanceRow(.SD, energyret), by=c('Date', 'origin')]
+    # invert the significance columns for negative retrograde energy
+    significance.days[energy < 0, c('V1', 'V2', 'V3', 'V4') := list(V2, V1, V4, V3)]
+    # apply the row energy
+    significance.days[, c('V1', 'V2') := list(V1 * abs(energy), V2 * abs(energy))]
     return(significance.days)
   }
 
@@ -2275,7 +2270,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets.pred <- merge(planets.pred, significance.patterns, by='Date')
     # helper function to process day aspects energy
     processPlanesDaySignificance <- function(x) {
-      dayAspectsEnergy(x, panalogymatrix, aspectspolaritymatrix, aspectsenergymatrix, planetsenergymatrix, args$energygrowthsp, args$energyret)
+      dayAspectsEnergy(x, panalogymatrix, aspectspolaritymatrix, aspectsenergymatrix, planetsenergymatrix, args$energygrowthsp)
     }
 
     energy.days <- rbindlist(apply(planets.pred, 1, processPlanesDaySignificance))
