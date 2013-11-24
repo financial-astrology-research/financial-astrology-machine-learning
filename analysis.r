@@ -2321,11 +2321,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # compute test predictions by year
     res.test <- planets.pred[Year.1 %in% years.test, processYearPredictions(.SD), by=Year.1]
     resMean <- function(x) round(mean(x), digits=2)
-    resAbsMean <- function(x) round(mean(abs(x)), digits=2)
-    res.test.mean <- res.test[, list(correlation=resAbsMean(correlation), volatility=resMean(volatility), matches.d=resMean(matches.d))]
+    res.test.mean <- res.test[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.d=resMean(matches.d))]
     # compute confirmation predictions by year
     res.conf <- planets.pred[Year.1 %in% years.conf, processYearPredictions(.SD), by=Year.1]
-    res.conf.mean <- res.conf[, list(correlation=resAbsMean(correlation), volatility=resMean(volatility), matches.d=resMean(matches.d))]
+    res.conf.mean <- res.conf[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.d=resMean(matches.d))]
 
     # use appropriate fitness type
     if (args$fittype == 'correlation') {
