@@ -2106,10 +2106,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       # longitude col names
       loncol1 <- paste(col1, 'LONG', sep='')
       loncol2 <- paste(col2, 'LONG', sep='')
-      # speed col names
-      spcol1 <- paste(col1, 'SP', sep='')
-      spcol2 <- paste(col2, 'SP', sep='')
-
       planetenergy1 <- planetsenergy['energy', loncol1]
       planetenergy2 <- planetsenergy['energy', loncol2]
       aspect <- as.character(as.numeric(planets.day.asp[idx]))
@@ -2117,10 +2113,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       aspectenergy <- aspectsenergy['energy', aspect] * (planetenergy1 + planetenergy2)
       # get the polarity and in case the energy is negative then invert polarity
       aspectpolarity <- aspectspolarity[curcol, aspect]
-      if (aspectenergy < 0) {
-        aspectpolarity <- abs(aspectpolarity - 1)
-      }
-
       # compute the given energy based on the aspect orb distance
       curcolorb <- paste(curcol, 'ORB', sep='')
       distance <- as.numeric(planets.day[[curcolorb]])
