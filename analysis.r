@@ -190,6 +190,23 @@ defpanalogy <- list(c(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13),
                     c(2, 3, 4, 5, 6, 7, 8, 1, 1, 1, 1, 1),
                     c(2, 3, 4, 5, 6, 1, 1, 1, 1, 1, 1, 1))
 
+zodSignsCols <- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CA', 'AC', 'PI')
+planetsZodEnergyCols <- as.character(apply(expand.grid(planetsLonCols, zodSignsCols), 1, function(x) paste(x[1], '_', x[2], sep='')))
+zodenergy.su <- c( 30,  10,  10,  10,  30,  10, -30,  10,  10,  10, -30,  10)
+zodenergy.mo <- c( 10,  30,  10,  30,  10,  10,  10, -30,  10, -30,  10,  10)
+zodenergy.me <- c( 10,  10,  30,  10,  10,  30,  10,  10, -30,  10,  10, -30)
+zodenergy.ve <- c(-30,  30,  10,  10,  10, -30,  30, -30,  10,  10,  10,  30)
+zodenergy.ma <- c( 30,  10,  10, -30,  10,  10, -30,  10,  10,  30,  10,  10)
+zodenergy.ju <- c( 10,  10, -30,  30,  10, -30,  10,  10,  30, -30,  10,  30)
+zodenergy.sa <- c(-30,  10,  10, -30, -30,  10,  30,  10,  10,  30,  30,  10)
+zodenergy.ur <- c( 10,  10,  10,  10, -30,  10,  10,  10,  10,  10,  30,  10)
+zodenergy.ne <- c( 10,  10,  10,  10,  10, -30,  10,  10,  10,  10,  10,  30)
+zodenergy.pl <- c( 10, -30,  10,  10,  10,  10,  10,  30,  10,  10,  10,  10)
+zodenergy.sn <- c( 10,  10,  10,  10,  30,  10,  10,  10,  10,  10,  10,  10)
+zodenergy.nn <- c( 10,  10,  10,  10,  30,  10,  10,  10,  10,  10,  10,  10)
+defplanetszodenergy <- c(zodenergy.su, zodenergy.mo, zodenergy.me, zodenergy.ve, zodenergy.ma, zodenergy.ju, zodenergy.sa,
+                         zodenergy.ur, zodenergy.ne, zodenergy.pl, zodenergy.sn, zodenergy.nn)
+
 # a function that returns the position of n-th largest
 maxn <- function(x, n) {
   order_x <- order(x, decreasing = TRUE)
@@ -1069,10 +1086,11 @@ gaint_Population <- function (object, ...) {
   pdeforb <- 0.3
   pdefaspectenergy <- 0.3
   pdefplanetenergy <- 0.3
+  pdefplanetzodenergy <- 0.5
   min <- object@min
   max <- object@max
   nvars <- length(min)
-  nvars1.e <- nvars-length(defpanalogy[[1]])-length(defaspectspolarity)-length(deforbs)-length(defaspectsenergy)-length(defplanetsenergy)
+  nvars1.e <- nvars-length(defpanalogy[[1]])-length(defaspectspolarity)-length(deforbs)-length(defaspectsenergy)-length(defplanetsenergy)-length(defplanetszodenergy)
   nvars2.s <- nvars1.e+1
   nvars2.e <- nvars1.e+length(defpanalogy[[1]])
   nvars3.s <- nvars2.e+1
@@ -1083,6 +1101,8 @@ gaint_Population <- function (object, ...) {
   nvars5.e <- nvars4.e+length(defaspectsenergy)
   nvars6.s <- nvars5.e+1
   nvars6.e <- nvars5.e+length(defplanetsenergy)
+  nvars7.s <- nvars6.e+1
+  nvars7.e <- nvars6.e+length(defplanetszodenergy)
 
   population <- matrix(NA, nrow = object@popSize, ncol = nvars)
   for (j in 1:nvars) {
@@ -1109,6 +1129,10 @@ gaint_Population <- function (object, ...) {
     # override by default planets energy
     if (pdefplanetenergy > runif(1)) {
       population[i, nvars6.s:nvars6.e] <- defplanetsenergy
+    }
+    # override by default planets zod energy
+    if (pdefplanetzodenergy > runif(1)) {
+      population[i, nvars7.s:nvars7.e] <- defplanetszodenergy
     }
   }
 
@@ -2076,7 +2100,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     significance.days <- merge(significance.days, planets.lon, by=c('Date', 'origin'))
     significance.days <- merge(significance.days, planets.sp, by=c('Date', 'origin'))
     setkeyv(significance.days, 'Date', 'origin')
-    significance.days[, zsign := round(lon/30, digits=0)]
+    significance.days[, zsign := ceiling(lon/30)]
     # remove no used cols
     significance.days[, c('variable.x', 'variable.y', 'variable') := NULL]
     return(significance.days)
@@ -2106,10 +2130,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       # longitude col names
       loncol1 <- paste(col1, 'LONG', sep='')
       loncol2 <- paste(col2, 'LONG', sep='')
-      # speed col names
-      spcol1 <- paste(col1, 'SP', sep='')
-      spcol2 <- paste(col2, 'SP', sep='')
-
       planetenergy1 <- planetsenergy['energy', loncol1]
       planetenergy2 <- planetsenergy['energy', loncol2]
       aspect <- as.character(as.numeric(planets.day.asp[idx]))
@@ -2117,10 +2137,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       aspectenergy <- aspectsenergy['energy', aspect] * (planetenergy1 + planetenergy2)
       # get the polarity and in case the energy is negative then invert polarity
       aspectpolarity <- aspectspolarity[curcol, aspect]
-      if (aspectenergy < 0) {
-        aspectpolarity <- abs(aspectpolarity - 1)
-      }
-
       # compute the given energy based on the aspect orb distance
       curcolorb <- paste(curcol, 'ORB', sep='')
       distance <- as.numeric(planets.day[[curcolorb]])
@@ -2149,22 +2165,26 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   # process the significance rows energy
-  dailySignificanceEnergy <- function(significance.days, energyret) {
-    processSignificanceRow <- function(significance.row, energyret) {
+  dailySignificanceEnergy <- function(significance.days, energyret, planetszodenergy) {
+    processSignificanceRow <- function(significance.row, by.row) {
+      watchdog <- list()
+      energy <- 1.0
+      # add retrograde energy
       if (significance.row$sp < 0) {
-        energy <- energyret
+        energy <- energy + energyret
+        watchdog[length(watchdog)+1] <- paste(energy, by.row$origin, ' Re')
       }
-      else {
-        energy <- 1.0
-      }
-      return(c(significance.row, energy=energy))
+      # add the planet zodiacal energy
+      zodenergy <- planetszodenergy[by.row$origin, significance.row$zsign]
+      watchdog[length(watchdog)+1] <- paste(zodenergy, by.row$origin, ' zod ', significance.row$zsign)
+      energy <- energy + zodenergy
+      return(list(energy=energy, watchdog=paste(watchdog, collapse=' / ')))
     }
 
     # process each significance row
-    significance.days <- significance.days[, processSignificanceRow(.SD, energyret), by=c('Date', 'origin')]
+    significance.days[, c('energy', 'watchdog') := processSignificanceRow(.SD, .BY), by=c('Date', 'origin')]
     # invert the significance columns for negative retrograde energy
     significance.days[energy < 0, c('V1', 'V2', 'V3', 'V4') := list(V2, V1, V4, V3)]
-    # apply the row energy
     significance.days[, c('V1', 'V2') := list(V1 * abs(energy), V2 * abs(energy))]
     return(significance.days)
   }
@@ -2237,6 +2257,9 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planetsenergymatrix <- matrix(args$planetsenergy, nrow = 1, ncol = length(args$planetsenergy), byrow = TRUE,
                                   dimnames = list(c('energy'), planetsLonGCols))
 
+    planetszodenergymatrix <- matrix(args$planetszodenergy, nrow = length(planetsLonGCols), ncol = 12, byrow = TRUE,
+                                     dimnames = list(planetsLonGCols, zodSignsCols))
+
     panalogymatrix <- matrix(args$panalogy, nrow = 1, ncol = length(args$panalogy), byrow = TRUE,
                              dimnames = list(c('analogy'), planetsLonGCols))
 
@@ -2251,6 +2274,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                              ", cusorbs=c(", paste(cusorbs, collapse=", "), ")",
                              ", aspectsenergy=c(", paste(aspectsenergy, collapse=", "), ")",
                              ", planetsenergy=c(", paste(planetsenergy, collapse=", "), ")",
+                             ", planetszodenergy=c(", paste(planetszodenergy, collapse=", "), ")",
                              ", aspectspolarity=c(", paste(aspectspolarity, collapse=", "), ")",
                              ", dateformat=", shQuote(dateformat), ", verbose=F", ", doplot=T", ", fittype=", shQuote(fittype), ")\n", sep=""))
 
@@ -2264,7 +2288,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     years.conf <- format(seq(rdates[5], rdates[6], by='year'), '%Y')
     # get significance days
     significance.days <- buildDailySignificance(significance, planets.pred, panalogymatrix)
-    significance.days <- dailySignificanceEnergy(significance.days, args$energyret)
+    significance.days <- dailySignificanceEnergy(significance.days, args$energyret, planetszodenergymatrix)
     significance.patterns <- significance.days[, buildDaySignificancePatterns(origin), by=Date]
     significance.patterns[, Date := as.Date(Date, format="%Y-%m-%d")]
     planets.pred <- merge(planets.pred, significance.patterns, by='Date')
@@ -2347,6 +2371,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     print(apply(aspectspolaritymatrix, 2, function(x) round(mean(x), digits=1)))
     cat("\n")
     print(aspectsenergymatrix)
+    cat("\n")
+    print(planetszodenergymatrix)
     cat("\n")
     print(planetsenergymatrix)
     cat("\n")
@@ -2453,6 +2479,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     api.e = co.e+length(defaspectspolarity)
     ae.e = api.e+length(defaspectsenergy)
     pe.e = ae.e+length(defplanetsenergy)
+    pze.e = pe.e+length(defplanetszodenergy)
 
     args <-list(planetslist=planetslist,
                  securityfile=securityfile,
@@ -2484,10 +2511,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                  cusorbs=x[pa.e:(co.e-1)],
                  aspectspolarity=x[co.e:(api.e-1)],
                  aspectsenergy=x[api.e:(ae.e-1)]/10,
-                 planetsenergy=x[ae.e:(pe.e-1)]/10)
+                 planetsenergy=x[ae.e:(pe.e-1)]/10,
+                 planetszodenergy=x[pe.e:(pze.e-1)]/10)
 
     res <- relativeTrend(args)
-
     return(res$fitness)
   }
 
@@ -2505,13 +2532,18 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     aspectenergymax <- rep(30, length(defaspectsenergy))
     planetenergymin <- rep(0, length(defplanetsenergy))
     planetenergymax <- rep(30, length(defplanetsenergy))
+    planetzodenergymin <- rep(-30, length(defplanetszodenergy))
+    planetzodenergymax <- rep(30, length(defplanetszodenergy))
 
-    minvals <- c( 2,  2,  2, 1, 1, 0, dsmin,  0, 1, 0, -20, -20, 1, panalogymin, orbsmin, polaritymin, aspectenergymin, planetenergymin)
-    maxvals <- c(10, 15, 20, 4, 2, 1, dsmax, 30, 2, 9,  20,  20, 2, panalogymax, orbsmax, polaritymax, aspectenergymax, planetenergymax)
+    minvals <- c( 2,  2,  2, 1, 1, 0, dsmin,  0, 1, 0, -20, -20, 1, panalogymin, orbsmin, polaritymin, aspectenergymin,
+                 planetenergymin, planetzodenergymin)
+    maxvals <- c(10, 15, 20, 4, 2, 1, dsmax, 30, 2, 9,  20,  20, 2, panalogymax, orbsmax, polaritymax, aspectenergymax,
+                 planetenergymax, planetzodenergymax)
 
     panalogyCols <- planetsLonGCols[5:length(planetsLonGCols)]
-    varnames <- c('mapredslow', 'mapredfact', 'maprice', 'mapricetype', 'predtype', 'cordir', 'degsplit', 'threshold', 'energymode', 'energygrowthsp',
-                  'energyret', 'alignmove', 'pricemadir', panalogyCols, aspOrbsCols, planetsAspCombCols, aspectsEnergyCols, planetsEnergyCols)
+    varnames <- c('mapredslow', 'mapredfact', 'maprice', 'mapricetype', 'predtype', 'cordir', 'degsplit', 'threshold', 'energymode',
+                  'energygrowthsp', 'energyret', 'alignmove', 'pricemadir', panalogyCols, aspOrbsCols, planetsAspCombCols,
+                  aspectsEnergyCols, planetsEnergyCols, planetsZodEnergyCols)
 
     degsplits <- seq(dsmin, dsmax)
     planetslist <- multipleOpenPlanets(planetsfile, degsplits)
