@@ -1968,6 +1968,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
   if (!hasArg('execfunc')) stop("Provide function to execute")
   ptm <- proc.time()
+  fitness.best <- 0
 
   openPlanets <- function(planets.file) {
     Date=DateMT4=Year=NULL
@@ -2243,6 +2244,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     mapricefunc <- get(args$mapricetype)
     mapredfunc <- get('SMA')
     rdates <- as.Date(with(args, c(tsdate, tedate, vsdate, vedate, csdate, cedate)))
+    new.fitness.best <- ""
 
     # build matrix
     orbsmatrix <- matrix(args$cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE,
@@ -2353,12 +2355,19 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # use appropriate fitness type
     if (args$fittype == 'correlation') {
       fitness <- round(res.test.mean$correlation * 100, digits=0)
+      fitness.total <- round(((res.test.mean$correlation + res.conf.mean$correlation) * 100) / 2, digits=0)
     }
     else if (args$fittype == 'matches') {
       fitness <- round(res.test.mean$matches.d, digits=0)
+      fitness.total <- round((res.test.mean$matches.d + res.conf.mean$matches.d) / 2, digits=0)
     }
     else {
       stop("No valid fittype provided")
+    }
+
+    if (fitness.total > fitness.best) {
+      fitness.best <<- fitness.total
+      new.fitness.best <- "best solution --- "
     }
 
     cat("\n---------------------------------------------------------------------------------\n")
@@ -2384,7 +2393,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     with(res.test.mean, cat("\tvolatility =", volatility, " - correlation =", correlation, " - matches.d =", matches.d, " - ### = ", fitness, "\n"))
     apply(res.conf, 1, printPredYearSummary, type="Confirmation")
     with(res.conf.mean, cat("\tvolatility =", volatility, " - correlation =", correlation, " - matches.d =", matches.d, "\n"))
-    cat("\n\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
+    cat("\n\t", new.fitness.best, "Total fitness - %%% = ", fitness.total, "\n")
+    cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
     cat("\t Trained significance table with: ", nrow(planets.train), " days", "\n")
     cat("\t Optimized and confirmed with: ", nrow(planets.pred), " days", "\n")
     return(list(fitness=fitness))
