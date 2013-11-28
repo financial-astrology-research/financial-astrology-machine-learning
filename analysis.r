@@ -1968,7 +1968,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
   if (!hasArg('execfunc')) stop("Provide function to execute")
   ptm <- proc.time()
-  fitness.best <- 0
+  sharedEnv <- new.env()
+  assign('fitness.best', 0, envir=sharedEnv)
 
   # determine the current system version
   system("cd ~/trading")
@@ -2371,8 +2372,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       stop("No valid fittype provided")
     }
 
-    if (fitness.total > fitness.best) {
-      fitness.best <<- fitness.total
+    if (fitness.total > get('fitness.best', envir=sharedEnv)) {
+      assign('fitness.best', fitness.total, envir=sharedEnv)
       new.fitness.best <- "best solution --- "
     }
 
