@@ -1970,6 +1970,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   ptm <- proc.time()
   fitness.best <- 0
 
+  # determine the current system version
+  system("cd ~/trading")
+  branch.name <- system2("git", "rev-parse --abbrev-ref HEAD", stdout=T)
+
   openPlanets <- function(planets.file) {
     Date=DateMT4=Year=NULL
     planets.file <- npath(planets.file)
@@ -2280,6 +2284,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                              ", aspectspolarity=c(", paste(aspectspolarity, collapse=", "), ")",
                              ", dateformat=", shQuote(dateformat), ", verbose=F", ", doplot=T", ", fittype=", shQuote(fittype), ")\n", sep=""))
 
+
+    sout <- paste("system version: ", branch.name, "\n\n", sout, sep="")
     # use a cloned planets to ensure original is no modified
     planets <- processPlanetsAspects(args$planetslist[[as.character(args$degsplit)]], orbsmatrix)
     planets.train <- planets[Date > rdates[1] & Date <= rdates[2] & wday %in% c(1, 2, 3, 4, 5)]
