@@ -9,6 +9,7 @@ library(quantmod)
 library(randomForest)
 library(reshape2)
 library(rpart)
+library(RSQLite)
 library(splus2R)
 library(timeDate)
 library(xts)
@@ -1965,15 +1966,47 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   if (hasArg('sinkfile')) {
     sinkpathfile <- npath(paste("~/trading/predict/", sinkfile, ".txt", sep=''))
     sink(sinkpathfile, append=T)
+    # output to master process
+    #parallel:::setDefaultClusterOptions(outfile=sinkpathfile)
   }
   if (!hasArg('execfunc')) stop("Provide function to execute")
   ptm <- proc.time()
-  sharedEnv <- new.env()
-  assign('fitness.best', 0, envir=sharedEnv)
 
   # determine the current system version
   system("cd ~/trading")
   branch.name <- system2("git", "rev-parse --abbrev-ref HEAD", stdout=T)
+
+  getFitnessBest <- function(db) {
+    return(as.numeric(dbGetQuery(db, "select * from keys where key='fitness.best'")[2]))
+  }
+
+  setFitnessBest <- function(db, value) {
+    dbBeginTransaction(db)
+    sql <- "update keys set count = ? where key = 'fitness.best'"
+    res <- dbGetPreparedQuery(db, sql, bind.data = data.frame(count=value))
+    return(dbCommit(db))
+  }
+
+  initSQLiteDB <- function() {
+    db <- dbConnect(SQLite(), dbname = "citlacom.db")
+    # create table if not exists
+    if (!dbExistsTable(db, 'keys')) {
+      sql <- "create table keys (key text PRIMARY KEY, count integer)"
+      dbGetQuery(db, sql)
+      sql <- "insert into keys values (?, ?)"
+      fitness.best <- data.frame(key='fitness.best', count=-100)
+      res <- dbGetPreparedQuery(db, sql, bind.data = fitness.best)
+    }
+    else {
+      setFitnessBest(db, -100)
+    }
+    return(db)
+  }
+
+  dbcon <- initSQLiteDB()
+  closeSQLiteDB <- function(db) {
+    dbDisconnect(db)
+  }
 
   openPlanets <- function(planets.file) {
     Date=DateMT4=Year=NULL
@@ -2372,8 +2405,9 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       stop("No valid fittype provided")
     }
 
-    if (fitness.total > get('fitness.best', envir=sharedEnv)) {
-      assign('fitness.best', fitness.total, envir=sharedEnv)
+    fitness.best <- getFitnessBest(dbcon)
+    if (fitness.total > fitness.best) {
+      setFitnessBest(dbcon, fitness.total)
       new.fitness.best <- "best solution --- "
     }
 
@@ -2619,6 +2653,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   #}
   #dev.off()
   if (hasArg('sinkfile')) sink()
+  closeSQLiteDB()
 }
 
 # compile the function to byte code
