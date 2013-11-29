@@ -2613,7 +2613,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   #}
   #dev.off()
   if (hasArg('sinkfile')) sink()
-  closeSQLiteDB()
+  closeSQLiteDB(dbcon)
 }
 
 # compile the function to byte code
