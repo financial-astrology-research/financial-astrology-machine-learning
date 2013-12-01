@@ -2443,7 +2443,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   processPredictions <- function(planets.test, predtype, pltitle, doplot) {
     planets.pred <- copy(planets.test)
-    zerores <- list(correlation=0, volatility=0, matches.t=0, matches.f=0, matches.d=0)
+    zerores <- list(correlation=0.0, volatility=0.0, matches.t=as.integer(0), matches.f=as.integer(0), matches.d=as.integer(0))
 
     if (nrow(planets.pred) == 0) {
       return(zerores)
@@ -2502,10 +2502,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     }
     else if ('TRUE' %in% names(t1)) {
       matches.t <- t1[['TRUE']]
-      matches.f <- 0
+      matches.f <- as.integer(0)
     }
     else if ('FALSE' %in% names(t1)) {
-      matches.t <- 0
+      matches.t <- as.integer(0)
       matches.f <- t1[['FALSE']]
     }
     else {
@@ -2514,9 +2514,9 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     }
 
     # calculate the matches difference
-    matches.d <- matches.t-matches.f
-
-    return(list(correlation=correlation, volatility=volatility, matches.t=matches.t, matches.f=matches.f, matches.d=matches.d))
+    matches.d <- as.integer(matches.t-matches.f)
+    res <- list(correlation=correlation, volatility=volatility, matches.t=matches.t, matches.f=matches.f, matches.d=matches.d)
+    return(res)
   }
 
   relativeTrendFitness <- function(x, planetslist, securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, fittype, dateformat) {
