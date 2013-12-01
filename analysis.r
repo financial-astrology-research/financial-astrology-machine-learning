@@ -2409,7 +2409,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   processPredictions <- function(planets.test, predtype, pltitle, doplot) {
     planets.pred <- copy(planets.test)
-    zerores <- list(correlation=0, volatility=0, matches.t=0, matches.f=0, matches.d=0)
+    zerores <- list(correlation=0.0, volatility=0.0, matches.t=as.integer(0), matches.f=as.integer(0), matches.d=as.integer(0))
 
     if (nrow(planets.pred) == 0) {
       return(zerores)
@@ -2468,10 +2468,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     }
     else if ('TRUE' %in% names(t1)) {
       matches.t <- t1[['TRUE']]
-      matches.f <- 0
+      matches.f <- as.integer(0)
     }
     else if ('FALSE' %in% names(t1)) {
-      matches.t <- 0
+      matches.t <- as.integer(0)
       matches.f <- t1[['FALSE']]
     }
     else {
@@ -2480,9 +2480,9 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     }
 
     # calculate the matches difference
-    matches.d <- matches.t-matches.f
-
-    return(list(correlation=correlation, volatility=volatility, matches.t=matches.t, matches.f=matches.f, matches.d=matches.d))
+    matches.d <- as.integer(matches.t-matches.f)
+    res <- list(correlation=correlation, volatility=volatility, matches.t=matches.t, matches.f=matches.f, matches.d=matches.d)
+    return(res)
   }
 
   relativeTrendFitness <- function(x, planetslist, securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, fittype, dateformat) {
@@ -2577,6 +2577,58 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     if (args$doplot) dev.off()
   }
 
+  testSolutionDebug <- function(predfile, x, planetsfile, securityfile, tsdate, tedate, vsdate, vedate, csdate, cedate, fittype, dateformat) {
+    # build the parameters based on GA indexes
+    mapricetypes <- c('SMA', 'EMA', 'WMA', 'ZLEMA')
+    predtypes <- c('absolute',  'relative')
+    pricetypes <- c('averages',  'daily', 'priceaverage')
+    analogytypes <- c(NA, 'SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG')
+    pa.e = 14+length(planetsBaseCols)
+    co.e = pa.e+length(deforbs)
+    api.e = co.e+length(defaspectspolarity)
+    ae.e = api.e+length(defaspectsenergy)
+    pze.e = ae.e+length(defplanetszodenergy)
+
+    args <-list(securityfile=securityfile,
+                planetsfile=planetsfile,
+                tsdate=tsdate,
+                tedate=tedate,
+                vsdate=vsdate,
+                vedate=vedate,
+                csdate=csdate,
+                cedate=cedate,
+                fittype=fittype,
+                dateformat=dateformat,
+                verbose=F,
+                doplot=F,
+                mapredslow=x[1],
+                mapredfact=x[2],
+                maprice=x[3],
+                mapricetype=mapricetypes[[x[4]]],
+                predtype=predtypes[[x[5]]],
+                cordir=x[6],
+                degsplit=x[7],
+                threshold=x[8]/100,
+                energymode=x[9],
+                energygrowthsp=x[10]/10,
+                energyret=x[11]/10,
+                alignmove=x[12],
+                pricemadir=x[13],
+                panalogy=analogytypes[x[14:(pa.e-1)]],
+                cusorbs=x[pa.e:(co.e-1)],
+                aspectspolarity=x[co.e:(api.e-1)],
+                aspectsenergy=x[api.e:(ae.e-1)]/10,
+                planetszodenergy=x[ae.e:(pze.e-1)]/10)
+
+    if (!hasArg('dateformat')) stop("A dateformat is needed.")
+    if (args$doplot) pdf(paste("~/chart_", predfile, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
+    degsplits <- c(args$degsplit)
+    planetslist <- multipleOpenPlanets(args$planetsfile, degsplits)
+    args[['planetslist']] <- planetslist
+    relativeTrend(args)
+    if (args$doplot) dev.off()
+  }
+
   testRefactoring <- function() {
     expected <- c(27, 2, 11)
     retrieved <- c()
@@ -2613,7 +2665,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   #}
   #dev.off()
   if (hasArg('sinkfile')) sink()
-  closeSQLiteDB()
+  closeSQLiteDB(dbcon)
 }
 
 # compile the function to byte code
