@@ -2480,7 +2480,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     }
 
     # calculate the matches difference
-    matches.d <- as.integer(matches.t-matches.f)
+    matches.d <- (matches.t / (matches.t + matches.f)) * 100
     res <- list(correlation=correlation, volatility=volatility, matches.t=matches.t, matches.f=matches.f, matches.d=matches.d)
     return(res)
   }
