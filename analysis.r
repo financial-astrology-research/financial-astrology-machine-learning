@@ -2164,8 +2164,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       curcol <- names(planets.day.asp[idx])
       # ignore aspects between nodes that happens ever
       if (curcol == 'SNLONNNLON') return
-      col1 <- paste(substr(curcol, 1, 2), sep='')
-      col2 <- paste(substr(curcol, 6, 7), sep='')
+      col1 <- substr(curcol, 1, 2)
+      col2 <- substr(curcol, 6, 7)
       # longitude col names
       loncol1 <- paste(col1, 'LONG', sep='')
       loncol2 <- paste(col2, 'LONG', sep='')
@@ -2224,7 +2224,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     significance.days[, c('energy', 'watchdog') := processSignificanceRow(.SD, .BY), by=c('Date', 'origin')]
     # invert the significance columns for negative retrograde energy
     significance.days[energy < 0, c('V1', 'V2', 'V3', 'V4') := list(V2, V1, V4, V3)]
-    significance.days[, c('V1', 'V2') := list(V1 * abs(energy), V2 * abs(energy))]
     return(significance.days)
   }
 
@@ -2236,25 +2235,31 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     setkeyv(energy.sum, c('Date', 'origin'))
     significance.days <- merge(significance.days, energy.sum, by=c('Date', 'origin'))
     setkeyv(significance.days, c('Date', 'Eff'))
+    significance.days[, c('up', 'down') := list(up + abs(energy), down + abs(energy))]
 
     if (energymode == 1) {
       # add more energy to the lower part based on bad aspects and to the upper part with good aspects
       # energy influence by count
-      significance.days[Eff == 'up', c('V2', 'V1') := list(V2 * up, V1 * down)]
-      significance.days[Eff == 'down', c('V2', 'V1') := list(V2 * down, V1 * up)]
+      significance.days[Eff == 'up', c('energy1', 'energy2') := list(down, up)]
+      significance.days[Eff == 'down', c('energy1', 'energy2') := list(up, down)]
     }
     else if (energymode == 2) {
       # add more energy to the lower part based on good aspects and to the upper part with bad aspects
-      # energy influence by count
-      significance.days[Eff == 'down', c('V2', 'V1') := list(V2 * up, V1 * down)]
-      significance.days[Eff == 'up', c('V2', 'V1') := list(V2 * down, V1 * up)]
+      # energy influence by countu
+      significance.days[Eff == 'down', c('energy1', 'energy2') := list(down, up)]
+      significance.days[Eff == 'up', c('energy1', 'energy2') := list(up, down)]
     }
     else {
       stop("No valid energy mode was provided.")
     }
 
-    prediction <- significance.days[, list(predRaw=(sum(V2)-sum(V1)) * 10), by='Date']
+    # to prevent division by zero
+    significance.days[, c('PE1', 'PE2') := list(V1 * energy1, V2 * energy2)]
+    prediction <- significance.days[, list(down = sum(PE1)/sum(energy1), up = sum(PE2)/sum(energy2)), by='Date']
+    prediction <- significance.days[is.nan(down), down := 0]
+    prediction <- significance.days[is.nan(up), up := 0]
     prediction[, Date := as.Date(Date, format="%Y-%m-%d")]
+    prediction[, predRaw := (up-down) * 100]
     return(prediction)
   }
 
