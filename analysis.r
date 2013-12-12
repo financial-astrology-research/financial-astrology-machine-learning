@@ -182,7 +182,7 @@ defaspectspolarity <- c(1, 1, 0, 1, 1, 0, 1, 0, 0, 0,
                         0, 1, 0, 1, 1, 0, 1, 0, 0, 0,
                         0, 1, 0, 1, 1, 0, 1, 0, 0, 0)
 
-defaspectsenergy <- c(20, 5, 5, 10, 5, 15, 10, 5, 5, 20)
+defaspectsenergy <- c(10, 2, 2, 5, 3, 7, 5, 2, 2, 10)
 defplanetsenergy <- c(5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5)
 defpanalogy <- list(c(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13),
                     c(2, 3, 4, 5, 6, 2, 2, 2, 2, 2, 2, 2),
@@ -193,18 +193,18 @@ defpanalogy <- list(c(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13),
 
 zodSignsCols <- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CA', 'AC', 'PI')
 planetsZodEnergyCols <- as.character(apply(expand.grid(planetsLonCols, zodSignsCols), 1, function(x) paste(x[1], '_', x[2], sep='')))
-zodenergy.su <- c( 30,  10,  10,  10,  30,  10, -30,  10,  10,  10, -30,  10)
-zodenergy.mo <- c( 10,  30,  10,  30,  10,  10,  10, -30,  10, -30,  10,  10)
-zodenergy.me <- c( 10,  10,  30,  10,  10,  30,  10,  10, -30,  10,  10, -30)
-zodenergy.ve <- c(-30,  30,  10,  10,  10, -30,  30, -30,  10,  10,  10,  30)
-zodenergy.ma <- c( 30,  10,  10, -30,  10,  10, -30,  10,  10,  30,  10,  10)
-zodenergy.ju <- c( 10,  10, -30,  30,  10, -30,  10,  10,  30, -30,  10,  30)
-zodenergy.sa <- c(-30,  10,  10, -30, -30,  10,  30,  10,  10,  30,  30,  10)
-zodenergy.ur <- c( 10,  10,  10,  10, -30,  10,  10,  10,  10,  10,  30,  10)
-zodenergy.ne <- c( 10,  10,  10,  10,  10, -30,  10,  10,  10,  10,  10,  30)
-zodenergy.pl <- c( 10, -30,  10,  10,  10,  10,  10,  30,  10,  10,  10,  10)
-zodenergy.sn <- c( 10,  10,  10,  10,  30,  10,  10,  10,  10,  10,  10,  10)
-zodenergy.nn <- c( 10,  10,  10,  10,  30,  10,  10,  10,  10,  10,  10,  10)
+zodenergy.su <- c( 10,  01,  01,  01,  10,  01, -10,  01,  01,  01, -10,  01)
+zodenergy.mo <- c( 01,  10,  01,  10,  01,  01,  01, -10,  01, -10,  01,  01)
+zodenergy.me <- c( 01,  01,  10,  01,  01,  10,  01,  01, -10,  01,  01, -10)
+zodenergy.ve <- c(-10,  10,  01,  01,  01, -10,  10, -10,  01,  01,  01,  10)
+zodenergy.ma <- c( 10,  01,  01, -10,  01,  01, -10,  01,  01,  10,  01,  01)
+zodenergy.ju <- c( 01,  01, -10,  10,  01, -10,  01,  01,  10, -10,  01,  10)
+zodenergy.sa <- c(-10,  01,  01, -10, -10,  01,  10,  01,  01,  10,  10,  01)
+zodenergy.ur <- c( 01,  01,  01,  01, -10,  01,  01,  01,  01,  01,  10,  01)
+zodenergy.ne <- c( 01,  01,  01,  01,  01, -10,  01,  01,  01,  01,  01,  10)
+zodenergy.pl <- c( 01, -10,  01,  01,  01,  01,  01,  10,  01,  01,  01,  01)
+zodenergy.sn <- c( 01,  01,  01,  01,  10,  01,  01,  01,  01,  01,  01,  01)
+zodenergy.nn <- c( 01,  01,  01,  01,  10,  01,  01,  01,  01,  01,  01,  01)
 defplanetszodenergy <- c(zodenergy.su, zodenergy.mo, zodenergy.me, zodenergy.ve, zodenergy.ma, zodenergy.ju, zodenergy.sa,
                          zodenergy.ur, zodenergy.ne, zodenergy.pl, zodenergy.sn, zodenergy.nn)
 
@@ -2207,7 +2207,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   dailySignificanceEnergy <- function(significance.days, energyret, planetszodenergy) {
     processSignificanceRow <- function(significance.row, by.row) {
       watchdog <- list()
-      energy <- 1.0
+      energy <- 0
       # add retrograde energy
       if (significance.row$sp < 0) {
         energy <- energy + energyret
@@ -2538,40 +2538,44 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     pze.e = pe.e+length(defplanetszodenergy)
 
     args <-list(planetslist=planetslist,
-                 securityfile=securityfile,
-                 planetsfile=planetsfile,
-                 tsdate=tsdate,
-                 tedate=tedate,
-                 vsdate=vsdate,
-                 vedate=vedate,
-                 csdate=csdate,
-                 cedate=cedate,
-                 fittype=fittype,
-                 dateformat=dateformat,
-                 verbose=F,
-                 doplot=F,
-                 mapredslow=x[1],
-                 mapredfact=x[2],
-                 maprice=x[3],
-                 mapricetype=mapricetypes[[x[4]]],
-                 predtype=predtypes[[x[5]]],
-                 cordir=x[6],
-                 degsplit=x[7],
-                 threshold=x[8]/100,
-                 energymode=x[9],
-                 energygrowthsp=x[10]/10,
-                 energyret=x[11]/10,
-                 alignmove=x[12],
-                 pricemadir=x[13],
-                 panalogy=analogytypes[x[14:(pa.e-1)]],
-                 cusorbs=x[pa.e:(co.e-1)],
-                 aspectspolarity=x[co.e:(api.e-1)],
-                 aspectsenergy=x[api.e:(ae.e-1)]/10,
-                 planetsenergy=x[ae.e:(pe.e-1)]/10,
-                 planetszodenergy=x[pe.e:(pze.e-1)]/10)
+                securityfile=securityfile,
+                planetsfile=planetsfile,
+                tsdate=tsdate,
+                tedate=tedate,
+                vsdate=vsdate,
+                vedate=vedate,
+                csdate=csdate,
+                cedate=cedate,
+                fittype=fittype,
+                dateformat=dateformat,
+                verbose=F,
+                doplot=F,
+                mapredslow=x[1],
+                mapredfact=x[2],
+                maprice=x[3],
+                mapricetype=mapricetypes[[x[4]]],
+                predtype=predtypes[[x[5]]],
+                cordir=x[6],
+                degsplit=x[7],
+                threshold=x[8]/100,
+                energymode=x[9],
+                energygrowthsp=x[10]/10,
+                energyret=adjustEnergy(x[11]),
+                alignmove=x[12],
+                pricemadir=x[13],
+                panalogy=analogytypes[x[14:(pa.e-1)]],
+                cusorbs=x[pa.e:(co.e-1)],
+                aspectspolarity=x[co.e:(api.e-1)],
+                aspectsenergy=adjustEnergy(x[api.e:(ae.e-1)]),
+                planetsenergy=adjustEnergy(x[ae.e:(pe.e-1)]),
+                planetszodenergy=adjustEnergy(x[pe.e:(pze.e-1)]))
 
     res <- relativeTrend(args)
     return(res$fitness)
+  }
+
+  adjustEnergy <- function(x) {
+    ifelse(x >= 0, (10 + x) / 10, (-10 + x) / 10)
   }
 
   optimizeRelativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, fittype, dateformat) {
@@ -2585,15 +2589,15 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     polaritymin <- rep(0, length(defaspectspolarity))
     polaritymax <- rep(1, length(defaspectspolarity))
     aspectenergymin <- rep(0, length(defaspectsenergy))
-    aspectenergymax <- rep(30, length(defaspectsenergy))
+    aspectenergymax <- rep(10, length(defaspectsenergy))
     planetenergymin <- rep(0, length(defplanetsenergy))
-    planetenergymax <- rep(30, length(defplanetsenergy))
-    planetzodenergymin <- rep(-30, length(defplanetszodenergy))
-    planetzodenergymax <- rep(30, length(defplanetszodenergy))
+    planetenergymax <- rep(10, length(defplanetsenergy))
+    planetzodenergymin <- rep(-10, length(defplanetszodenergy))
+    planetzodenergymax <- rep(10, length(defplanetszodenergy))
 
-    minvals <- c( 2,  2,  2, 1, 1, 0, dsmin,  0, 1, 0, -20, -20, 1, panalogymin, orbsmin, polaritymin, aspectenergymin,
+    minvals <- c( 2,  2,  2, 1, 1, 0, dsmin,  0, 1, 0, -10, -20, 1, panalogymin, orbsmin, polaritymin, aspectenergymin,
                  planetenergymin, planetzodenergymin)
-    maxvals <- c(10, 15, 20, 4, 2, 1, dsmax, 30, 2, 9,  20,  20, 2, panalogymax, orbsmax, polaritymax, aspectenergymax,
+    maxvals <- c(10, 15, 20, 4, 2, 1, dsmax, 30, 2, 9,  10,  20, 2, panalogymax, orbsmax, polaritymax, aspectenergymax,
                  planetenergymax, planetzodenergymax)
 
     panalogyCols <- planetsLonGCols[5:length(planetsLonGCols)]
