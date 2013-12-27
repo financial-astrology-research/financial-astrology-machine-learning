@@ -2120,7 +2120,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     for (idx in 1:length(planets.day.asp)) {
       curcol <- names(planets.day.asp[idx])
       # ignore aspects between nodes that happens ever
-      if (curcol == 'SNLONNNLON') return
+      if (curcol == 'SNLONNNLON') next
       col1 <- substr(curcol, 1, 2)
       col2 <- substr(curcol, 6, 7)
       # longitude col names
@@ -2162,7 +2162,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     # convert energy list to data table
     energy <- rbindlist(energy)
-    setkeyv(energy, c('Date', 'origin'))
     return(energy)
   }
 
