@@ -1970,7 +1970,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets.file <- npath(planets.file)
     planets <- fread(planets.file, sep="\t", na.strings="", verbose = F)
     planets[, Date := as.Date(planets$Date, format="%Y-%m-%d")]
-    planets[, DateMT4 := as.character(format(Date, "%Y.%m.%d"))]
+    planets <- planets[, c('Date', planetsLonCols, planetsSpCols), with=F]
+    #planets[, DateMT4 := as.character(format(Date, "%Y.%m.%d"))]
     planets[, Year := as.character(format(Date, "%Y"))]
     planets[, wday := format(Date, "%w")]
     setkey(planets, 'Date')
