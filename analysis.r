@@ -76,7 +76,7 @@ aspectsCombList <- aspectsList
 aspectTypesCols <- c('SUT', 'MOT', 'MET', 'VET', 'MAT', 'JUT', 'SAT', 'URT', 'NET', 'PLT')
 
 # planets cols
-planetsBaseCols <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "SN", "NN", "CE", "JN", "VS", "PA", "PH", "CH")
+planetsBaseCols <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "SN", "NN", "CE", "JN", "VS", "PA", "CH")
 
 # Aspects and orbs
 aspects = c(0, 30, 45, 60, 72, 90, 120, 135, 150, 180)
@@ -132,13 +132,13 @@ defpolarity <- c(defconjpolarity, defaspectspolarity)
 aspectspolaritycols <- aspects[2:length(aspects)]
 
 defaspectsenergy <- c(10, 2, 2, 5, 3, 7, 5, 2, 2, 10)
-defplanetsenergy <- c(5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5)
-defpanalogy <- list(c(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19),
-                    c(2, 3, 4, 5, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2),
-                    c(2, 3, 4, 5, 6, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4),
-                    c(2, 3, 4, 5, 6, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5),
-                    c(2, 3, 4, 5, 6, 7, 8, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
-                    c(2, 3, 4, 5, 6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1))
+defplanetsenergy <- c(5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5)
+defpanalogy <- list(c(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18),
+                    c(2, 3, 4, 5, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2),
+                    c(2, 3, 4, 5, 6, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4),
+                    c(2, 3, 4, 5, 6, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5),
+                    c(2, 3, 4, 5, 6, 7, 8, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+                    c(2, 3, 4, 5, 6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1))
 
 zodSignsCols <- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CA', 'AC', 'PI')
 planetsZodEnergyCols <- as.character(apply(expand.grid(planetsLonCols, zodSignsCols), 1, function(x) paste(x[1], '_', x[2], sep='')))
@@ -158,12 +158,11 @@ zodenergy.ce <- c( 01,  01,  01,  01,  10,  01,  01,  01,  01,  01,  01,  01)
 zodenergy.ch <- c( 01,  01,  01,  01,  10,  01,  01,  01,  01,  01,  01,  01)
 zodenergy.jn <- c( 01,  01,  01,  01,  10,  01,  01,  01,  01,  01,  01,  01)
 zodenergy.pa <- c( 01,  01,  01,  01,  10,  01,  01,  01,  01,  01,  01,  01)
-zodenergy.ph <- c( 01,  01,  01,  01,  10,  01,  01,  01,  01,  01,  01,  01)
 zodenergy.vs <- c( 01,  01,  01,  01,  10,  01,  01,  01,  01,  01,  01,  01)
 
 defplanetszodenergy <- c(zodenergy.su, zodenergy.mo, zodenergy.me, zodenergy.ve, zodenergy.ma, zodenergy.ju, zodenergy.sa,
                          zodenergy.ur, zodenergy.ne, zodenergy.pl, zodenergy.sn, zodenergy.nn, zodenergy.ce, zodenergy.ch,
-                         zodenergy.jn, zodenergy.pa, zodenergy.ph, zodenergy.vs)
+                         zodenergy.jn, zodenergy.pa, zodenergy.vs)
 
 # a function that returns the position of n-th largest
 maxn <- function(x, n) {
@@ -2554,15 +2553,15 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     polaritymin <- rep(0, length(defpolarity))
     polaritymax <- rep(1, length(defpolarity))
     aspectenergymin <- rep(0, length(defaspectsenergy))
-    aspectenergymax <- rep(10, length(defaspectsenergy))
+    aspectenergymax <- rep(20, length(defaspectsenergy))
     planetenergymin <- rep(0, length(defplanetsenergy))
-    planetenergymax <- rep(10, length(defplanetsenergy))
-    planetzodenergymin <- rep(-10, length(defplanetszodenergy))
-    planetzodenergymax <- rep(10, length(defplanetszodenergy))
+    planetenergymax <- rep(20, length(defplanetsenergy))
+    planetzodenergymin <- rep(-20, length(defplanetszodenergy))
+    planetzodenergymax <- rep(20, length(defplanetszodenergy))
 
-    minvals <- c( 2,  2,  2, 1, 1, 0, dsmin,  0, 1, 0, -10, -20, 1, panalogymin, orbsmin, polaritymin, aspectenergymin,
+    minvals <- c( 2,  2,  2, 1, 1, 0, dsmin,  0, 1, 0, -20, -20, 1, panalogymin, orbsmin, polaritymin, aspectenergymin,
                  planetenergymin, planetzodenergymin)
-    maxvals <- c(10, 15, 20, 4, 2, 1, dsmax, 30, 2, 9,  10,  20, 2, panalogymax, orbsmax, polaritymax, aspectenergymax,
+    maxvals <- c(10, 15, 20, 4, 2, 1, dsmax, 30, 2, 9,  20,  20, 2, panalogymax, orbsmax, polaritymax, aspectenergymax,
                  planetenergymax, planetzodenergymax)
 
     panalogyCols <- planetsLonGCols[5:length(planetsLonGCols)]
