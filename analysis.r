@@ -360,7 +360,7 @@ openCurrency  <- function(currency_file) {
   currency
 }
 
-openSecurity <- function(security_file, mapricetype, mapricefs, dateformat="%Y.%m.%d", pricemadir=1) {
+openSecurity <- function(security_file, mapricetype, mapricefs, mapricesl, dateformat="%Y.%m.%d", pricemadir=1) {
   mapricefunc <- get(get('mapricetype'))
   security_file <- npath(security_file)
   security <- fread(security_file)
@@ -371,12 +371,12 @@ openSecurity <- function(security_file, mapricetype, mapricefs, dateformat="%Y.%
 
   if (pricemadir == 1) {
     security[, MidMAF := mapricefunc(Mid, n=mapricefs)]
-    security[, MidMAS := mapricefunc(Mid, n=mapricefs*2)]
+    security[, MidMAS := mapricefunc(Mid, n=mapricefs * mapricesl)]
     security[, val := MidMAF-MidMAS]
   }
   else if (pricemadir == 2) {
     security[, MidMAF := rev(mapricefunc(rev(Mid), n=mapricefs))]
-    security[, MidMAS := rev(mapricefunc(rev(Mid), n=mapricefs*2))]
+    security[, MidMAS := rev(mapricefunc(rev(Mid), n=mapricefs * mapricesl))]
     security[, val := MidMAS-MidMAF]
   }
   else {
@@ -2276,7 +2276,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     sout <- with(args, paste("testPlanetsSignificanceRelative('testSolution', securityfile=", shQuote(securityfile), ", planetsfile=", shQuote(planetsfile),
                              ", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate),
                              ", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate),
-                             ", mapredsm=", mapredsm, ", mapredfs=", mapredfs, ", mapricefs=", mapricefs,
+                             ", mapredsm=", mapredsm, ", mapredfs=", mapredfs, ", mapredsl=", mapredsl, ", mapricefs=", mapricefs, ", mapricesl=", mapricesl,
                              ", mapricetype=", shQuote(mapricetype),
                              ", predtype=", shQuote(predtype), ", cordir=", cordir, ", pricemadir=", pricemadir, ", degsplit=", degsplit, ", threshold=", threshold,
                              ", energymode=", energymode, ", energygrowthsp=", energygrowthsp, ", energyret=", energyret, ", alignmove=", alignmove,
@@ -2293,7 +2293,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets <- processPlanetsAspects(args$planetslist[[as.character(args$degsplit)]], orbsmatrix)
     planets.train <- planets[Date > rdates[1] & Date <= rdates[2] & wday %in% c(1, 2, 3, 4, 5)]
     planets.pred <- planets[Date > rdates[3] & Date <= rdates[6] & wday %in% c(1, 2, 3, 4, 5)]
-    security <- with(args, openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, mapricefs, dateformat, pricemadir))
+    security <- with(args, openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, mapricefs, mapricesl, dateformat, pricemadir))
     significance <- with(args, planetsVarsSignificance(planets.train, security, threshold))
     years.test <- format(seq(rdates[3], rdates[4], by='year'), '%Y')
     years.conf <- format(seq(rdates[5], rdates[6], by='year'), '%Y')
@@ -2333,7 +2333,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     # remove NAs and apply MAs
     planets.pred[!is.na(predval), predvalMAF := mapredfunc(predval, args$mapredfs)]
-    planets.pred[!is.na(predval), predvalMAS := mapredfunc(predval, args$mapredfs*2)]
+    planets.pred[!is.na(predval), predvalMAS := mapredfunc(predval, args$mapredfs * args$mapredsl)]
 
     # calculate the predEff based on the prediction type
     if (args$predtype == 'absolute') {
@@ -2494,7 +2494,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     predtypes <- c('absolute',  'relative')
     pricetypes <- c('averages',  'daily', 'priceaverage')
     analogytypes <- c(NA, 'SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG')
-    pa.e = 14+length(planetsBaseCols)
+    pa.e = 16+length(planetsBaseCols)
     co.e = pa.e+length(deforbs)
     api.e = co.e+length(defpolarity)
     ae.e = api.e+length(defaspectsenergy)
@@ -2516,18 +2516,20 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 doplot=F,
                 mapredsm=x[1],
                 mapredfs=x[2],
-                mapricefs=x[3],
-                mapricetype=mapricetypes[[x[4]]],
-                predtype=predtypes[[x[5]]],
-                cordir=x[6],
-                degsplit=x[7],
-                threshold=x[8]/100,
-                energymode=x[9],
-                energygrowthsp=x[10]/10,
-                energyret=adjustEnergy(x[11]),
-                alignmove=x[12],
-                pricemadir=x[13],
-                panalogy=analogytypes[x[14:(pa.e-1)]],
+                mapredsl=x[3]/2,
+                mapricefs=x[4],
+                mapricesl=x[5]/2,
+                mapricetype=mapricetypes[[x[6]]],
+                predtype=predtypes[[x[7]]],
+                cordir=x[8],
+                degsplit=x[9],
+                threshold=x[10]/100,
+                energymode=x[11],
+                energygrowthsp=x[12]/10,
+                energyret=adjustEnergy(x[13]),
+                alignmove=x[14],
+                pricemadir=x[15],
+                panalogy=analogytypes[x[16:(pa.e-1)]],
                 cusorbs=x[pa.e:(co.e-1)],
                 aspectspolarity=x[co.e:(api.e-1)],
                 aspectsenergy=adjustEnergy(x[api.e:(ae.e-1)]),
@@ -2559,13 +2561,13 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planetzodenergymin <- rep(-20, length(defplanetszodenergy))
     planetzodenergymax <- rep(20, length(defplanetszodenergy))
 
-    minvals <- c( 2,  2,  2, 1, 1, 0, dsmin,  0, 1, 0, -20, -20, 1, panalogymin, orbsmin, polaritymin, aspectenergymin,
+    minvals <- c( 2,  2, 3,  2, 3, 1, 1, 0, dsmin,  0, 1, 0, -20, -20, 1, panalogymin, orbsmin, polaritymin, aspectenergymin,
                  planetenergymin, planetzodenergymin)
-    maxvals <- c(10, 15, 20, 4, 2, 1, dsmax, 30, 2, 9,  20,  20, 2, panalogymax, orbsmax, polaritymax, aspectenergymax,
+    maxvals <- c(10, 15, 8, 20, 8, 4, 2, 1, dsmax, 30, 2, 9,  20,  20, 2, panalogymax, orbsmax, polaritymax, aspectenergymax,
                  planetenergymax, planetzodenergymax)
 
     panalogyCols <- planetsLonGCols[5:length(planetsLonGCols)]
-    varnames <- c('mapredsm', 'mapredfs', 'mapricefs', 'mapricetype', 'predtype', 'cordir', 'degsplit', 'threshold', 'energymode',
+    varnames <- c('mapredsm', 'mapredfs', 'mapredsl', 'mapricefs', 'mapricesl', 'mapricetype', 'predtype', 'cordir', 'degsplit', 'threshold', 'energymode',
                   'energygrowthsp', 'energyret', 'alignmove', 'pricemadir', panalogyCols, aspOrbsCols, planetsCombLonCols, aspectspolaritycols,
                   aspectsEnergyCols, planetsEnergyCols, planetsZodEnergyCols)
 
