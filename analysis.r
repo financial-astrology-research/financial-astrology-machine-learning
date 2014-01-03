@@ -360,7 +360,7 @@ openCurrency  <- function(currency_file) {
   currency
 }
 
-openSecurity <- function(security_file, mapricetype, maprice, dateformat="%Y.%m.%d", pricemadir=1) {
+openSecurity <- function(security_file, mapricetype, mapricefs, dateformat="%Y.%m.%d", pricemadir=1) {
   mapricefunc <- get(get('mapricetype'))
   security_file <- npath(security_file)
   security <- fread(security_file)
@@ -370,13 +370,13 @@ openSecurity <- function(security_file, mapricetype, maprice, dateformat="%Y.%m.
   security[, Mid := (High + Low + Close + Open) / 4]
 
   if (pricemadir == 1) {
-    security[, MidMAF := mapricefunc(Mid, n=maprice)]
-    security[, MidMAS := mapricefunc(Mid, n=maprice*2)]
+    security[, MidMAF := mapricefunc(Mid, n=mapricefs)]
+    security[, MidMAS := mapricefunc(Mid, n=mapricefs*2)]
     security[, val := MidMAF-MidMAS]
   }
   else if (pricemadir == 2) {
-    security[, MidMAF := rev(mapricefunc(rev(Mid), n=maprice))]
-    security[, MidMAS := rev(mapricefunc(rev(Mid), n=maprice*2))]
+    security[, MidMAF := rev(mapricefunc(rev(Mid), n=mapricefs))]
+    security[, MidMAS := rev(mapricefunc(rev(Mid), n=mapricefs*2))]
     security[, val := MidMAS-MidMAF]
   }
   else {
@@ -2276,7 +2276,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     sout <- with(args, paste("testPlanetsSignificanceRelative('testSolution', securityfile=", shQuote(securityfile), ", planetsfile=", shQuote(planetsfile),
                              ", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate),
                              ", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate),
-                             ", mapredsm=", mapredsm, ", mapredfact=", mapredfact, ", maprice=", maprice,
+                             ", mapredsm=", mapredsm, ", mapredfs=", mapredfs, ", mapricefs=", mapricefs,
                              ", mapricetype=", shQuote(mapricetype),
                              ", predtype=", shQuote(predtype), ", cordir=", cordir, ", pricemadir=", pricemadir, ", degsplit=", degsplit, ", threshold=", threshold,
                              ", energymode=", energymode, ", energygrowthsp=", energygrowthsp, ", energyret=", energyret, ", alignmove=", alignmove,
@@ -2293,7 +2293,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets <- processPlanetsAspects(args$planetslist[[as.character(args$degsplit)]], orbsmatrix)
     planets.train <- planets[Date > rdates[1] & Date <= rdates[2] & wday %in% c(1, 2, 3, 4, 5)]
     planets.pred <- planets[Date > rdates[3] & Date <= rdates[6] & wday %in% c(1, 2, 3, 4, 5)]
-    security <- with(args, openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, maprice, dateformat, pricemadir))
+    security <- with(args, openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, mapricefs, dateformat, pricemadir))
     significance <- with(args, planetsVarsSignificance(planets.train, security, threshold))
     years.test <- format(seq(rdates[3], rdates[4], by='year'), '%Y')
     years.conf <- format(seq(rdates[5], rdates[6], by='year'), '%Y')
@@ -2332,8 +2332,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     }
 
     # remove NAs and apply MAs
-    planets.pred[!is.na(predval), predvalMAF := mapredfunc(predval, args$mapredfact)]
-    planets.pred[!is.na(predval), predvalMAS := mapredfunc(predval, args$mapredfact*2)]
+    planets.pred[!is.na(predval), predvalMAF := mapredfunc(predval, args$mapredfs)]
+    planets.pred[!is.na(predval), predvalMAS := mapredfunc(predval, args$mapredfs*2)]
 
     # calculate the predEff based on the prediction type
     if (args$predtype == 'absolute') {
@@ -2515,8 +2515,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 verbose=F,
                 doplot=F,
                 mapredsm=x[1],
-                mapredfact=x[2],
-                maprice=x[3],
+                mapredfs=x[2],
+                mapricefs=x[3],
                 mapricetype=mapricetypes[[x[4]]],
                 predtype=predtypes[[x[5]]],
                 cordir=x[6],
@@ -2565,7 +2565,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                  planetenergymax, planetzodenergymax)
 
     panalogyCols <- planetsLonGCols[5:length(planetsLonGCols)]
-    varnames <- c('mapredsm', 'mapredfact', 'maprice', 'mapricetype', 'predtype', 'cordir', 'degsplit', 'threshold', 'energymode',
+    varnames <- c('mapredsm', 'mapredfs', 'mapricefs', 'mapricetype', 'predtype', 'cordir', 'degsplit', 'threshold', 'energymode',
                   'energygrowthsp', 'energyret', 'alignmove', 'pricemadir', panalogyCols, aspOrbsCols, planetsCombLonCols, aspectspolaritycols,
                   aspectsEnergyCols, planetsEnergyCols, planetsZodEnergyCols)
 
@@ -2615,8 +2615,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 verbose=F,
                 doplot=F,
                 mapredsm=x[1],
-                mapredfact=x[2],
-                maprice=x[3],
+                mapredfs=x[2],
+                mapricefs=x[3],
                 mapricetype=mapricetypes[[x[4]]],
                 predtype=predtypes[[x[5]]],
                 cordir=x[6],
@@ -2647,10 +2647,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   #planets.security <- merge(planets, security, by='Date')
   #planets.security <- subset(planets.security, !is.na(Eff) & Date >= as.Date(tsdate) & Date <= as.Date(tedate))
-  #pdf(npath(paste("~/", plotfile, "_SMA", maprice, ".pdf", sep='')), width = 11, height = 8, family='Helvetica', pointsize=12)
+  #pdf(npath(paste("~/", plotfile, "_SMA", mapricefs, ".pdf", sep='')), width = 11, height = 8, family='Helvetica', pointsize=12)
   #for (curcol in planetsLonGCols) {
-  #  p1 <- ggplot(aes_string(x=curcol, fill="Eff"), data=planets.security) + geom_bar(position="fill") + theme(axis.text.x = element_text(angle = 90, size = 5)) + xlab(curcol)  + ggtitle(paste("Significance Planets LONG groups SMA", maprice)) + geom_hline(yintercept=seq(0, 1, by=0.1)) + scale_fill_grey()
-  #  #p1 <- qplot(x=get(curcol), y=val2, geom='boxplot', data=planets.security) + theme(axis.text.x = element_text(angle = 85, size = 7)) + xlab(curcol) + ggtitle(paste("Significance Planets LONG groups SMA", maprice))
+  #  p1 <- ggplot(aes_string(x=curcol, fill="Eff"), data=planets.security) + geom_bar(position="fill") + theme(axis.text.x = element_text(angle = 90, size = 5)) + xlab(curcol)  + ggtitle(paste("Significance Planets LONG groups SMA", mapricefs)) + geom_hline(yintercept=seq(0, 1, by=0.1)) + scale_fill_grey()
+  #  #p1 <- qplot(x=get(curcol), y=val2, geom='boxplot', data=planets.security) + theme(axis.text.x = element_text(angle = 85, size = 7)) + xlab(curcol) + ggtitle(paste("Significance Planets LONG groups SMA", mapricefs))
   #  print(p1)
   #}
   #dev.off()
