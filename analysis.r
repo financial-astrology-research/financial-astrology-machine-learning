@@ -371,12 +371,12 @@ openSecurity <- function(security_file, mapricetype, mapricefs, mapricesl, datef
 
   if (pricemadir == 1) {
     security[, MidMAF := mapricefunc(Mid, n=mapricefs)]
-    security[, MidMAS := mapricefunc(Mid, n=mapricefs * mapricesl)]
+    security[, MidMAS := mapricefunc(Mid, n=round(mapricefs * mapricesl))]
     security[, val := MidMAF-MidMAS]
   }
   else if (pricemadir == 2) {
     security[, MidMAF := rev(mapricefunc(rev(Mid), n=mapricefs))]
-    security[, MidMAS := rev(mapricefunc(rev(Mid), n=mapricefs * mapricesl))]
+    security[, MidMAS := rev(mapricefunc(rev(Mid), n=round(mapricefs * mapricesl)))]
     security[, val := MidMAS-MidMAF]
   }
   else {
@@ -2333,7 +2333,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     # remove NAs and apply MAs
     planets.pred[!is.na(predval), predvalMAF := mapredfunc(predval, args$mapredfs)]
-    planets.pred[!is.na(predval), predvalMAS := mapredfunc(predval, args$mapredfs * args$mapredsl)]
+    planets.pred[!is.na(predval), predvalMAS := mapredfunc(predval, round(args$mapredfs * args$mapredsl))]
 
     # calculate the predEff based on the prediction type
     if (args$predtype == 'absolute') {
@@ -2483,7 +2483,13 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     }
 
     # calculate the matches difference
-    matches.d <- (matches.t / (matches.t + matches.f)) * 100
+    if (matches.t == 0 && matches.f == 0) {
+      matches.d <- 0
+    }
+    else {
+      matches.d <- (matches.t / (matches.t + matches.f)) * 100
+    }
+
     res <- list(correlation=correlation, volatility=volatility, matches.t=matches.t, matches.f=matches.f, matches.d=matches.d)
     return(res)
   }
