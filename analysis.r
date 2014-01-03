@@ -2276,7 +2276,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     sout <- with(args, paste("testPlanetsSignificanceRelative('testSolution', securityfile=", shQuote(securityfile), ", planetsfile=", shQuote(planetsfile),
                              ", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate),
                              ", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate),
-                             ", mapredslow=", mapredslow, ", mapredfact=", mapredfact, ", maprice=", maprice,
+                             ", mapredsm=", mapredsm, ", mapredfact=", mapredfact, ", maprice=", maprice,
                              ", mapricetype=", shQuote(mapricetype),
                              ", predtype=", shQuote(predtype), ", cordir=", cordir, ", pricemadir=", pricemadir, ", degsplit=", degsplit, ", threshold=", threshold,
                              ", energymode=", energymode, ", energygrowthsp=", energygrowthsp, ", energyret=", energyret, ", alignmove=", alignmove,
@@ -2317,7 +2317,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     snippet <- paste(strwrap(sout, width=170), collapse="\n")
 
     # smoth the prediction serie
-    planets.pred[, predval := mapredfunc(predRaw, args$mapredslow)]
+    planets.pred[, predval := mapredfunc(predRaw, args$mapredsm)]
     # negative correlation invert prediction
     if (args$cordir == 1) {
       planets.pred[, predval := predval * -1]
@@ -2514,7 +2514,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 dateformat=dateformat,
                 verbose=F,
                 doplot=F,
-                mapredslow=x[1],
+                mapredsm=x[1],
                 mapredfact=x[2],
                 maprice=x[3],
                 mapricetype=mapricetypes[[x[4]]],
@@ -2565,7 +2565,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                  planetenergymax, planetzodenergymax)
 
     panalogyCols <- planetsLonGCols[5:length(planetsLonGCols)]
-    varnames <- c('mapredslow', 'mapredfact', 'maprice', 'mapricetype', 'predtype', 'cordir', 'degsplit', 'threshold', 'energymode',
+    varnames <- c('mapredsm', 'mapredfact', 'maprice', 'mapricetype', 'predtype', 'cordir', 'degsplit', 'threshold', 'energymode',
                   'energygrowthsp', 'energyret', 'alignmove', 'pricemadir', panalogyCols, aspOrbsCols, planetsCombLonCols, aspectspolaritycols,
                   aspectsEnergyCols, planetsEnergyCols, planetsZodEnergyCols)
 
@@ -2614,7 +2614,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 dateformat=dateformat,
                 verbose=F,
                 doplot=F,
-                mapredslow=x[1],
+                mapredsm=x[1],
                 mapredfact=x[2],
                 maprice=x[3],
                 mapricetype=mapricetypes[[x[4]]],
