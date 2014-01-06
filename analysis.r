@@ -2553,7 +2553,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   optimizeRelativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, fittype, dateformat) {
     cat("---------------------------- Initialize optimization ----------------------------------\n\n")
     dsmin <- 1
-    dsmax <- 3
+    dsmax <- 5
     panalogymin <- rep(1, length(planetsBaseCols))
     panalogymax <- rep(6, length(planetsBaseCols))
     orbsmin <- rep(1, length(deforbs))
@@ -2569,7 +2569,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     minvals <- c( 2,  2, 3,  2, 3, 1, 1, 0, dsmin,  0, 1, 0, -20, -20, 1, panalogymin, orbsmin, polaritymin, aspectenergymin,
                  planetenergymin, planetzodenergymin)
-    maxvals <- c(10, 15, 8, 20, 8, 4, 2, 1, dsmax, 30, 2, 9,  20,  20, 2, panalogymax, orbsmax, polaritymax, aspectenergymax,
+    maxvals <- c(10, 15, 6, 20, 6, 4, 2, 1, dsmax, 30, 2, 9,  20,  20, 2, panalogymax, orbsmax, polaritymax, aspectenergymax,
                  planetenergymax, planetzodenergymax)
 
     panalogyCols <- planetsLonGCols[5:length(planetsLonGCols)]
