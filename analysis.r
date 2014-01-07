@@ -2276,9 +2276,9 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     sout <- with(args, paste("testPlanetsSignificanceRelative('testSolution', securityfile=", shQuote(securityfile), ", planetsfile=", shQuote(planetsfile),
                              ", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate),
                              ", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate),
-                             ", mapredsm=", mapredsm, ", mapredfs=", mapredfs, ", mapredsl=", mapredsl, ", mapricefs=", mapricefs, ", mapricesl=", mapricesl,
+                             ", mapredsm=", mapredsm, ", predcut=", predcut,", mapricefs=", mapricefs, ", mapricesl=", mapricesl,
                              ", mapricetype=", shQuote(mapricetype),
-                             ", predtype=", shQuote(predtype), ", cordir=", cordir, ", pricemadir=", pricemadir, ", degsplit=", degsplit, ", threshold=", threshold,
+                             ", cordir=", cordir, ", pricemadir=", pricemadir, ", degsplit=", degsplit, ", threshold=", threshold,
                              ", energymode=", energymode, ", energygrowthsp=", energygrowthsp, ", energyret=", energyret, ", alignmove=", alignmove,
                              ", panalogy=c(", paste(shQuote(panalogy), collapse=", "), ")",
                              ", cusorbs=c(", paste(cusorbs, collapse=", "), ")",
@@ -2331,28 +2331,14 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       planets.pred[, predval := c(rep(NA, abs(args$alignmove)), predval[1:(length(predval)-abs(args$alignmove))])]
     }
 
-    # remove NAs and apply MAs
-    planets.pred[!is.na(predval), predvalMAF := mapredfunc(predval, args$mapredfs)]
-    planets.pred[!is.na(predval), predvalMAS := mapredfunc(predval, round(args$mapredfs * args$mapredsl))]
-
-    # calculate the predEff based on the prediction type
-    if (args$predtype == 'absolute') {
-      planets.pred[, predEff := predval]
-    }
-    else if (args$predtype == 'relative') {
-      planets.pred[, predEff := predvalMAF-predvalMAS]
-    }
-    else {
-      stop("No valid prediction type was provided.")
-    }
-
+    planets.pred[, predEff := predval]
     # determine a factor prediction response
-    planets.pred[, predFactor := cut(predEff, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
+    planets.pred[, predFactor := cut(predEff, c(-10000, args$predcut, 10000), labels=c('down', 'up'), right=FALSE)]
     # plot solution snippet if doplot is enabled
     if (args$doplot) plotSolutionSnippet(snippet)
     # helper function to process predictions by year
     pltitle <- paste('Yearly prediction VS price movement for ', args$securityfile)
-    processYearPredictions <- function(x) processPredictions(x, args$predtype, pltitle, args$doplot)
+    processYearPredictions <- function(x) processPredictions(x, pltitle, args$doplot)
     # compute test predictions by year
     res.test <- planets.pred[Year.1 %in% years.test, processYearPredictions(.SD), by=Year.1]
     resMean <- function(x) round(mean(x), digits=2)
@@ -2410,7 +2396,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(list(fitness=fitness))
   }
 
-  processPredictions <- function(planets.test, predtype, pltitle, doplot) {
+  processPredictions <- function(planets.test, pltitle, doplot) {
     planets.pred <- copy(planets.test)
     zerores <- list(correlation=0.0, volatility=0.0, matches.t=as.integer(0), matches.f=as.integer(0), matches.d=as.integer(0))
 
@@ -2500,7 +2486,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     predtypes <- c('absolute',  'relative')
     pricetypes <- c('averages',  'daily', 'priceaverage')
     analogytypes <- c(NA, 'SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG')
-    pa.e = 16+length(planetsBaseCols)
+    pa.e = 14+length(planetsBaseCols)
     co.e = pa.e+length(deforbs)
     api.e = co.e+length(defpolarity)
     ae.e = api.e+length(defaspectsenergy)
@@ -2521,21 +2507,19 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 verbose=F,
                 doplot=F,
                 mapredsm=x[1],
-                mapredfs=x[2],
-                mapredsl=x[3]/2,
-                mapricefs=x[4],
-                mapricesl=x[5]/2,
-                mapricetype=mapricetypes[[x[6]]],
-                predtype=predtypes[[x[7]]],
-                cordir=x[8],
-                degsplit=x[9],
-                threshold=x[10]/100,
-                energymode=x[11],
-                energygrowthsp=x[12]/10,
-                energyret=adjustEnergy(x[13]),
-                alignmove=x[14],
-                pricemadir=x[15],
-                panalogy=analogytypes[x[16:(pa.e-1)]],
+                predcut=x[2],
+                mapricefs=x[3],
+                mapricesl=x[4]/2,
+                mapricetype=mapricetypes[[x[5]]],
+                cordir=x[6],
+                degsplit=x[7],
+                threshold=x[8]/100,
+                energymode=x[9],
+                energygrowthsp=x[10]/10,
+                energyret=adjustEnergy(x[11]),
+                alignmove=x[12],
+                pricemadir=x[13],
+                panalogy=analogytypes[x[14:(pa.e-1)]],
                 cusorbs=x[pa.e:(co.e-1)],
                 aspectspolarity=x[co.e:(api.e-1)],
                 aspectsenergy=adjustEnergy(x[api.e:(ae.e-1)]),
@@ -2567,13 +2551,13 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planetzodenergymin <- rep(-20, length(defplanetszodenergy))
     planetzodenergymax <- rep(20, length(defplanetszodenergy))
 
-    minvals <- c( 2,  2, 3,  2, 3, 1, 1, 0, dsmin,  0, 1, 0, -20, -20, 1, panalogymin, orbsmin, polaritymin, aspectenergymin,
+    minvals <- c( 2, -10,  2, 3, 1, 0, dsmin,  0, 1, 0, -20, -20, 1, panalogymin, orbsmin, polaritymin, aspectenergymin,
                  planetenergymin, planetzodenergymin)
-    maxvals <- c(10, 15, 6, 20, 6, 4, 2, 1, dsmax, 30, 2, 9,  20,  20, 2, panalogymax, orbsmax, polaritymax, aspectenergymax,
+    maxvals <- c(10,  10, 20, 6, 4, 1, dsmax, 30, 2, 9,  20,  20, 2, panalogymax, orbsmax, polaritymax, aspectenergymax,
                  planetenergymax, planetzodenergymax)
 
     panalogyCols <- planetsLonGCols[5:length(planetsLonGCols)]
-    varnames <- c('mapredsm', 'mapredfs', 'mapredsl', 'mapricefs', 'mapricesl', 'mapricetype', 'predtype', 'cordir', 'degsplit', 'threshold', 'energymode',
+    varnames <- c('mapredsm', 'predcut', 'mapricefs', 'mapricesl', 'mapricetype','cordir', 'degsplit', 'threshold', 'energymode',
                   'energygrowthsp', 'energyret', 'alignmove', 'pricemadir', panalogyCols, aspOrbsCols, planetsCombLonCols, aspectspolaritycols,
                   aspectsEnergyCols, planetsEnergyCols, planetsZodEnergyCols)
 
@@ -2623,10 +2607,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 verbose=F,
                 doplot=F,
                 mapredsm=x[1],
-                mapredfs=x[2],
                 mapricefs=x[3],
                 mapricetype=mapricetypes[[x[4]]],
-                predtype=predtypes[[x[5]]],
                 cordir=x[6],
                 degsplit=x[7],
                 threshold=x[8]/100,
