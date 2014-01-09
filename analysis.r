@@ -2424,16 +2424,14 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       x_dates <- seq(min(planets.pred$Date), max(planets.pred$Date), by=interval)
 
       if (all(is.na(planets.pred$Mid))) {
-        p1 <- ggplot() + geom_path(data = planets.pred, aes(Date, predval), size=1) +
-        geom_path(data = planets.pred, aes(Date, predvalMAF), colour="blue", size=0.7, na.rm=T) +
-        geom_path(data = planets.pred, aes(Date, predvalMAS), colour="red", sizee=0.7, na.rm=T)
+        p1 <- ggplot() + geom_path(data = planets.pred, aes(Date, predval), size=1)
       }
       else {
         # split security & prediction data with it's corresponding MAs
         planets.sec.plot <- planets.pred[, c('Date', 'Mid', 'MidMAF', 'MidMAS'), with=F]
         planets.sec.plot[, type := 'security']
         setnames(planets.sec.plot, c('Date', 'val', 'valMAF', 'valMAS', 'type'))
-        planets.pred.plot <- planets.pred[, c('Date', 'predval', 'predvalMAF', 'predvalMAS'), with=F]
+        planets.pred.plot <- planets.pred[, c('Date', 'predval', 'predval', 'predval'), with=F]
         planets.pred.plot[, type := 'prediction']
         setnames(planets.pred.plot, c('Date', 'val', 'valMAF', 'valMAS', 'type'))
         planets.plot <- rbindlist(list(planets.pred.plot, planets.sec.plot))
