@@ -2278,7 +2278,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                              ", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate),
                              ", mapredsm=", mapredsm, ", predcut=", predcut,", mapricefs=", mapricefs, ", mapricesl=", mapricesl,
                              ", mapricetype=", shQuote(mapricetype),
-                             ", cordir=", cordir, ", pricemadir=", pricemadir, ", degsplit=", degsplit, ", threshold=", threshold,
+                             ", pricemadir=", pricemadir, ", degsplit=", degsplit, ", threshold=", threshold,
                              ", energymode=", energymode, ", energygrowthsp=", energygrowthsp, ", energyret=", energyret, ", alignmove=", alignmove,
                              ", panalogy=c(", paste(shQuote(panalogy), collapse=", "), ")",
                              ", cusorbs=c(", paste(cusorbs, collapse=", "), ")",
@@ -2318,11 +2318,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     # smoth the prediction serie
     planets.pred[, predval := mapredfunc(predRaw, args$mapredsm)]
-    # negative correlation invert prediction
-    if (args$cordir == 1) {
-      planets.pred[, predval := predval * -1]
-    }
-
     # apply alignment to left & right
     if (args$alignmove > 0) {
       planets.pred[, predval := c(predval[(args$alignmove+1):length(predval)], rep(NA, args$alignmove))]
@@ -2484,7 +2479,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     predtypes <- c('absolute',  'relative')
     pricetypes <- c('averages',  'daily', 'priceaverage')
     analogytypes <- c(NA, 'SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG')
-    pa.e = 14+length(planetsBaseCols)
+    pa.e = 13+length(planetsBaseCols)
     co.e = pa.e+length(deforbs)
     api.e = co.e+length(defpolarity)
     ae.e = api.e+length(defaspectsenergy)
@@ -2509,15 +2504,14 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 mapricefs=x[3],
                 mapricesl=x[4]/2,
                 mapricetype=mapricetypes[[x[5]]],
-                cordir=x[6],
-                degsplit=x[7],
-                threshold=x[8]/100,
-                energymode=x[9],
-                energygrowthsp=x[10]/10,
-                energyret=adjustEnergy(x[11]),
-                alignmove=x[12],
-                pricemadir=x[13],
-                panalogy=analogytypes[x[14:(pa.e-1)]],
+                degsplit=x[6],
+                threshold=x[7]/100,
+                energymode=x[8],
+                energygrowthsp=x[9]/10,
+                energyret=adjustEnergy(x[10]),
+                alignmove=x[11],
+                pricemadir=x[12],
+                panalogy=analogytypes[x[13:(pa.e-1)]],
                 cusorbs=x[pa.e:(co.e-1)],
                 aspectspolarity=x[co.e:(api.e-1)],
                 aspectsenergy=adjustEnergy(x[api.e:(ae.e-1)]),
@@ -2549,13 +2543,13 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planetzodenergymin <- rep(-20, length(defplanetszodenergy))
     planetzodenergymax <- rep(20, length(defplanetszodenergy))
 
-    minvals <- c( 2, -5,  2, 3, 1, 0, dsmin,  0, 1, 0, -20, -20, 1, panalogymin, orbsmin, polaritymin, aspectenergymin,
+    minvals <- c( 2, -5,  2, 3, 1, dsmin,  0, 1, 0, -20, -20, 1, panalogymin, orbsmin, polaritymin, aspectenergymin,
                  planetenergymin, planetzodenergymin)
-    maxvals <- c(10,  5, 20, 6, 4, 1, dsmax, 30, 2, 9,  20,  20, 2, panalogymax, orbsmax, polaritymax, aspectenergymax,
+    maxvals <- c(10,  5, 20, 6, 4, dsmax, 30, 2, 9,  20,  20, 2, panalogymax, orbsmax, polaritymax, aspectenergymax,
                  planetenergymax, planetzodenergymax)
 
     panalogyCols <- planetsLonGCols[5:length(planetsLonGCols)]
-    varnames <- c('mapredsm', 'predcut', 'mapricefs', 'mapricesl', 'mapricetype','cordir', 'degsplit', 'threshold', 'energymode',
+    varnames <- c('mapredsm', 'predcut', 'mapricefs', 'mapricesl', 'mapricetype', 'degsplit', 'threshold', 'energymode',
                   'energygrowthsp', 'energyret', 'alignmove', 'pricemadir', panalogyCols, aspOrbsCols, planetsCombLonCols, aspectspolaritycols,
                   aspectsEnergyCols, planetsEnergyCols, planetsZodEnergyCols)
 
@@ -2607,7 +2601,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 mapredsm=x[1],
                 mapricefs=x[3],
                 mapricetype=mapricetypes[[x[4]]],
-                cordir=x[6],
                 degsplit=x[7],
                 threshold=x[8]/100,
                 energymode=x[9],
