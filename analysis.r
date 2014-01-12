@@ -2276,7 +2276,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     sout <- with(args, paste("testPlanetsSignificanceRelative('testSolution', securityfile=", shQuote(securityfile), ", planetsfile=", shQuote(planetsfile),
                              ", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate),
                              ", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate),
-                             ", mapredsm=", mapredsm, ", predcut=", predcut,", mapricefs=", mapricefs, ", mapricesl=", mapricesl,
+                             ", mapredsm=", mapredsm, ", mapricefs=", mapricefs, ", mapricesl=", mapricesl,
                              ", mapricetype=", shQuote(mapricetype),
                              ", pricemadir=", pricemadir, ", degsplit=", degsplit, ", threshold=", threshold,
                              ", energymode=", energymode, ", energygrowthsp=", energygrowthsp, ", energyret=", energyret, ", alignmove=", alignmove,
@@ -2328,7 +2328,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     planets.pred[, predEff := predval]
     # determine a factor prediction response
-    planets.pred[, predFactor := cut(predEff, c(-10000, args$predcut, 10000), labels=c('down', 'up'), right=FALSE)]
+    planets.pred[, predFactor := cut(predEff, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
     # plot solution snippet if doplot is enabled
     if (args$doplot) plotSolutionSnippet(snippet)
     # helper function to process predictions by year
@@ -2479,7 +2479,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     predtypes <- c('absolute',  'relative')
     pricetypes <- c('averages',  'daily', 'priceaverage')
     analogytypes <- c(NA, 'SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG')
-    pa.e = 13+length(planetsBaseCols)
+    pa.e = 12+length(planetsBaseCols)
     co.e = pa.e+length(deforbs)
     api.e = co.e+length(defpolarity)
     ae.e = api.e+length(defaspectsenergy)
@@ -2500,18 +2500,17 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 verbose=F,
                 doplot=F,
                 mapredsm=x[1],
-                predcut=x[2],
-                mapricefs=x[3],
-                mapricesl=x[4]/2,
-                mapricetype=mapricetypes[[x[5]]],
-                degsplit=x[6],
-                threshold=x[7]/100,
-                energymode=x[8],
-                energygrowthsp=x[9]/10,
-                energyret=adjustEnergy(x[10]),
-                alignmove=x[11],
-                pricemadir=x[12],
-                panalogy=analogytypes[x[13:(pa.e-1)]],
+                mapricefs=x[2],
+                mapricesl=x[3]/2,
+                mapricetype=mapricetypes[[x[4]]],
+                degsplit=x[5],
+                threshold=x[6]/100,
+                energymode=x[7],
+                energygrowthsp=x[8]/10,
+                energyret=adjustEnergy(x[9]),
+                alignmove=x[10],
+                pricemadir=x[11],
+                panalogy=analogytypes[x[12:(pa.e-1)]],
                 cusorbs=x[pa.e:(co.e-1)],
                 aspectspolarity=x[co.e:(api.e-1)],
                 aspectsenergy=adjustEnergy(x[api.e:(ae.e-1)]),
@@ -2543,13 +2542,13 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planetzodenergymin <- rep(-20, length(defplanetszodenergy))
     planetzodenergymax <- rep(20, length(defplanetszodenergy))
 
-    minvals <- c( 2, -5,  2, 3, 1, dsmin,  0, 1, 0, -20, -20, 1, panalogymin, orbsmin, polaritymin, aspectenergymin,
+    minvals <- c( 2, 2, 3, 1, dsmin,  0, 1, 0, -20, -20, 1, panalogymin, orbsmin, polaritymin, aspectenergymin,
                  planetenergymin, planetzodenergymin)
-    maxvals <- c(10,  5, 20, 6, 4, dsmax, 30, 2, 9,  20,  20, 2, panalogymax, orbsmax, polaritymax, aspectenergymax,
+    maxvals <- c(10, 20, 6, 4, dsmax, 30, 2, 9,  20,  20, 2, panalogymax, orbsmax, polaritymax, aspectenergymax,
                  planetenergymax, planetzodenergymax)
 
     panalogyCols <- planetsLonGCols[5:length(planetsLonGCols)]
-    varnames <- c('mapredsm', 'predcut', 'mapricefs', 'mapricesl', 'mapricetype', 'degsplit', 'threshold', 'energymode',
+    varnames <- c('mapredsm', 'mapricefs', 'mapricesl', 'mapricetype', 'degsplit', 'threshold', 'energymode',
                   'energygrowthsp', 'energyret', 'alignmove', 'pricemadir', panalogyCols, aspOrbsCols, planetsCombLonCols, aspectspolaritycols,
                   aspectsEnergyCols, planetsEnergyCols, planetsZodEnergyCols)
 
