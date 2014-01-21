@@ -79,7 +79,10 @@ aspectTypesCols <- c('SUT', 'MOT', 'MET', 'VET', 'MAT', 'JUT', 'SAT', 'URT', 'NE
 planetsBaseCols <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "SN", "NN", "CE", "JN", "VS", "PA", "CH")
 
 # Aspects and orbs
-aspects = c(0, 30, 45, 60, 72, 90, 120, 135, 150, 180)
+aspects = c(0, 30, 45, 60, 90, 120, 135, 150, 180)
+deforbs <- c(4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0)
+defaspectsenergy <- c(10, 2, 2, 3, 7, 5, 2, 2, 10)
+defaspectspolarity <- c(1, 0, 1, 0, 1, 0, 0, 0)
 
 aspOrbsCols <- as.character(apply(expand.grid(aspects, planetsBaseCols[1:(length(planetsBaseCols)-1)]), 1, function(x) paste(x[2], x[1], sep='')))
 zodDegrees <- seq(0, 360, by=2)
@@ -112,8 +115,7 @@ npath <- function(path) {
   normalizePath(path.expand(path))
 }
 
-deforbs <- c(4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0)
-deforbsmatrix = matrix(deforbs, nrow = 1, ncol = 10, dimnames = list('orbs', aspects))
+deforbsmatrix = matrix(deforbs, nrow = 1, ncol = length(deforbs), dimnames = list('orbs', aspects))
 defconjpolarity <- list(SULONMOLON=1, SULONMELON=1, SULONVELON=1, SULONMALON=0, SULONJULON=1, SULONSALON=0, SULONURLON=1, SULONNELON=0, SULONPLLON=0,
                         SULONSNLON=1, SULONNNLON=1, MOLONMELON=1, MOLONVELON=1, MOLONMALON=0, MOLONJULON=1, MOLONSALON=0, MOLONURLON=0, MOLONNELON=1,
                         MOLONPLLON=0, MOLONSNLON=1, MOLONNNLON=1, MELONVELON=1, MELONMALON=0, MELONJULON=1, MELONSALON=0, MELONURLON=1, MELONNELON=1,
@@ -127,11 +129,9 @@ defconjpolaritymatrix <- matrix(0, nrow = length(planetsCombLonCols), ncol = 1, 
 # set default polarity for aspects
 defconjpolaritymatrix[names(defconjpolarity), '0'] <- as.integer(defconjpolarity)
 defconjpolarity <- as.integer(defconjpolaritymatrix)
-defaspectspolarity <- c(1, 0, 1, 1, 0, 1, 0, 0, 0)
 defpolarity <- c(defconjpolarity, defaspectspolarity)
 aspectspolaritycols <- aspects[2:length(aspects)]
 
-defaspectsenergy <- c(10, 2, 2, 5, 3, 7, 5, 2, 2, 10)
 defplanetsenergy <- c(5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5)
 defpanalogy <- list(c(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18),
                     c(2, 3, 4, 5, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2),
