@@ -79,10 +79,10 @@ aspectTypesCols <- c('SUT', 'MOT', 'MET', 'VET', 'MAT', 'JUT', 'SAT', 'URT', 'NE
 planetsBaseCols <- c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "SN", "NN", "CE", "JN", "VS", "PA", "CH")
 
 # Aspects and orbs
-aspects = c(0, 30, 45, 60, 90, 120, 135, 150, 180)
-deforbs <- c(4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0)
-defaspectsenergy <- c(10, 2, 2, 3, 7, 5, 2, 2, 10)
-defaspectspolarity <- c(1, 0, 1, 0, 1, 0, 0, 0)
+aspects = c(0, 30, 60, 90, 120, 135, 150, 180)
+deforbs <- c(4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0)
+defaspectsenergy <- c(10, 2, 3, 7, 5, 2, 2, 10)
+defaspectspolarity <- c(1, 1, 0, 1, 0, 0, 0)
 
 aspOrbsCols <- as.character(apply(expand.grid(aspects, planetsBaseCols[1:(length(planetsBaseCols)-1)]), 1, function(x) paste(x[2], x[1], sep='')))
 zodDegrees <- seq(0, 360, by=2)
@@ -2556,7 +2556,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planetslist <- multipleOpenPlanets(planetsfile, degsplits)
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=TRUE,
-       monitor=gaMonitor, maxiter=200, run=50, popSize=500, min=minvals, max=maxvals, pcrossover = 0.5, pmutation = 0.3,
+       monitor=gaMonitor, maxiter=200, run=50, popSize=500, min=minvals, max=maxvals, pcrossover = 0.5, pmutation = 0.2,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
        planetslist=planetslist, securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate,
        vedate=vedate, csdate=csdate, cedate=cedate, fittype=fittype, dateformat=dateformat)
