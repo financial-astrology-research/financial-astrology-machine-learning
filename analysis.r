@@ -76,7 +76,7 @@ aspectsCombList <- aspectsList
 aspectTypesCols <- c('SUT', 'MOT', 'MET', 'VET', 'MAT', 'JUT', 'SAT', 'URT', 'NET', 'PLT')
 
 # planets cols
-planetsBaseCols <- c("SU", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "NN", "CE", "VS", "CH")
+planetsBaseCols <- c("SU", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "NN", "CE", "VS")
 
 # Aspects and orbs
 aspects = c(0, 30, 60, 90, 120, 150, 180)
@@ -129,14 +129,14 @@ defconjpolarity <- as.integer(defconjpolaritymatrix)
 defpolarity <- c(defconjpolarity, defaspectspolarity)
 aspectspolaritycols <- aspects[2:length(aspects)]
 
-defplanetsenergy <- c(5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5)
-defpanalogy <- list(c(2, 3, 4, 5, 1, 1, 1, 1, 1, 1, 6, 7, 1),
-                    c(2, 3, 4, 5, 2, 2, 2, 2, 2, 2, 6, 7, 2),
-                    c(2, 3, 4, 5, 3, 3, 3, 3, 3, 3, 6, 7, 3),
-                    c(2, 3, 4, 5, 4, 4, 4, 4, 4, 4, 6, 7, 4),
-                    c(2, 3, 4, 5, 5, 5, 5, 5, 5, 5, 6, 7, 5),
-                    c(2, 3, 4, 5, 6, 6, 6, 6, 6, 6, 6, 7, 6),
-                    c(2, 3, 4, 5, 7, 7, 7, 7, 7, 7, 6, 7, 7))
+defplanetsenergy <- c(5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5)
+defpanalogy <- list(c(2, 3, 4, 5, 1, 1, 1, 1, 1, 1, 6, 7),
+                    c(2, 3, 4, 5, 2, 2, 2, 2, 2, 2, 6, 7),
+                    c(2, 3, 4, 5, 3, 3, 3, 3, 3, 3, 6, 7),
+                    c(2, 3, 4, 5, 4, 4, 4, 4, 4, 4, 6, 7),
+                    c(2, 3, 4, 5, 5, 5, 5, 5, 5, 5, 6, 7),
+                    c(2, 3, 4, 5, 6, 6, 6, 6, 6, 6, 6, 7),
+                    c(2, 3, 4, 5, 7, 7, 7, 7, 7, 7, 6, 7))
 
 zodSignsCols <- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CA', 'AC', 'PI')
 planetsZodEnergyCols <- as.character(apply(expand.grid(planetsLonCols, zodSignsCols), 1, function(x) paste(x[1], '_', x[2], sep='')))
@@ -151,11 +151,10 @@ zodenergy.ne <- c( 01,  01,  01,  01,  01, -10,  01,  01,  01,  01,  01,  10)
 zodenergy.pl <- c( 01, -10,  01,  01,  01,  01,  01,  10,  01,  01,  01,  01)
 zodenergy.nn <- c( 01,  01,  01,  01,  10,  01,  01,  01,  01,  01,  01,  01)
 zodenergy.ce <- c( 01,  01,  01,  01,  10,  01,  01,  01,  01,  01,  01,  01)
-zodenergy.ch <- c( 01,  01,  01,  01,  10,  01,  01,  01,  01,  01,  01,  01)
 zodenergy.vs <- c( 01,  01,  01,  01,  10,  01,  01,  01,  01,  01,  01,  01)
 
 defplanetszodenergy <- c(zodenergy.su, zodenergy.me, zodenergy.ve, zodenergy.ma, zodenergy.ju, zodenergy.sa, zodenergy.ur,
-                         zodenergy.ne, zodenergy.pl, zodenergy.nn, zodenergy.ce, zodenergy.ch, zodenergy.vs)
+                         zodenergy.ne, zodenergy.pl, zodenergy.nn, zodenergy.ce, zodenergy.vs)
 
 # a function that returns the position of n-th largest
 maxn <- function(x, n) {
