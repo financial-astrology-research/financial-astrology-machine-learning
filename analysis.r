@@ -76,7 +76,7 @@ aspectsCombList <- aspectsList
 aspectTypesCols <- c('SUT', 'MOT', 'MET', 'VET', 'MAT', 'JUT', 'SAT', 'URT', 'NET', 'PLT')
 
 # planets cols
-planetsBaseCols <- c("SU", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "NN", "CE", "VS")
+planetsBaseCols <- c('SU', 'MO', 'ME', 'VE', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN', 'CE', 'VS')
 
 # Aspects and orbs
 aspects = c(0, 30, 45, 60, 72, 90, 120, 135, 150, 180)
@@ -116,11 +116,13 @@ npath <- function(path) {
 }
 
 deforbsmatrix = matrix(deforbs, nrow = 1, ncol = length(deforbs), dimnames = list('orbs', aspects))
-defconjpolarity <- list(SULONMELON=1, SULONVELON=1, SULONMALON=0, SULONJULON=1, SULONSALON=0, SULONURLON=1, SULONNELON=0, SULONPLLON=0, SULONNNLON=1,
-                        MELONVELON=1, MELONMALON=0, MELONJULON=1, MELONSALON=0, MELONURLON=1, MELONNELON=1, MELONPLLON=0, MELONNNLON=1, VELONMALON=0,
-                        VELONJULON=1, VELONSALON=0, VELONURLON=1, VELONNELON=1, VELONPLLON=1, VELONNNLON=1, MALONJULON=0, MALONSALON=0, MALONURLON=0,
-                        MALONNELON=0, MALONPLLON=0, MALONNNLON=0, JULONSALON=0, JULONURLON=1, JULONNELON=1, JULONPLLON=0, JULONNNLON=1, SALONURLON=0,
-                        SALONNELON=0, SALONPLLON=0, SALONNNLON=0, URLONNELON=0, URLONPLLON=0, URLONNNLON=0, NELONPLLON=0, NELONNNLON=0, PLLONNNLON=0)
+defconjpolarity <- list(SULONMOLON=1, SULONMELON=1, SULONVELON=1, SULONMALON=0, SULONJULON=1, SULONSALON=0, SULONURLON=1, SULONNELON=0, SULONPLLON=0,
+                        SULONNNLON=1, MOLONMELON=1, MOLONVELON=1, MOLONMALON=0, MOLONJULON=1, MOLONSALON=0, MOLONURLON=0, MOLONNELON=1, MOLONPLLON=0,
+                        MOLONNNLON=1, MELONVELON=1, MELONMALON=0, MELONJULON=1, MELONSALON=0, MELONURLON=1, MELONNELON=1, MELONPLLON=0, MELONNNLON=1,
+                        VELONMALON=0, VELONJULON=1, VELONSALON=0, VELONURLON=1, VELONNELON=1, VELONPLLON=1, VELONNNLON=1, MALONJULON=0, MALONSALON=0,
+                        MALONURLON=0, MALONNELON=0, MALONPLLON=0, MALONNNLON=0, JULONSALON=0, JULONURLON=1, JULONNELON=1, JULONPLLON=0, JULONNNLON=1,
+                        SALONURLON=0, SALONNELON=0, SALONPLLON=0, SALONNNLON=0, URLONNELON=0, URLONPLLON=0, URLONNNLON=0, NELONPLLON=0, NELONNNLON=0,
+                        PLLONNNLON=0)
 
 defconjpolaritymatrix <- matrix(0, nrow = length(planetsCombLonCols), ncol = 1, dimnames = list(planetsCombLonCols, c('0')))
 # set default polarity for aspects
@@ -129,19 +131,20 @@ defconjpolarity <- as.integer(defconjpolaritymatrix)
 defpolarity <- c(defconjpolarity, defaspectspolarity)
 aspectspolaritycols <- aspects[2:length(aspects)]
 
-defplanetsenergy <- c(5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5)
-defpanalogy <- list(c(2, 3, 4, 5, 8, 1, 1, 1, 1, 1, 6, 7),
-                    c(2, 3, 4, 5, 8, 2, 2, 2, 2, 2, 6, 7),
-                    c(2, 3, 4, 5, 8, 3, 3, 3, 3, 3, 6, 7),
-                    c(2, 3, 4, 5, 8, 4, 4, 4, 4, 4, 6, 7),
-                    c(2, 3, 4, 5, 8, 5, 5, 5, 5, 5, 6, 7),
-                    c(2, 3, 4, 5, 8, 6, 6, 6, 6, 6, 6, 7),
-                    c(2, 3, 4, 5, 8, 7, 7, 7, 7, 7, 6, 7),
-                    c(2, 3, 4, 5, 8, 8, 8, 8, 8, 8, 6, 7))
+defplanetsenergy <- c(5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5)
+defpanalogy <- list(c(2, 1, 3, 4, 5, 8, 1, 1, 1, 1, 1, 6, 7),
+                    c(2, 1, 3, 4, 5, 8, 2, 2, 2, 2, 2, 6, 7),
+                    c(2, 1, 3, 4, 5, 8, 3, 3, 3, 3, 3, 6, 7),
+                    c(2, 1, 3, 4, 5, 8, 4, 4, 4, 4, 4, 6, 7),
+                    c(2, 1, 3, 4, 5, 8, 5, 5, 5, 5, 5, 6, 7),
+                    c(2, 1, 3, 4, 5, 8, 6, 6, 6, 6, 6, 6, 7),
+                    c(2, 1, 3, 4, 5, 8, 7, 7, 7, 7, 7, 6, 7),
+                    c(2, 1, 3, 4, 5, 8, 8, 8, 8, 8, 8, 6, 7))
 
 zodSignsCols <- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CA', 'AC', 'PI')
 planetsZodEnergyCols <- as.character(apply(expand.grid(planetsLonCols, zodSignsCols), 1, function(x) paste(x[1], '_', x[2], sep='')))
 zodenergy.su <- c( 10,  01,  01,  01,  10,  01, -10,  01,  01,  01, -10,  01)
+zodenergy.mo <- c( 01,  10,  01,  10,  01,  01,  01, -10,  01, -10,  01,  01)
 zodenergy.me <- c( 01,  01,  10,  01,  01,  10,  01,  01, -10,  01,  01, -10)
 zodenergy.ve <- c(-10,  10,  01,  01,  01, -10,  10, -10,  01,  01,  01,  10)
 zodenergy.ma <- c( 10,  01,  01, -10,  01,  01, -10,  01,  01,  10,  01,  01)
@@ -154,8 +157,8 @@ zodenergy.nn <- c( 01,  01,  01,  01,  10,  01,  01,  01,  01,  01,  01,  01)
 zodenergy.ce <- c( 01,  01,  01,  01,  10,  01,  01,  01,  01,  01,  01,  01)
 zodenergy.vs <- c( 01,  01,  01,  01,  10,  01,  01,  01,  01,  01,  01,  01)
 
-defplanetszodenergy <- c(zodenergy.su, zodenergy.me, zodenergy.ve, zodenergy.ma, zodenergy.ju, zodenergy.sa, zodenergy.ur,
-                         zodenergy.ne, zodenergy.pl, zodenergy.nn, zodenergy.ce, zodenergy.vs)
+defplanetszodenergy <- c(zodenergy.su, zodenergy.mo, zodenergy.me, zodenergy.ve, zodenergy.ma, zodenergy.ju, zodenergy.sa,
+                         zodenergy.ur, zodenergy.ne, zodenergy.pl, zodenergy.nn, zodenergy.ce, zodenergy.vs)
 
 # a function that returns the position of n-th largest
 maxn <- function(x, n) {
