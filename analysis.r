@@ -132,14 +132,15 @@ defpolarity <- c(defconjpolarity, defaspectspolarity)
 aspectspolaritycols <- aspects[2:length(aspects)]
 
 defplanetsenergy <- c(5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5)
-defpanalogy <- list(c(2, 1, 3, 4, 5, 8, 1, 1, 1, 1, 1, 6, 7),
-                    c(2, 1, 3, 4, 5, 8, 2, 2, 2, 2, 2, 6, 7),
-                    c(2, 1, 3, 4, 5, 8, 3, 3, 3, 3, 3, 6, 7),
-                    c(2, 1, 3, 4, 5, 8, 4, 4, 4, 4, 4, 6, 7),
-                    c(2, 1, 3, 4, 5, 8, 5, 5, 5, 5, 5, 6, 7),
-                    c(2, 1, 3, 4, 5, 8, 6, 6, 6, 6, 6, 6, 7),
-                    c(2, 1, 3, 4, 5, 8, 7, 7, 7, 7, 7, 6, 7),
-                    c(2, 1, 3, 4, 5, 8, 8, 8, 8, 8, 8, 6, 7))
+defpanalogy <- list(c(2, 3, 4, 5, 6, 9, 1, 1, 1, 1, 1, 7, 8),
+                    c(2, 3, 4, 5, 6, 9, 2, 2, 2, 2, 2, 7, 8),
+                    c(2, 3, 4, 5, 6, 9, 3, 3, 3, 3, 3, 7, 8),
+                    c(2, 3, 4, 5, 6, 9, 4, 4, 4, 4, 4, 7, 8),
+                    c(2, 3, 4, 5, 6, 9, 5, 5, 5, 5, 5, 7, 8),
+                    c(2, 3, 4, 5, 6, 9, 6, 6, 6, 6, 6, 7, 8),
+                    c(2, 3, 4, 5, 6, 9, 7, 7, 7, 7, 7, 7, 8),
+                    c(2, 3, 4, 5, 6, 9, 8, 8, 8, 8, 8, 7, 8),
+                    c(2, 3, 4, 5, 6, 9, 9, 9, 9, 9, 9, 7, 8))
 
 zodSignsCols <- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CA', 'AC', 'PI')
 planetsZodEnergyCols <- as.character(apply(expand.grid(planetsLonCols, zodSignsCols), 1, function(x) paste(x[1], '_', x[2], sep='')))
@@ -2474,7 +2475,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     mapricetypes <- c('SMA', 'EMA', 'WMA', 'ZLEMA')
     predtypes <- c('absolute',  'relative')
     pricetypes <- c('averages',  'daily', 'priceaverage')
-    analogytypes <- c(NA, 'SULONG', 'MELONG', 'VELONG', 'MALONG', 'CELONG', 'VSLONG', 'JULONG')
+    analogytypes <- c(NA, 'SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'CELONG', 'VSLONG', 'JULONG')
     pa.e = 12+length(planetsBaseCols)
     co.e = pa.e+length(deforbs)
     api.e = co.e+length(defpolarity)
