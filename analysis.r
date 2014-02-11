@@ -1984,9 +1984,11 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   # Open multiple planets tables for different degsplit
-  multipleOpenPlanets <- function(planetsfile, degsplits) {
+  multipleOpenPlanets <- function(planetsfile, degsplits, cusorbs) {
+    orbsmatrix <- matrix(cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
     planetslist <- list()
     planetsorig <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""))
+    planetsorig <- processPlanetsAspects(planetsorig, orbsmatrix)
     # calculate the lon deg splits
     calculateLonGroups <- function(x, degsplit) {
       return(cut(x, seq(0, 360, by=degsplit)))
@@ -2098,7 +2100,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   # process the daily aspects energy
-  dayAspectsEnergy <- function(planets.day, panalogy, aspectspolarity, conjpolarity, aspectsenergy, planetsenergy, energygrowthsp) {
+  dayAspectsEnergy <- function(planets.day, panalogy, aspectspolarity, conjpolarity, aspectsenergy, planetsenergy, energygrowthsp, asporbs) {
     #planets.day <- trim(planets.day)
     curdate <- planets.day[['Date']]
     activecols <- planetsCombLonCols[grep(planets.day[['sigpatterns']], planetsCombLonCols, perl=T)]
@@ -2113,17 +2115,23 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     # build energy aspects table
     for (idx in 1:length(planets.day.asp)) {
+      aspect <- as.character(as.numeric(planets.day.asp[idx]))
       curcol <- names(planets.day.asp[idx])
+      curcolorb <- paste(curcol, 'ORB', sep='')
+      distance <- as.numeric(planets.day[[curcolorb]])
+      # ignore aspects that are out of allowed orb
+      if (distance > asporbs['orbs', aspect]) next;
       # ignore aspects between nodes that happens ever
       if (curcol == 'SNLONNNLON') next
+      # code of planets involved in the aspect
       col1 <- substr(curcol, 1, 2)
       col2 <- substr(curcol, 6, 7)
       # longitude col names
       loncol1 <- paste(col1, 'LONG', sep='')
       loncol2 <- paste(col2, 'LONG', sep='')
+      # energy for planets
       planetenergy1 <- planetsenergy['energy', loncol1]
       planetenergy2 <- planetsenergy['energy', loncol2]
-      aspect <- as.character(as.numeric(planets.day.asp[idx]))
       # determine aspect energy based on aspect and involved planets
       aspectenergy <- aspectsenergy['energy', aspect] * (planetenergy1 + planetenergy2)
       # determine aspect polarity
@@ -2135,8 +2143,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       }
 
       # compute the given energy based on the aspect orb distance
-      curcolorb <- paste(curcol, 'ORB', sep='')
-      distance <- as.numeric(planets.day[[curcolorb]])
       aspectenergydis <- energyGrowth(abs(aspectenergy), distance, energygrowthsp)
 
       if (aspectpolarity == 1) {
@@ -2247,8 +2253,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     new.fitness.best <- ""
 
     # build matrix
-    orbsmatrix <- matrix(args$cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE,
-                         dimnames = list('orbs', aspects))
+    orbsmatrix <- matrix(args$cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
 
     # aspects polarities
     pol1 <- args$aspectspolarity[1:length(defconjpolarity)]
@@ -2285,7 +2290,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     sout <- paste("system version: ", branch.name, "\n\n", sout, sep="")
     # use a cloned planets to ensure original is no modified
-    planets <- processPlanetsAspects(args$planetslist[[as.character(args$degsplit)]], orbsmatrix)
+    planets <- args$planetslist[[as.character(args$degsplit)]]
     planets.train <- planets[Date > rdates[1] & Date <= rdates[2] & wday %in% c(1, 2, 3, 4, 5)]
     planets.pred <- planets[Date > rdates[3] & Date <= rdates[6] & wday %in% c(1, 2, 3, 4, 5)]
     security <- with(args, openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, mapricefs, mapricesl, dateformat, pricemadir))
@@ -2300,7 +2305,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets.pred <- merge(planets.pred, significance.patterns, by='Date')
     # helper function to process day aspects energy
     processPlanesDaySignificance <- function(x) {
-      dayAspectsEnergy(x, panalogymatrix, aspectspolaritymatrix, conjpolaritymatrix, aspectsenergymatrix, planetsenergymatrix, args$energygrowthsp)
+      dayAspectsEnergy(x, panalogymatrix, aspectspolaritymatrix, conjpolaritymatrix, aspectsenergymatrix,
+                       planetsenergymatrix, args$energygrowthsp, orbsmatrix)
     }
 
     energy.days <- rbindlist(apply(planets.pred, 1, processPlanesDaySignificance))
@@ -2548,7 +2554,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                   aspectsEnergyCols, planetsEnergyCols, planetsZodEnergyCols)
 
     degsplits <- seq(dsmin, dsmax)
-    planetslist <- multipleOpenPlanets(planetsfile, degsplits)
+    cusorbs <- rep(orbsmax, length(aspects))
+    planetslist <- multipleOpenPlanets(planetsfile, degsplits, cusorbs)
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=TRUE,
        monitor=gaMonitor, maxiter=200, run=50, popSize=500, min=minvals, max=maxvals, pcrossover = 0.4, pmutation = 0.3,
@@ -2562,7 +2569,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     if (!hasArg('dateformat')) stop("A dateformat is needed.")
     if (args$doplot) pdf(paste("~/chart_", predfile, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
     degsplits <- c(args$degsplit)
-    planetslist <- multipleOpenPlanets(args$planetsfile, degsplits)
+    cusorbs <- rep(max(args$cusorbs), length(aspects))
+    planetslist <- multipleOpenPlanets(args$planetsfile, degsplits, cusorbs)
     args[['planetslist']] <- planetslist
     relativeTrend(args)
     if (args$doplot) dev.off()
