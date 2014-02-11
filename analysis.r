@@ -139,7 +139,7 @@ defpanalogy <- list(c(2, 3, 4, 5, 6, 8, 1, 1, 1, 1, 1, 7),
                     c(2, 3, 4, 5, 6, 8, 5, 5, 5, 5, 5, 7),
                     c(2, 3, 4, 5, 6, 8, 6, 6, 6, 6, 6, 7),
                     c(2, 3, 4, 5, 6, 8, 7, 7, 7, 7, 7, 7),
-                    c(2, 3, 4, 5, 6, 8, 8, 8, 8, 8, 8, 7),
+                    c(2, 3, 4, 5, 6, 8, 8, 8, 8, 8, 8, 7))
 
 zodSignsCols <- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CA', 'AC', 'PI')
 planetsZodEnergyCols <- as.character(apply(expand.grid(planetsLonCols, zodSignsCols), 1, function(x) paste(x[1], '_', x[2], sep='')))
