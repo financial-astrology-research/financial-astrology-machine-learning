@@ -76,11 +76,12 @@ aspectsCombList <- aspectsList
 aspectTypesCols <- c('SUT', 'MOT', 'MET', 'VET', 'MAT', 'JUT', 'SAT', 'URT', 'NET', 'PLT')
 
 # planets cols
-planetsBaseCols <- c('SU', 'MO', 'ME', 'VE', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN', 'CE')
+planetsBaseCols <- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'VS', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN')
 
 # Aspects and orbs
 aspects = c(0, 30, 45, 60, 72, 90, 120, 135, 150, 180)
 deforbs <- c(4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0)
+deforbsmax <- c(10, 6, 6, 6, 6, 10, 6, 6, 6, 10)
 defaspectsenergy <- c(10, 2, 2, 3, 2, 7, 5, 2, 2, 10)
 defaspectspolarity <- c(1, 0, 1, 1, 0, 1, 0, 0, 0)
 
@@ -131,15 +132,16 @@ defconjpolarity <- as.integer(defconjpolaritymatrix)
 defpolarity <- c(defconjpolarity, defaspectspolarity)
 aspectspolaritycols <- aspects[2:length(aspects)]
 
-defplanetsenergy <- c(5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5)
-defpanalogy <- list(c(2, 3, 4, 5, 6, 8, 1, 1, 1, 1, 1, 7),
-                    c(2, 3, 4, 5, 6, 8, 2, 2, 2, 2, 2, 7),
-                    c(2, 3, 4, 5, 6, 8, 3, 3, 3, 3, 3, 7),
-                    c(2, 3, 4, 5, 6, 8, 4, 4, 4, 4, 4, 7),
-                    c(2, 3, 4, 5, 6, 8, 5, 5, 5, 5, 5, 7),
-                    c(2, 3, 4, 5, 6, 8, 6, 6, 6, 6, 6, 7),
-                    c(2, 3, 4, 5, 6, 8, 7, 7, 7, 7, 7, 7),
-                    c(2, 3, 4, 5, 6, 8, 8, 8, 8, 8, 8, 7))
+defplanetsenergy <- c(5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5)
+defpanalogy <- list(c(2, 3, 4, 5, 6, 7, 8, 9, 1, 1, 1, 1, 1),
+                    c(2, 3, 4, 5, 6, 7, 8, 9, 2, 2, 2, 2, 2),
+                    c(2, 3, 4, 5, 6, 7, 8, 9, 3, 3, 3, 3, 3),
+                    c(2, 3, 4, 5, 6, 7, 8, 9, 4, 4, 4, 4, 4),
+                    c(2, 3, 4, 5, 6, 7, 8, 9, 5, 5, 5, 5, 5),
+                    c(2, 3, 4, 5, 6, 7, 8, 9, 6, 6, 6, 6, 6),
+                    c(2, 3, 4, 5, 6, 7, 8, 9, 7, 7, 7, 7, 7),
+                    c(2, 3, 4, 5, 6, 7, 8, 9, 8, 8, 8, 8, 8),
+                    c(2, 3, 4, 5, 6, 7, 8, 9, 9, 9, 9, 9, 9))
 
 zodSignsCols <- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CA', 'AC', 'PI')
 planetsZodEnergyCols <- as.character(apply(expand.grid(planetsLonCols, zodSignsCols), 1, function(x) paste(x[1], '_', x[2], sep='')))
@@ -148,16 +150,17 @@ zodenergy.mo <- c( 01,  10,  01,  10,  01,  01,  01, -10,  01, -10,  01,  01)
 zodenergy.me <- c( 01,  01,  10,  01,  01,  10,  01,  01, -10,  01,  01, -10)
 zodenergy.ve <- c(-10,  10,  01,  01,  01, -10,  10, -10,  01,  01,  01,  10)
 zodenergy.ma <- c( 10,  01,  01, -10,  01,  01, -10,  01,  01,  10,  01,  01)
+zodenergy.ce <- c( 01,  01,  01,  01,  10,  01,  01,  01,  01,  01,  01,  01)
+zodenergy.vs <- c( 01,  01,  01,  01,  10,  01,  01,  01,  01,  01,  01,  01)
 zodenergy.ju <- c( 01,  01, -10,  10,  01, -10,  01,  01,  10, -10,  01,  10)
 zodenergy.sa <- c(-10,  01,  01, -10, -10,  01,  10,  01,  01,  10,  10,  01)
 zodenergy.ur <- c( 01,  01,  01,  01, -10,  01,  01,  01,  01,  01,  10,  01)
 zodenergy.ne <- c( 01,  01,  01,  01,  01, -10,  01,  01,  01,  01,  01,  10)
 zodenergy.pl <- c( 01, -10,  01,  01,  01,  01,  01,  10,  01,  01,  01,  01)
 zodenergy.nn <- c( 01,  01,  01,  01,  10,  01,  01,  01,  01,  01,  01,  01)
-zodenergy.ce <- c( 01,  01,  01,  01,  10,  01,  01,  01,  01,  01,  01,  01)
 
-defplanetszodenergy <- c(zodenergy.su, zodenergy.mo, zodenergy.me, zodenergy.ve, zodenergy.ma, zodenergy.ju, zodenergy.sa,
-                         zodenergy.ur, zodenergy.ne, zodenergy.pl, zodenergy.nn, zodenergy.ce)
+defplanetszodenergy <- c(zodenergy.su, zodenergy.mo, zodenergy.me, zodenergy.ve, zodenergy.ma, zodenergy.ce, zodenergy.vs,
+                         zodenergy.ju, zodenergy.sa, zodenergy.ur, zodenergy.ne, zodenergy.pl, zodenergy.nn)
 
 # a function that returns the position of n-th largest
 maxn <- function(x, n) {
@@ -2479,7 +2482,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     mapricetypes <- c('SMA', 'EMA', 'WMA', 'ZLEMA')
     predtypes <- c('absolute',  'relative')
     pricetypes <- c('averages',  'daily', 'priceaverage')
-    analogytypes <- c(NA, 'SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'CELONG', 'JULONG')
+    analogytypes <- c(NA, 'SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'CELONG', 'VSLONG', 'JULONG')
     pa.e = 12+length(planetsBaseCols)
     co.e = pa.e+length(deforbs)
     api.e = co.e+length(defpolarity)
@@ -2531,9 +2534,9 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     dsmin <- 1
     dsmax <- 5
     panalogymin <- rep(1, length(planetsBaseCols))
-    panalogymax <- rep(8, length(planetsBaseCols))
+    panalogymax <- rep(9, length(planetsBaseCols))
     orbsmin <- rep(1, length(deforbs))
-    orbsmax <- rep(12, length(deforbs))
+    orbsmax <- deforbsmax
     polaritymin <- rep(0, length(defpolarity))
     polaritymax <- rep(1, length(defpolarity))
     aspectenergymin <- rep(0, length(defaspectsenergy))
@@ -2554,8 +2557,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                   aspectsEnergyCols, planetsEnergyCols, planetsZodEnergyCols)
 
     degsplits <- seq(dsmin, dsmax)
-    cusorbs <- rep(orbsmax, length(aspects))
-    planetslist <- multipleOpenPlanets(planetsfile, degsplits, cusorbs)
+    planetslist <- multipleOpenPlanets(planetsfile, degsplits, deforbsmax)
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=TRUE,
        monitor=gaMonitor, maxiter=200, run=50, popSize=500, min=minvals, max=maxvals, pcrossover = 0.4, pmutation = 0.3,
@@ -2569,8 +2571,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     if (!hasArg('dateformat')) stop("A dateformat is needed.")
     if (args$doplot) pdf(paste("~/chart_", predfile, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
     degsplits <- c(args$degsplit)
-    cusorbs <- rep(max(args$cusorbs), length(aspects))
-    planetslist <- multipleOpenPlanets(args$planetsfile, degsplits, cusorbs)
+    planetslist <- multipleOpenPlanets(args$planetsfile, degsplits, args$cusorbs)
     args[['planetslist']] <- planetslist
     relativeTrend(args)
     if (args$doplot) dev.off()
