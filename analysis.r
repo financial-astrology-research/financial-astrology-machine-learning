@@ -1984,7 +1984,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       col1 <- substr(curcol, 1, 5)
       col2 <- substr(curcol, 6, 10)
       combnameorb <- paste(curcol, 'ORB', sep='')
-      planets[, c(curcol) := abs(((get(col1) - get(col2) + 180) %% 360) - 180)]
+      planets[, c(curcol) := abs(get(col1) - get(col2))]
     }
 
     exprcopy <- paste("c(planetsCombLonOrbCols) := list(", paste(planetsCombLonCols, collapse=","), ")", sep="")
@@ -2021,9 +2021,17 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       allidx <- rep(FALSE, length(x))
       for (aspect in aspects) {
         comborb <- cusorbs['orbs', as.character(aspect)]
-        rstart <- aspect-comborb
-        rend <- aspect+comborb
-        idx <- x >= rstart & x <= rend
+        # for a0 the start is 360+(orb)
+        if (aspect == 0) {
+          rstart <- 360-comborb
+          rend <- aspect+comborb
+          idx <- x >= rstart | x <= rend
+        }
+        else {
+          rstart <- aspect-comborb
+          rend <- aspect+comborb
+          idx <- x >= rstart & x <= rend
+        }
         allidx[idx] <- TRUE
         x[idx] <- aspect
       }
@@ -2035,10 +2043,22 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     calculateAspectOrbs <- function(x) {
       for (aspect in aspects) {
         comborb <- cusorbs['orbs', as.character(aspect)]
-        rstart <- aspect-comborb
-        rend <- aspect+comborb
-        idx <- x >= rstart & x <= rend
-        x[idx] <- aspect - x[idx]
+        if (aspect == 0) {
+          rstart <- 360-comborb
+          rend <- aspect+comborb
+          # first with aspect in mode 360
+          idx <- x >= rstart
+          x[idx] <- x[idx] - 360
+          # second in mode 0
+          idx <- x <= rend
+          x[idx] <- x[idx]
+        }
+        else {
+          rstart <- aspect-comborb
+          rend <- aspect+comborb
+          idx <- x >= rstart & x <= rend
+          x[idx] <- aspect - x[idx]
+        }
       }
       return(x)
     }
