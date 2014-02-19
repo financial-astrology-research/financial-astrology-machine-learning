@@ -79,11 +79,10 @@ aspectTypesCols <- c('SUT', 'MOT', 'MET', 'VET', 'MAT', 'JUT', 'SAT', 'URT', 'NE
 planetsBaseCols <- c('SU', 'MO', 'ME', 'VE', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN')
 
 # Aspects and orbs
-aspects = c(0, 30, 45, 60, 72, 90, 120, 135, 150, 180)
-deforbs <- c(4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0)
-deforbsmax <- c(10, 6, 6, 6, 6, 10, 6, 6, 6, 10)
-defaspectsenergy <- c(10, 2, 2, 3, 2, 7, 5, 2, 2, 10)
-defaspectspolarity <- c(1, 0, 1, 1, 0, 1, 0, 0, 0)
+aspects            <- c(0 , 30, 36, 40, 45, 51, 60, 72, 80, 90, 103, 108, 120, 135, 144, 150, 160, 180)
+deforbs            <- c(10, 1 , 1 , 1 , 1 , 1 , 7 , 1 , 1 , 7 , 1  , 1  , 7  , 1  , 1  , 1  , 1  , 10)
+defaspectsenergy   <- c(10, 2 , 2 , 2 , 2 , 2 , 6 , 2 , 2 , 6 , 2  , 2  , 6  , 2  , 2  , 2  , 2  , 10)
+defaspectspolarity <- c(1 , 0 , 0 , 1 , 0 , 1 , 0 , 1 , 0 , 0 , 0  , 0  , 1  , 0  , 1  , 0  , 1  , 0)
 
 aspOrbsCols <- as.character(apply(expand.grid(aspects, planetsBaseCols[1:(length(planetsBaseCols)-1)]), 1, function(x) paste(x[2], x[1], sep='')))
 zodDegrees <- seq(0, 360, by=2)
@@ -2550,8 +2549,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     dsmax <- 5
     panalogymin <- rep(1, length(planetsBaseCols))
     panalogymax <- rep(6, length(planetsBaseCols))
-    orbsmin <- rep(1, length(deforbs))
-    orbsmax <- deforbsmax
+    orbsmin <- rep(0, length(deforbs))
+    orbsmax <- deforbs
     polaritymin <- rep(0, length(defpolarity))
     polaritymax <- rep(1, length(defpolarity))
     aspectenergymin <- rep(0, length(defaspectsenergy))
@@ -2572,7 +2571,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                   aspectsEnergyCols, planetsEnergyCols, planetsZodEnergyCols)
 
     degsplits <- seq(dsmin, dsmax)
-    planetslist <- multipleOpenPlanets(planetsfile, degsplits, deforbsmax)
+    planetslist <- multipleOpenPlanets(planetsfile, degsplits, deforbs)
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=TRUE,
        monitor=gaMonitor, maxiter=200, run=50, popSize=500, min=minvals, max=maxvals, pcrossover = 0.4, pmutation = 0.3,
