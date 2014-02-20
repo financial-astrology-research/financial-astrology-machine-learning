@@ -80,7 +80,7 @@ planetsBaseCols <- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'SA', 'UR', 'NE',
 
 # Aspects and orbs
 aspects            <- c(0 , 30, 36, 40, 45, 51, 60, 72, 80, 90, 103, 108, 120, 135, 144, 150, 160, 180)
-deforbs            <- c(10, 2 , 2 , 2 , 2 , 2 , 6 , 2 , 2 , 6 , 2  , 2  , 6  , 2  , 2  , 2  , 2  , 10)
+deforbs            <- c(12, 1 , 1 , 1 , 1 , 1 , 8 , 1 , 1 , 8 , 1  , 1  , 8  , 1  , 1  , 1  , 1  , 12)
 defaspectsenergy   <- c(10, 2 , 2 , 2 , 2 , 2 , 6 , 2 , 2 , 6 , 2  , 2  , 6  , 2  , 2  , 2  , 2  , 10)
 defaspectspolarity <- c(1 , 0 , 0 , 1 , 0 , 1 , 0 , 1 , 0 , 0 , 0  , 0  , 1  , 0  , 1  , 0  , 1  , 0)
 
@@ -132,13 +132,14 @@ defpolarity <- c(defconjpolarity, defaspectspolarity)
 aspectspolaritycols <- aspects[2:length(aspects)]
 
 defplanetsenergy <- c(5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5)
-defpanalogy <- list(c(2, 3, 4, 5, 6, 7, 1, 1, 1, 1, 1, 1),
-                    c(2, 3, 4, 5, 6, 7, 2, 2, 2, 2, 2, 2),
-                    c(2, 3, 4, 5, 6, 7, 3, 3, 3, 3, 3, 3),
-                    c(2, 3, 4, 5, 6, 7, 4, 4, 4, 4, 4, 4),
-                    c(2, 3, 4, 5, 6, 7, 5, 5, 5, 5, 5, 5),
-                    c(2, 3, 4, 5, 6, 7, 6, 6, 6, 6, 6, 6),
-                    c(2, 3, 4, 5, 6, 7, 7, 7, 7, 7, 7, 7))
+defpanalogy <- list(c(2, 3, 4, 5, 6, 7, 8, 1, 1, 1, 1, 1),
+                    c(2, 3, 4, 5, 6, 7, 8, 2, 2, 2, 2, 2),
+                    c(2, 3, 4, 5, 6, 7, 8, 3, 3, 3, 3, 3),
+                    c(2, 3, 4, 5, 6, 7, 8, 4, 4, 4, 4, 4),
+                    c(2, 3, 4, 5, 6, 7, 8, 5, 5, 5, 5, 5),
+                    c(2, 3, 4, 5, 6, 7, 8, 6, 6, 6, 6, 6),
+                    c(2, 3, 4, 5, 6, 7, 8, 7, 7, 7, 7, 7),
+                    c(2, 3, 4, 5, 6, 7, 8, 8, 8, 8, 8, 8))
 
 zodSignsCols <- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CA', 'AC', 'PI')
 planetsZodEnergyCols <- as.character(apply(expand.grid(planetsLonCols, zodSignsCols), 1, function(x) paste(x[1], '_', x[2], sep='')))
@@ -2498,7 +2499,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     mapricetypes <- c('SMA', 'EMA', 'WMA', 'ZLEMA')
     predtypes <- c('absolute',  'relative')
     pricetypes <- c('averages',  'daily', 'priceaverage')
-    analogytypes <- c(NA, 'SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'CELONG')
+    analogytypes <- c(NA, 'SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'CELONG', 'JULONG')
     pa.e = 12+length(planetsBaseCols)
     co.e = pa.e+length(deforbs)
     api.e = co.e+length(defpolarity)
@@ -2550,7 +2551,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     dsmin <- 1
     dsmax <- 5
     panalogymin <- rep(1, length(planetsBaseCols))
-    panalogymax <- rep(7, length(planetsBaseCols))
+    panalogymax <- rep(8, length(planetsBaseCols))
     orbsmin <- rep(0, length(deforbs))
     orbsmax <- deforbs
     polaritymin <- rep(0, length(defpolarity))
