@@ -1,15 +1,16 @@
 library(GA)
+library(RSQLite)
 library(compiler)
 library(data.table)
 library(ggplot2)
 library(gtools)
+library(memoise)
 library(microbenchmark)
 library(plyr)
 library(quantmod)
 library(randomForest)
 library(reshape2)
 library(rpart)
-library(RSQLite)
 library(splus2R)
 library(timeDate)
 library(xts)
@@ -1959,10 +1960,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     dbDisconnect(db)
   }
 
-  openPlanets <- function(planets.file) {
+  openPlanets <- function(planetsfile, cusorbs) {
     Date=DateMT4=Year=NULL
-    planets.file <- npath(planets.file)
-    planets <- fread(planets.file, sep="\t", na.strings="", verbose = F)
+    planetsfile <- npath(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""))
+    planets <- fread(planetsfile, sep="\t", na.strings="", verbose = F)
     planets[, Date := as.Date(planets$Date, format="%Y-%m-%d")]
     planets <- planets[, c('Date', planetsLonCols, planetsSpCols), with=F]
     #planets[, DateMT4 := as.character(format(Date, "%Y.%m.%d"))]
@@ -1980,27 +1981,23 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     exprcopy <- paste("c(planetsCombLonOrbCols) := list(", paste(planetsCombLonCols, collapse=","), ")", sep="")
     planets[, eval(parse(text = exprcopy))]
+
+    # calculate aspects for max orbs
+    orbsmatrix <- matrix(cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
+    planets <- processPlanetsAspects(planets, orbsmatrix)
     return(planets)
   }
 
-  # Open multiple planets tables for different degsplit
-  multipleOpenPlanets <- function(planetsfile, degsplits, cusorbs) {
-    orbsmatrix <- matrix(cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
-    planetslist <- list()
-    planetsorig <- openPlanets(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""))
-    planetsorig <- processPlanetsAspects(planetsorig, orbsmatrix)
+  # process the degsplit for a cloned original planets dt
+  processPlanetsDegsplit <- function(planetsorig, degsplit) {
     # calculate the lon deg splits
     calculateLonGroups <- function(x, degsplit) {
       return(cut(x, seq(0, 360, by=degsplit)))
     }
 
-    for (degsplit in degsplits) {
-      planets <- copy(planetsorig)
-      planets[, c(planetsLonGCols) := lapply(.SD, calculateLonGroups, degsplit=degsplit), .SDcols=planetsLonCols]
-      planetslist[[as.character(degsplit)]] <- planets
-    }
-
-    return(planetslist)
+    planets <- copy(planetsorig)
+    planets[, c(planetsLonGCols) := lapply(.SD, calculateLonGroups, degsplit=degsplit), .SDcols=planetsLonCols]
+    return(planets)
   }
 
   # calculate the planets aspects for a given solution
@@ -2310,28 +2307,28 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     sout <- paste("system version: ", branch.name, "\n\n", sout, sep="")
     # use a cloned planets to ensure original is no modified
-    planets <- args$planetslist[[as.character(args$degsplit)]]
+    planets <- memProcessPlanetsDegsplit(args$planetsorig, args$degsplit)
     planets.train <- planets[Date > rdates[1] & Date <= rdates[2] & wday %in% c(1, 2, 3, 4, 5)]
     planets.pred <- planets[Date > rdates[3] & Date <= rdates[6] & wday %in% c(1, 2, 3, 4, 5)]
-    security <- with(args, openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, mapricefs, mapricesl, dateformat, pricemadir))
-    significance <- with(args, planetsVarsSignificance(planets.train, security, threshold))
+    security <- with(args, memOpenSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, mapricefs, mapricesl, dateformat, pricemadir))
+    significance <- with(args, memPlanetsVarSignificance(planets.train, security, threshold))
     years.test <- format(seq(rdates[3], rdates[4], by='year'), '%Y')
     years.conf <- format(seq(rdates[5], rdates[6], by='year'), '%Y')
     # get significance days
-    significance.days <- buildDailySignificance(significance, planets.pred, panalogymatrix)
-    significance.days <- dailySignificanceEnergy(significance.days, args$energyret, planetszodenergymatrix)
+    significance.days <- memBuildDailySignificance(significance, planets.pred, panalogymatrix)
+    significance.days <- memDailySignificanceEnergy(significance.days, args$energyret, planetszodenergymatrix)
     significance.patterns <- significance.days[, buildDaySignificancePatterns(origin), by=Date]
     significance.patterns[, Date := as.Date(Date, format="%Y-%m-%d")]
     planets.pred <- merge(planets.pred, significance.patterns, by='Date')
     # helper function to process day aspects energy
     processPlanesDaySignificance <- function(x) {
-      dayAspectsEnergy(x, panalogymatrix, aspectspolaritymatrix, conjpolaritymatrix, aspectsenergymatrix,
+      memDayAspectsEnergy(x, panalogymatrix, aspectspolaritymatrix, conjpolaritymatrix, aspectsenergymatrix,
                        planetsenergymatrix, args$energygrowthsp, orbsmatrix)
     }
 
     energy.days <- rbindlist(apply(planets.pred, 1, processPlanesDaySignificance))
     # calculate prediction
-    prediction <- calculatePrediction(significance.days, energy.days, args$energymode)
+    prediction <- memCalculatePrediction(significance.days, energy.days, args$energymode)
     planets.pred <- planets.pred[prediction]
     planets.pred <- security[planets.pred]
     setkeyv(planets.pred, c('Date', 'Year.1'))
@@ -2494,7 +2491,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(res)
   }
 
-  relativeTrendFitness <- function(x, planetslist, securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, fittype, dateformat) {
+  relativeTrendFitness <- function(x, planetsorig, securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, fittype, dateformat) {
     # build the parameters based on GA indexes
     mapricetypes <- c('SMA', 'EMA', 'WMA', 'ZLEMA')
     predtypes <- c('absolute',  'relative')
@@ -2507,7 +2504,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     pe.e = ae.e+length(defplanetsenergy)
     pze.e = pe.e+length(defplanetszodenergy)
 
-    args <-list(planetslist=planetslist,
+    args <-list(planetsorig=planetsorig,
                 securityfile=securityfile,
                 planetsfile=planetsfile,
                 tsdate=tsdate,
@@ -2573,13 +2570,12 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                   'energygrowthsp', 'energyret', 'alignmove', 'pricemadir', panalogyCols, aspOrbsCols, planetsCombLonCols, aspectspolaritycols,
                   aspectsEnergyCols, planetsEnergyCols, planetsZodEnergyCols)
 
-    degsplits <- seq(dsmin, dsmax)
-    planetslist <- multipleOpenPlanets(planetsfile, degsplits, deforbs)
+    planetsorig <- openPlanets(planetsfile, deforbs)
 
     ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=TRUE,
        monitor=gaMonitor, maxiter=200, run=50, popSize=500, min=minvals, max=maxvals, pcrossover = 0.4, pmutation = 0.3,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
-       planetslist=planetslist, securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate,
+       planetsorig=planetsorig, securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate,
        vedate=vedate, csdate=csdate, cedate=cedate, fittype=fittype, dateformat=dateformat)
   }
 
@@ -2587,9 +2583,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     args <- list(...)
     if (!hasArg('dateformat')) stop("A dateformat is needed.")
     if (args$doplot) pdf(paste("~/chart_", predfile, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
-    degsplits <- c(args$degsplit)
-    planetslist <- multipleOpenPlanets(args$planetsfile, degsplits, args$cusorbs)
-    args[['planetslist']] <- planetslist
+    planetsorig <- openPlanets(args$planetsfile, args$cusorbs)
+    args[['planetsorig']] <- planetsorig
     relativeTrend(args)
     if (args$doplot) dev.off()
   }
@@ -2639,11 +2634,17 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 planetszodenergy=adjustEnergy(x[pe.e:(pze.e-1)]))
 
     if (!hasArg('dateformat')) stop("A dateformat is needed.")
-    degsplits <- c(args$degsplit)
-    planetslist <- multipleOpenPlanets(args$planetsfile, degsplits)
-    args[['planetslist']] <- planetslist
     relativeTrend(args)
   }
+
+  # activate cache in some strongly used functions
+  memOpenSecurity <- memoise(openSecurity)
+  memPlanetsVarSignificance <- memoise(planetsVarsSignificance)
+  memBuildDailySignificance <- memoise(buildDailySignificance)
+  memDailySignificanceEnergy <- memoise(dailySignificanceEnergy)
+  memDayAspectsEnergy <- memoise(dayAspectsEnergy)
+  memCalculatePrediction <- memoise(calculatePrediction)
+  memProcessPlanetsDegsplit <- memoise(processPlanetsDegsplit)
 
   execfunc <- get(get('execfunc'))
   execfunc(...)
