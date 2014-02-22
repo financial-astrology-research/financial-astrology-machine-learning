@@ -1,10 +1,10 @@
 library(GA)
+library(R.cache)
 library(RSQLite)
 library(compiler)
 library(data.table)
 library(ggplot2)
 library(gtools)
-library(digest)
 library(microbenchmark)
 library(plyr)
 library(quantmod)
@@ -2308,7 +2308,14 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     sout <- paste("system version: ", branch.name, "\n\n", sout, sep="")
     # use a cloned planets to ensure original is no modified
-    planets <- processPlanetsDegsplit(key=c(args$degsplit), args$planetsorig, args$degsplit)
+    ckey=list('planets_', args$degsplit)
+    planets <- loadCache(key=ckey)
+    if (is.null(planets)) {
+      planets <- processPlanetsDegsplit(args$planetsorig, args$degsplit)
+      saveCache(planets, key=ckey)
+      cat("Set cache\n")
+    }
+
     planets.train <- planets[Date > rdates[1] & Date <= rdates[2] & wday %in% c(1, 2, 3, 4, 5)]
     planets.pred <- planets[Date > rdates[3] & Date <= rdates[6] & wday %in% c(1, 2, 3, 4, 5)]
     security <- with(args, openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, mapricefs, mapricesl, dateformat, pricemadir))
