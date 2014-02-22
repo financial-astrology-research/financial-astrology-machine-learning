@@ -4,7 +4,7 @@ library(compiler)
 library(data.table)
 library(ggplot2)
 library(gtools)
-library(memoise)
+library(digest)
 library(microbenchmark)
 library(plyr)
 library(quantmod)
@@ -2308,28 +2308,28 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     sout <- paste("system version: ", branch.name, "\n\n", sout, sep="")
     # use a cloned planets to ensure original is no modified
-    planets <- memProcessPlanetsDegsplit(args$planetsorig, args$degsplit)
+    planets <- processPlanetsDegsplit(key=c(args$degsplit), args$planetsorig, args$degsplit)
     planets.train <- planets[Date > rdates[1] & Date <= rdates[2] & wday %in% c(1, 2, 3, 4, 5)]
     planets.pred <- planets[Date > rdates[3] & Date <= rdates[6] & wday %in% c(1, 2, 3, 4, 5)]
-    security <- with(args, memOpenSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, mapricefs, mapricesl, dateformat, pricemadir))
-    significance <- with(args, memPlanetsVarSignificance(planets.train, security, threshold))
+    security <- with(args, openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, mapricefs, mapricesl, dateformat, pricemadir))
+    significance <- with(args, planetsVarsSignificance(planets.train, security, threshold))
     years.test <- format(seq(rdates[3], rdates[4], by='year'), '%Y')
     years.conf <- format(seq(rdates[5], rdates[6], by='year'), '%Y')
     # get significance days
-    significance.days <- memBuildDailySignificance(significance, planets.pred, panalogymatrix)
-    significance.days <- memDailySignificanceEnergy(significance.days, args$energyret, planetszodenergymatrix)
+    significance.days <- buildDailySignificance(significance, planets.pred, panalogymatrix)
+    significance.days <- dailySignificanceEnergy(significance.days, args$energyret, planetszodenergymatrix)
     significance.patterns <- significance.days[, buildDaySignificancePatterns(origin), by=Date]
     significance.patterns[, Date := as.Date(Date, format="%Y-%m-%d")]
     planets.pred <- merge(planets.pred, significance.patterns, by='Date')
     # helper function to process day aspects energy
     processPlanesDaySignificance <- function(x) {
-      memDayAspectsEnergy(x, panalogymatrix, aspectspolaritymatrix, conjpolaritymatrix, aspectsenergymatrix,
+      dayAspectsEnergy(x, panalogymatrix, aspectspolaritymatrix, conjpolaritymatrix, aspectsenergymatrix,
                        planetsenergymatrix, args$energygrowthsp, orbsmatrix)
     }
 
     energy.days <- rbindlist(apply(planets.pred, 1, processPlanesDaySignificance))
     # calculate prediction
-    prediction <- memCalculatePrediction(significance.days, energy.days, args$energymode)
+    prediction <- calculatePrediction(significance.days, energy.days, args$energymode)
     planets.pred <- planets.pred[prediction]
     planets.pred <- security[planets.pred]
     setkeyv(planets.pred, c('Date', 'Year.1'))
@@ -2637,15 +2637,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     if (!hasArg('dateformat')) stop("A dateformat is needed.")
     relativeTrend(args)
   }
-
-  # activate cache in some strongly used functions
-  memOpenSecurity <- memoise(openSecurity)
-  memPlanetsVarSignificance <- memoise(planetsVarsSignificance)
-  memBuildDailySignificance <- memoise(buildDailySignificance)
-  memDailySignificanceEnergy <- memoise(dailySignificanceEnergy)
-  memDayAspectsEnergy <- memoise(dayAspectsEnergy)
-  memCalculatePrediction <- memoise(calculatePrediction)
-  memProcessPlanetsDegsplit <- memoise(processPlanetsDegsplit)
 
   execfunc <- get(get('execfunc'))
   execfunc(...)
