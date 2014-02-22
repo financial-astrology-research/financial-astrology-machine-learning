@@ -2062,7 +2062,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(energy * (1 - speed) ^ abs(distance))
   }
 
-  planetsVarsSignificance <- function(planets, currency, threshold) {
+  planetsVarsSignificance <- function(planets, currency) {
     # build significance table analogy for each planet
     planetTableAanalogy <- function(curcol) {
       planet.significance <- copy(significance)
@@ -2077,11 +2077,15 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     setnames(significance, c('variable', 'key', 'V1', 'V2', 'V3', 'V4'))
     significance.full <- rbindlist(lapply(planetsLonGCols, planetTableAanalogy))
     significance.full[, c('pdiff', 'keyidx') := list(V2-V1, paste(key, variable, origin, sep='_'))]
-    significance.full <- significance.full[pdiff >= threshold | pdiff <= -threshold]
-    significance.full <- significance.full[!is.na(key)]
-    significance.full[, Eff := cut(pdiff, c(-1000, 0, 1000), labels=c('down', 'up'), right=FALSE)]
     setkey(significance.full, 'keyidx', 'V1', 'V2')
     return(significance.full)
+  }
+
+  planetsVarsSignificanceFilter <- function(significance, threshold) {
+    significance <- significance[pdiff >= threshold | pdiff <= -threshold]
+    significance <- significance[!is.na(key)]
+    significance[, Eff := cut(pdiff, c(-1000, 0, 1000), labels=c('down', 'up'), right=FALSE)]
+    return(significance)
   }
 
   # build the daily signficance table
@@ -2308,22 +2312,61 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     sout <- paste("system version: ", branch.name, "\n\n", sout, sep="")
     # use a cloned planets to ensure original is no modified
-    ckey=list('planets_', args$degsplit)
+    ckey <- list('processPlanetsDegsplit', args$degsplit)
     planets <- loadCache(key=ckey)
     if (is.null(planets)) {
       planets <- processPlanetsDegsplit(args$planetsorig, args$degsplit)
       saveCache(planets, key=ckey)
-      cat("Set cache\n")
+      cat("Set processPlanetsDegsplit cache\n")
+    }
+    else {
+      cat("Get processPlanetsDegsplit cache\n")
     }
 
+    # split in training and prediction
     planets.train <- planets[Date > rdates[1] & Date <= rdates[2] & wday %in% c(1, 2, 3, 4, 5)]
     planets.pred <- planets[Date > rdates[3] & Date <= rdates[6] & wday %in% c(1, 2, 3, 4, 5)]
-    security <- with(args, openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, mapricefs, mapricesl, dateformat, pricemadir))
-    significance <- with(args, planetsVarsSignificance(planets.train, security, threshold))
-    years.test <- format(seq(rdates[3], rdates[4], by='year'), '%Y')
-    years.conf <- format(seq(rdates[5], rdates[6], by='year'), '%Y')
-    # get significance days
-    significance.days <- buildDailySignificance(significance, planets.pred, panalogymatrix)
+
+    # load the security data
+    ckey <- with(args, list('openSecurity', mapricetype, mapricefs, mapricesl, pricemadir))
+    security <- loadCache(key=ckey)
+    if (is.null(security)) {
+      security <- with(args, openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, mapricefs, mapricesl, dateformat, pricemadir))
+      saveCache(security, key=ckey)
+      cat("Set openSecurity cache\n")
+    }
+    else {
+      cat("Get openSecurity cache\n")
+    }
+
+    # process the planets significance table
+    ckey <- with(args, list('planetsVarsSignificance', degsplit, mapricetype, mapricefs, mapricesl, pricemadir))
+    significance <- loadCache(key=ckey)
+    if (is.null(significance)) {
+      significance <- with(args, planetsVarsSignificance(planets.train, security))
+      saveCache(significance, key=ckey)
+      cat("Set planetsVarsSignificance cache\n")
+    }
+    else {
+      cat("Get planetsVarsSignificance cache\n")
+    }
+
+    # filter the significance by threshold
+    significance <- planetsVarsSignificanceFilter(significance, args$threshold)
+    # build significance by days
+
+    # process the planets significance table
+    ckey <- with(args, list('buildDailySignificance', degsplit, mapricetype, mapricefs, mapricesl, pricemadir, panalogymatrix))
+    significance.days <- loadCache(key=ckey)
+    if (is.null(significance.days)) {
+      significance.days <- buildDailySignificance(significance, planets.pred, panalogymatrix)
+      saveCache(significance.days, key=ckey)
+      cat("Set buildDailySignificance cache\n")
+    }
+    else {
+      cat("Get buildDailySignificance cache\n")
+    }
+
     significance.days <- dailySignificanceEnergy(significance.days, args$energyret, planetszodenergymatrix)
     significance.patterns <- significance.days[, buildDaySignificancePatterns(origin), by=Date]
     significance.patterns[, Date := as.Date(Date, format="%Y-%m-%d")]
@@ -2360,7 +2403,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # helper function to process predictions by year
     pltitle <- paste('Yearly prediction VS price movement for ', args$securityfile)
     processYearPredictions <- function(x) processPredictions(x, pltitle, args$doplot)
+
     # compute test predictions by year
+    years.test <- format(seq(rdates[3], rdates[4], by='year'), '%Y')
+    years.conf <- format(seq(rdates[5], rdates[6], by='year'), '%Y')
     res.test <- planets.pred[Year.1 %in% years.test, processYearPredictions(.SD), by=Year.1]
     resMean <- function(x) round(mean(x), digits=2)
     res.test.mean <- res.test[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.d=resMean(matches.d))]
