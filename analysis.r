@@ -83,7 +83,8 @@ planetsBaseCols <- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'SA', 'UR', 'NE',
 aspects            <- c(0 , 30, 36, 40, 45, 51, 60, 72, 80, 90, 103, 108, 120, 135, 144, 154, 180)
 deforbs            <- c(12, 2 , 2 , 2 , 2 , 2 , 6 , 2 , 2 , 6 , 2  , 2  , 6  , 2  , 2  , 2  , 12)
 defaspectsenergy   <- c(10, 2 , 2 , 2 , 2 , 2 , 6 , 2 , 2 , 6 , 2  , 2  , 6  , 2  , 2  , 2  , 10)
-defaspectspolarity <- c(1 , 0 , 0 , 1 , 0 , 1 , 0 , 1 , 0 , 0 , 0  , 0  , 1  , 0  , 1  , 0  , 0)
+defaspectspolarity <- c(NA, 1 , 0 , 0 , 1 , 0 , 1 , 0 , 1 , 0 , 0  , 0  , 1  , 0  , 0  , 1  , 0)
+defaspectspolarity <- defaspectspolarity[!is.na(defaspectspolarity)]
 
 aspOrbsCols <- as.character(apply(expand.grid(aspects, planetsBaseCols[1:(length(planetsBaseCols)-1)]), 1, function(x) paste(x[2], x[1], sep='')))
 zodDegrees <- seq(0, 360, by=2)
