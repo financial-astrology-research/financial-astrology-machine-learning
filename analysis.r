@@ -1960,8 +1960,9 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   openPlanets <- function(planetsfile, cusorbs) {
+    args <- list(...)
     ckey <- list(planetsfile, cusorbs)
-    planets <- loadCache(key=ckey)
+    planets <- loadCache(key=ckey, dirs=c(args$securityfile))
     if (is.null(planets)) {
       Date=DateMT4=Year=NULL
       planetsfile <- npath(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""))
@@ -1987,7 +1988,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       # calculate aspects for max orbs
       orbsmatrix <- matrix(cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
       planets <- processPlanetsAspects(planets, orbsmatrix)
-      saveCache(planets, key=ckey)
+      saveCache(planets, key=ckey, dirs=c(args$securityfile))
       cat("Set openPlanets cache\n")
     }
     else {
@@ -2321,10 +2322,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     sout <- paste("system version: ", branch.name, "\n\n", sout, sep="")
     # use a cloned planets to ensure original is no modified
     ckey <- list('processPlanetsDegsplit', args$degsplit)
-    planets <- loadCache(key=ckey)
+    planets <- loadCache(key=ckey, dirs=c(args$securityfile))
     if (is.null(planets)) {
       planets <- processPlanetsDegsplit(args$planetsorig, args$degsplit)
-      saveCache(planets, key=ckey)
+      saveCache(planets, key=ckey, dirs=c(args$securityfile))
       cat("Set processPlanetsDegsplit cache\n")
     }
     else {
@@ -2337,10 +2338,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     # load the security data
     ckey <- with(args, list('openSecurity', mapricetype, mapricefs, mapricesl))
-    security <- loadCache(key=ckey)
+    security <- loadCache(key=ckey, dirs=c(args$securityfile))
     if (is.null(security)) {
       security <- with(args, openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, mapricefs, mapricesl, dateformat))
-      saveCache(security, key=ckey)
+      saveCache(security, key=ckey, dirs=c(args$securityfile))
       cat("Set openSecurity cache\n")
     }
     else {
@@ -2349,10 +2350,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     # process the planets significance table
     ckey <- with(args, list('planetsVarsSignificance', degsplit, mapricetype, mapricefs, mapricesl))
-    significance <- loadCache(key=ckey)
+    significance <- loadCache(key=ckey, dirs=c(args$securityfile))
     if (is.null(significance)) {
       significance <- with(args, planetsVarsSignificance(planets.train, security))
-      saveCache(significance, key=ckey)
+      saveCache(significance, key=ckey, dirs=c(args$securityfile))
       cat("Set planetsVarsSignificance cache\n")
     }
     else {
@@ -2363,10 +2364,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     significance <- planetsVarsSignificanceFilter(significance, args$threshold)
     # build significance by days
     ckey <- with(args, list('buildDailySignificance', degsplit, mapricetype, mapricefs, mapricesl, panalogymatrix))
-    significance.days <- loadCache(key=ckey)
+    significance.days <- loadCache(key=ckey, dirs=c(args$securityfile))
     if (is.null(significance.days)) {
       significance.days <- buildDailySignificance(significance, planets.pred, panalogymatrix)
-      saveCache(significance.days, key=ckey)
+      saveCache(significance.days, key=ckey, dirs=c(args$securityfile))
       cat("Set buildDailySignificance cache\n")
     }
     else {
@@ -2375,10 +2376,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     ckey <- with(args, list('buildDailySignificance', degsplit, mapricetype, mapricefs, mapricesl, panalogymatrix, energyret))
     ckey[[length(ckey)+1]] <- planetszodenergymatrix
-    significance.daysen <- loadCache(key=ckey)
+    significance.daysen <- loadCache(key=ckey, dirs=c(args$securityfile))
     if (is.null(significance.daysen)) {
       significance.daysen <- dailySignificanceEnergy(significance.days, args$energyret, planetszodenergymatrix)
-      saveCache(significance.daysen, key=ckey)
+      saveCache(significance.daysen, key=ckey, dirs=c(args$securityfile))
       cat("Set dailySignificanceEnergy cache\n")
     }
     else {
@@ -2643,7 +2644,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     planetsorig <- openPlanets(planetsfile, deforbs)
     # Clear the cache directory before start
-    unlink(getCacheRootPath(), T, T)
+    clearCache(prompt=F)
     ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=TRUE,
        monitor=gaMonitor, maxiter=200, run=50, popSize=500, min=minvals, max=maxvals, pcrossover = 0.4, pmutation = 0.3,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
