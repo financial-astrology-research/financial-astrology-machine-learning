@@ -1926,7 +1926,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   # determine the current system version
   system("cd ~/trading")
   branch.name <- system2("git", "rev-parse --abbrev-ref HEAD", stdout=T)
-  branch.name <- 'test'
 
   getFitnessBest <- function(db) {
     return(as.numeric(dbGetQuery(db, "select * from keys where key='fitness.best'")[2]))
