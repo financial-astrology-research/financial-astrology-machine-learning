@@ -1914,12 +1914,6 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
 }
 
 cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
-  if (hasArg('sinkfile')) {
-    sinkpathfile <- npath(paste("~/trading/predict/", sinkfile, ".txt", sep=''))
-    sink(sinkpathfile, append=T)
-    # output to master process
-    #parallel:::setDefaultClusterOptions(outfile=sinkpathfile)
-  }
   if (!hasArg('execfunc')) stop("Provide function to execute")
   ptm <- proc.time()
 
@@ -2642,12 +2636,22 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     planetsorig <- openPlanets(planetsfile, deforbs)
     # Clear the cache directory before start
-    clearCache(recursive=T, prompt=F)
+    clearCache(recursive=T, prompt=T)
+    # Redirect output to file
+    if (exists('sinkfile', envir=parent.frame())) {
+      sinkpathfile <- npath(paste("~/trading/predict/", sinkfile, ".txt", sep=''))
+      sink(sinkpathfile, append=T)
+    }
+
     ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=TRUE,
        monitor=gaMonitor, maxiter=200, run=50, popSize=500, min=minvals, max=maxvals, pcrossover = 0.4, pmutation = 0.3,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
        planetsorig=planetsorig, securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate,
        vedate=vedate, csdate=csdate, cedate=cedate, fittype=fittype, dateformat=dateformat)
+
+    if (exists('sinkfile', envir=parent.frame())) {
+      sink()
+    }
   }
 
   testSolution <- function(predfile, ...) {
@@ -2719,7 +2723,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   #  print(p1)
   #}
   #dev.off()
-  if (hasArg('sinkfile')) sink()
   closeSQLiteDB(dbcon)
 }
 
