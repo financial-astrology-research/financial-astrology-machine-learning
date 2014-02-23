@@ -1934,7 +1934,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   setFitnessBest <- function(db, value) {
     dbBeginTransaction(db)
     sql <- "update keys set count = ? where key = 'fitness.best'"
-    res <- dbGetPreparedQuery(db, sql, bind.data = data.frame(count=value))
+    dbGetPreparedQuery(db, sql, bind.data = data.frame(count=value))
     return(dbCommit(db))
   }
 
@@ -1946,7 +1946,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       dbGetQuery(db, sql)
       sql <- "insert into keys values (?, ?)"
       fitness.best <- data.frame(key='fitness.best', count=-100)
-      res <- dbGetPreparedQuery(db, sql, bind.data = fitness.best)
+      dbGetPreparedQuery(db, sql, bind.data = fitness.best)
     }
     else {
       setFitnessBest(db, -100)
@@ -2479,7 +2479,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
     cat("\t Trained significance table with: ", nrow(planets.train), " days", "\n")
     cat("\t Optimized and confirmed with: ", nrow(planets.pred), " days", "\n")
-    return(list(fitness=fitness))
+    return(fitness)
   }
 
   processPredictions <- function(planets.test, pltitle, doplot) {
@@ -2560,8 +2560,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       matches.d <- (matches.t / (matches.t + matches.f)) * 100
     }
 
-    res <- list(correlation=correlation, volatility=volatility, matches.t=matches.t, matches.f=matches.f, matches.d=matches.d)
-    return(res)
+    return(list(correlation=correlation, volatility=volatility, matches.t=matches.t, matches.f=matches.f, matches.d=matches.d))
   }
 
   relativeTrendFitness <- function(x, planetsorig, securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, fittype, dateformat) {
@@ -2607,8 +2606,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 planetsenergy=adjustEnergy(x[ae.e:(pe.e-1)]),
                 planetszodenergy=adjustEnergy(x[pe.e:(pze.e-1)]))
 
-    res <- relativeTrend(args)
-    return(res$fitness)
+    return(relativeTrend(args))
   }
 
   adjustEnergy <- function(x) {
