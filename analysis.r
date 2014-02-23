@@ -18,7 +18,8 @@ library(xts)
 options(scipen=100)
 options(width=130)
 options(error=recover)
-enableJIT(3)
+enableJIT(0)
+enableWD <- TRUE
 
 `%ni%` <- Negate(`%in%`)
 
@@ -1912,9 +1913,6 @@ testPlanetsSignificanceGA <- function(sinkfile, securitydir, securityfile, plane
   sink()
 }
 
-# returns string w/o leading or trailing whitespace
-trim <- function (x) gsub("^\\s+|\\s+$", "", x)
-
 cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   if (hasArg('sinkfile')) {
     sinkpathfile <- npath(paste("~/trading/predict/", sinkfile, ".txt", sep=''))
@@ -1928,6 +1926,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   # determine the current system version
   system("cd ~/trading")
   branch.name <- system2("git", "rev-parse --abbrev-ref HEAD", stdout=T)
+  branch.name <- 'test'
 
   getFitnessBest <- function(db) {
     return(as.numeric(dbGetQuery(db, "select * from keys where key='fitness.best'")[2]))
@@ -1962,30 +1961,39 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   openPlanets <- function(planetsfile, cusorbs) {
-    Date=DateMT4=Year=NULL
-    planetsfile <- npath(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""))
-    planets <- fread(planetsfile, sep="\t", na.strings="", verbose = F)
-    planets[, Date := as.Date(planets$Date, format="%Y-%m-%d")]
-    planets <- planets[, c('Date', planetsLonCols, planetsSpCols), with=F]
-    #planets[, DateMT4 := as.character(format(Date, "%Y.%m.%d"))]
-    planets[, Year := as.character(format(Date, "%Y"))]
-    planets[, wday := format(Date, "%w")]
-    setkey(planets, 'Date')
+    ckey <- list(planetsfile, cusorbs)
+    planets <- loadCache(key=ckey)
+    if (is.null(planets)) {
+      Date=DateMT4=Year=NULL
+      planetsfile <- npath(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""))
+      planets <- fread(planetsfile, sep="\t", na.strings="", verbose = F)
+      planets[, Date := as.Date(planets$Date, format="%Y-%m-%d")]
+      planets <- planets[, c('Date', planetsLonCols, planetsSpCols), with=F]
+      #planets[, DateMT4 := as.character(format(Date, "%Y.%m.%d"))]
+      planets[, Year := as.character(format(Date, "%Y"))]
+      planets[, wday := format(Date, "%w")]
+      setkey(planets, 'Date')
 
-    # calculate longitudinal differences
-    for (curcol in planetsCombLonCols) {
-      col1 <- substr(curcol, 1, 5)
-      col2 <- substr(curcol, 6, 10)
-      combnameorb <- paste(curcol, 'ORB', sep='')
-      planets[, c(curcol) := abs(get(col1) - get(col2))]
+      # calculate longitudinal differences
+      for (curcol in planetsCombLonCols) {
+        col1 <- substr(curcol, 1, 5)
+        col2 <- substr(curcol, 6, 10)
+        combnameorb <- paste(curcol, 'ORB', sep='')
+        planets[, c(curcol) := abs(get(col1) - get(col2))]
+      }
+
+      exprcopy <- paste("c(planetsCombLonOrbCols) := list(", paste(planetsCombLonCols, collapse=","), ")", sep="")
+      planets[, eval(parse(text = exprcopy))]
+
+      # calculate aspects for max orbs
+      orbsmatrix <- matrix(cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
+      planets <- processPlanetsAspects(planets, orbsmatrix)
+      saveCache(planets, key=ckey)
+      cat("Set openPlanets cache\n")
     }
-
-    exprcopy <- paste("c(planetsCombLonOrbCols) := list(", paste(planetsCombLonCols, collapse=","), ")", sep="")
-    planets[, eval(parse(text = exprcopy))]
-
-    # calculate aspects for max orbs
-    orbsmatrix <- matrix(cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
-    planets <- processPlanetsAspects(planets, orbsmatrix)
+    else {
+      cat("Get openPlanets cache\n")
+    }
     return(planets)
   }
 
@@ -2075,7 +2083,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # calculate the signficance for each long
     significance <- planets.long[, cbind(as.list(prop.table(as.numeric(table(Eff)))), as.list(as.numeric(table(Eff)))), by=c('variable', 'value')]
     setnames(significance, c('variable', 'key', 'V1', 'V2', 'V3', 'V4'))
-    significance.full <- rbindlist(lapply(planetsLonGCols, planetTableAanalogy))
+    significance.full <- rbindlist(lapply(planetsLonCols, planetTableAanalogy))
     significance.full[, c('pdiff', 'keyidx') := list(V2-V1, paste(key, variable, origin, sep='_'))]
     setkey(significance.full, 'keyidx', 'V1', 'V2')
     return(significance.full)
@@ -2093,7 +2101,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # build daily significance indexes
     buildDailySignificanceIdxs <- function(planets.day) {
       curdate <- planets.day[['Date']]
-      sigidxs <- paste(planets.day[planetsLonGCols], panalogymatrix['analogy', planetsLonGCols], planetsLonGCols, sep='_')
+      sigidxs <- paste(planets.day[planetsLonGCols], panalogymatrix['analogy', planetsLonGCols], planetsLonCols, sep='_')
       datelist <- rep(curdate, length(sigidxs))
       day.idxs <- list(Date=datelist, keyidx=sigidxs)
       return(day.idxs)
@@ -2104,11 +2112,11 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     significance.days <- merge(significance.days.idxs, significance, by='keyidx')
     # build daily planets lon & sp tables
     planets.lon <- data.table(melt(planets.pred, id.var=c('Date'), measure.var=planetsLonCols))
-    planets.lon[, origin := gsub('LON', 'LONG', variable)]
+    planets.lon[, origin := variable]
     planets.lon[, Date := as.character(Date, format="%Y-%m-%d")]
     setnames(planets.lon, c('Date', 'variable', 'lon', 'origin'))
     planets.sp <- data.table(melt(planets.pred, id.var=c('Date'), measure.var=planetsSpCols))
-    planets.sp[, origin := gsub('SP', 'LONG', variable)]
+    planets.sp[, origin := gsub('SP', 'LON', variable)]
     planets.sp[, Date := as.character(Date, format="%Y-%m-%d")]
     setnames(planets.sp, c('Date', 'variable', 'sp', 'origin'))
     # merge significance with lon & sp
@@ -2123,7 +2131,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   # process the daily aspects energy
   dayAspectsEnergy <- function(planets.day, panalogy, aspectspolarity, conjpolarity, aspectsenergy, planetsenergy, energygrowthsp, asporbs) {
-    #planets.day <- trim(planets.day)
     curdate <- planets.day[['Date']]
     activecols <- planetsCombLonCols[grep(planets.day[['sigpatterns']], planetsCombLonCols, perl=T)]
     # ignore anon aspects or non active
@@ -2143,17 +2150,12 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       distance <- as.numeric(planets.day[[curcolorb]])
       # ignore aspects that are out of allowed orb
       if (distance > asporbs['orbs', aspect]) next;
-      # ignore aspects between nodes that happens ever
-      if (curcol == 'SNLONNNLON') next
       # code of planets involved in the aspect
-      col1 <- substr(curcol, 1, 2)
-      col2 <- substr(curcol, 6, 7)
-      # longitude col names
-      loncol1 <- paste(col1, 'LONG', sep='')
-      loncol2 <- paste(col2, 'LONG', sep='')
+      col1 <- substr(curcol, 1, 5)
+      col2 <- substr(curcol, 6, 10)
       # energy for planets
-      planetenergy1 <- planetsenergy['energy', loncol1]
-      planetenergy2 <- planetsenergy['energy', loncol2]
+      planetenergy1 <- planetsenergy['energy', col1]
+      planetenergy2 <- planetsenergy['energy', col2]
       # determine aspect energy based on aspect and involved planets
       aspectenergy <- aspectsenergy['energy', aspect] * (planetenergy1 + planetenergy2)
       # determine aspect polarity
@@ -2179,8 +2181,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
         stop(paste("No valid polarity was provided - ", curcol, aspect))
       }
 
-      energy[[length(energy)+1]] <- list(Date=curdate, origin=loncol1, up=up, down=down)
-      energy[[length(energy)+1]] <- list(Date=curdate, origin=loncol2, up=up, down=down)
+      energy[[length(energy)+1]] <- list(Date=curdate, origin=col1, up=up, down=down)
+      energy[[length(energy)+1]] <- list(Date=curdate, origin=col2, up=up, down=down)
     }
 
     # convert energy list to data table
@@ -2196,13 +2198,20 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       # add retrograde energy
       if (significance.row$sp < 0) {
         energy <- energy + energyret
-        watchdog[length(watchdog)+1] <- paste(energy, by.row$origin, ' Re')
+        if (enableWD) {
+          watchdog[length(watchdog)+1] <- paste(energy, by.row$origin, ' Re')
+        }
       }
       # add the planet zodiacal energy
       zodenergy <- planetszodenergy[by.row$origin, significance.row$zsign]
-      watchdog[length(watchdog)+1] <- paste(zodenergy, by.row$origin, ' zod ', significance.row$zsign)
       energy <- energy + zodenergy
-      return(list(energy=energy, watchdog=paste(watchdog, collapse=' / ')))
+      if (enableWD) {
+        watchdog[length(watchdog)+1] <- paste(zodenergy, by.row$origin, ' zod ', significance.row$zsign)
+        return(list(energy=energy, watchdog=paste(watchdog, collapse=' / ')))
+      }
+      else {
+        return(list(energy=energy, watchdog=''))
+      }
     }
 
     # process each significance row
@@ -2287,10 +2296,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                                   dimnames = list(c('energy'), aspects))
 
     planetsenergymatrix <- matrix(args$planetsenergy, nrow = 1, ncol = length(args$planetsenergy), byrow = TRUE,
-                                  dimnames = list(c('energy'), planetsLonGCols))
+                                  dimnames = list(c('energy'), planetsLonCols))
 
-    planetszodenergymatrix <- matrix(args$planetszodenergy, nrow = length(planetsLonGCols), ncol = 12, byrow = TRUE,
-                                     dimnames = list(planetsLonGCols, zodSignsCols))
+    planetszodenergymatrix <- matrix(args$planetszodenergy, nrow = length(planetsLonCols), ncol = 12, byrow = TRUE,
+                                     dimnames = list(planetsLonCols, zodSignsCols))
 
     panalogymatrix <- matrix(args$panalogy, nrow = 1, ncol = length(args$panalogy), byrow = TRUE,
                              dimnames = list(c('analogy'), planetsLonGCols))
@@ -2354,8 +2363,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # filter the significance by threshold
     significance <- planetsVarsSignificanceFilter(significance, args$threshold)
     # build significance by days
-
-    # process the planets significance table
     ckey <- with(args, list('buildDailySignificance', degsplit, mapricetype, mapricefs, mapricesl, pricemadir, panalogymatrix))
     significance.days <- loadCache(key=ckey)
     if (is.null(significance.days)) {
@@ -2367,8 +2374,19 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       cat("Get buildDailySignificance cache\n")
     }
 
-    significance.days <- dailySignificanceEnergy(significance.days, args$energyret, planetszodenergymatrix)
-    significance.patterns <- significance.days[, buildDaySignificancePatterns(origin), by=Date]
+    ckey <- with(args, list('buildDailySignificance', degsplit, mapricetype, mapricefs, mapricesl, pricemadir, panalogymatrix, energyret))
+    ckey[[length(ckey)+1]] <- planetszodenergymatrix
+    significance.daysen <- loadCache(key=ckey)
+    if (is.null(significance.daysen)) {
+      significance.daysen <- dailySignificanceEnergy(significance.days, args$energyret, planetszodenergymatrix)
+      saveCache(significance.daysen, key=ckey)
+      cat("Set dailySignificanceEnergy cache\n")
+    }
+    else {
+      cat("Get dailySignificanceEnergy cache\n")
+    }
+
+    significance.patterns <- significance.daysen[, buildDaySignificancePatterns(origin), by=Date]
     significance.patterns[, Date := as.Date(Date, format="%Y-%m-%d")]
     planets.pred <- merge(planets.pred, significance.patterns, by='Date')
     # helper function to process day aspects energy
@@ -2379,12 +2397,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     energy.days <- rbindlist(apply(planets.pred, 1, processPlanesDaySignificance))
     # calculate prediction
-    prediction <- calculatePrediction(significance.days, energy.days, args$energymode)
+    prediction <- calculatePrediction(significance.daysen, energy.days, args$energymode)
     planets.pred <- planets.pred[prediction]
     planets.pred <- security[planets.pred]
     setkeyv(planets.pred, c('Date', 'Year.1'))
-    snippet <- paste(strwrap(sout, width=170), collapse="\n")
-
     # smoth the prediction serie
     planets.pred[, predval := mapredfunc(predRaw, args$mapredsm)]
     # apply alignment to left & right
@@ -2399,7 +2415,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # determine a factor prediction response
     planets.pred[, predFactor := cut(predEff, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
     # plot solution snippet if doplot is enabled
-    if (args$doplot) plotSolutionSnippet(snippet)
+    if (args$doplot) {
+      snippet <- paste(strwrap(sout, width=170), collapse="\n")
+      plotSolutionSnippet(snippet)
+    }
     # helper function to process predictions by year
     pltitle <- paste('Yearly prediction VS price movement for ', args$securityfile)
     processYearPredictions <- function(x) processPredictions(x, pltitle, args$doplot)
@@ -2638,7 +2657,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     args <- list(...)
     if (!hasArg('dateformat')) stop("A dateformat is needed.")
     if (args$doplot) pdf(paste("~/chart_", predfile, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
-    planetsorig <- openPlanets(args$planetsfile, args$cusorbs)
+    planetsorig <- openPlanets(args$planetsfile, deforbs)
     args[['planetsorig']] <- planetsorig
     relativeTrend(args)
     if (args$doplot) dev.off()
