@@ -995,9 +995,12 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                   'energygrowthsp', 'energyret', 'alignmove', panalogyCols, aspOrbsCols, planetsCombLonCols, aspectspolaritycols,
                   aspectsEnergyCols, planetsEnergyCols, planetsZodEnergyCols)
 
-    planetsorig <- openPlanets(planetsfile, deforbs)
     # Clear the cache directory before start
     clearCache(recursive=T, prompt=T)
+    # Create the cache directories structure
+    getCachePath(dirs=c(securityfile))
+    # Load the planets file
+    planetsorig <- openPlanets(planetsfile, deforbs)
     # Redirect output to file
     if (exists('sinkfile', envir=parent.frame())) {
       sinkpathfile <- npath(paste("~/trading/predict/", sinkfile, ".txt", sep=''))
