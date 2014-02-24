@@ -25,7 +25,6 @@ defaspectspolarity <- defaspectspolarity[!is.na(defaspectspolarity)]
 
 # columns names
 aspOrbsCols <- as.character(apply(expand.grid(aspects, planetsBaseCols[1:(length(planetsBaseCols)-1)]), 1, function(x) paste(x[2], x[1], sep='')))
-zodDegrees <- seq(0, 360, by=2)
 planetsLonCols <- paste(planetsBaseCols, 'LON', sep='')
 planetsLonGCols <- paste(planetsLonCols, 'G', sep='')
 planetsLatCols <- paste(planetsBaseCols, 'LAT', sep='')
@@ -36,10 +35,6 @@ planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1]
 planetsCombLonOrbCols <- paste(planetsCombLonCols, 'ORB', sep='')
 aspectsEnergyCols <- paste(aspects, 'E', sep='')
 planetsEnergyCols <- paste(planetsBaseCols, 'E', sep='')
-
-npath <- function(path) {
-  normalizePath(path.expand(path))
-}
 
 deforbsmatrix = matrix(deforbs, nrow = 1, ncol = length(deforbs), dimnames = list('orbs', aspects))
 defconjpolarity <- list(SULONMOLON=1, SULONMELON=1, SULONVELON=1, SULONMALON=0, SULONJULON=1, SULONSALON=0, SULONURLON=1, SULONNELON=0,
@@ -272,6 +267,10 @@ gaint_blxCrossover <- function (object, parents, ...) {
   }
   out <- list(children = children, fitness = NA)
   return(out)
+}
+
+npath <- function(path) {
+  normalizePath(path.expand(path))
 }
 
 cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
