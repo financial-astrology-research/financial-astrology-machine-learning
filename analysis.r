@@ -98,39 +98,6 @@ decToDeg <- function(num) {
   c(d, m, s)
 }
 
-openSecurity <- function(security_file, mapricetype, mapricefs, mapricesl, dateformat="%Y.%m.%d", pricemadir=1) {
-  mapricefunc <- get(get('mapricetype'))
-  security_file <- npath(security_file)
-  security <- fread(security_file)
-  security[, Date := as.Date(as.character(Date), format=dateformat)]
-  security[, Year := as.character(format(Date, "%Y"))]
-  setkey(security, 'Date')
-  security[, Mid := (High + Low + Close + Open) / 4]
-
-  if (pricemadir == 1) {
-    security[, MidMAF := mapricefunc(Mid, n=mapricefs)]
-    security[, MidMAS := mapricefunc(Mid, n=round(mapricefs * mapricesl))]
-    security[, val := MidMAF-MidMAS]
-  }
-  else if (pricemadir == 2) {
-    security[, MidMAF := rev(mapricefunc(rev(Mid), n=mapricefs))]
-    security[, MidMAS := rev(mapricefunc(rev(Mid), n=round(mapricefs * mapricesl)))]
-    security[, val := MidMAS-MidMAF]
-  }
-  else {
-    stop("No valid pricemadir was provided.")
-  }
-
-  if (all(security$val == 0)) {
-    stop("Undetermined security price direction")
-  }
-
-  security <- security[!is.na(val)]
-  security[, Eff := cut(val, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
-
-  return(security)
-}
-
 generateSamples <- function(ds, n) {
   total <- nrow(ds)
   # build test samples
@@ -311,6 +278,40 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   dbcon <- initSQLiteDB()
   closeSQLiteDB <- function(db) {
     dbDisconnect(db)
+  }
+
+  # open a security historic file
+  openSecurity <- function(security_file, mapricetype, mapricefs, mapricesl, dateformat="%Y.%m.%d", pricemadir=1) {
+    mapricefunc <- get(get('mapricetype'))
+    security_file <- npath(security_file)
+    security <- fread(security_file)
+    security[, Date := as.Date(as.character(Date), format=dateformat)]
+    security[, Year := as.character(format(Date, "%Y"))]
+    setkey(security, 'Date')
+    security[, Mid := (High + Low + Close + Open) / 4]
+
+    if (pricemadir == 1) {
+      security[, MidMAF := mapricefunc(Mid, n=mapricefs)]
+      security[, MidMAS := mapricefunc(Mid, n=round(mapricefs * mapricesl))]
+      security[, val := MidMAF-MidMAS]
+    }
+    else if (pricemadir == 2) {
+      security[, MidMAF := rev(mapricefunc(rev(Mid), n=mapricefs))]
+      security[, MidMAS := rev(mapricefunc(rev(Mid), n=round(mapricefs * mapricesl)))]
+      security[, val := MidMAS-MidMAF]
+    }
+    else {
+      stop("No valid pricemadir was provided.")
+    }
+
+    if (all(security$val == 0)) {
+      stop("Undetermined security price direction")
+    }
+
+    security <- security[!is.na(val)]
+    security[, Eff := cut(val, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
+
+    return(security)
   }
 
   openPlanets <- function(planetsfile, cusorbs) {
