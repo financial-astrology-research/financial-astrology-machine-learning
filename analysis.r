@@ -281,7 +281,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   # open a security historic file
-  openSecurity <- function(security_file, mapricetype, mapricefs, mapricesl, dateformat="%Y.%m.%d", pricemadir=1) {
+  openSecurity <- function(security_file, mapricetype, mapricefs, mapricesl, dateformat="%Y.%m.%d", pricemadir=2) {
     mapricefunc <- get(get('mapricetype'))
     security_file <- npath(security_file)
     security <- fread(security_file)
