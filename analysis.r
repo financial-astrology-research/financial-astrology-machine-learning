@@ -5,6 +5,7 @@ library(compiler)
 library(data.table)
 library(ggplot2)
 library(microbenchmark)
+library(quantmod)
 library(reshape2)
 library(splus2R)
 # no scientific notation
