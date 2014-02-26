@@ -282,28 +282,17 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   # open a security historic file
-  openSecurity <- function(security_file, mapricetype, mapricefs, mapricesl, dateformat="%Y.%m.%d", pricemadir=2) {
-    mapricefunc <- get(get('mapricetype'))
+  openSecurity <- function(security_file, mapricefs, mapricesl, dateformat="%Y.%m.%d") {
+    mapricefunc <- get('EMA')
     security_file <- npath(security_file)
     security <- fread(security_file)
     security[, Date := as.Date(as.character(Date), format=dateformat)]
     security[, Year := as.character(format(Date, "%Y"))]
     setkey(security, 'Date')
     security[, Mid := (High + Low + Close + Open) / 4]
-
-    if (pricemadir == 1) {
-      security[, MidMAF := mapricefunc(Mid, n=mapricefs)]
-      security[, MidMAS := mapricefunc(Mid, n=round(mapricefs * mapricesl))]
-      security[, val := MidMAF-MidMAS]
-    }
-    else if (pricemadir == 2) {
-      security[, MidMAF := rev(mapricefunc(rev(Mid), n=mapricefs))]
-      security[, MidMAS := rev(mapricefunc(rev(Mid), n=round(mapricefs * mapricesl)))]
-      security[, val := MidMAS-MidMAF]
-    }
-    else {
-      stop("No valid pricemadir was provided.")
-    }
+    security[, MidMAF := rev(mapricefunc(rev(Mid), n=mapricefs))]
+    security[, MidMAS := rev(mapricefunc(rev(Mid), n=round(mapricefs * mapricesl)))]
+    security[, val := MidMAS-MidMAF]
 
     if (all(security$val == 0)) {
       stop("Undetermined security price direction")
@@ -634,8 +623,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   relativeTrend <- function(args) {
     looptm <- proc.time()
-    mapricefunc <- get(args$mapricetype)
-    mapredfunc <- get('SMA')
     rdates <- as.Date(with(args, c(tsdate, tedate, vsdate, vedate, csdate, cedate)))
     new.fitness.best <- ""
 
@@ -664,7 +651,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                              ", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate),
                              ", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate),
                              ", mapredsm=", mapredsm, ", mapricefs=", mapricefs, ", mapricesl=", mapricesl,
-                             ", mapricetype=", shQuote(mapricetype),
                              ", degsplit=", degsplit, ", threshold=", threshold,
                              ", energymode=", energymode, ", energygrowthsp=", energygrowthsp, ", energyret=", energyret, ", alignmove=", alignmove,
                              ", panalogy=c(", paste(shQuote(panalogy), collapse=", "), ")",
@@ -693,10 +679,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets.pred <- planets[Date > rdates[3] & Date <= rdates[6] & wday %in% c(1, 2, 3, 4, 5)]
 
     # load the security data
-    ckey <- with(args, list('openSecurity', mapricetype, mapricefs, mapricesl))
+    ckey <- with(args, list('openSecurity', mapricefs, mapricesl))
     security <- loadCache(key=ckey, dirs=c(args$securityfile))
     if (is.null(security)) {
-      security <- with(args, openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricetype, mapricefs, mapricesl, dateformat))
+      security <- with(args, openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricefs, mapricesl, dateformat))
       saveCache(security, key=ckey, dirs=c(args$securityfile))
       cat("Set openSecurity cache\n")
     }
@@ -705,7 +691,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     }
 
     # process the planets significance table
-    ckey <- with(args, list('planetsVarsSignificance', degsplit, mapricetype, mapricefs, mapricesl))
+    ckey <- with(args, list('planetsVarsSignificance', degsplit, mapricefs, mapricesl))
     significance <- loadCache(key=ckey, dirs=c(args$securityfile))
     if (is.null(significance)) {
       significance <- with(args, planetsVarsSignificance(planets.train, security))
@@ -719,7 +705,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # filter the significance by threshold
     significance <- planetsVarsSignificanceFilter(significance, args$threshold)
     # build significance by days
-    ckey <- with(args, list('buildDailySignificance', degsplit, mapricetype, mapricefs, mapricesl, panalogymatrix))
+    ckey <- with(args, list('buildDailySignificance', degsplit, mapricefs, mapricesl, panalogymatrix))
     significance.days <- loadCache(key=ckey, dirs=c(args$securityfile))
     if (is.null(significance.days)) {
       significance.days <- buildDailySignificance(significance, planets.pred, panalogymatrix)
@@ -730,7 +716,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       cat("Get buildDailySignificance cache\n")
     }
 
-    ckey <- with(args, list('buildDailySignificance', degsplit, mapricetype, mapricefs, mapricesl, panalogymatrix, energyret))
+    ckey <- with(args, list('buildDailySignificance', degsplit, mapricefs, mapricesl, panalogymatrix, energyret))
     ckey[[length(ckey)+1]] <- planetszodenergymatrix
     significance.daysen <- loadCache(key=ckey, dirs=c(args$securityfile))
     if (is.null(significance.daysen)) {
@@ -758,7 +744,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets.pred <- security[planets.pred]
     setkeyv(planets.pred, c('Date', 'Year.1'))
     # smoth the prediction serie
-    planets.pred[, predval := mapredfunc(predRaw, args$mapredsm)]
+    planets.pred[, predval := SMA(predRaw, args$mapredsm)]
     # apply alignment to left & right
     if (args$alignmove > 0) {
       planets.pred[, predval := c(predval[(args$alignmove+1):length(predval)], rep(NA, args$alignmove))]
@@ -921,11 +907,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   relativeTrendFitness <- function(x, planetsorig, securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, fittype, dateformat) {
     # build the parameters based on GA indexes
-    mapricetypes <- c('SMA', 'EMA', 'WMA', 'ZLEMA')
-    predtypes <- c('absolute',  'relative')
-    pricetypes <- c('averages',  'daily', 'priceaverage')
     analogytypes <- c(NA, 'SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'CELONG', 'JULONG')
-    pa.e = 11+length(planetsBaseCols)
+    pa.e = 10+length(planetsBaseCols)
     co.e = pa.e+length(deforbs)
     api.e = co.e+length(defpolarity)
     ae.e = api.e+length(defaspectsenergy)
@@ -948,14 +931,13 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 mapredsm=x[1],
                 mapricefs=x[2],
                 mapricesl=x[3]/2,
-                mapricetype=mapricetypes[[x[4]]],
-                degsplit=x[5],
-                threshold=x[6]/100,
-                energymode=x[7],
-                energygrowthsp=x[8]/10,
-                energyret=adjustEnergy(x[9]),
-                alignmove=x[10],
-                panalogy=analogytypes[x[11:(pa.e-1)]],
+                degsplit=x[4],
+                threshold=x[5]/100,
+                energymode=x[6],
+                energygrowthsp=x[7]/10,
+                energyret=adjustEnergy(x[8]),
+                alignmove=x[9],
+                panalogy=analogytypes[x[10:(pa.e-1)]],
                 cusorbs=x[pa.e:(co.e-1)],
                 aspectspolarity=x[co.e:(api.e-1)],
                 aspectsenergy=adjustEnergy(x[api.e:(ae.e-1)]),
@@ -986,15 +968,15 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planetzodenergymin <- rep(-20, length(defplanetszodenergy))
     planetzodenergymax <- rep(20, length(defplanetszodenergy))
 
-    minvals <- c( 2,  2, 3, 1, dsmin,  0, 1, 0, -20, -20, panalogymin, orbsmin, polaritymin, aspectenergymin,
+    minvals <- c( 2,  2, 3, dsmin,  0, 1, 0, -20, -20, panalogymin, orbsmin, polaritymin, aspectenergymin,
                  planetenergymin, planetzodenergymin)
-    maxvals <- c(10, 20, 6, 4, dsmax, 30, 2, 9,  20,  20, panalogymax, orbsmax, polaritymax, aspectenergymax,
+    maxvals <- c(10, 20, 6, dsmax, 30, 2, 9,  20,  20, panalogymax, orbsmax, polaritymax, aspectenergymax,
                  planetenergymax, planetzodenergymax)
 
     panalogyCols <- planetsLonGCols[5:length(planetsLonGCols)]
-    varnames <- c('mapredsm', 'mapricefs', 'mapricesl', 'mapricetype', 'degsplit', 'threshold', 'energymode',
-                  'energygrowthsp', 'energyret', 'alignmove', panalogyCols, aspOrbsCols, planetsCombLonCols, aspectspolaritycols,
-                  aspectsEnergyCols, planetsEnergyCols, planetsZodEnergyCols)
+    varnames <- c('mapredsm', 'mapricefs', 'mapricesl', 'degsplit', 'threshold', 'energymode', 'energygrowthsp', 'energyret',
+                  'alignmove', panalogyCols, aspOrbsCols, planetsCombLonCols, aspectspolaritycols, aspectsEnergyCols,
+                  planetsEnergyCols, planetsZodEnergyCols)
 
     # Clear the cache directory before start
     clearCache(recursive=T, prompt=T)
@@ -1031,12 +1013,9 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   testSolutionDebug <- function(planetsfile, securityfile, tsdate, tedate, vsdate, vedate, csdate, cedate, fittype, dateformat, predfile, x) {
     # build the parameters based on GA indexes
-    mapricetypes <- c('SMA', 'EMA', 'WMA', 'ZLEMA')
-    predtypes <- c('absolute',  'relative')
-    pricetypes <- c('averages',  'daily', 'priceaverage')
     analogytypes <- c(NA, 'SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG')
 
-    pa.e = 11+length(planetsBaseCols)
+    pa.e = 10+length(planetsBaseCols)
     co.e = pa.e+length(deforbs)
     api.e = co.e+length(defpolarity)
     ae.e = api.e+length(defaspectsenergy)
@@ -1058,14 +1037,13 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 mapredsm=x[1],
                 mapricefs=x[2],
                 mapricesl=x[3]/2,
-                mapricetype=mapricetypes[[x[4]]],
-                degsplit=x[5],
-                threshold=x[6]/100,
-                energymode=x[7],
-                energygrowthsp=x[8]/10,
-                energyret=adjustEnergy(x[9]),
-                alignmove=x[10],
-                panalogy=analogytypes[x[11:(pa.e-1)]],
+                degsplit=x[4],
+                threshold=x[5]/100,
+                energymode=x[6],
+                energygrowthsp=x[7]/10,
+                energyret=adjustEnergy(x[8]),
+                alignmove=x[9],
+                panalogy=analogytypes[x[10:(pa.e-1)]],
                 cusorbs=x[pa.e:(co.e-1)],
                 aspectspolarity=x[co.e:(api.e-1)],
                 aspectsenergy=adjustEnergy(x[api.e:(ae.e-1)]),
