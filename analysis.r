@@ -999,7 +999,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                   planetsEnergyCols, planetsZodEnergyCols)
 
     # Clear the cache directory before start
-    clearCache(recursive=T, prompt=T)
+    clearCache()
     # Create the cache directories structure
     getCachePath(dirs=c(securityfile))
     # Load the planets file
@@ -1072,6 +1072,21 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     if (!hasArg('dateformat')) stop("A dateformat is needed.")
     relativeTrend(args)
+  }
+
+  clearCache <- function(path=getCachePath()) {
+    answer <- '.'
+    nofiles <- as.numeric(system2('find', paste(getCachePath(), '-type f | wc -l'), stdout=T))
+    while (!(answer %in% c('y', 'n', ''))) {
+      cat(sprintf("Are you really sure you want to delete %d files in '%s'? [y/N]: ", nofiles, path))
+      answer <- tolower(readline())
+    }
+    if (answer != 'y') {
+      return(invisible(NULL))
+    }
+    system2('find', paste(getCachePath(), '-type f -delete'), stdout=F)
+    nofiles <- as.numeric(system2('find', paste(getCachePath(), '-type f | wc -l'), stdout=T))
+    cat(sprintf("Now '%s' has %d files\n", path, nofiles))
   }
 
   execfunc <- get(get('execfunc'))
