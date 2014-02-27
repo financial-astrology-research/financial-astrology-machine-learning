@@ -283,7 +283,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   # open a security historic file
   openSecurity <- function(security_file, mapricefs, mapricesl, dateformat="%Y.%m.%d") {
-    mapricefunc <- get('EMA')
+    mapricefunc <- get('SMA')
     security_file <- npath(security_file)
     security <- fread(security_file)
     security[, Date := as.Date(as.character(Date), format=dateformat)]
