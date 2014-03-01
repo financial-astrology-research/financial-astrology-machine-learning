@@ -716,29 +716,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       cat("Get buildDailySignificance cache\n")
     }
 
-    ckey <- with(args, list('buildDailySignificance', degsplit, mapricefs, mapricesl, panalogy, energyret, planetszodenergy))
-    significance.daysen <- loadCache(key=ckey, dirs=c(args$securityfile))
-    if (is.null(significance.daysen)) {
-      significance.daysen <- dailySignificanceEnergy(significance.days, args$energyret, planetszodenergymatrix)
-      saveCache(significance.daysen, key=ckey, dirs=c(args$securityfile))
-      cat("Set dailySignificanceEnergy cache\n")
-    }
-    else {
-      cat("Get dailySignificanceEnergy cache\n")
-    }
-
-    ckey <- with(args, list('buildDaySignificancePatterns', degsplit, mapricefs, mapricesl, panalogy, energyret, planetszodenergy))
-    significance.patterns <- loadCache(key=ckey, dirs=c(args$securityfile))
-    if (is.null(significance.patterns)) {
-      significance.patterns <- significance.daysen[, buildDaySignificancePatterns(origin), by=Date]
-      significance.patterns[, Date := as.Date(Date, format="%Y-%m-%d")]
-      saveCache(significance.patterns, key=ckey, dirs=c(args$securityfile))
-      cat("Set buildDaySignificancePatterns cache\n")
-    }
-    else {
-      cat("Get buildDaySignificancePatterns cache\n")
-    }
-
+    # Calculate daily significance energy and patterns (no cache due is fast to calculate)
+    significance.daysen <- dailySignificanceEnergy(significance.days, args$energyret, planetszodenergymatrix)
+    significance.patterns <- significance.daysen[, buildDaySignificancePatterns(origin), by=Date]
+    significance.patterns[, Date := as.Date(Date, format="%Y-%m-%d")]
     planets.pred <- merge(planets.pred, significance.patterns, by='Date')
     # helper function to process day aspects energy
     processPlanesDaySignificance <- function(x) {
