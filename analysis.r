@@ -1,6 +1,5 @@
 library(GA)
 library(R.cache)
-library(RSQLite)
 library(compiler)
 library(data.table)
 library(ggplot2)
@@ -248,38 +247,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   # determine the current system version
   system("cd ~/trading")
   branch.name <- system2("git", "rev-parse --abbrev-ref HEAD", stdout=T)
-
-  getFitnessBest <- function(db) {
-    return(as.numeric(dbGetQuery(db, "select * from keys where key='fitness.best'")[2]))
-  }
-
-  setFitnessBest <- function(db, value) {
-    dbBeginTransaction(db)
-    sql <- "update keys set count = ? where key = 'fitness.best'"
-    dbGetPreparedQuery(db, sql, bind.data = data.frame(count=value))
-    return(dbCommit(db))
-  }
-
-  initSQLiteDB <- function() {
-    db <- dbConnect(SQLite(), dbname = "citlacom.db")
-    # create table if not exists
-    if (!dbExistsTable(db, 'keys')) {
-      sql <- "create table keys (key text PRIMARY KEY, count integer)"
-      dbGetQuery(db, sql)
-      sql <- "insert into keys values (?, ?)"
-      fitness.best <- data.frame(key='fitness.best', count=-100)
-      dbGetPreparedQuery(db, sql, bind.data = fitness.best)
-    }
-    else {
-      setFitnessBest(db, -100)
-    }
-    return(db)
-  }
-
-  dbcon <- initSQLiteDB()
-  closeSQLiteDB <- function(db) {
-    dbDisconnect(db)
-  }
 
   # open a security historic file
   openSecurity <- function(security_file, mapricefs, mapricesl, dateformat="%Y.%m.%d") {
@@ -789,9 +756,13 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       stop("No valid fittype provided")
     }
 
-    fitness.best <- getFitnessBest(dbcon)
-    if (fitness.total > fitness.best) {
-      setFitnessBest(dbcon, fitness.total)
+    ckey <- list('fitnessBest')
+    fitness.best <- loadCache(key=ckey, dirs=c(args$securityfile))
+    if (is.null(fitness.best)) {
+      saveCache(-100, key=ckey, dirs=c(args$securityfile))
+    }
+    else if (fitness.total > fitness.best) {
+      saveCache(fitness.total, key=ckey, dirs=c(args$securityfile))
       new.fitness.best <- "best solution --- "
     }
 
@@ -1082,7 +1053,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   #  print(p1)
   #}
   #dev.off()
-  closeSQLiteDB(dbcon)
 }
 
 # compile the function to byte code
