@@ -1028,17 +1028,16 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   clearCache <- function(path=getCachePath()) {
     answer <- '.'
-    nofiles <- as.numeric(system2('find', paste(getCachePath(), '-type f | wc -l'), stdout=T))
+    allFiles <- system2('lsfs', paste(getCachePath(), "| grep '^file' | awk '{print $2};'"), stdout=T)
     while (!(answer %in% c('y', 'n', ''))) {
-      cat(sprintf("Are you really sure you want to delete %d files in '%s'? [y/N]: ", nofiles, path))
+      cat(sprintf("Are you really sure you want to delete %d files in '%s'? [y/N]: ", length(allFiles), path))
       answer <- tolower(readline())
     }
     if (answer != 'y') {
       return(invisible(NULL))
     }
-    system2('find', paste(getCachePath(), '-type f -delete'), stdout=F)
-    nofiles <- as.numeric(system2('find', paste(getCachePath(), '-type f | wc -l'), stdout=T))
-    cat(sprintf("Now '%s' has %d files\n", path, nofiles))
+    removed <- file.remove(allFiles)
+    cat(sprintf("%d files had been removed %d failed.\n", length(removed==TRUE), length(removed==FALSE)))
   }
 
   execfunc <- get(get('execfunc'))
