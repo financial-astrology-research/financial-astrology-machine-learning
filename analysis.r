@@ -1036,8 +1036,11 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     if (answer != 'y') {
       return(invisible(NULL))
     }
+    # remove files and count op results
     removed <- file.remove(allFiles)
-    cat(sprintf("%d files had been removed %d failed.\n", length(removed==TRUE), length(removed==FALSE)))
+    sucess <- length(removed[removed==TRUE])
+    failed <- length(removed[removed==FALSE])
+    cat(sprintf("%d files had been removed %d failed.\n", sucess, failed))
   }
 
   execfunc <- get(get('execfunc'))
