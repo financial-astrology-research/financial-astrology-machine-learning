@@ -62,7 +62,7 @@ defpanalogy <- list(c(2, 3, 4, 5, 6, 7, 8, 1, 1, 1, 1, 1),
                     c(2, 3, 4, 5, 6, 7, 8, 7, 7, 7, 7, 7),
                     c(2, 3, 4, 5, 6, 7, 8, 8, 8, 8, 8, 8))
 
-zodSignsCols <- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CA', 'AC', 'PI')
+zodSignsCols <- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CP', 'AC', 'PI')
 planetsZodEnergyCols <- as.character(apply(expand.grid(planetsLonCols, zodSignsCols), 1, function(x) paste(x[1], '_', x[2], sep='')))
 zodenergy.su <- c( 10,  01,  01,  01,  10,  01, -10,  01,  01,  01, -10,  01)
 zodenergy.mo <- c( 01,  10,  01,  10,  01,  01,  01, -10,  01, -10,  01,  01)
@@ -257,9 +257,9 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     security[, Year := as.character(format(Date, "%Y"))]
     setkey(security, 'Date')
     security[, Mid := (High + Low + Close + Open) / 4]
-    security[, MidMAF := rev(mapricefunc(rev(Mid), n=mapricefs))]
-    security[, MidMAS := rev(mapricefunc(rev(Mid), n=mapricesl))]
-    security[, val := MidMAS-MidMAF]
+    security[, MidMAF := mapricefunc(Mid, n=mapricefs)]
+    security[, MidMAS := mapricefunc(Mid, n=mapricesl)]
+    security[, val := MidMAF-MidMAS]
 
     if (all(security$val == 0)) {
       stop("Undetermined security price direction")
