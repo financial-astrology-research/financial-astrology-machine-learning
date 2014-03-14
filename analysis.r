@@ -53,14 +53,6 @@ defpolarity <- c(defconjpolarity, defaspectspolarity)
 aspectspolaritycols <- aspects[2:length(aspects)]
 
 defplanetsenergy <- c(5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5)
-defpanalogy <- list(c(2, 3, 4, 5, 6, 7, 8, 1, 1, 1, 1, 1),
-                    c(2, 3, 4, 5, 6, 7, 8, 2, 2, 2, 2, 2),
-                    c(2, 3, 4, 5, 6, 7, 8, 3, 3, 3, 3, 3),
-                    c(2, 3, 4, 5, 6, 7, 8, 4, 4, 4, 4, 4),
-                    c(2, 3, 4, 5, 6, 7, 8, 5, 5, 5, 5, 5),
-                    c(2, 3, 4, 5, 6, 7, 8, 6, 6, 6, 6, 6),
-                    c(2, 3, 4, 5, 6, 7, 8, 7, 7, 7, 7, 7),
-                    c(2, 3, 4, 5, 6, 7, 8, 8, 8, 8, 8, 8))
 
 zodSignsCols <- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CP', 'AC', 'PI')
 planetsZodEnergyCols <- as.character(apply(expand.grid(planetsLonCols, zodSignsCols), 1, function(x) paste(x[1], '_', x[2], sep='')))
@@ -833,7 +825,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   relativeTrendFitness <- function(x, planetsorig, securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate,
                                    fittype, dateformat, mapricefs, mapricesl) {
     # build the parameters based on GA indexes
-    analogytypes <- c(NA, 'SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'CELONG', 'JULONG')
+    analogytypes <- c(NA, 'SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'CELONG')
     pa.e = 8+length(planetsBaseCols)
     co.e = pa.e+length(deforbs)
     api.e = co.e+length(defpolarity)
@@ -883,7 +875,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     dsmin <- 1
     dsmax <- 5
     panalogymin <- rep(1, length(planetsBaseCols))
-    panalogymax <- rep(8, length(planetsBaseCols))
+    panalogymax <- rep(7, length(planetsBaseCols))
     orbsmin <- rep(0, length(deforbs))
     orbsmax <- deforbs
     polaritymin <- rep(0, length(defpolarity))
