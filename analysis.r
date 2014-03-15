@@ -19,9 +19,6 @@ planetsBaseCols <- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'SA', 'UR', 'NE',
 # Aspects and orbs
 aspects            <-  c(0,30,36,40,45,51,60,72,80,90,103,108,120,135,144,150,154,160,180)
 deforbs            <- c(12, 2, 2, 2, 2, 2, 7, 2, 2, 7,  2,  2,  7,  2,  2,  2,  2,  2, 12)
-defaspectsenergy   <- c(10, 2, 2, 2, 2, 2, 6, 2, 2, 6,  2,  2,  6,  2,  2,  2,  2,  2, 10)
-defaspectspolarity <- c(NA, 1, 0, 0, 1, 0, 1, 0, 1, 0,  0,  0,  1,  0,  0,  0,  0,  1,  0)
-defaspectspolarity <- defaspectspolarity[!is.na(defaspectspolarity)]
 
 # columns names
 aspOrbsCols <- as.character(apply(expand.grid(aspects, planetsBaseCols[1:(length(planetsBaseCols)-1)]), 1, function(x) paste(x[2], x[1], sep='')))
@@ -35,22 +32,6 @@ planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1]
 planetsCombLonOrbCols <- paste(planetsCombLonCols, 'ORB', sep='')
 aspectsEnergyCols <- paste(aspects, 'E', sep='')
 planetsEnergyCols <- paste(planetsBaseCols, 'E', sep='')
-
-deforbsmatrix = matrix(deforbs, nrow = 1, ncol = length(deforbs), dimnames = list('orbs', aspects))
-defconjpolarity <- list(SULONMOLON=1, SULONMELON=1, SULONVELON=1, SULONMALON=0, SULONJULON=1, SULONSALON=0, SULONURLON=1, SULONNELON=0,
-                        SULONPLLON=0, SULONNNLON=1, MOLONMELON=1, MOLONVELON=1, MOLONMALON=0, MOLONJULON=1, MOLONSALON=0, MOLONURLON=0,
-                        MOLONNELON=1, MOLONPLLON=0, MOLONNNLON=1, MELONVELON=1, MELONMALON=0, MELONJULON=1, MELONSALON=0, MELONURLON=1,
-                        MELONNELON=1, MELONPLLON=0, MELONNNLON=1, VELONMALON=0, VELONJULON=1, VELONSALON=0, VELONURLON=1, VELONNELON=1,
-                        VELONPLLON=1, VELONNNLON=1, MALONJULON=0, MALONSALON=0, MALONURLON=0, MALONNELON=0, MALONPLLON=0, MALONNNLON=0,
-                        JULONSALON=0, JULONURLON=1, JULONNELON=1, JULONPLLON=0, JULONNNLON=1, SALONURLON=0, SALONNELON=0, SALONPLLON=0,
-                        SALONNNLON=0, URLONNELON=0, URLONPLLON=0, URLONNNLON=0, NELONPLLON=0, NELONNNLON=0, PLLONNNLON=0)
-
-defconjpolaritymatrix <- matrix(0, nrow = length(planetsCombLonCols), ncol = 1, dimnames = list(planetsCombLonCols, c('0')))
-# set default polarity for aspects
-defconjpolaritymatrix[names(defconjpolarity), '0'] <- as.integer(defconjpolarity)
-defconjpolarity <- as.integer(defconjpolaritymatrix)
-defpolarity <- c(defconjpolarity, defaspectspolarity)
-aspectspolaritycols <- aspects[2:length(aspects)]
 
 defplanetsenergy <- c(5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5)
 
@@ -387,7 +368,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   # process the daily aspects energy
-  dayAspectsEnergy <- function(planets.day, panalogy, aspectspolarity, conjpolarity, aspectsenergy, planetsenergy, energygrowthsp, asporbs) {
+  dayAspectsEnergy <- function(planets.day, panalogy, aspectspolarity, aspectsenergy, planetsenergy, energygrowthsp, asporbs) {
     curdate <- planets.day[['Date']]
     activecols <- planetsCombLonCols[grep(planets.day[['sigpatterns']], planetsCombLonCols, perl=T)]
     # ignore anon aspects or non active
@@ -416,22 +397,21 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       # determine aspect energy based on aspect and involved planets
       aspectenergy <- aspectsenergy['energy', aspect] * (planetenergy1 + planetenergy2)
       # determine aspect polarity
-      if (aspect == '0') {
-        aspectpolarity <- conjpolarity['polarity', curcol]
-      }
-      else {
-        aspectpolarity <- aspectspolarity['polarity', aspect]
-      }
+      aspectpolarity <- aspectspolarity['polarity', aspect]
 
       # compute the given energy based on the aspect orb distance
       aspectenergydis <- energyGrowth(abs(aspectenergy), distance, energygrowthsp)
 
-      if (aspectpolarity == 1) {
+      if (aspectpolarity == 0) {
+        up <- 0
+        down <- aspectenergydis
+      }
+      else if (aspectpolarity == 1) {
         up <- aspectenergydis
         down <- 0
       }
-      else if (aspectpolarity == 0) {
-        up <- 0
+      else if (aspectpolarity == 2) {
+        up <- aspectenergydis
         down <- aspectenergydis
       }
       else {
@@ -542,10 +522,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     orbsmatrix <- matrix(args$cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
 
     # aspects polarities
-    pol1 <- args$aspectspolarity[1:length(defconjpolarity)]
-    pol2 <- args$aspectspolarity[(length(defconjpolarity)+1):length(args$aspectspolarity)]
-    conjpolaritymatrix <- matrix(pol1, nrow = 1, ncol = length(planetsCombLonCols), byrow = TRUE, dimnames = list('polarity', planetsCombLonCols))
-    aspectspolaritymatrix <- matrix(pol2, nrow = 1, ncol = length(aspectspolaritycols), byrow = TRUE, dimnames = list('polarity', aspectspolaritycols))
+    aspectspolaritymatrix <- matrix(args$aspectspolarity, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('polarity', aspects))
 
     aspectsenergymatrix <- matrix(args$aspectsenergy, nrow = 1, ncol = length(args$aspectsenergy), byrow = TRUE,
                                   dimnames = list(c('energy'), aspects))
@@ -635,7 +612,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets.pred <- merge(planets.pred, significance.patterns, by='Date')
     # helper function to process day aspects energy
     processPlanesDaySignificance <- function(x) {
-      dayAspectsEnergy(x, panalogymatrix, aspectspolaritymatrix, conjpolaritymatrix, aspectsenergymatrix,
+      dayAspectsEnergy(x, panalogymatrix, aspectspolaritymatrix, aspectsenergymatrix,
                        planetsenergymatrix, args$energygrowthsp, orbsmatrix)
     }
 
@@ -715,8 +692,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     cat(sout)
     cat("\n")
     print(orbsmatrix)
-    cat("\n")
-    print(conjpolaritymatrix)
     cat("\n")
     print(aspectspolaritymatrix)
     cat("\n")
@@ -828,8 +803,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     analogytypes <- c('SULONG', 'MELONG', 'VELONG', 'MALONG', 'CELONG')
     pa.e = 8+length(planetsBaseCols)
     co.e = pa.e+length(deforbs)
-    api.e = co.e+length(defpolarity)
-    ae.e = api.e+length(defaspectsenergy)
+    api.e = co.e+length(aspects)
+    ae.e = api.e+length(aspects)
     pe.e = ae.e+length(defplanetsenergy)
     pze.e = pe.e+length(defplanetszodenergy)
 
@@ -878,10 +853,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     panalogymax <- rep(5, length(planetsBaseCols))
     orbsmin <- rep(0, length(deforbs))
     orbsmax <- deforbs
-    polaritymin <- rep(0, length(defpolarity))
-    polaritymax <- rep(1, length(defpolarity))
-    aspectenergymin <- rep(0, length(defaspectsenergy))
-    aspectenergymax <- rep(20, length(defaspectsenergy))
+    polaritymin <- rep(0, length(aspects))
+    polaritymax <- rep(2, length(aspects))
+    aspectenergymin <- rep(0, length(aspects))
+    aspectenergymax <- rep(20, length(aspects))
     planetenergymin <- rep(0, length(defplanetsenergy))
     planetenergymax <- rep(20, length(defplanetsenergy))
     planetzodenergymin <- rep(-20, length(defplanetszodenergy))
@@ -891,7 +866,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     maxvals <- c(10, dsmax, 30, 2, 9,  20,  20, panalogymax, orbsmax, polaritymax, aspectenergymax, planetenergymax, planetzodenergymax)
     panalogyCols <- planetsLonGCols[5:length(planetsLonGCols)]
     varnames <- c('mapredsm', 'degsplit', 'threshold', 'energymode', 'energygrowthsp', 'energyret',
-                  'alignmove', panalogyCols, aspOrbsCols, planetsCombLonCols, aspectspolaritycols, aspectsEnergyCols,
+                  'alignmove', panalogyCols, aspOrbsCols, planetsCombLonCols, aspects, aspectsEnergyCols,
                   planetsEnergyCols, planetsZodEnergyCols)
 
     # Clear the cache directory before start
@@ -933,8 +908,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     pa.e = 8+length(planetsBaseCols)
     co.e = pa.e+length(deforbs)
-    api.e = co.e+length(defpolarity)
-    ae.e = api.e+length(defaspectsenergy)
+    api.e = co.e+length(aspects)
+    ae.e = api.e+length(aspects)
     pe.e = ae.e+length(defplanetsenergy)
     pze.e = pe.e+length(defplanetszodenergy)
 
