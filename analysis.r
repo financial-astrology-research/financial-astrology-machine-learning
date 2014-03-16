@@ -436,14 +436,14 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       if (significance.row$sp < 0) {
         energy <- energy + energyret
         if (enableWD) {
-          watchdog[length(watchdog)+1] <- paste(energy, by.row$origin, ' Re')
+          watchdog[length(watchdog)+1] <- paste(energy, by.row[[2]], ' Re')
         }
       }
       # add the planet zodiacal energy
-      zodenergy <- planetszodenergy[by.row$origin, significance.row$zsign]
+      zodenergy <- planetszodenergy[by.row[[2]], significance.row$zsign]
       energy <- energy + zodenergy
       if (enableWD) {
-        watchdog[length(watchdog)+1] <- paste(zodenergy, by.row$origin, ' zod ', significance.row$zsign)
+        watchdog[length(watchdog)+1] <- paste(zodenergy, by.row[[2]], ' zod ', significance.row$zsign)
         return(list(energy=energy, watchdog=paste(watchdog, collapse=' / ')))
       }
       else {
