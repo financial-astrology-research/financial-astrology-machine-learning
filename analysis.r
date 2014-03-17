@@ -523,7 +523,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     # aspects polarities
     aspectspolarity <- c(2, args$aspectspolarity)
-    aspectspolaritymatrix <- matrix(args$aspectspolarity, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('polarity', aspects))
+    aspectspolaritymatrix <- matrix(aspectspolarity, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('polarity', aspects))
 
     aspectsenergymatrix <- matrix(args$aspectsenergy, nrow = 1, ncol = length(args$aspectsenergy), byrow = TRUE,
                                   dimnames = list(c('energy'), aspects))
