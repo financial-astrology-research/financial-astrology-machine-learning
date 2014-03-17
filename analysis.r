@@ -522,6 +522,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     orbsmatrix <- matrix(args$cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
 
     # aspects polarities
+    aspectspolarity <- c(2, args$aspectspolarity)
     aspectspolaritymatrix <- matrix(args$aspectspolarity, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('polarity', aspects))
 
     aspectsenergymatrix <- matrix(args$aspectsenergy, nrow = 1, ncol = length(args$aspectsenergy), byrow = TRUE,
@@ -803,7 +804,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     analogytypes <- c('SULONG', 'MELONG', 'VELONG', 'MALONG', 'CELONG')
     pa.e = 8+length(planetsBaseCols)
     co.e = pa.e+length(deforbs)
-    api.e = co.e+length(aspects)
+    api.e = co.e+length(aspects)-1
     ae.e = api.e+length(aspects)
     pe.e = ae.e+length(defplanetsenergy)
     pze.e = pe.e+length(defplanetszodenergy)
@@ -853,8 +854,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     panalogymax <- rep(5, length(planetsBaseCols))
     orbsmin <- rep(0, length(deforbs))
     orbsmax <- deforbs
-    polaritymin <- rep(0, length(aspects))
-    polaritymax <- rep(2, length(aspects))
+    polaritymin <- rep(0, length(aspects)-1)
+    polaritymax <- rep(1, length(aspects)-1)
     aspectenergymin <- rep(0, length(aspects))
     aspectenergymax <- rep(20, length(aspects))
     planetenergymin <- rep(0, length(defplanetsenergy))
