@@ -16,6 +16,7 @@ enableWD <- FALSE
 
 `%ni%` <- Negate(`%in%`)
 planetsBaseCols <- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN')
+defpanalogy <- c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'CELONG')
 # Aspects and orbs
 aspects            <-  c(0,30,36,40,45,51,60,72,80,90,103,108,120,135,144,150,154,160,180)
 deforbs            <- c(12, 2, 2, 2, 2, 2, 7, 2, 2, 7,  2,  2,  7,  2,  2,  2,  2,  2, 12)
@@ -519,11 +520,13 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     new.fitness.best <- ""
 
     # build matrix
-    orbsmatrix <- matrix(args$cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
+    orbsmatrix <- matrix(args$cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE,
+                         dimnames = list('orbs', aspects))
 
     # aspects polarities
     aspectspolarity <- c(2, args$aspectspolarity)
-    aspectspolaritymatrix <- matrix(aspectspolarity, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('polarity', aspects))
+    aspectspolaritymatrix <- matrix(aspectspolarity, nrow = 1, ncol = length(aspects), byrow = TRUE,
+                                    dimnames = list('polarity', aspects))
 
     aspectsenergymatrix <- matrix(args$aspectsenergy, nrow = 1, ncol = length(args$aspectsenergy), byrow = TRUE,
                                   dimnames = list(c('energy'), aspects))
@@ -534,7 +537,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planetszodenergymatrix <- matrix(args$planetszodenergy, nrow = length(planetsLonCols), ncol = 12, byrow = TRUE,
                                      dimnames = list(planetsLonCols, zodSignsCols))
 
-    panalogymatrix <- matrix(args$panalogy, nrow = 1, ncol = length(args$panalogy), byrow = TRUE,
+    panalogy <- c(defpanalogy, args$panalogy)
+    panalogymatrix <- matrix(panalogy, nrow = 1, ncol = length(panalogy), byrow = TRUE,
                              dimnames = list(c('analogy'), planetsLonGCols))
 
     sout <- with(args, paste("testPlanetsSignificanceRelative('testSolution', securityfile=", shQuote(securityfile), ", planetsfile=", shQuote(planetsfile),
@@ -802,7 +806,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                                    fittype, dateformat, mapricefs, mapricesl) {
     # build the parameters based on GA indexes
     analogytypes <- c('SULONG', 'MELONG', 'VELONG', 'MALONG', 'CELONG')
-    pa.e = 8+length(planetsBaseCols)
+    pa.e = 8+length(planetsBaseCols)-length(defpanalogy)
     co.e = pa.e+length(deforbs)
     api.e = co.e+length(aspects)-1
     ae.e = api.e+length(aspects)
@@ -850,8 +854,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     cat("---------------------------- Initialize optimization ----------------------------------\n\n")
     dsmin <- 1
     dsmax <- 5
-    panalogymin <- rep(1, length(planetsBaseCols))
-    panalogymax <- rep(5, length(planetsBaseCols))
+    panalogymin <- rep(1, length(planetsBaseCols)-length(defpanalogy))
+    panalogymax <- rep(5, length(planetsBaseCols)-length(defpanalogy))
     orbsmin <- rep(0, length(deforbs))
     orbsmax <- deforbs
     polaritymin <- rep(0, length(aspects)-1)
@@ -907,7 +911,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # build the parameters based on GA indexes
     analogytypes <- c(NA, 'SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG')
 
-    pa.e = 8+length(planetsBaseCols)
+    pa.e = 8+length(planetsBaseCols)-length(defpanalogy)
     co.e = pa.e+length(deforbs)
     api.e = co.e+length(aspects)
     ae.e = api.e+length(aspects)
