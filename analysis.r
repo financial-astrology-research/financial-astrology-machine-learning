@@ -33,26 +33,8 @@ planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1]
 planetsCombLonOrbCols <- paste(planetsCombLonCols, 'ORB', sep='')
 aspectsEnergyCols <- paste(aspects, 'E', sep='')
 planetsEnergyCols <- paste(planetsBaseCols, 'E', sep='')
-
-defplanetsenergy <- c(5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5)
-
 zodSignsCols <- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CP', 'AC', 'PI')
 planetsZodEnergyCols <- as.character(apply(expand.grid(planetsLonCols, zodSignsCols), 1, function(x) paste(x[1], '_', x[2], sep='')))
-zodenergy.su <- c( 10,  01,  01,  01,  10,  01, -10,  01,  01,  01, -10,  01)
-zodenergy.mo <- c( 01,  10,  01,  10,  01,  01,  01, -10,  01, -10,  01,  01)
-zodenergy.me <- c( 01,  01,  10,  01,  01,  10,  01,  01, -10,  01,  01, -10)
-zodenergy.ve <- c(-10,  10,  01,  01,  01, -10,  10, -10,  01,  01,  01,  10)
-zodenergy.ma <- c( 10,  01,  01, -10,  01,  01, -10,  01,  01,  10,  01,  01)
-zodenergy.ce <- c( 01,  01,  01,  01,  10,  01,  01,  01,  01,  01,  01,  01)
-zodenergy.ju <- c( 01,  01, -10,  10,  01, -10,  01,  01,  10, -10,  01,  10)
-zodenergy.sa <- c(-10,  01,  01, -10, -10,  01,  10,  01,  01,  10,  10,  01)
-zodenergy.ur <- c( 01,  01,  01,  01, -10,  01,  01,  01,  01,  01,  10,  01)
-zodenergy.ne <- c( 01,  01,  01,  01,  01, -10,  01,  01,  01,  01,  01,  10)
-zodenergy.pl <- c( 01, -10,  01,  01,  01,  01,  01,  10,  01,  01,  01,  01)
-zodenergy.nn <- c( 01,  01,  01,  01,  10,  01,  01,  01,  01,  01,  01,  01)
-
-defplanetszodenergy <- c(zodenergy.su, zodenergy.mo, zodenergy.me, zodenergy.ve, zodenergy.ma, zodenergy.ce,
-                         zodenergy.ju, zodenergy.sa, zodenergy.ur, zodenergy.ne, zodenergy.pl, zodenergy.nn)
 
 # a function that returns the position of n-th largest
 maxn <- function(x, n) {
@@ -396,7 +378,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       planetenergy1 <- planetsenergy['energy', col1]
       planetenergy2 <- planetsenergy['energy', col2]
       # determine aspect energy based on aspect and involved planets
-      aspectenergy <- aspectsenergy['energy', aspect] * (planetenergy1 + planetenergy2)
+      aspectenergy <- aspectsenergy['energy', aspect] * planetenergy1 * planetenergy2
       # determine aspect polarity
       aspectpolarity <- aspectspolarity['polarity', aspect]
 
@@ -810,8 +792,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     co.e = pa.e+length(deforbs)
     api.e = co.e+length(aspects)-1
     ae.e = api.e+length(aspects)
-    pe.e = ae.e+length(defplanetsenergy)
-    pze.e = pe.e+length(defplanetszodenergy)
+    pe.e = ae.e+length(planetsBaseCols)
+    pze.e = pe.e+length(planetsZodEnergyCols)
 
     args <-list(planetsorig=planetsorig,
                 securityfile=securityfile,
@@ -846,7 +828,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   adjustEnergy <- function(x) {
-    ifelse(x >= 0, (10 + x) / 10, (-10 + x) / 10)
+    x / 10
   }
 
   optimizeRelativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, fittype,
@@ -861,11 +843,11 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     polaritymin <- rep(0, length(aspects)-1)
     polaritymax <- rep(1, length(aspects)-1)
     aspectenergymin <- rep(0, length(aspects))
-    aspectenergymax <- rep(20, length(aspects))
-    planetenergymin <- rep(0, length(defplanetsenergy))
-    planetenergymax <- rep(20, length(defplanetsenergy))
-    planetzodenergymin <- rep(-20, length(defplanetszodenergy))
-    planetzodenergymax <- rep(20, length(defplanetszodenergy))
+    aspectenergymax <- rep(30, length(aspects))
+    planetenergymin <- rep(0, length(planetsBaseCols))
+    planetenergymax <- rep(30, length(planetsBaseCols))
+    planetzodenergymin <- rep(-30, length(planetsZodEnergyCols))
+    planetzodenergymax <- rep(30, length(planetsZodEnergyCols))
 
     minvals <- c( 2, dsmin,  0, 1, 0, -20, -20, panalogymin, orbsmin, polaritymin, aspectenergymin, planetenergymin, planetzodenergymin)
     maxvals <- c(10, dsmax, 30, 2, 9,  20,  20, panalogymax, orbsmax, polaritymax, aspectenergymax, planetenergymax, planetzodenergymax)
@@ -915,8 +897,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     co.e = pa.e+length(deforbs)
     api.e = co.e+length(aspects)
     ae.e = api.e+length(aspects)
-    pe.e = ae.e+length(defplanetsenergy)
-    pze.e = pe.e+length(defplanetszodenergy)
+    pe.e = ae.e+length(planetsBaseCols)
+    pze.e = pe.e+length(planetsZodEnergyCols)
 
     args <-list(securityfile=securityfile,
                 planetsfile=planetsfile,
