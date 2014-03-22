@@ -300,7 +300,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     }
 
     planets  <- merge(planets, currency, by='Date')
-    planets.long <- data.table(melt(planets, id.var=c('Date', 'Eff'), measure.var=planetsLonGCols))
+    planets.long <- melt(planets, id.var=c('Date', 'Eff'), measure.var=planetsLonGCols)
     # calculate the signficance for each long
     significance <- planets.long[, cbind(as.list(prop.table(as.numeric(table(Eff)))), as.list(as.numeric(table(Eff)))), by=c('variable', 'value')]
     setnames(significance, c('variable', 'key', 'V1', 'V2', 'V3', 'V4'))
@@ -332,11 +332,11 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     setkeyv(significance.days.idxs, c('Date', 'keyidx'))
     significance.days <- merge(significance.days.idxs, significance, by='keyidx')
     # build daily planets lon & sp tables
-    planets.lon <- data.table(melt(planets.pred, id.var=c('Date'), measure.var=planetsLonCols))
+    planets.lon <- melt(planets.pred, id.var=c('Date'), measure.var=planetsLonCols)
     planets.lon[, origin := variable]
     planets.lon[, Date := as.character(Date, format="%Y-%m-%d")]
     setnames(planets.lon, c('Date', 'variable', 'lon', 'origin'))
-    planets.sp <- data.table(melt(planets.pred, id.var=c('Date'), measure.var=planetsSpCols))
+    planets.sp <- melt(planets.pred, id.var=c('Date'), measure.var=planetsSpCols)
     planets.sp[, origin := gsub('SP', 'LON', variable)]
     planets.sp[, Date := as.character(Date, format="%Y-%m-%d")]
     setnames(planets.sp, c('Date', 'variable', 'sp', 'origin'))
@@ -351,63 +351,41 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   # process the daily aspects energy
-  dayAspectsEnergy <- function(planets.day, panalogy, aspectspolarity, aspectsenergy, planetsenergy, energygrowthsp, asporbs) {
-    curdate <- planets.day[['Date']]
-    activecols <- planetsCombLonCols[grep(planets.day[['sigpatterns']], planetsCombLonCols, perl=T)]
-    # ignore anon aspects or non active
-    planets.day.asp <- planets.day[!is.na(planets.day) & names(planets.day) %in% activecols]
-    energy <- list()
+  dayAspectsEnergy <- function(planets.pred, aspectspolarity, aspectsenergy, planetsenergy, orbs, energygrowthsp) {
+    # melt aspects
+    planets.pred.aspects <- melt(planets.pred, id.var=c('Date'), variable.name='origin',
+                                 value.name='aspect', value.factor=T, measure.var=planetsCombLonCols, na.rm=T)
+    # melt orbs
+    planets.pred.orbs <- melt(planets.pred, id.var=c('Date'), variable.name='origin', value.name='orb',
+                              measure.var=planetsCombLonOrbCols)
+    # remove ORBS from the origin column name
+    planets.pred.orbs[, origin := substr(origin, 1, 10)]
+    # join aspects & orbs
+    planets.pred.aspen <- merge(planets.pred.aspects, planets.pred.orbs, by=c('Date', 'origin'))
+    # add up / down energy cols inintially to 0
+    planets.pred.aspen[, c('up', 'down') := list(0, 0)]
+    # planets cols involved in the aspect
+    planets.pred.aspen[, plaone := substr(origin, 1, 5)]
+    planets.pred.aspen[, platwo := substr(origin, 6, 10)]
+    planets.pred.aspen[, polarity := aspectspolarity['polarity', aspect]]
+    planets.pred.aspen[, energy := aspectsenergy['energy', aspect] * planetsenergy['energy', plaone] * planetsenergy['energy', platwo]]
+    # Energy is given to the two involved planets in an aspect then we need two tables
+    planets.pred.aspen.one <- copy(planets.pred.aspen)
+    planets.pred.aspen.one <- planets.pred.aspen.one[, origin := plaone]
+    planets.pred.aspen.two <- copy(planets.pred.aspen)
+    planets.pred.aspen.two <- planets.pred.aspen.two[, origin := platwo]
+    # join the two aspects cols
+    planets.pred.aspen <- rbind(planets.pred.aspen.one, planets.pred.aspen.two)
+    # use only aspects that are in the allowed orb for specific aspect
+    planets.pred.aspen <- planets.pred.aspen[orb <= orbs['orbs', aspect]]
+    # compute the given energy based on the aspect orb distance
+    planets.pred.aspen[, disenergy := energyGrowth(energy, orb, energygrowthsp)]
+    # set energy up / down based on polarities
+    planets.pred.aspen[polarity == 0, c('up', 'down') := list(0, disenergy)]
+    planets.pred.aspen[polarity == 1, c('up', 'down') := list(disenergy, 0)]
+    planets.pred.aspen[polarity == 2, c('up', 'down') := list(disenergy, disenergy)]
 
-    # no significant positions for this day
-    if (length(planets.day.asp) == 0) {
-      return(data.table())
-    }
-
-    # build energy aspects table
-    for (idx in 1:length(planets.day.asp)) {
-      aspect <- as.character(as.numeric(planets.day.asp[idx]))
-      curcol <- names(planets.day.asp[idx])
-      curcolorb <- paste(curcol, 'ORB', sep='')
-      distance <- as.numeric(planets.day[[curcolorb]])
-      # ignore aspects that are out of allowed orb
-      if (distance > asporbs['orbs', aspect]) next;
-      # code of planets involved in the aspect
-      col1 <- substr(curcol, 1, 5)
-      col2 <- substr(curcol, 6, 10)
-      # energy for planets
-      planetenergy1 <- planetsenergy['energy', col1]
-      planetenergy2 <- planetsenergy['energy', col2]
-      # determine aspect energy based on aspect and involved planets
-      aspectenergy <- aspectsenergy['energy', aspect] * planetenergy1 * planetenergy2
-      # determine aspect polarity
-      aspectpolarity <- aspectspolarity['polarity', aspect]
-
-      # compute the given energy based on the aspect orb distance
-      aspectenergydis <- energyGrowth(abs(aspectenergy), distance, energygrowthsp)
-
-      if (aspectpolarity == 0) {
-        up <- 0
-        down <- aspectenergydis
-      }
-      else if (aspectpolarity == 1) {
-        up <- aspectenergydis
-        down <- 0
-      }
-      else if (aspectpolarity == 2) {
-        up <- aspectenergydis
-        down <- aspectenergydis
-      }
-      else {
-        stop(paste("No valid polarity was provided - ", curcol, aspect))
-      }
-
-      energy[[length(energy)+1]] <- list(Date=curdate, origin=col1, up=up, down=down)
-      energy[[length(energy)+1]] <- list(Date=curdate, origin=col2, up=up, down=down)
-    }
-
-    # convert energy list to data table
-    energy <- rbindlist(energy)
-    return(energy)
+    return(planets.pred.aspen)
   }
 
   # process the significance rows energy
@@ -445,8 +423,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   # to calculate the final prediction
   calculatePrediction <- function(significance.days, energy.days, energymode) {
     energy.sum <- energy.days[, list(sum(up), sum(down)), by=list(Date, origin)]
+    energy.sum[, Date := as.character(Date)]
     setnames(energy.sum, c('Date', 'origin', 'up', 'down'))
     setkeyv(energy.sum, c('Date', 'origin'))
+    significance.days[, Date := as.character(Date)]
     significance.days <- merge(significance.days, energy.sum, by=c('Date', 'origin'))
     setkeyv(significance.days, c('Date', 'Eff'))
     significance.days[, c('up', 'down') := list(up + abs(energy), down + abs(energy))]
@@ -592,22 +572,19 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       cat("Get buildDailySignificance cache\n")
     }
 
-    # Calculate daily significance energy and patterns (no cache due is fast to calculate)
+    # Calculate daily significance energy and patterns (no cache due is fast to calculate
     significance.daysen <- dailySignificanceEnergy(significance.days, args$energyret, planetszodenergymatrix)
     significance.patterns <- significance.daysen[, buildDaySignificancePatterns(origin), by=Date]
     significance.patterns[, Date := as.Date(Date, format="%Y-%m-%d")]
     planets.pred <- merge(planets.pred, significance.patterns, by='Date')
-    # helper function to process day aspects energy
-    processPlanesDaySignificance <- function(x) {
-      dayAspectsEnergy(x, panalogymatrix, aspectspolaritymatrix, aspectsenergymatrix,
-                       planetsenergymatrix, args$energygrowthsp, orbsmatrix)
-    }
 
+    # Daily aspects energy
     ckey <- with(args, list('processPlanesDaySignificance', degsplit, mapricefs, mapricesl, panalogy, energyret, planetszodenergy,
                             aspectspolarity, aspectsenergy, planetsenergy, energygrowthsp, cusorbs))
     energy.days <- loadCache(key=ckey, dirs=c(args$securityfile))
     if (is.null(energy.days)) {
-      energy.days <- rbindlist(apply(planets.pred, 1, processPlanesDaySignificance))
+      energy.days <- dayAspectsEnergy(planets.pred, aspectspolaritymatrix, aspectsenergymatrix,
+                                      planetsenergymatrix, orbsmatrix, args$energygrowthsp)
       saveCache(energy.days, key=ckey, dirs=c(args$securityfile))
       cat("Set processPlanesDaySignificance cache\n")
     }
@@ -994,7 +971,7 @@ securityPeaksValleys <- function(security, span=50, plotfile="peaks_valleys") {
   abline(v=dates.v, col="red", lty="dashed")
 
   # Aggregated longitude
-  planets.pv.long <- data.table(melt(planets.pv, id.var=c('Date', 'type'), measure.var=planetsLonGCols))
+  planets.pv.long <- melt(planets.pv, id.var=c('Date', 'type'), measure.var=planetsLonGCols)
   planets.pv.long$value <- factor(planets.pv.long$value, mixedsort(unique(planets.pv.long$value)))
   pl <- ggplot(aes(x=value, fill=type), data=planets.pv.long) + geom_bar(position='fill') + theme(axis.text.x = element_text(angle = 90, size = 9)) + xlab("Aggregated Planets LONG.")  + ggtitle(paste("Peaks VS Valleys Aggregated Planets (Percent)"))
   print(pl)
@@ -1002,7 +979,7 @@ securityPeaksValleys <- function(security, span=50, plotfile="peaks_valleys") {
   print(pl)
 
   # Aggregated Aspects
-  planets.pv.asp <- data.table(melt(planets.pv, id.var=c('Date', 'type'), measure.var=planetsCombLonCols))
+  planets.pv.asp <- melt(planets.pv, id.var=c('Date', 'type'), measure.var=planetsCombLonCols)
   planets.pv.asp <- planets.pv.asp[value != 'anon']
   pl <- ggplot(aes(x=value, fill=type), data=planets.pv.asp) + geom_bar(position = 'fill') + theme(axis.text.x = element_text(angle = 90, size = 9)) + xlab("Aggregated Planets Aspects")  + ggtitle(paste("Peaks VS Valleys Aggregated Planets (Percent)"))
   print(pl)
