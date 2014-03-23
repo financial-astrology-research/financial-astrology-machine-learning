@@ -570,18 +570,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     significance.daysen <- dailySignificanceEnergy(significance.days, args$energyret, planetszodenergymatrix)
 
     # Daily aspects energy
-    ckey <- with(args, list('processPlanesDaySignificance', degsplit, mapricefs, mapricesl, panalogy, energyret, planetszodenergy,
-                            aspectspolarity, aspectsenergy, planetsenergy, energygrowthsp, cusorbs))
-    energy.days <- loadCache(key=ckey, dirs=c(args$securityfile))
-    if (is.null(energy.days)) {
-      energy.days <- dayAspectsEnergy(planets.pred, aspectspolaritymatrix, aspectsenergymatrix,
-                                      planetsenergymatrix, orbsmatrix, args$energygrowthsp)
-      saveCache(energy.days, key=ckey, dirs=c(args$securityfile))
-      cat("Set processPlanesDaySignificance cache\n")
-    }
-    else {
-      cat("Get processPlanesDaySignificance cache\n")
-    }
+    energy.days <- dayAspectsEnergy(planets.pred, aspectspolaritymatrix, aspectsenergymatrix,
+                                    planetsenergymatrix, orbsmatrix, args$energygrowthsp)
 
     # calculate prediction
     prediction <- calculatePrediction(significance.daysen, energy.days, args$energymode)
