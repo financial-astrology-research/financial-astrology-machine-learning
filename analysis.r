@@ -457,12 +457,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(prediction)
   }
 
-  # build daily significance patterns
-  buildDaySignificancePatterns <- function(origin) {
-    patterns <- paste(strtrim(origin, 5), collapse='|', sep='')
-    return(list(sigpatterns=patterns))
-  }
-
   # print a year solution summary
   printPredYearSummary <- function(x, type) {
     cat("\t ", type, "test: vol =", x['volatility'], " - cor =", x['correlation'])
@@ -574,9 +568,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     # Calculate daily significance energy and patterns (no cache due is fast to calculate
     significance.daysen <- dailySignificanceEnergy(significance.days, args$energyret, planetszodenergymatrix)
-    significance.patterns <- significance.daysen[, buildDaySignificancePatterns(origin), by=Date]
-    significance.patterns[, Date := as.Date(Date, format="%Y-%m-%d")]
-    planets.pred <- merge(planets.pred, significance.patterns, by='Date')
 
     # Daily aspects energy
     ckey <- with(args, list('processPlanesDaySignificance', degsplit, mapricefs, mapricesl, panalogy, energyret, planetszodenergy,
