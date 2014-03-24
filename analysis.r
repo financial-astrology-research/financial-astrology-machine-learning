@@ -514,8 +514,11 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     sout <- paste("system version: ", branch.name, "\n\n", sout, sep="")
     # use a cloned planets to ensure original is no modified
     ckey <- list('processPlanetsDegsplit', args$degsplit)
-    planets <- loadCache(key=ckey, dirs=c(args$securityfile))
+    planets <- loadCache(key=ckey, dirs=c(args$securityfile), onError='print')
     if (is.null(planets)) {
+      # If the cache file exists but no data was returned probably is corrupted
+      pathname <- findCache(key=ckey, dirs=c(args$securityfile))
+      if (!is.null(pathname)) file.remove(pathname)
       planets <- processPlanetsDegsplit(args$planetsorig, args$degsplit)
       saveCache(planets, key=ckey, dirs=c(args$securityfile))
       cat("Set processPlanetsDegsplit cache\n")
@@ -530,8 +533,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     # load the security data
     ckey <- with(args, list('openSecurity', mapricefs, mapricesl))
-    security <- loadCache(key=ckey, dirs=c(args$securityfile))
+    security <- loadCache(key=ckey, dirs=c(args$securityfile), onError='print')
     if (is.null(security)) {
+      pathname <- findCache(key=ckey, dirs=c(args$securityfile))
+      if (!is.null(pathname)) file.remove(pathname)
       security <- with(args, openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricefs, mapricesl, dateformat))
       saveCache(security, key=ckey, dirs=c(args$securityfile))
       cat("Set openSecurity cache\n")
@@ -542,8 +547,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     # process the planets significance table
     ckey <- with(args, list('planetsVarsSignificance', degsplit, mapricefs, mapricesl))
-    significance <- loadCache(key=ckey, dirs=c(args$securityfile))
+    significance <- loadCache(key=ckey, dirs=c(args$securityfile), onError='print')
     if (is.null(significance)) {
+      pathname <- findCache(key=ckey, dirs=c(args$securityfile))
+      if (!is.null(pathname)) file.remove(pathname)
       significance <- with(args, planetsVarsSignificance(planets.train, security))
       saveCache(significance, key=ckey, dirs=c(args$securityfile))
       cat("Set planetsVarsSignificance cache\n")
@@ -556,8 +563,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     significance <- planetsVarsSignificanceFilter(significance, args$threshold)
     # build significance by days
     ckey <- with(args, list('buildDailySignificance', degsplit, mapricefs, mapricesl, panalogy))
-    significance.days <- loadCache(key=ckey, dirs=c(args$securityfile))
+    significance.days <- loadCache(key=ckey, dirs=c(args$securityfile), onError='print')
     if (is.null(significance.days)) {
+      pathname <- findCache(key=ckey, dirs=c(args$securityfile))
+      if (!is.null(pathname)) file.remove(pathname)
       significance.days <- buildDailySignificance(significance, planets.pred, panalogymatrix)
       saveCache(significance.days, key=ckey, dirs=c(args$securityfile))
       cat("Set buildDailySignificance cache\n")
@@ -624,8 +633,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     }
 
     ckey <- list('fitnessBest')
-    fitness.best <- loadCache(key=ckey, dirs=c(args$securityfile))
+    fitness.best <- loadCache(key=ckey, dirs=c(args$securityfile), onError='print')
     if (is.null(fitness.best)) {
+      pathname <- findCache(key=ckey, dirs=c(args$securityfile))
+      if (!is.null(pathname)) file.remove(pathname)
       saveCache(-100, key=ckey, dirs=c(args$securityfile))
     }
     else if (fitness.total > fitness.best) {
