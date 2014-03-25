@@ -820,10 +820,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     minvals <- c( 2, dsmin,  0, 1, 0, -20, -20, panalogymin, orbsmin, polaritymin, aspectenergymin, planetenergymin, planetzodenergymin)
     maxvals <- c(10, dsmax, 30, 2, 9,  20,  20, panalogymax, orbsmax, polaritymax, aspectenergymax, planetenergymax, planetzodenergymax)
-    panalogyCols <- planetsLonGCols[5:length(planetsLonGCols)]
-    varnames <- c('mapredsm', 'degsplit', 'threshold', 'energymode', 'energygrowthsp', 'energyret',
-                  'alignmove', panalogyCols, aspOrbsCols, planetsCombLonCols, aspects, aspectsEnergyCols,
-                  planetsEnergyCols, planetsZodEnergyCols)
 
     # Clear the cache directory before start
     clearCache()
@@ -837,8 +833,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       sink(sinkpathfile, append=T)
     }
 
-    ga("real-valued", fitness=relativeTrendFitness, names=varnames, parallel=TRUE,
-       monitor=gaMonitor, maxiter=200, run=50, popSize=1000, min=minvals, max=maxvals, pcrossover = 0.4, pmutation = 0.3,
+    ga("real-valued", fitness=relativeTrendFitness, parallel=TRUE, monitor=gaMonitor, maxiter=500, run=50, min=minvals, max=maxvals,
+       popSize=300, elitism = 15, pcrossover = 0.4, pmutation = 0.3,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
        planetsorig=planetsorig, securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate,
        vedate=vedate, csdate=csdate, cedate=cedate, fittype=fittype, mapricefs=mapricefs, mapricesl=mapricesl, dateformat=dateformat)
