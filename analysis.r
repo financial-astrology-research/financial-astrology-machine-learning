@@ -80,22 +80,10 @@ gaint_Population <- function (object, ...) {
   return(population)
 }
 
-gaint_raMutation <- function(object, parent) {
+gaint_raMutation <- function(object, parent, k = 1) {
   mutate <- parent <- as.vector(object@population[parent, ])
   n <- length(parent)
-  randn <- runif(1)
-
-  # with 30% probability alter 1%, 30% alter 2% and 40% alter 0.5%
-  if (0.3 > randn) {
-    j <- sample(1:n, size = round(n*0.01))
-  }
-  else if (0.7 < randn) {
-    j <- sample(1:n, size = round(n*0.02))
-  }
-  else {
-    j <- sample(1:n, size = round(n*0.005))
-  }
-
+  j <- sample(1:n, size = k)
   # mutate the parameters
   mutate[j] <- sapply(j, function(x) sample(object@min[x[1]]:object@max[x[1]], 1))
   return(mutate)
