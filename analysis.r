@@ -12,7 +12,6 @@ options(scipen=100)
 options(width=130)
 options(error=recover)
 enableJIT(0)
-enableWD <- FALSE
 startDate = as.Date("1970-01-01")
 maxretry <- 1
 
@@ -399,32 +398,15 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   # process the significance rows energy
-  dailySignificanceEnergy <- function(significance.days, energyret, planetszodenergy) {
+  dailySignificanceEnergy <- function(significance.days, planetszodenergy) {
     processSignificanceRow <- function(significance.row, by.row) {
-      watchdog <- list()
-      energy <- 0
-      # add retrograde energy
-      if (significance.row$sp < 0) {
-        energy <- energy + energyret
-        if (enableWD) {
-          watchdog[length(watchdog)+1] <- paste(energy, by.row[[2]], ' Re')
-        }
-      }
       # add the planet zodiacal energy
-      zodenergy <- planetszodenergy[by.row[[2]], significance.row$zsign]
-      energy <- energy + zodenergy
-      if (enableWD) {
-        watchdog[length(watchdog)+1] <- paste(zodenergy, by.row[[2]], ' zod ', significance.row$zsign)
-        return(list(energy=energy, watchdog=paste(watchdog, collapse=' / ')))
-      }
-      else {
-        return(list(energy=energy, watchdog=''))
-      }
+      planetszodenergy[by.row[[1]], significance.row$zsign]
     }
 
     # process each significance row
-    significance.days[, c('energy', 'watchdog') := processSignificanceRow(.SD, .BY), by=c('Date', 'origin')]
-    # invert the significance columns for negative retrograde energy
+    significance.days[, energy := processSignificanceRow(.SD, .BY), by=c('origin')]
+    # invert the significance columns for negative energy
     significance.days[energy < 0, c('V1', 'V2', 'V3', 'V4') := list(V2, V1, V4, V3)]
     return(significance.days)
   }
@@ -509,7 +491,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                              ", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate),
                              ", mapredsm=", mapredsm, ", mapricefs=", mapricefs, ", mapricesl=", mapricesl,
                              ", degsplit=", degsplit, ", threshold=", threshold,
-                             ", energymode=", energymode, ", energygrowthsp=", energygrowthsp, ", energyret=", energyret, ", alignmove=", alignmove,
+                             ", energymode=", energymode, ", energygrowthsp=", energygrowthsp, ", alignmove=", alignmove,
                              ", panalogy=c(", paste(shQuote(panalogy), collapse=", "), ")",
                              ", cusorbs=c(", paste(cusorbs, collapse=", "), ")",
                              ", aspectsenergy=c(", paste(aspectsenergy, collapse=", "), ")",
@@ -582,7 +564,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     }
 
     # Calculate daily significance energy and patterns (no cache due is fast to calculate
-    significance.daysen <- dailySignificanceEnergy(significance.days, args$energyret, planetszodenergymatrix)
+    significance.daysen <- dailySignificanceEnergy(significance.days, planetszodenergymatrix)
 
     # Daily aspects energy
     energy.days <- dayAspectsEnergy(planets.pred, aspectspolaritymatrix, aspectsenergymatrix,
@@ -761,7 +743,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                                    fittype, dateformat, mapricefs, mapricesl) {
     # build the parameters based on GA indexes
     analogytypes <- c('SULONG', 'MELONG', 'VELONG', 'MALONG', 'CELONG')
-    pa.e = 8+length(planetsBaseCols)-length(defpanalogy)
+    pa.e = 7+length(planetsBaseCols)-length(defpanalogy)
     co.e = pa.e+length(deforbs)
     api.e = co.e+length(aspects)-1
     ae.e = api.e+length(aspects)
@@ -787,9 +769,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 threshold=x[3]/100,
                 energymode=x[4],
                 energygrowthsp=x[5]/10,
-                energyret=adjustEnergy(x[6]),
-                alignmove=x[7],
-                panalogy=analogytypes[x[8:(pa.e-1)]],
+                alignmove=x[6],
+                panalogy=analogytypes[x[7:(pa.e-1)]],
                 cusorbs=x[pa.e:(co.e-1)],
                 aspectspolarity=x[co.e:(api.e-1)],
                 aspectsenergy=adjustEnergy(x[api.e:(ae.e-1)]),
@@ -818,8 +799,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planetzodenergymin <- rep(-30, length(planetsZodEnergyCols))
     planetzodenergymax <- rep(30, length(planetsZodEnergyCols))
 
-    minvals <- c( 2, dsmin,  0, 1, 0, -20, -20, panalogymin, orbsmin, polaritymin, aspectenergymin, planetzodenergymin)
-    maxvals <- c(10, dsmax, 30, 2, 9,  20,  20, panalogymax, orbsmax, polaritymax, aspectenergymax, planetzodenergymax)
+    minvals <- c( 2, dsmin,  0, 1, 0, -20, panalogymin, orbsmin, polaritymin, aspectenergymin, planetzodenergymin)
+    maxvals <- c(10, dsmax, 30, 2, 9,  20, panalogymax, orbsmax, polaritymax, aspectenergymax, planetzodenergymax)
 
     # Clear the cache directory before start
     clearCache()
@@ -858,7 +839,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # build the parameters based on GA indexes
     analogytypes <- c(NA, 'SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG')
 
-    pa.e = 8+length(planetsBaseCols)-length(defpanalogy)
+    pa.e = 7+length(planetsBaseCols)-length(defpanalogy)
     co.e = pa.e+length(deforbs)
     api.e = co.e+length(aspects)
     ae.e = api.e+length(aspects)
@@ -881,9 +862,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 threshold=x[3]/100,
                 energymode=x[4],
                 energygrowthsp=x[5]/10,
-                energyret=adjustEnergy(x[6]),
-                alignmove=x[7],
-                panalogy=analogytypes[x[8:(pa.e-1)]],
+                alignmove=x[6],
+                panalogy=analogytypes[x[7:(pa.e-1)]],
                 cusorbs=x[pa.e:(co.e-1)],
                 aspectspolarity=x[co.e:(api.e-1)],
                 aspectsenergy=adjustEnergy(x[api.e:(ae.e-1)]),
