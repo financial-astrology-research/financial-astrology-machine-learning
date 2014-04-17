@@ -275,7 +275,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   # calculate the proportional energy of aspect based on the distance
-  energyGrowth <- function(energy, distance, speed) {
+  energyGrowth <- function(energy, distance, speed = 0.5) {
     return(energy * (1 - speed) ^ abs(distance))
   }
 
@@ -339,7 +339,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   # process the daily aspects energy
-  dayAspectsEnergy <- function(planets.pred, aspectspolarity, aspectsenergy, zodenergy, orbs, energygrowthsp) {
+  dayAspectsEnergy <- function(planets.pred, aspectspolarity, aspectsenergy, zodenergy, orbs) {
     # melt aspects
     planets.pred.aspects <- melt(planets.pred, id.var=c('Date'), variable.name='origin',
                                  value.name='aspect', value.factor=T, measure.var=planetsCombLonCols, na.rm=T)
@@ -388,7 +388,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # use only aspects that are in the allowed orb for specific aspect
     planets.pred.aspen <- planets.pred.aspen[orb <= orbs['orbs', aspect]]
     # compute the given energy based on the aspect orb distance
-    planets.pred.aspen[, disenergy := energyGrowth(energy, orb, energygrowthsp)]
+    planets.pred.aspen[, disenergy := energyGrowth(energy, orb)]
     # set energy up / down based on polarities
     planets.pred.aspen[polarity == 0, c('up', 'down') := list(0, disenergy)]
     planets.pred.aspen[polarity == 1, c('up', 'down') := list(disenergy, 0)]
@@ -491,7 +491,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                              ", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate),
                              ", mapredsm=", mapredsm, ", mapricefs=", mapricefs, ", mapricesl=", mapricesl,
                              ", degsplit=", degsplit, ", threshold=", threshold,
-                             ", energymode=", energymode, ", energygrowthsp=", energygrowthsp, ", alignmove=", alignmove,
+                             ", energymode=", energymode, ", alignmove=", alignmove,
                              ", panalogy=c(", paste(shQuote(panalogy), collapse=", "), ")",
                              ", cusorbs=c(", paste(cusorbs, collapse=", "), ")",
                              ", aspectsenergy=c(", paste(aspectsenergy, collapse=", "), ")",
@@ -568,7 +568,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     # Daily aspects energy
     energy.days <- dayAspectsEnergy(planets.pred, aspectspolaritymatrix, aspectsenergymatrix,
-                                    planetszodenergymatrix, orbsmatrix, args$energygrowthsp)
+                                    planetszodenergymatrix, orbsmatrix)
 
     # calculate prediction
     prediction <- calculatePrediction(significance.daysen, energy.days, args$energymode)
@@ -743,7 +743,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                                    fittype, dateformat, mapricefs, mapricesl) {
     # build the parameters based on GA indexes
     analogytypes <- c('SULONG', 'MELONG', 'VELONG', 'MALONG', 'CELONG')
-    pa.e = 7+length(planetsBaseCols)-length(defpanalogy)
+    pa.e = 6+length(planetsBaseCols)-length(defpanalogy)
     co.e = pa.e+length(deforbs)
     api.e = co.e+length(aspects)-1
     ae.e = api.e+length(aspects)
@@ -768,9 +768,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 degsplit=x[2],
                 threshold=x[3]/100,
                 energymode=x[4],
-                energygrowthsp=x[5]/10,
-                alignmove=x[6],
-                panalogy=analogytypes[x[7:(pa.e-1)]],
+                alignmove=x[5],
+                panalogy=analogytypes[x[6:(pa.e-1)]],
                 cusorbs=x[pa.e:(co.e-1)],
                 aspectspolarity=x[co.e:(api.e-1)],
                 aspectsenergy=adjustEnergy(x[api.e:(ae.e-1)]),
@@ -799,8 +798,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planetzodenergymin <- rep(-30, length(planetsZodEnergyCols))
     planetzodenergymax <- rep(30, length(planetsZodEnergyCols))
 
-    minvals <- c( 2, dsmin,  0, 1, 0, -20, panalogymin, orbsmin, polaritymin, aspectenergymin, planetzodenergymin)
-    maxvals <- c(10, dsmax, 30, 2, 9,  20, panalogymax, orbsmax, polaritymax, aspectenergymax, planetzodenergymax)
+    minvals <- c( 2, dsmin,  0, 1, -20, panalogymin, orbsmin, polaritymin, aspectenergymin, planetzodenergymin)
+    maxvals <- c(10, dsmax, 30, 2,  20, panalogymax, orbsmax, polaritymax, aspectenergymax, planetzodenergymax)
 
     # Clear the cache directory before start
     clearCache()
@@ -839,7 +838,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # build the parameters based on GA indexes
     analogytypes <- c(NA, 'SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG')
 
-    pa.e = 7+length(planetsBaseCols)-length(defpanalogy)
+    pa.e = 6+length(planetsBaseCols)-length(defpanalogy)
     co.e = pa.e+length(deforbs)
     api.e = co.e+length(aspects)
     ae.e = api.e+length(aspects)
@@ -861,9 +860,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 degsplit=x[2],
                 threshold=x[3]/100,
                 energymode=x[4],
-                energygrowthsp=x[5]/10,
-                alignmove=x[6],
-                panalogy=analogytypes[x[7:(pa.e-1)]],
+                alignmove=x[5],
+                panalogy=analogytypes[x[6:(pa.e-1)]],
                 cusorbs=x[pa.e:(co.e-1)],
                 aspectspolarity=x[co.e:(api.e-1)],
                 aspectsenergy=adjustEnergy(x[api.e:(ae.e-1)]),
