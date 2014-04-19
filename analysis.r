@@ -491,7 +491,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                              ", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate),
                              ", mapredsm=", mapredsm, ", mapricefs=", mapricefs, ", mapricesl=", mapricesl,
                              ", degsplit=", degsplit, ", threshold=", threshold,
-                             ", energymode=", energymode, ", alignmove=", alignmove,
+                             ", energymode=", energymode,
                              ", panalogy=c(", paste(shQuote(panalogy), collapse=", "), ")",
                              ", cusorbs=c(", paste(cusorbs, collapse=", "), ")",
                              ", aspectsenergy=c(", paste(aspectsenergy, collapse=", "), ")",
@@ -577,14 +577,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     setkeyv(planets.pred, c('Date', 'Year.1'))
     # smoth the prediction serie
     planets.pred[, predval := SMA(predRaw, args$mapredsm)]
-    # apply alignment to left & right
-    if (args$alignmove > 0) {
-      planets.pred[, predval := c(predval[(args$alignmove+1):length(predval)], rep(NA, args$alignmove))]
-    }
-    else if (args$alignmove < 0) {
-      planets.pred[, predval := c(rep(NA, abs(args$alignmove)), predval[1:(length(predval)-abs(args$alignmove))])]
-    }
-
     planets.pred[, predEff := predval]
     # determine a factor prediction response
     planets.pred[, predFactor := cut(predEff, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
@@ -743,7 +735,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                                    fittype, dateformat, mapricefs, mapricesl) {
     # build the parameters based on GA indexes
     analogytypes <- c('SULONG', 'MELONG', 'VELONG', 'MALONG', 'CELONG')
-    pa.e = 6+length(planetsBaseCols)-length(defpanalogy)
+    pa.e = 5+length(planetsBaseCols)-length(defpanalogy)
     co.e = pa.e+length(deforbs)
     api.e = co.e+length(aspects)-1
     ae.e = api.e+length(aspects)
@@ -768,8 +760,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 degsplit=x[2],
                 threshold=x[3]/100,
                 energymode=x[4],
-                alignmove=x[5],
-                panalogy=analogytypes[x[6:(pa.e-1)]],
+                panalogy=analogytypes[x[5:(pa.e-1)]],
                 cusorbs=x[pa.e:(co.e-1)],
                 aspectspolarity=x[co.e:(api.e-1)],
                 aspectsenergy=adjustEnergy(x[api.e:(ae.e-1)]),
@@ -785,8 +776,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   optimizeRelativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, fittype,
                                     mapricefs, mapricesl, dateformat) {
     cat("---------------------------- Initialize optimization ----------------------------------\n\n")
-    dsmin <- 1
-    dsmax <- 5
     panalogymin <- rep(1, length(planetsBaseCols)-length(defpanalogy))
     panalogymax <- rep(5, length(planetsBaseCols)-length(defpanalogy))
     orbsmin <- rep(0, length(deforbs))
@@ -798,8 +787,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planetzodenergymin <- rep(-30, length(planetsZodEnergyCols))
     planetzodenergymax <- rep(30, length(planetsZodEnergyCols))
 
-    minvals <- c( 2, dsmin,  0, 1, -20, panalogymin, orbsmin, polaritymin, aspectenergymin, planetzodenergymin)
-    maxvals <- c(10, dsmax, 30, 2,  20, panalogymax, orbsmax, polaritymax, aspectenergymax, planetzodenergymax)
+    minvals <- c( 2, 1,  0, 1, panalogymin, orbsmin, polaritymin, aspectenergymin, planetzodenergymin)
+    maxvals <- c(10, 5, 30, 2, panalogymax, orbsmax, polaritymax, aspectenergymax, planetzodenergymax)
 
     # Clear the cache directory before start
     clearCache()
@@ -837,8 +826,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   testSolutionDebug <- function(planetsfile, securityfile, tsdate, tedate, vsdate, vedate, csdate, cedate, fittype, dateformat, predfile, x) {
     # build the parameters based on GA indexes
     analogytypes <- c(NA, 'SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG')
-
-    pa.e = 6+length(planetsBaseCols)-length(defpanalogy)
+    pa.e = 5+length(planetsBaseCols)-length(defpanalogy)
     co.e = pa.e+length(deforbs)
     api.e = co.e+length(aspects)
     ae.e = api.e+length(aspects)
@@ -860,8 +848,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 degsplit=x[2],
                 threshold=x[3]/100,
                 energymode=x[4],
-                alignmove=x[5],
-                panalogy=analogytypes[x[6:(pa.e-1)]],
+                panalogy=analogytypes[x[5:(pa.e-1)]],
                 cusorbs=x[pa.e:(co.e-1)],
                 aspectspolarity=x[co.e:(api.e-1)],
                 aspectsenergy=adjustEnergy(x[api.e:(ae.e-1)]),
