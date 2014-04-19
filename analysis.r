@@ -348,11 +348,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                               measure.var=planetsCombLonOrbCols)
     # remove ORBS from the origin column name
     planets.pred.orbs[, origin := substr(origin, 1, 10)]
-    # melt longitudes
-    planets.pred.longs <- melt(planets.pred, id.var=c('Date'), variable.name='origin', value.name='lon',
-                               measure.var=planetsLonCols)
-    # avoid lon 0 that cause 0 sign when divide celing(0/30)
-    planets.pred.longs[lon == 0, lon := 1]
     # join aspects & orbs
     planets.pred.aspen <- merge(planets.pred.aspects, planets.pred.orbs, by=c('Date', 'origin'))
     # add up / down energy cols inintially to 0
@@ -361,31 +356,17 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets.pred.aspen[, plaone := substr(origin, 1, 5)]
     planets.pred.aspen[, platwo := substr(origin, 6, 10)]
     planets.pred.aspen[, polarity := aspectspolarity['polarity', aspect]]
-    # change the col names to make it match with plaone and merge
-    setnames(planets.pred.longs, c('Date', 'plaone', 'plaonelon'))
-    planets.pred.aspen <- merge(planets.pred.aspen, planets.pred.longs, by=c('Date', 'plaone'))
-    # now with platwo
-    setnames(planets.pred.longs, c('Date', 'platwo', 'platwolon'))
-    planets.pred.aspen <- merge(planets.pred.aspen, planets.pred.longs, by=c('Date', 'platwo'))
-    # calculate zod signs for each planet
-    planets.pred.aspen[, plaonesign := ceiling(plaonelon/30)]
-    planets.pred.aspen[, platwosign := ceiling(platwolon/30)]
-    processAspEnergy <- function(asp.row, by.row) {
-      abs(zodenergy[by.row[[1]], asp.row[[1]]])
-    }
-    # calculate the energy considering planets zodenergy
-    planets.pred.aspen[, zenone := processAspEnergy(.SD, .BY), by=c('plaone'), .SDcols=c('plaonesign')]
-    planets.pred.aspen[, zentwo := processAspEnergy(.SD, .BY), by=c('platwo'), .SDcols=c('platwosign')]
     # Energy is given to the two involved planets in an aspect then we need two tables
     planets.pred.aspen.one <- copy(planets.pred.aspen)
     planets.pred.aspen.one <- planets.pred.aspen.one[, origin := plaone]
-    planets.pred.aspen.one[, energy := aspectsenergy['energy', aspect] + zenone]
+    planets.pred.aspen.one[, energy := aspectsenergy['energy', aspect]]
     planets.pred.aspen.two <- copy(planets.pred.aspen)
     planets.pred.aspen.two <- planets.pred.aspen.two[, origin := platwo]
-    planets.pred.aspen.two[, energy := aspectsenergy['energy', aspect] + zentwo]
+    planets.pred.aspen.two[, energy := aspectsenergy['energy', aspect]]
     # join the two aspects cols
     planets.pred.aspen <- rbind(planets.pred.aspen.one, planets.pred.aspen.two)
     # use only aspects that are in the allowed orb for specific aspect
+    # TODO: verify that the filtered aspects correspond to the maximum orb
     planets.pred.aspen <- planets.pred.aspen[orb <= orbs['orbs', aspect]]
     # compute the given energy based on the aspect orb distance
     planets.pred.aspen[, disenergy := energyGrowth(energy, orb)]
