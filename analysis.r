@@ -118,21 +118,6 @@ gaint_spCrossover <- function (object, parents, ...) {
   return(out)
 }
 
-gaint_blxCrossover <- function (object, parents, ...) {
-  parents <- object@population[parents, , drop = FALSE]
-  n <- ncol(parents)
-  a <- 0.5
-  children <- matrix(NA, nrow = 2, ncol = n)
-  for (i in 1:n) {
-    x <- sort(parents[, i])
-    xl <- max(x[1] - a * (x[2] - x[1]), object@min[i])
-    xu <- min(x[2] + a * (x[2] - x[1]), object@max[i])
-    children[, i] <- round(runif(2, xl, xu))
-  }
-  out <- list(children = children, fitness = NA)
-  return(out)
-}
-
 npath <- function(path) {
   normalizePath(path.expand(path))
 }
