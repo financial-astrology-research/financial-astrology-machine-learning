@@ -120,15 +120,14 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   # open a security historic file
   openSecurity <- function(security_file, mapricefs, mapricesl, dateformat="%Y.%m.%d") {
-    mapricefunc <- get('SMA')
     security_file <- npath(security_file)
     security <- fread(security_file)
     security[, Date := as.Date(as.character(Date), format=dateformat)]
     security[, Year := as.character(format(Date, "%Y"))]
     setkey(security, 'Date')
     security[, Mid := (High + Low + Close + Open) / 4]
-    security[, MidMAF := mapricefunc(Mid, n=mapricefs)]
-    security[, MidMAS := mapricefunc(Mid, n=mapricesl)]
+    security[, MidMAF := SMA(Mid, n=mapricefs)]
+    security[, MidMAS := SMA(Mid, n=mapricesl)]
     security[, val := MidMAF-MidMAS]
 
     if (all(security$val == 0)) {
@@ -191,7 +190,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(planets)
   }
 
-  # calculate the planets aspects for a given solution
+  # calculate the planets aspects
   processPlanetsAspects <- function(planetsorig, cusorbs) {
     # clone original to ensure is no modified
     planets <- copy(planetsorig)
@@ -274,7 +273,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   planetsVarsSignificanceFilter <- function(significance, threshold) {
     significance <- significance[pdiff >= threshold | pdiff <= -threshold]
     significance <- significance[!is.na(key)]
-    significance[, Eff := cut(pdiff, c(-1000, 0, 1000), labels=c('down', 'up'), right=FALSE)]
+    significance[, Eff := cut(pdiff, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
     return(significance)
   }
 
@@ -297,13 +296,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets.lon[, origin := variable]
     planets.lon[, Date := as.character(Date, format="%Y-%m-%d")]
     setnames(planets.lon, c('Date', 'variable', 'lon', 'origin'))
-    planets.sp <- melt(planets.pred, id.var=c('Date'), measure.var=planetsSpCols)
-    planets.sp[, origin := gsub('SP', 'LON', variable)]
-    planets.sp[, Date := as.character(Date, format="%Y-%m-%d")]
-    setnames(planets.sp, c('Date', 'variable', 'sp', 'origin'))
-    # merge significance with lon & sp
+    # merge significance with lon
     significance.days <- merge(significance.days, planets.lon, by=c('Date', 'origin'))
-    significance.days <- merge(significance.days, planets.sp, by=c('Date', 'origin'))
     setkeyv(significance.days, 'Date', 'origin')
     significance.days[, zsign := ceiling(lon/30)]
     # remove no used cols
