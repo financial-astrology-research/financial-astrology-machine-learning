@@ -54,18 +54,6 @@ decToDeg <- function(num) {
   c(d, m, s)
 }
 
-generateSamples <- function(ds, n) {
-  total <- nrow(ds)
-  # build test samples
-  samples <- list()
-  for (i in 1:n) {
-    samples[[i]] <- ds[sample(total, total/2),]
-  }
-  # finally add the entire data set as a sample
-  samples[[length(samples)+1]] <- ds
-  samples
-}
-
 gaint_Population <- function (object, ...) {
   min <- object@min
   max <- object@max
