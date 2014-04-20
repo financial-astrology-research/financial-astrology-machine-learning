@@ -369,7 +369,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     significance.days[, Date := as.character(Date)]
     significance.days <- merge(significance.days, energy.sum, by=c('Date', 'origin'))
     setkeyv(significance.days, c('Date', 'Eff'))
-    significance.days[, c('up', 'down') := list(up + abs(energy), down + abs(energy))]
+    significance.days[, c('up', 'down') := list(up * abs(energy), down * abs(energy))]
 
     if (energymode == 1) {
       # add more energy to the lower part based on bad aspects and to the upper part with good aspects
@@ -731,9 +731,9 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     polaritymin <- rep(0, length(aspects)-1)
     polaritymax <- rep(1, length(aspects)-1)
     aspectenergymin <- rep(0, length(aspects))
-    aspectenergymax <- rep(30, length(aspects))
-    planetzodenergymin <- rep(-30, length(planetsZodEnergyCols))
-    planetzodenergymax <- rep(30, length(planetsZodEnergyCols))
+    aspectenergymax <- rep(20, length(aspects))
+    planetzodenergymin <- rep(-20, length(planetsZodEnergyCols))
+    planetzodenergymax <- rep(20, length(planetsZodEnergyCols))
 
     minvals <- c( 2, 1,  0, 1, panalogymin, orbsmin, polaritymin, aspectenergymin, planetzodenergymin)
     maxvals <- c(10, 5, 30, 2, panalogymax, orbsmax, polaritymax, aspectenergymax, planetzodenergymax)
