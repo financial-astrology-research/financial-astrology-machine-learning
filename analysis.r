@@ -26,15 +26,14 @@ deforbs            <- c(12, 2, 2, 2, 2, 2, 7, 2, 2, 7,  2,  2,  7,  2,  2,  2,  
 aspOrbsCols <- as.character(apply(expand.grid(aspects, planetsBaseCols[1:(length(planetsBaseCols)-1)]), 1, function(x) paste(x[2], x[1], sep='')))
 planetsLonCols <- paste(planetsBaseCols, 'LON', sep='')
 planetsLonGCols <- paste(planetsLonCols, 'G', sep='')
-planetsLatCols <- paste(planetsBaseCols, 'LAT', sep='')
 planetsSpCols <- paste(planetsBaseCols, 'SP', sep='')
 planetsSpGCols <- paste(planetsSpCols, "G", sep="")
 planetsCombLon <- combn(planetsLonCols, 2, simplify=F)
 planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
 planetsCombLonOrbCols <- paste(planetsCombLonCols, 'ORB', sep='')
-aspectsEnergyCols <- paste(aspects, 'E', sep='')
 zodSignsCols <- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CP', 'AC', 'PI')
-planetsZodEnergyCols <- as.character(apply(expand.grid(planetsLonCols, zodSignsCols), 1, function(x) paste(x[1], '_', x[2], sep='')))
+lenZodEnergyMi <- length(defpanalogy) * length(zodSignsCols)
+lenZodEnergyMa <- (length(planetsLonCols) * length(zodSignsCols)) - lenZodEnergyMi
 
 # a function that returns the position of n-th largest
 maxn <- function(x, n) {
@@ -427,7 +426,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     aspectsenergymatrix <- matrix(args$aspectsenergy, nrow = 1, ncol = length(args$aspectsenergy), byrow = TRUE,
                                   dimnames = list(c('energy'), aspects))
 
-    planetszodenergymatrix <- matrix(args$planetszodenergy, nrow = length(planetsLonCols), ncol = 12, byrow = TRUE,
+    planetszodenergy <- c(args$planetszodenergy, rep(1, lenZodEnergyMa))
+    planetszodenergymatrix <- matrix(planetszodenergy, nrow = length(planetsLonCols), ncol = 12, byrow = TRUE,
                                      dimnames = list(planetsLonCols, zodSignsCols))
 
     panalogy <- c(defpanalogy, args$panalogy)
@@ -687,7 +687,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     co.e = pa.e+length(deforbs)
     api.e = co.e+length(aspects)-1
     ae.e = api.e+length(aspects)
-    pze.e = ae.e+length(planetsZodEnergyCols)
+    pze.e = ae.e+lenZodEnergyMi
 
     args <-list(planetsorig=planetsorig,
                 securityfile=securityfile,
@@ -732,8 +732,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     polaritymax <- rep(1, length(aspects)-1)
     aspectenergymin <- rep(0, length(aspects))
     aspectenergymax <- rep(20, length(aspects))
-    planetzodenergymin <- rep(-20, length(planetsZodEnergyCols))
-    planetzodenergymax <- rep(20, length(planetsZodEnergyCols))
+    planetzodenergymin <- rep(-20, lenZodEnergyMi)
+    planetzodenergymax <- rep(20, lenZodEnergyMi)
 
     minvals <- c( 2, 1,  0, 1, panalogymin, orbsmin, polaritymin, aspectenergymin, planetzodenergymin)
     maxvals <- c(10, 5, 30, 2, panalogymax, orbsmax, polaritymax, aspectenergymax, planetzodenergymax)
@@ -778,7 +778,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     co.e = pa.e+length(deforbs)
     api.e = co.e+length(aspects)
     ae.e = api.e+length(aspects)
-    pze.e = ae.e+length(planetsZodEnergyCols)
+    pze.e = ae.e+lenZodEnergyMi
 
     args <-list(securityfile=securityfile,
                 planetsfile=planetsfile,
