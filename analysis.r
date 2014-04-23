@@ -32,7 +32,7 @@ planetsCombLon <- combn(planetsLonCols, 2, simplify=F)
 planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
 planetsCombLonOrbCols <- paste(planetsCombLonCols, 'ORB', sep='')
 zodSignsCols <- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CP', 'AC', 'PI')
-lenZodEnergyMi <- length(defpanalogy) * length(zodSignsCols)
+lenZodEnergyMi <- 8 * length(zodSignsCols)
 lenZodEnergyMa <- (length(planetsLonCols) * length(zodSignsCols)) - lenZodEnergyMi
 
 # a function that returns the position of n-th largest
