@@ -17,7 +17,6 @@ maxretry <- 1
 
 `%ni%` <- Negate(`%in%`)
 planetsBaseCols <- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN')
-defpanalogy <- c('SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG', 'CELONG')
 # Aspects and orbs
 aspects            <-  c(0,30,36,40,45,51,60,72,80,90,103,108,120,135,144,150,154,160,180)
 deforbs            <- c(12, 2, 2, 2, 2, 2, 7, 2, 2, 7,  2,  2,  7,  2,  2,  2,  2,  2, 12)
@@ -251,8 +250,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   planetsVarsSignificance <- function(planets, currency) {
-    # build significance table analogy for each planet
-    planetTableAanalogy <- function(curcol) {
+    # build significance table for each planet
+    planetTable <- function(curcol) {
       planet.significance <- copy(significance)
       planet.significance[, origin := curcol]
       return(planet.significance)
@@ -261,11 +260,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets  <- merge(planets, currency, by='Date')
     planets.long <- melt(planets, id.var=c('Date', 'Eff'), measure.var=planetsLonGCols)
     # calculate the signficance for each long
-    significance <- planets.long[, cbind(as.list(prop.table(as.numeric(table(Eff)))), as.list(as.numeric(table(Eff)))), by=c('variable', 'value')]
-    setnames(significance, c('variable', 'key', 'V1', 'V2', 'V3', 'V4'))
-    significance.full <- rbindlist(lapply(planetsLonCols, planetTableAanalogy))
-    significance.full[, c('pdiff', 'keyidx') := list(V2-V1, paste(key, variable, origin, sep='_'))]
-    setkey(significance.full, 'keyidx', 'V1', 'V2')
+    significance <- planets.long[, cbind(as.list(prop.table(as.numeric(table(Eff)))), as.list(as.numeric(table(Eff)))), by=c('value')]
+    setnames(significance, c('key', 'V1', 'V2', 'V3', 'V4'))
+    significance.full <- rbindlist(lapply(planetsLonCols, planetTable))
+    significance.full[, c('pdiff', 'keyidx') := list(V2-V1, paste(key, origin, sep='_'))]
     return(significance.full)
   }
 
@@ -277,30 +275,28 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   # build the daily signficance table
-  buildDailySignificance <- function(significance, planets.pred, panalogymatrix) {
+  buildDailySignificance <- function(significance, planets.pred) {
     # build daily significance indexes
     buildDailySignificanceIdxs <- function(planets.day) {
       curdate <- planets.day[['Date']]
-      sigidxs <- paste(planets.day[planetsLonGCols], panalogymatrix['analogy', planetsLonGCols], planetsLonCols, sep='_')
+      sigidxs <- paste(planets.day[planetsLonGCols], planetsLonCols, sep='_')
       datelist <- rep(curdate, length(sigidxs))
       day.idxs <- list(Date=datelist, keyidx=sigidxs)
       return(day.idxs)
     }
 
     significance.days.idxs <- rbindlist(apply(planets.pred, 1, buildDailySignificanceIdxs))
-    setkeyv(significance.days.idxs, c('Date', 'keyidx'))
-    significance.days <- merge(significance.days.idxs, significance, by='keyidx')
-    # build daily planets lon & sp tables
+    significance.days <- merge(significance.days.idxs, significance, by=c('keyidx'))
+    # build daily planets lon to calculate zodsign
     planets.lon <- melt(planets.pred, id.var=c('Date'), measure.var=planetsLonCols)
     planets.lon[, origin := variable]
     planets.lon[, Date := as.character(Date, format="%Y-%m-%d")]
-    setnames(planets.lon, c('Date', 'variable', 'lon', 'origin'))
+    planets.lon[, variable := NULL]
+    setnames(planets.lon, c('Date', 'lon', 'origin'))
     # merge significance with lon
     significance.days <- merge(significance.days, planets.lon, by=c('Date', 'origin'))
-    setkeyv(significance.days, 'Date', 'origin')
     significance.days[, zsign := ceiling(lon/30)]
-    # remove no used cols
-    significance.days[, c('variable.x', 'variable.y', 'variable') := NULL]
+    setkeyv(significance.days, 'Date', 'origin')
     return(significance.days)
   }
 
@@ -427,12 +423,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                                   dimnames = list(c('energy'), aspects))
 
     #planetszodenergy <- c(args$planetszodenergy, rep(1, lenZodEnergyMa))
-    planetszodenergymatrix <- matrix(planetszodenergy, nrow = length(planetsLonCols), ncol = 12, byrow = TRUE,
+    planetszodenergymatrix <- matrix(args$planetszodenergy, nrow = length(planetsLonCols), ncol = 12, byrow = TRUE,
                                      dimnames = list(planetsLonCols, zodSignsCols))
-
-    panalogy <- c(defpanalogy, args$panalogy)
-    panalogymatrix <- matrix(panalogy, nrow = 1, ncol = length(panalogy), byrow = TRUE,
-                             dimnames = list(c('analogy'), planetsLonGCols))
 
     sout <- with(args, paste("testPlanetsSignificanceRelative('testSolution', securityfile=", shQuote(securityfile), ", planetsfile=", shQuote(planetsfile),
                              ", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate),
@@ -440,7 +432,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                              ", mapredsm=", mapredsm, ", mapricefs=", mapricefs, ", mapricesl=", mapricesl,
                              ", degsplit=", degsplit, ", threshold=", threshold,
                              ", energymode=", energymode,
-                             ", panalogy=c(", paste(shQuote(panalogy), collapse=", "), ")",
                              ", cusorbs=c(", paste(cusorbs, collapse=", "), ")",
                              ", aspectsenergy=c(", paste(aspectsenergy, collapse=", "), ")",
                              ", planetszodenergy=c(", paste(planetszodenergy, collapse=", "), ")",
@@ -498,12 +489,12 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # filter the significance by threshold
     significance <- planetsVarsSignificanceFilter(significance, args$threshold)
     # build significance by days
-    ckey <- with(args, list('buildDailySignificance', degsplit, mapricefs, mapricesl, panalogy))
+    ckey <- with(args, list('buildDailySignificance', degsplit, mapricefs, mapricesl))
     significance.days <- loadCache(key=ckey, dirs=c(args$securityfile), onError='print')
     if (is.null(significance.days)) {
       pathname <- findCache(key=ckey, dirs=c(args$securityfile))
       if (!is.null(pathname)) file.remove(pathname)
-      significance.days <- buildDailySignificance(significance, planets.pred, panalogymatrix)
+      significance.days <- buildDailySignificance(significance, planets.pred)
       saveCache(significance.days, key=ckey, dirs=c(args$securityfile))
       cat("Set buildDailySignificance cache\n")
     }
@@ -582,8 +573,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     print(aspectsenergymatrix)
     cat("\n")
     print(planetszodenergymatrix)
-    cat("\n")
-    print(panalogymatrix)
     cat("\n")
 
     # print yearly summary
@@ -683,8 +672,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                                    fittype, dateformat, mapricefs, mapricesl) {
     # build the parameters based on GA indexes
     analogytypes <- c('SULONG', 'MELONG', 'VELONG', 'MALONG', 'CELONG')
-    pa.e = 5+length(planetsBaseCols)-length(defpanalogy)
-    co.e = pa.e+length(deforbs)
+    co.e = 5+length(deforbs)
     api.e = co.e+length(aspects)-1
     ae.e = api.e+length(aspects)
     pze.e = ae.e+lenZodEnergyMi
@@ -708,8 +696,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 degsplit=x[2],
                 threshold=x[3]/100,
                 energymode=x[4],
-                panalogy=analogytypes[x[5:(pa.e-1)]],
-                cusorbs=x[pa.e:(co.e-1)],
+                cusorbs=x[5:(co.e-1)],
                 aspectspolarity=x[co.e:(api.e-1)],
                 aspectsenergy=adjustEnergy(x[api.e:(ae.e-1)]),
                 planetszodenergy=adjustEnergy(x[ae.e:(pze.e-1)]))
@@ -724,8 +711,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   optimizeRelativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, fittype,
                                     mapricefs, mapricesl, dateformat) {
     cat("---------------------------- Initialize optimization ----------------------------------\n\n")
-    panalogymin <- rep(1, length(planetsBaseCols)-length(defpanalogy))
-    panalogymax <- rep(5, length(planetsBaseCols)-length(defpanalogy))
     orbsmin <- rep(0, length(deforbs))
     orbsmax <- deforbs
     polaritymin <- rep(0, length(aspects)-1)
@@ -735,8 +720,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planetzodenergymin <- rep(-20, lenZodEnergyMi)
     planetzodenergymax <- rep(20, lenZodEnergyMi)
 
-    minvals <- c( 2, 1,  0, 1, panalogymin, orbsmin, polaritymin, aspectenergymin, planetzodenergymin)
-    maxvals <- c(10, 5, 30, 2, panalogymax, orbsmax, polaritymax, aspectenergymax, planetzodenergymax)
+    minvals <- c( 2, 1,  0, 1, orbsmin, polaritymin, aspectenergymin, planetzodenergymin)
+    maxvals <- c(10, 5, 30, 2, orbsmax, polaritymax, aspectenergymax, planetzodenergymax)
 
     # Clear the cache directory before start
     clearCache()
@@ -773,10 +758,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   testSolutionDebug <- function(planetsfile, securityfile, tsdate, tedate, vsdate, vedate, csdate, cedate, fittype, dateformat, predfile, x) {
     # build the parameters based on GA indexes
-    analogytypes <- c(NA, 'SULONG', 'MOLONG', 'MELONG', 'VELONG', 'MALONG')
-    pa.e = 5+length(planetsBaseCols)-length(defpanalogy)
-    co.e = pa.e+length(deforbs)
-    api.e = co.e+length(aspects)
+    co.e = 5+length(deforbs)
+    api.e = co.e+length(aspects)-1
     ae.e = api.e+length(aspects)
     pze.e = ae.e+lenZodEnergyMi
 
@@ -796,8 +779,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 degsplit=x[2],
                 threshold=x[3]/100,
                 energymode=x[4],
-                panalogy=analogytypes[x[5:(pa.e-1)]],
-                cusorbs=x[pa.e:(co.e-1)],
+                cusorbs=x[5:(co.e-1)],
                 aspectspolarity=x[co.e:(api.e-1)],
                 aspectsenergy=adjustEnergy(x[api.e:(ae.e-1)]),
                 planetszodenergy=adjustEnergy(x[ae.e:(pze.e-1)]))
