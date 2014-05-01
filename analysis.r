@@ -32,8 +32,8 @@ planetsCombLon <- combn(planetsLonCols, 2, simplify=F)
 planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
 planetsCombLonOrbCols <- paste(planetsCombLonCols, 'ORB', sep='')
 zodSignsCols <- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CP', 'AC', 'PI')
-lenZodEnergyMi <- 8 * length(zodSignsCols)
-lenZodEnergyMa <- (length(planetsLonCols) * length(zodSignsCols)) - lenZodEnergyMi
+lenZodEnergyMi <- length(planetsBaseCols) * length(zodSignsCols)
+#lenZodEnergyMa <- (length(planetsLonCols) * length(zodSignsCols)) - lenZodEnergyMi
 
 # a function that returns the position of n-th largest
 maxn <- function(x, n) {
@@ -426,7 +426,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     aspectsenergymatrix <- matrix(args$aspectsenergy, nrow = 1, ncol = length(args$aspectsenergy), byrow = TRUE,
                                   dimnames = list(c('energy'), aspects))
 
-    planetszodenergy <- c(args$planetszodenergy, rep(1, lenZodEnergyMa))
+    #planetszodenergy <- c(args$planetszodenergy, rep(1, lenZodEnergyMa))
     planetszodenergymatrix <- matrix(planetszodenergy, nrow = length(planetsLonCols), ncol = 12, byrow = TRUE,
                                      dimnames = list(planetsLonCols, zodSignsCols))
 
