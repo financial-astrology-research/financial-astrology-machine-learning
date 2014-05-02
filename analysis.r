@@ -735,7 +735,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       sink(sinkpathfile, append=T)
     }
 
-    ga("real-valued", fitness=relativeTrendFitness, parallel=TRUE, monitor=gaMonitor, maxiter=100, run=50, min=minvals, max=maxvals,
+    ga("real-valued", fitness=relativeTrendFitness, parallel=TRUE, monitor=gaMonitor, maxiter=60, run=50, min=minvals, max=maxvals,
        popSize=1000, elitism = 100, pcrossover = 0.9, pmutation = 0.1,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
        planetsorig=planetsorig, securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate,
