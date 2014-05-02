@@ -117,26 +117,35 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   branch.name <- system2("git", "rev-parse --abbrev-ref HEAD", stdout=T)
 
   # open a security historic file
-  openSecurity <- function(security_file, mapricefs, mapricesl, dateformat="%Y.%m.%d", sdate) {
-    security_file <- npath(security_file)
-    security <- fread(security_file)
-    security[, Date := as.Date(as.character(Date), format=dateformat)]
-    security[, Year := as.character(format(Date, "%Y"))]
-    # sort by Date and key it
-    setkey(security, 'Date')
-    # take data starging from sdate
-    security <- security[Date >= sdate,]
-    security[, Mid := (High + Low + Close + Open) / 4]
-    security[, MidMAF := SMA(Mid, n=mapricefs)]
-    security[, MidMAS := SMA(Mid, n=mapricesl)]
-    security[, val := MidMAF-MidMAS]
+  openSecurity <- function(securityfile, mapricefs, mapricesl, dateformat="%Y.%m.%d", sdate) {
+    ckey <- list('openSecurity', securityfile, mapricefs, mapricesl, sdate)
+    security <- loadCache(key=ckey, dirs=c(securityfile), onError='print')
+    if (is.null(security)) {
+      filename <- npath(paste("~/trading/", securityfile, ".csv", sep=''))
+      security <- fread(filename)
+      security[, Date := as.Date(as.character(Date), format=dateformat)]
+      security[, Year := as.character(format(Date, "%Y"))]
+      # sort by Date and key it
+      setkey(security, 'Date')
+      # take data starging from sdate
+      security <- security[Date >= sdate,]
+      security[, Mid := (High + Low + Close + Open) / 4]
+      security[, MidMAF := SMA(Mid, n=mapricefs)]
+      security[, MidMAS := SMA(Mid, n=mapricesl)]
+      security[, val := MidMAF-MidMAS]
 
-    if (all(security$val == 0)) {
-      stop("Undetermined security price direction")
+      if (all(security$val == 0)) {
+        stop("Undetermined security price direction")
+      }
+
+      security <- security[!is.na(val)]
+      security[, Eff := cut(val, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
+      saveCache(security, key=ckey, dirs=c(securityfile))
+      cat("Set openSecurity cache\n")
     }
-
-    security <- security[!is.na(val)]
-    security[, Eff := cut(val, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
+    else {
+      cat("Get openSecurity cache\n")
+    }
 
     return(security)
   }
@@ -181,13 +190,29 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   # process the degsplit for a cloned original planets dt
   processPlanetsDegsplit <- function(planetsorig, degsplit) {
+    args <- list(...)
     # calculate the lon deg splits
     calculateLonGroups <- function(x, degsplit) {
       return(cut(x, seq(0, 360, by=degsplit)))
     }
 
-    planets <- copy(planetsorig)
-    planets[, c(planetsLonGCols) := lapply(.SD, calculateLonGroups, degsplit=degsplit), .SDcols=planetsLonCols]
+    ckey <- list('processPlanetsDegsplit', args$securityfile, planetsorig, degsplit)
+    planets <- loadCache(key=ckey, dirs=c(args$securityfile), onError='print')
+    if (is.null(planets)) {
+      # If the cache file exists but no data was returned probably is corrupted
+      pathname <- findCache(key=ckey, dirs=c(args$securityfile))
+      if (!is.null(pathname)) file.remove(pathname)
+
+      planets <- copy(planetsorig)
+      planets[, c(planetsLonGCols) := lapply(.SD, calculateLonGroups, degsplit=degsplit), .SDcols=planetsLonCols]
+
+      saveCache(planets, key=ckey, dirs=c(args$securityfile))
+      cat("Set processPlanetsDegsplit cache\n")
+    }
+    else {
+      cat("Get processPlanetsDegsplit cache\n")
+    }
+
     return(planets)
   }
 
@@ -252,7 +277,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(energy * (1 - speed) ^ abs(distance))
   }
 
-  planetsVarsSignificance <- function(planets, currency) {
+  planetsVarsSignificance <- function(planets, security) {
+    args <- list(...)
     # build significance table for each planet
     planetTable <- function(curcol) {
       planet.significance <- copy(significance)
@@ -260,13 +286,27 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       return(planet.significance)
     }
 
-    planets  <- merge(planets, currency, by='Date')
-    planets.long <- melt(planets, id.var=c('Date', 'Eff'), measure.var=planetsLonGCols)
-    # calculate the signficance for each long
-    significance <- planets.long[, cbind(as.list(prop.table(as.numeric(table(Eff)))), as.list(as.numeric(table(Eff)))), by=c('value')]
-    setnames(significance, c('key', 'V1', 'V2', 'V3', 'V4'))
-    significance.full <- rbindlist(lapply(planetsLonCols, planetTable))
-    significance.full[, c('pdiff', 'keyidx') := list(V2-V1, paste(key, origin, sep='_'))]
+    ckey <- list('planetsVarsSignificance', args$securityfile, planets, security)
+    significance.full <- loadCache(key=ckey, dirs=c(args$securityfile), onError='print')
+    if (is.null(significance.full)) {
+      pathname <- findCache(key=ckey, dirs=c(args$securityfile))
+      if (!is.null(pathname)) file.remove(pathname)
+
+      planets  <- merge(planets, security, by='Date')
+      planets.long <- melt(planets, id.var=c('Date', 'Eff'), measure.var=planetsLonGCols)
+      # calculate the signficance for each long
+      significance <- planets.long[, cbind(as.list(prop.table(as.numeric(table(Eff)))), as.list(as.numeric(table(Eff)))), by=c('value')]
+      setnames(significance, c('key', 'V1', 'V2', 'V3', 'V4'))
+      significance.full <- rbindlist(lapply(planetsLonCols, planetTable))
+      significance.full[, c('pdiff', 'keyidx') := list(V2-V1, paste(key, origin, sep='_'))]
+
+      saveCache(significance.full, key=ckey, dirs=c(args$securityfile))
+      cat("Set planetsVarsSignificance cache\n")
+    }
+    else {
+      cat("Get planetsVarsSignificance cache\n")
+    }
+
     return(significance.full)
   }
 
@@ -279,6 +319,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   # build the daily signficance table
   buildDailySignificance <- function(significance, planets.pred) {
+    args <- list(...)
     # build daily significance indexes
     buildDailySignificanceIdxs <- function(planets.day) {
       curdate <- planets.day[['Date']]
@@ -288,18 +329,32 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       return(day.idxs)
     }
 
-    significance.days.idxs <- rbindlist(apply(planets.pred, 1, buildDailySignificanceIdxs))
-    significance.days <- merge(significance.days.idxs, significance, by=c('keyidx'))
-    # build daily planets lon to calculate zodsign
-    planets.lon <- melt(planets.pred, id.var=c('Date'), measure.var=planetsLonCols)
-    planets.lon[, origin := variable]
-    planets.lon[, Date := as.character(Date, format="%Y-%m-%d")]
-    planets.lon[, variable := NULL]
-    setnames(planets.lon, c('Date', 'lon', 'origin'))
-    # merge significance with lon
-    significance.days <- merge(significance.days, planets.lon, by=c('Date', 'origin'))
-    significance.days[, zsign := ceiling(lon/30)]
-    setkeyv(significance.days, 'Date', 'origin')
+    ckey <- list('buildDailySignificance', args$securityfile, significance, planets.pred)
+    significance.days <- loadCache(key=ckey, dirs=c(args$securityfile), onError='print')
+    if (is.null(significance.days)) {
+      pathname <- findCache(key=ckey, dirs=c(args$securityfile))
+      if (!is.null(pathname)) file.remove(pathname)
+
+      significance.days.idxs <- rbindlist(apply(planets.pred, 1, buildDailySignificanceIdxs))
+      significance.days <- merge(significance.days.idxs, significance, by=c('keyidx'))
+      # build daily planets lon to calculate zodsign
+      planets.lon <- melt(planets.pred, id.var=c('Date'), measure.var=planetsLonCols)
+      planets.lon[, origin := variable]
+      planets.lon[, Date := as.character(Date, format="%Y-%m-%d")]
+      planets.lon[, variable := NULL]
+      setnames(planets.lon, c('Date', 'lon', 'origin'))
+      # merge significance with lon
+      significance.days <- merge(significance.days, planets.lon, by=c('Date', 'origin'))
+      significance.days[, zsign := ceiling(lon/30)]
+      setkeyv(significance.days, 'Date', 'origin')
+
+      saveCache(significance.days, key=ckey, dirs=c(args$securityfile))
+      cat("Set buildDailySignificance cache\n")
+    }
+    else {
+      cat("Get buildDailySignificance cache\n")
+    }
+
     return(significance.days)
   }
 
@@ -442,69 +497,23 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                              ", dateformat=", shQuote(dateformat), ", verbose=F", ", doplot=T", ", fittype=", shQuote(fittype), ")\n", sep=""))
 
     sout <- paste("system version: ", branch.name, "\n\n", sout, sep="")
-    # use a cloned planets to ensure original is no modified
-    ckey <- list('processPlanetsDegsplit', args$degsplit)
-    planets <- loadCache(key=ckey, dirs=c(args$securityfile), onError='print')
-    if (is.null(planets)) {
-      # If the cache file exists but no data was returned probably is corrupted
-      pathname <- findCache(key=ckey, dirs=c(args$securityfile))
-      if (!is.null(pathname)) file.remove(pathname)
-      planets <- processPlanetsDegsplit(args$planetsorig, args$degsplit)
-      saveCache(planets, key=ckey, dirs=c(args$securityfile))
-      cat("Set processPlanetsDegsplit cache\n")
-    }
-    else {
-      cat("Get processPlanetsDegsplit cache\n")
-    }
+    # open planets file
+    planetsorig <- openPlanets(args$planetsfile, deforbs)
+    planets <- processPlanetsDegsplit(planetsorig, args$degsplit)
 
     # split in training and prediction
     planets.train <- planets[Date > rdates[1] & Date <= rdates[2] & wday %in% c(1, 2, 3, 4, 5)]
     planets.pred <- planets[Date > rdates[3] & Date <= rdates[6] & wday %in% c(1, 2, 3, 4, 5)]
-
     # load the security data
-    ckey <- with(args, list('openSecurity', mapricefs, mapricesl))
-    security <- loadCache(key=ckey, dirs=c(args$securityfile), onError='print')
-    if (is.null(security)) {
-      pathname <- findCache(key=ckey, dirs=c(args$securityfile))
-      if (!is.null(pathname)) file.remove(pathname)
-      security <- with(args, openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricefs, mapricesl, dateformat, tsdate))
-      saveCache(security, key=ckey, dirs=c(args$securityfile))
-      cat("Set openSecurity cache\n")
-    }
-    else {
-      cat("Get openSecurity cache\n")
-    }
+    security <- with(args, openSecurity(securityfile, mapricefs, mapricesl, dateformat, tsdate))
 
     # process the planets significance table
-    ckey <- with(args, list('planetsVarsSignificance', degsplit, mapricefs, mapricesl))
-    significance <- loadCache(key=ckey, dirs=c(args$securityfile), onError='print')
-    if (is.null(significance)) {
-      pathname <- findCache(key=ckey, dirs=c(args$securityfile))
-      if (!is.null(pathname)) file.remove(pathname)
-      significance <- with(args, planetsVarsSignificance(planets.train, security))
-      saveCache(significance, key=ckey, dirs=c(args$securityfile))
-      cat("Set planetsVarsSignificance cache\n")
-    }
-    else {
-      cat("Get planetsVarsSignificance cache\n")
-    }
-
+    significance <- with(args, planetsVarsSignificance(planets.train, security))
     # filter the significance by threshold
     significance <- planetsVarsSignificanceFilter(significance, args$threshold)
-    # build significance by days
-    ckey <- with(args, list('buildDailySignificance', degsplit, mapricefs, mapricesl))
-    significance.days <- loadCache(key=ckey, dirs=c(args$securityfile), onError='print')
-    if (is.null(significance.days)) {
-      pathname <- findCache(key=ckey, dirs=c(args$securityfile))
-      if (!is.null(pathname)) file.remove(pathname)
-      significance.days <- buildDailySignificance(significance, planets.pred)
-      saveCache(significance.days, key=ckey, dirs=c(args$securityfile))
-      cat("Set buildDailySignificance cache\n")
-    }
-    else {
-      cat("Get buildDailySignificance cache\n")
-    }
 
+    # build significance by days
+    significance.days <- buildDailySignificance(significance, planets.pred)
     # Calculate daily significance energy and patterns (no cache due is fast to calculate
     significance.daysen <- dailySignificanceEnergy(significance.days, planetszodenergymatrix)
 
@@ -671,7 +680,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(list(correlation=correlation, volatility=volatility, matches.t=matches.t, matches.f=matches.f, matches.d=matches.d))
   }
 
-  relativeTrendFitness <- function(x, planetsorig, securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate,
+  relativeTrendFitness <- function(x, securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate,
                                    fittype, dateformat, mapricefs, mapricesl) {
     # build the parameters based on GA indexes
     analogytypes <- c('SULONG', 'MELONG', 'VELONG', 'MALONG', 'CELONG')
@@ -680,8 +689,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     ae.e = api.e+length(aspects)
     pze.e = ae.e+lenZodEnergyMi
 
-    args <-list(planetsorig=planetsorig,
-                securityfile=securityfile,
+    args <-list(securityfile=securityfile,
                 planetsfile=planetsfile,
                 tsdate=tsdate,
                 tedate=tedate,
@@ -730,8 +738,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     clearCache()
     # Create the cache directories structure
     getCachePath(dirs=c(securityfile))
-    # Load the planets file
-    planetsorig <- openPlanets(planetsfile, deforbs)
     # Redirect output to file
     if (exists('sinkfile', envir=parent.frame())) {
       sinkpathfile <- npath(paste("~/trading/predict/", sinkfile, ".txt", sep=''))
@@ -741,7 +747,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     ga("real-valued", fitness=relativeTrendFitness, parallel=TRUE, monitor=gaMonitor, maxiter=60, run=50, min=minvals, max=maxvals,
        popSize=1000, elitism = 100, pcrossover = 0.9, pmutation = 0.1,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
-       planetsorig=planetsorig, securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate,
+       securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate,
        vedate=vedate, csdate=csdate, cedate=cedate, fittype=fittype, mapricefs=mapricefs, mapricesl=mapricesl, dateformat=dateformat)
 
     if (exists('sinkfile', envir=parent.frame())) {
@@ -753,8 +759,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     args <- list(...)
     if (!hasArg('dateformat')) stop("A dateformat is needed.")
     if (args$doplot) pdf(paste("~/chart_", predfile, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
-    planetsorig <- openPlanets(args$planetsfile, deforbs)
-    args[['planetsorig']] <- planetsorig
     relativeTrend(args)
     if (args$doplot) dev.off()
   }
