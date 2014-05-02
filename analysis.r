@@ -117,12 +117,15 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   branch.name <- system2("git", "rev-parse --abbrev-ref HEAD", stdout=T)
 
   # open a security historic file
-  openSecurity <- function(security_file, mapricefs, mapricesl, dateformat="%Y.%m.%d") {
+  openSecurity <- function(security_file, mapricefs, mapricesl, dateformat="%Y.%m.%d", sdate) {
     security_file <- npath(security_file)
     security <- fread(security_file)
     security[, Date := as.Date(as.character(Date), format=dateformat)]
     security[, Year := as.character(format(Date, "%Y"))]
+    # sort by Date and key it
     setkey(security, 'Date')
+    # take data starging from sdate
+    security <- security[Date >= sdate,]
     security[, Mid := (High + Low + Close + Open) / 4]
     security[, MidMAF := SMA(Mid, n=mapricefs)]
     security[, MidMAS := SMA(Mid, n=mapricesl)]
@@ -464,7 +467,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     if (is.null(security)) {
       pathname <- findCache(key=ckey, dirs=c(args$securityfile))
       if (!is.null(pathname)) file.remove(pathname)
-      security <- with(args, openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricefs, mapricesl, dateformat))
+      security <- with(args, openSecurity(paste("~/trading/", securityfile, ".csv", sep=''), mapricefs, mapricesl, dateformat, tsdate))
       saveCache(security, key=ckey, dirs=c(args$securityfile))
       cat("Set openSecurity cache\n")
     }
