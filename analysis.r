@@ -455,7 +455,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   # print a year solution summary
   printPredYearSummary <- function(x, type) {
-    cat("\t ", type, "test: vol =", x['volatility'], " - cor =", x['correlation'])
+    cat("\t ", x['Year.1'], " - ", type ,": vol =", x['volatility'], " - cor =", x['correlation'])
     cat(" - matches.t =", x['matches.t'], " - matches.f =", x['matches.f'], " - matches.d =", x['matches.d'], "\n")
   }
 
