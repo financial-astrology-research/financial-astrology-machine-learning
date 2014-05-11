@@ -108,6 +108,121 @@ npath <- function(path) {
   normalizePath(path.expand(path))
 }
 
+# calculate the planets aspects
+processPlanetsAspects <- function(planetsorig, cusorbs) {
+  # clone original to ensure is no modified
+  planets <- copy(planetsorig)
+
+  calculateAspects <- function(x) {
+    allidx <- rep(FALSE, length(x))
+    for (aspect in aspects) {
+      comborb <- cusorbs['orbs', as.character(aspect)]
+      rstart <- aspect-comborb
+      rend <- aspect+comborb
+      idx <- x >= rstart & x <= rend
+      x[idx] <- aspect
+      allidx[idx] <- TRUE
+    }
+    # put NA no aspects
+    x[!allidx] <- NA
+    return(x)
+  }
+
+  calculateAspectOrbs <- function(x) {
+    allidx <- rep(FALSE, length(x))
+    for (aspect in aspects) {
+      comborb <- cusorbs['orbs', as.character(aspect)]
+      rstart <- aspect-comborb
+      rend <- aspect+comborb
+      idx <- x >= rstart & x <= rend
+      x[idx] <- abs(x[idx] - aspect)
+      allidx[idx] <- TRUE
+    }
+    # put NA no aspects
+    x[!allidx] <- NA
+    return(x)
+  }
+
+  planets[, c(planetsCombLonCols) := lapply(.SD, calculateAspects), .SDcols=planetsCombLonCols]
+  planets[, c(planetsCombLonOrbCols) := lapply(.SD, calculateAspectOrbs), .SDcols=planetsCombLonOrbCols]
+  return(planets)
+}
+
+mainOpenPlanets <- function(planetsfile, cusorbs) {
+  Date=DateMT4=Year=NULL
+  planetsfile <- npath(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""))
+  planets <- fread(planetsfile, sep="\t", na.strings="", verbose = F)
+  planets[, Date := as.Date(planets$Date, format="%Y-%m-%d")]
+  planets <- planets[, c('Date', planetsLonCols, planetsSpCols), with=F]
+  #planets[, DateMT4 := as.character(format(Date, "%Y.%m.%d"))]
+  planets[, Year := as.character(format(Date, "%Y"))]
+  planets[, wday := format(Date, "%w")]
+  setkey(planets, 'Date')
+
+  # calculate longitudinal differences
+  for (curcol in planetsCombLonCols) {
+    col1 <- substr(curcol, 1, 5)
+    col2 <- substr(curcol, 6, 10)
+    combnameorb <- paste(curcol, 'ORB', sep='')
+    planets[, c(curcol) := get(col1) - get(col2)]
+  }
+
+  normalizeDistance <- function(x) {
+    x[x > 180] <- abs(x[x > 180] - 360)
+    x[x < -180] <- abs(x[x < -180] + 360)
+    return(abs(x))
+  }
+
+  # Normalize to 180 degrees range
+  planets[, c(planetsCombLonCols) := lapply(.SD, normalizeDistance), .SDcols=planetsCombLonCols]
+  # Copy to orbs
+  exprcopy <- paste("c(planetsCombLonOrbCols) := list(", paste(planetsCombLonCols, collapse=","), ")", sep="")
+  planets[, eval(parse(text = exprcopy))]
+
+  # calculate aspects for max orbs
+  orbsmatrix <- matrix(cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
+  planets <- processPlanetsAspects(planets, orbsmatrix)
+  return(planets)
+}
+
+# Open planets file and handle caching
+openPlanets <- function(planetsfile, cusorbs=deforbs, clear=F) {
+  ckey <- list(planetsfile, cusorbs)
+  planets <- loadCache(key=ckey)
+  if (is.null(planets) || clear) {
+    planets <- mainOpenPlanets(planetsfile, cusorbs)
+    saveCache(planets, key=ckey)
+    cat("Set openPlanets cache\n")
+  }
+  else {
+    cat("Get openPlanets cache\n")
+  }
+  return(planets)
+}
+
+mainOpenSecurity <- function(securityfile, mapricefs, mapricesl, dateformat="%Y.%m.%d", sdate) {
+  filename <- npath(paste("~/trading/", securityfile, ".csv", sep=''))
+  security <- fread(filename)
+  security[, Date := as.Date(as.character(Date), format=dateformat)]
+  security[, Year := as.character(format(Date, "%Y"))]
+  # sort by Date and key it
+  setkey(security, 'Date')
+  # take data starging from sdate
+  security <- security[Date >= sdate,]
+  security[, Mid := (High + Low + Close + Open) / 4]
+  security[, MidMAF := SMA(Mid, n=mapricefs)]
+  security[, MidMAS := SMA(Mid, n=mapricesl)]
+  security[, val := MidMAF-MidMAS]
+
+  if (all(security$val == 0)) {
+    stop("Undetermined security price direction")
+  }
+
+  security <- security[!is.na(val)]
+  security[, Eff := cut(val, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
+  return(security)
+}
+
 cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   if (!hasArg('execfunc')) stop("Provide function to execute")
   ptm <- proc.time()
@@ -121,25 +236,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     ckey <- list('openSecurity', securityfile, mapricefs, mapricesl, sdate)
     security <- loadCache(key=ckey, dirs=c(securityfile), onError='print')
     if (is.null(security)) {
-      filename <- npath(paste("~/trading/", securityfile, ".csv", sep=''))
-      security <- fread(filename)
-      security[, Date := as.Date(as.character(Date), format=dateformat)]
-      security[, Year := as.character(format(Date, "%Y"))]
-      # sort by Date and key it
-      setkey(security, 'Date')
-      # take data starging from sdate
-      security <- security[Date >= sdate,]
-      security[, Mid := (High + Low + Close + Open) / 4]
-      security[, MidMAF := SMA(Mid, n=mapricefs)]
-      security[, MidMAS := SMA(Mid, n=mapricesl)]
-      security[, val := MidMAF-MidMAS]
-
-      if (all(security$val == 0)) {
-        stop("Undetermined security price direction")
-      }
-
-      security <- security[!is.na(val)]
-      security[, Eff := cut(val, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
+      security <- mainOpenSecurity(securityfile, mapricefs, mapricesl, dateformat, sdate)
       saveCache(security, key=ckey, dirs=c(securityfile))
       cat("Set openSecurity cache\n")
     }
@@ -148,44 +245,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     }
 
     return(security)
-  }
-
-  openPlanets <- function(planetsfile, cusorbs) {
-    args <- list(...)
-    ckey <- list(planetsfile, cusorbs)
-    planets <- loadCache(key=ckey, dirs=c(args$securityfile))
-    if (is.null(planets)) {
-      Date=DateMT4=Year=NULL
-      planetsfile <- npath(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""))
-      planets <- fread(planetsfile, sep="\t", na.strings="", verbose = F)
-      planets[, Date := as.Date(planets$Date, format="%Y-%m-%d")]
-      planets <- planets[, c('Date', planetsLonCols, planetsSpCols), with=F]
-      #planets[, DateMT4 := as.character(format(Date, "%Y.%m.%d"))]
-      planets[, Year := as.character(format(Date, "%Y"))]
-      planets[, wday := format(Date, "%w")]
-      setkey(planets, 'Date')
-
-      # calculate longitudinal differences
-      for (curcol in planetsCombLonCols) {
-        col1 <- substr(curcol, 1, 5)
-        col2 <- substr(curcol, 6, 10)
-        combnameorb <- paste(curcol, 'ORB', sep='')
-        planets[, c(curcol) := abs(get(col1) - get(col2))]
-      }
-
-      exprcopy <- paste("c(planetsCombLonOrbCols) := list(", paste(planetsCombLonCols, collapse=","), ")", sep="")
-      planets[, eval(parse(text = exprcopy))]
-
-      # calculate aspects for max orbs
-      orbsmatrix <- matrix(cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
-      planets <- processPlanetsAspects(planets, orbsmatrix)
-      saveCache(planets, key=ckey, dirs=c(args$securityfile))
-      cat("Set openPlanets cache\n")
-    }
-    else {
-      cat("Get openPlanets cache\n")
-    }
-    return(planets)
   }
 
   # process the degsplit for a cloned original planets dt
@@ -213,62 +272,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       cat("Get processPlanetsDegsplit cache\n")
     }
 
-    return(planets)
-  }
-
-  # calculate the planets aspects
-  processPlanetsAspects <- function(planetsorig, cusorbs) {
-    # clone original to ensure is no modified
-    planets <- copy(planetsorig)
-
-    calculateAspects <- function(x) {
-      allidx <- rep(FALSE, length(x))
-      for (aspect in aspects) {
-        comborb <- cusorbs['orbs', as.character(aspect)]
-        # for a0 the start is 360+(orb)
-        if (aspect == 0) {
-          rstart <- 360-comborb
-          rend <- aspect+comborb
-          idx <- x >= rstart | x <= rend
-        }
-        else {
-          rstart <- aspect-comborb
-          rend <- aspect+comborb
-          idx <- x >= rstart & x <= rend
-        }
-        allidx[idx] <- TRUE
-        x[idx] <- aspect
-      }
-      # put NA no aspects
-      x[!allidx] <- NA
-      return(x)
-    }
-
-    calculateAspectOrbs <- function(x) {
-      for (aspect in aspects) {
-        comborb <- cusorbs['orbs', as.character(aspect)]
-        if (aspect == 0) {
-          rstart <- 360-comborb
-          rend <- aspect+comborb
-          # first with aspect in mode 360
-          idx <- x >= rstart
-          x[idx] <- x[idx] - 360
-          # second in mode 0
-          idx <- x <= rend
-          x[idx] <- x[idx]
-        }
-        else {
-          rstart <- aspect-comborb
-          rend <- aspect+comborb
-          idx <- x >= rstart & x <= rend
-          x[idx] <- aspect - x[idx]
-        }
-      }
-      return(x)
-    }
-
-    planets[, c(planetsCombLonCols) := lapply(.SD, calculateAspects), .SDcols=planetsCombLonCols]
-    planets[, c(planetsCombLonOrbCols) := lapply(.SD, calculateAspectOrbs), .SDcols=planetsCombLonOrbCols]
     return(planets)
   }
 
@@ -921,4 +924,44 @@ getMySymbolsData  <- function(listfile) {
   #Load the list of ticker symbols from a csv, each row contains a ticker
   symbolsls <- read.csv(paste("./symbols/", listfile, '.csv', sep=''),  header=F, stringsAsFactors=F)
   res <- lapply(symbolsls$V1, processGetSymbol)
+}
+
+planetsIndicatorsChart <- function(securityfile, sdate, indicators, clear=F) {
+  planets <- openPlanets('planets_9', clear=clear)
+  security <- mainOpenSecurity(securityfile, 20, 50, "%Y-%m-%d", sdate)
+  sp <- as.data.frame(merge(security, planets, by='Date'))
+  # convert to xts class
+  sp <- xts(sp[, c('Open', 'High', 'Low', 'Close', planetsCombLonCols)], order.by=sp$Date)
+  # chart
+  chartSeries(OHLC(sp))
+  # draw indicators
+  planetsIndicatorsAdd(sp, indicators)
+  return(sp)
+}
+
+planetsIndicatorsAdd <- function(sp, indicators) {
+  expressions <- list()
+  # add indicators we need expression for correctly work of chart zooom
+  for (name in indicators) {
+    expressions[length(expressions)+1] <- paste("addTA(sp[, c('", name, "')], legend='", name, "')", sep="")
+  }
+
+  for (expr in expressions) {
+    print(eval(parse(text = expr)))
+  }
+}
+
+majorCombPlanets <- function() {
+  list('SULONMALON', 'SULONJULON', 'SULONSALON', 'MELONJULON', 'VELONJULON',
+       'VELONMALON', 'VELONSALON', 'MALONJULON', 'MALONSALON', 'JULONSALON')
+}
+
+sunCombPlanets <- function() {
+  list('SULONMELON', 'SULONVELON', 'SULONMALON', 'SULONCELON', 'SULONJULON',
+       'SULONJULON', 'SULONSALON', 'SULONURLON', 'SULONNELON', 'SULONPLLON')
+}
+
+venCombPlanets <- function() {
+  list('SULONVELON', 'MELONVELON', 'VELONMALON', 'VELONCELON', 'VELONJULON',
+       'VELONNNLON', 'VELONSALON', 'VELONURLON', 'VELONNELON', 'VELONPLLON')
 }
