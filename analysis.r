@@ -686,7 +686,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   relativeTrendFitness <- function(x, securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate,
                                    fittype, dateformat, mapricefs, mapricesl) {
     # build the parameters based on GA indexes
-    analogytypes <- c('SULONG', 'MELONG', 'VELONG', 'MALONG', 'CELONG')
     co.e = 5+length(deforbs)
     api.e = co.e+length(aspects)-1
     ae.e = api.e+length(aspects)
