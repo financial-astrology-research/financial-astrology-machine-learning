@@ -930,7 +930,7 @@ planetsIndicatorsChart <- function(securityfile, sdate, indicators, clear=F) {
   security <- mainOpenSecurity(securityfile, 20, 50, "%Y-%m-%d", sdate)
   sp <- as.data.frame(merge(security, planets, by='Date'))
   # convert to xts class
-  sp <- xts(sp[, c('Open', 'High', 'Low', 'Close', planetsCombLonCols, planetsLonCols)], order.by=sp$Date)
+  sp <- xts(sp[, c('Open', 'High', 'Low', 'Close', planetsCombLonCols, planetsLonCols, planetsSpCols)], order.by=sp$Date)
   # chart
   chartSeries(OHLC(sp))
   # draw indicators
@@ -949,7 +949,7 @@ planetsIndicatorsAdd <- function(sp, indicators) {
     print(eval(parse(text = expr)))
   }
 
-  for (i in seq(2, length(indicators))) {
+  for (i in seq(2, length(indicators)-1)) {
     print(addLines(0, 30, NULL, col='grey', on=i))
     print(addLines(0, 60, NULL, col='grey', on=i))
     print(addLines(0, 90, NULL, col='grey', on=i))
@@ -970,22 +970,22 @@ suCombPlanets <- function() {
 
 meCombPlanets <- function() {
   cols <- planetsCombLonCols[grep('MELON', planetsCombLonCols, ignore.case=T)]
-  return(c(cols, 'MELON'))
+  return(c(cols, 'MELON', 'MESP'))
 }
 
 veCombPlanets <- function() {
   cols <- planetsCombLonCols[grep('VELON', planetsCombLonCols, ignore.case=T)]
-  return(c(cols, 'VELON'))
+  return(c(cols, 'VELON', 'VESP'))
 }
 
 maCombPlanets <- function() {
   cols <- planetsCombLonCols[grep('MALON', planetsCombLonCols, ignore.case=T)]
-  return(c(cols, 'MALON'))
+  return(c(cols, 'MALON', 'MASP'))
 }
 
 juCombPlanets <- function() {
   cols <- planetsCombLonCols[grep('JULON', planetsCombLonCols, ignore.case=T)]
-  return(c(cols, 'JULON'))
+  return(c(cols, 'JULON', 'JUSP'))
 }
 
 nnCombPlanets <- function() {
@@ -995,5 +995,5 @@ nnCombPlanets <- function() {
 
 saCombPlanets <- function() {
   cols <- planetsCombLonCols[grep('SALON', planetsCombLonCols, ignore.case=T)]
-  return(c(cols, 'SALON'))
+  return(c(cols, 'SALON', 'SASP'))
 }
