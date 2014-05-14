@@ -227,9 +227,22 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   if (!hasArg('execfunc')) stop("Provide function to execute")
   ptm <- proc.time()
 
+  # Get the git branch / tag system name
+  getSystemName <- function(strparams) {
+    tryCatch(system2("git", strparams, stdout=T),
+             warning = function(w) {
+               'undefined'
+             })
+  }
+
   # determine the current system version
   system("cd ~/trading")
-  branch.name <- system2("git", "rev-parse --abbrev-ref HEAD", stdout=T)
+  # First try the branch name
+  branch.name <- getSystemName("symbolic-ref -q --short HEAD")
+  # If master or HEAD try the tag name
+  if (branch.name == 'undefined') {
+    branch.name <- getSystemName("describe --tags --exact-match")
+  }
 
   # open a security historic file
   openSecurity <- function(securityfile, mapricefs, mapricesl, dateformat="%Y.%m.%d", sdate) {
