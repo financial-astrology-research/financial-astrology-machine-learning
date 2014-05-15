@@ -966,7 +966,7 @@ planetsIndicatorsAdd <- function(sp, indicators) {
   for (i in seq(1, length(indicators))) {
     name <- indicators[i]
     indicators.exprs[i] <- paste("addTA(sp[, c('", name, "')], legend='", name, "', col='yellow', type='p', pch=20, lwd=0.1)", sep="")
-    lines.exprs[i] <- paste("addLines(0, 90, NULL, col='grey', on=", i+1, ")", sep="")
+    lines.exprs[i] <- paste("addLines(0, 90, NULL, col='red', on=", i+1, ")", sep="")
   }
 
   # eval indicators expression
@@ -1009,6 +1009,13 @@ maCombPlanets <- function() {
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
   return(c(cols, 'MALON', 'MASP'))
+}
+
+ceCombPlanets <- function() {
+  cols <- planetsCombLonCols[grep('CELON', planetsCombLonCols, ignore.case=T)]
+  cols <- removeMoon(cols)
+  cols <- removeEclipses(cols)
+  return(c(cols, 'CELON', 'CESP'))
 }
 
 juCombPlanets <- function() {
