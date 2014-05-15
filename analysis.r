@@ -960,18 +960,23 @@ planetsIndicatorsChart <- function(securityfile, sdate, indicators, clear=F) {
 }
 
 planetsIndicatorsAdd <- function(sp, indicators) {
-  expressions <- list()
+  indicators.exprs <- list()
+  lines.exprs <- list()
   # add indicators we need expression for correctly work of chart zooom
-  for (name in indicators) {
-    expressions[length(expressions)+1] <- paste("addTA(sp[, c('", name, "')], legend='", name, "', col='yellow', type='p', pch=20, lwd=0.1)", sep="")
+  for (i in seq(1, length(indicators))) {
+    name <- indicators[i]
+    indicators.exprs[i] <- paste("addTA(sp[, c('", name, "')], legend='", name, "', col='yellow', type='p', pch=20, lwd=0.1)", sep="")
+    lines.exprs[i] <- paste("addLines(0, 90, NULL, col='grey', on=", i+1, ")", sep="")
   }
 
-  for (expr in expressions) {
+  # eval indicators expression
+  for (expr in indicators.exprs) {
     print(eval(parse(text = expr)))
   }
 
-  for (i in seq(2, length(indicators)-1)) {
-    print(addLines(0, 90, NULL, col='grey', on=i))
+  # eval lines expressiions
+  for (expr in lines.exprs) {
+    print(eval(parse(text = expr)))
   }
 }
 
@@ -987,31 +992,43 @@ suCombPlanets <- function() {
 
 meCombPlanets <- function() {
   cols <- planetsCombLonCols[grep('MELON', planetsCombLonCols, ignore.case=T)]
+  cols <- removeMoon(cols)
+  cols <- removeEclipses(cols)
   return(c(cols, 'MELON', 'MESP'))
 }
 
 veCombPlanets <- function() {
   cols <- planetsCombLonCols[grep('VELON', planetsCombLonCols, ignore.case=T)]
+  cols <- removeMoon(cols)
+  cols <- removeEclipses(cols)
   return(c(cols, 'VELON', 'VESP'))
 }
 
 maCombPlanets <- function() {
   cols <- planetsCombLonCols[grep('MALON', planetsCombLonCols, ignore.case=T)]
+  cols <- removeMoon(cols)
+  cols <- removeEclipses(cols)
   return(c(cols, 'MALON', 'MASP'))
 }
 
 juCombPlanets <- function() {
   cols <- planetsCombLonCols[grep('JULON', planetsCombLonCols, ignore.case=T)]
+  cols <- removeMoon(cols)
+  cols <- removeEclipses(cols)
   return(c(cols, 'JULON', 'JUSP'))
 }
 
 nnCombPlanets <- function() {
   cols <- planetsCombLonCols[grep('NNLON', planetsCombLonCols, ignore.case=T)]
+  cols <- removeMoon(cols)
+  cols <- removeEclipses(cols)
   return(c(cols, 'NNLON'))
 }
 
 saCombPlanets <- function() {
   cols <- planetsCombLonCols[grep('SALON', planetsCombLonCols, ignore.case=T)]
+  cols <- removeMoon(cols)
+  cols <- removeEclipses(cols)
   return(c(cols, 'SALON', 'SASP'))
 }
 
@@ -1019,4 +1036,12 @@ ecsuCombPlanets <- function() {
   cols <- planetsCombLonCols[grep('ESLON', planetsCombLonCols, ignore.case=T)]
   cols <- cols[grep('EMLON|SULON|MOLON', cols, ignore.case=T, invert=T)]
   return(c(cols, 'ESLON'))
+}
+
+removeEclipses <- function(cols) {
+  return(cols[grep('ESLON|EMLON', cols, ignore.case=T, invert=T)])
+}
+
+removeMoon <- function(cols) {
+  return(cols[grep('MOLON', cols, ignore.case=T, invert=T)])
 }
