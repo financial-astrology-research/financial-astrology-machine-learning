@@ -980,11 +980,6 @@ planetsIndicatorsAdd <- function(sp, indicators) {
   }
 }
 
-majorCombPlanets <- function() {
-  list('SULONMALON', 'SULONJULON', 'SULONSALON', 'MELONJULON', 'VELONJULON',
-       'VELONMALON', 'VELONSALON', 'MALONJULON', 'MALONSALON', 'JULONSALON')
-}
-
 suCombPlanets <- function() {
   cols <- planetsCombLonCols[grep('SULON', planetsCombLonCols, ignore.case=T)]
   return(c(cols, 'SULON'))
@@ -1037,6 +1032,27 @@ saCombPlanets <- function() {
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
   return(c(cols, 'SALON', 'SASP'))
+}
+
+urCombPlanets <- function() {
+  cols <- planetsCombLonCols[grep('URLON', planetsCombLonCols, ignore.case=T)]
+  cols <- removeMoon(cols)
+  cols <- removeEclipses(cols)
+  return(c(cols, 'URLON', 'URSP'))
+}
+
+neCombPlanets <- function() {
+  cols <- planetsCombLonCols[grep('NELON', planetsCombLonCols, ignore.case=T)]
+  cols <- removeMoon(cols)
+  cols <- removeEclipses(cols)
+  return(c(cols, 'NELON', 'NESP'))
+}
+
+plCombPlanets <- function() {
+  cols <- planetsCombLonCols[grep('PLLON', planetsCombLonCols, ignore.case=T)]
+  cols <- removeMoon(cols)
+  cols <- removeEclipses(cols)
+  return(c(cols, 'PLLON', 'PLSP'))
 }
 
 ecsuCombPlanets <- function() {
