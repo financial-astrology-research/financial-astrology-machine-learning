@@ -963,7 +963,7 @@ planetsIndicatorsAdd <- function(sp, indicators) {
   expressions <- list()
   # add indicators we need expression for correctly work of chart zooom
   for (name in indicators) {
-    expressions[length(expressions)+1] <- paste("addTA(sp[, c('", name, "')], legend='", name, "', col='yellow', type='p', lwd=0.1)", sep="")
+    expressions[length(expressions)+1] <- paste("addTA(sp[, c('", name, "')], legend='", name, "', col='yellow', type='p', pch=20, lwd=0.1)", sep="")
   }
 
   for (expr in expressions) {
