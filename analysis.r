@@ -227,9 +227,22 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   if (!hasArg('execfunc')) stop("Provide function to execute")
   ptm <- proc.time()
 
+  # Get the git branch / tag system name
+  getSystemName <- function(strparams) {
+    tryCatch(system2("git", strparams, stdout=T),
+             warning = function(w) {
+               'undefined'
+             })
+  }
+
   # determine the current system version
   system("cd ~/trading")
-  branch.name <- system2("git", "rev-parse --abbrev-ref HEAD", stdout=T)
+  # First try the branch name
+  branch.name <- getSystemName("symbolic-ref -q --short HEAD")
+  # If master or HEAD try the tag name
+  if (branch.name == 'undefined') {
+    branch.name <- getSystemName("describe --tags --exact-match")
+  }
 
   # open a security historic file
   openSecurity <- function(securityfile, mapricefs, mapricesl, dateformat="%Y.%m.%d", sdate) {
@@ -930,7 +943,7 @@ planetsIndicatorsChart <- function(securityfile, sdate, indicators, clear=F) {
   security <- mainOpenSecurity(securityfile, 20, 50, "%Y-%m-%d", sdate)
   sp <- as.data.frame(merge(security, planets, by='Date'))
   # convert to xts class
-  sp <- xts(sp[, c('Open', 'High', 'Low', 'Close', planetsCombLonCols)], order.by=sp$Date)
+  sp <- xts(sp[, c('Open', 'High', 'Low', 'Close', planetsCombLonCols, planetsLonCols, planetsSpCols)], order.by=sp$Date)
   # chart
   chartSeries(OHLC(sp))
   # draw indicators
@@ -942,11 +955,19 @@ planetsIndicatorsAdd <- function(sp, indicators) {
   expressions <- list()
   # add indicators we need expression for correctly work of chart zooom
   for (name in indicators) {
-    expressions[length(expressions)+1] <- paste("addTA(sp[, c('", name, "')], legend='", name, "')", sep="")
+    expressions[length(expressions)+1] <- paste("addTA(sp[, c('", name, "')], legend='", name, "', col='yellow')", sep="")
   }
 
   for (expr in expressions) {
     print(eval(parse(text = expr)))
+  }
+
+  for (i in seq(2, length(indicators)-1)) {
+    print(addLines(0, 30, NULL, col='grey', on=i))
+    print(addLines(0, 60, NULL, col='grey', on=i))
+    print(addLines(0, 90, NULL, col='grey', on=i))
+    print(addLines(0, 120, NULL, col='grey', on=i))
+    print(addLines(0, 150, NULL, col='grey', on=i))
   }
 }
 
@@ -955,12 +976,37 @@ majorCombPlanets <- function() {
        'VELONMALON', 'VELONSALON', 'MALONJULON', 'MALONSALON', 'JULONSALON')
 }
 
-sunCombPlanets <- function() {
-  list('SULONMELON', 'SULONVELON', 'SULONMALON', 'SULONCELON', 'SULONJULON',
-       'SULONJULON', 'SULONSALON', 'SULONURLON', 'SULONNELON', 'SULONPLLON')
+suCombPlanets <- function() {
+  cols <- planetsCombLonCols[grep('SULON', planetsCombLonCols, ignore.case=T)]
+  return(c(cols, 'SULON'))
 }
 
-venCombPlanets <- function() {
-  list('SULONVELON', 'MELONVELON', 'VELONMALON', 'VELONCELON', 'VELONJULON',
-       'VELONNNLON', 'VELONSALON', 'VELONURLON', 'VELONNELON', 'VELONPLLON')
+meCombPlanets <- function() {
+  cols <- planetsCombLonCols[grep('MELON', planetsCombLonCols, ignore.case=T)]
+  return(c(cols, 'MELON', 'MESP'))
+}
+
+veCombPlanets <- function() {
+  cols <- planetsCombLonCols[grep('VELON', planetsCombLonCols, ignore.case=T)]
+  return(c(cols, 'VELON', 'VESP'))
+}
+
+maCombPlanets <- function() {
+  cols <- planetsCombLonCols[grep('MALON', planetsCombLonCols, ignore.case=T)]
+  return(c(cols, 'MALON', 'MASP'))
+}
+
+juCombPlanets <- function() {
+  cols <- planetsCombLonCols[grep('JULON', planetsCombLonCols, ignore.case=T)]
+  return(c(cols, 'JULON', 'JUSP'))
+}
+
+nnCombPlanets <- function() {
+  cols <- planetsCombLonCols[grep('NNLON', planetsCombLonCols, ignore.case=T)]
+  return(c(cols, 'NNLON'))
+}
+
+saCombPlanets <- function() {
+  cols <- planetsCombLonCols[grep('SALON', planetsCombLonCols, ignore.case=T)]
+  return(c(cols, 'SALON', 'SASP'))
 }
