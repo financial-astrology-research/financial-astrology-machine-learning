@@ -971,11 +971,7 @@ planetsIndicatorsAdd <- function(sp, indicators) {
   }
 
   for (i in seq(2, length(indicators)-1)) {
-    print(addLines(0, 30, NULL, col='grey', on=i))
-    print(addLines(0, 60, NULL, col='grey', on=i))
     print(addLines(0, 90, NULL, col='grey', on=i))
-    print(addLines(0, 120, NULL, col='grey', on=i))
-    print(addLines(0, 150, NULL, col='grey', on=i))
   }
 }
 
