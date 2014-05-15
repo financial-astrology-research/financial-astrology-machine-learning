@@ -22,17 +22,23 @@ aspects            <-  c(0,30,36,40,45,51,60,72,80,90,103,108,120,135,144,150,15
 deforbs            <- c(12, 2, 2, 2, 2, 2, 7, 2, 2, 7,  2,  2,  7,  2,  2,  2,  2,  2, 12)
 
 # columns names
-aspOrbsCols <- as.character(apply(expand.grid(aspects, planetsBaseCols[1:(length(planetsBaseCols)-1)]), 1, function(x) paste(x[2], x[1], sep='')))
-planetsLonCols <- paste(planetsBaseCols, 'LON', sep='')
-planetsLonGCols <- paste(planetsLonCols, 'G', sep='')
-planetsSpCols <- paste(planetsBaseCols, 'SP', sep='')
-planetsSpGCols <- paste(planetsSpCols, "G", sep="")
-planetsCombLon <- combn(planetsLonCols, 2, simplify=F)
-planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
-planetsCombLonOrbCols <- paste(planetsCombLonCols, 'ORB', sep='')
-zodSignsCols <- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CP', 'AC', 'PI')
-lenZodEnergyMi <- length(planetsBaseCols) * length(zodSignsCols)
-#lenZodEnergyMa <- (length(planetsLonCols) * length(zodSignsCols)) - lenZodEnergyMi
+buildPlanetsColsNames <- function(planetsBaseCols) {
+  aspOrbsCols <<- as.character(apply(expand.grid(aspects, planetsBaseCols[1:(length(planetsBaseCols)-1)]), 1, function(x) paste(x[2], x[1], sep='')))
+  planetsLonCols <<- paste(planetsBaseCols, 'LON', sep='')
+  planetsLonGCols <<- paste(planetsLonCols, 'G', sep='')
+  planetsSpCols <<- paste(planetsBaseCols, 'SP', sep='')
+  # Remove eclipse cols due it do not have speed
+  planetsSpCols <<- planetsSpCols[grep('^E', planetsSpCols, ignore.case=T, invert=T)]
+  planetsSpGCols <<- paste(planetsSpCols, "G", sep="")
+  planetsCombLon <<- combn(planetsLonCols, 2, simplify=F)
+  planetsCombLonCols <<- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
+  planetsCombLonOrbCols <<- paste(planetsCombLonCols, 'ORB', sep='')
+  zodSignsCols <<- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CP', 'AC', 'PI')
+  lenZodEnergyMi <<- length(planetsBaseCols) * length(zodSignsCols)
+  #lenZodEnergyMa <- (length(planetsLonCols) * length(zodSignsCols)) - lenZodEnergyMi
+}
+
+buildPlanetsColsNames(planetsBaseCols)
 
 # a function that returns the position of n-th largest
 maxn <- function(x, n) {
@@ -939,7 +945,9 @@ getMySymbolsData  <- function(listfile) {
 }
 
 planetsIndicatorsChart <- function(securityfile, sdate, indicators, clear=F) {
-  planets <- openPlanets('planets_9', clear=clear)
+  planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL', 'ES', 'EM')
+  buildPlanetsColsNames(planetsBaseCols)
+  planets <- openPlanets('planets_10', clear=clear)
   security <- mainOpenSecurity(securityfile, 20, 50, "%Y-%m-%d", sdate)
   sp <- as.data.frame(merge(security, planets, by='Date'))
   # convert to xts class
@@ -1009,4 +1017,10 @@ nnCombPlanets <- function() {
 saCombPlanets <- function() {
   cols <- planetsCombLonCols[grep('SALON', planetsCombLonCols, ignore.case=T)]
   return(c(cols, 'SALON', 'SASP'))
+}
+
+ecsuCombPlanets <- function() {
+  cols <- planetsCombLonCols[grep('ESLON', planetsCombLonCols, ignore.case=T)]
+  cols <- cols[grep('EMLON|SULON|MOLON', cols, ignore.case=T, invert=T)]
+  return(c(cols, 'ESLON'))
 }
