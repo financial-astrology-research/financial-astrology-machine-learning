@@ -25,13 +25,15 @@ deforbs            <- c(12, 2, 2, 2, 2, 2, 7, 2, 2, 7,  2,  2,  7,  2,  2,  2,  
 buildPlanetsColsNames <- function(planetsBaseCols) {
   aspOrbsCols <<- as.character(apply(expand.grid(aspects, planetsBaseCols[1:(length(planetsBaseCols)-1)]), 1, function(x) paste(x[2], x[1], sep='')))
   planetsLonCols <<- paste(planetsBaseCols, 'LON', sep='')
+  planetsAspCols <<- paste(planetsBaseCols, 'ASP', sep='')
   planetsDecCols <<- paste(planetsBaseCols, 'DEC', sep='')
   planetsLonGCols <<- paste(planetsLonCols, 'G', sep='')
   planetsSpCols <<- paste(planetsBaseCols, 'SP', sep='')
   planetsSpGCols <<- paste(planetsSpCols, "G", sep="")
-  planetsCombLon <<- combn(planetsLonCols, 2, simplify=F)
-  planetsCombLonCols <<- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
-  planetsCombLonOrbCols <<- paste(planetsCombLonCols, 'ORB', sep='')
+  planetsComb <<- combn(planetsBaseCols, 2, simplify=F)
+  planetsCombLon <<- as.character(lapply(planetsComb, function(x) paste(x[1], x[2], 'LON', sep='')))
+  planetsCombAsp <<- as.character(lapply(planetsComb, function(x) paste(x[1], x[2], 'ASP', sep='')))
+  planetsCombOrb <<- paste(planetsCombLon, 'ORB', sep='')
   zodSignsCols <<- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CP', 'AC', 'PI')
   lenZodEnergyMi <<- length(planetsBaseCols) * length(zodSignsCols)
   #lenZodEnergyMa <- (length(planetsLonCols) * length(zodSignsCols)) - lenZodEnergyMi
@@ -151,8 +153,8 @@ processPlanetsAspects <- function(planetsorig, cusorbs) {
     return(x)
   }
 
-  planets[, c(planetsCombLonCols) := lapply(.SD, calculateAspects), .SDcols=planetsCombLonCols]
-  planets[, c(planetsCombLonOrbCols) := lapply(.SD, calculateAspectOrbs), .SDcols=planetsCombLonOrbCols]
+  planets[, c(planetsCombAsp) := lapply(.SD, calculateAspects), .SDcols=planetsCombLon]
+  planets[, c(planetsCombOrb) := lapply(.SD, calculateAspectOrbs), .SDcols=planetsCombOrb]
   return(planets)
 }
 
@@ -168,10 +170,9 @@ mainOpenPlanets <- function(planetsfile, cusorbs) {
   setkey(planets, 'Date')
 
   # calculate longitudinal differences
-  for (curcol in planetsCombLonCols) {
-    col1 <- substr(curcol, 1, 5)
-    col2 <- substr(curcol, 6, 10)
-    combnameorb <- paste(curcol, 'ORB', sep='')
+  for (curcol in planetsCombLon) {
+    col1 <- paste(substr(curcol, 1, 2), 'LON', sep='')
+    col2 <- paste(substr(curcol, 3, 4), 'LON', sep='')
     planets[, c(curcol) := get(col1) - get(col2)]
   }
 
@@ -182,9 +183,9 @@ mainOpenPlanets <- function(planetsfile, cusorbs) {
   }
 
   # Normalize to 180 degrees range
-  planets[, c(planetsCombLonCols) := lapply(.SD, normalizeDistance), .SDcols=planetsCombLonCols]
+  planets[, c(planetsCombLon) := lapply(.SD, normalizeDistance), .SDcols=planetsCombLon]
   # Copy to orbs
-  exprcopy <- paste("c(planetsCombLonOrbCols) := list(", paste(planetsCombLonCols, collapse=","), ")", sep="")
+  exprcopy <- paste("c(planetsCombOrb) := list(", paste(planetsCombLon, collapse=","), ")", sep="")
   planets[, eval(parse(text = exprcopy))]
 
   # calculate aspects for max orbs
@@ -306,7 +307,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # build significance table for each planet
     planetTable <- function(curcol) {
       planet.significance <- copy(significance)
-      planet.significance[, origin := curcol]
+      planet.significance[, origin := substr(curcol, 1 , 2)]
       return(planet.significance)
     }
 
@@ -347,7 +348,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # build daily significance indexes
     buildDailySignificanceIdxs <- function(planets.day) {
       curdate <- planets.day[['Date']]
-      sigidxs <- paste(planets.day[planetsLonGCols], planetsLonCols, sep='_')
+      sigidxs <- paste(planets.day[planetsLonGCols], planetsBaseCols, sep='_')
       datelist <- rep(curdate, length(sigidxs))
       day.idxs <- list(Date=datelist, keyidx=sigidxs)
       return(day.idxs)
@@ -363,7 +364,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       significance.days <- merge(significance.days.idxs, significance, by=c('keyidx'))
       # build daily planets lon to calculate zodsign
       planets.lon <- melt(planets.pred, id.var=c('Date'), measure.var=planetsLonCols)
-      planets.lon[, origin := variable]
+      planets.lon[, origin := substr(variable, 1, 2)]
       planets.lon[, Date := as.character(Date, format="%Y-%m-%d")]
       planets.lon[, variable := NULL]
       setnames(planets.lon, c('Date', 'lon', 'origin'))
@@ -386,19 +387,21 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   dayAspectsEnergy <- function(planets.pred, aspectspolarity, aspectsenergy, zodenergy, orbs) {
     # melt aspects
     planets.pred.aspects <- melt(planets.pred, id.var=c('Date'), variable.name='origin',
-                                 value.name='aspect', value.factor=T, measure.var=planetsCombLonCols, na.rm=T)
+                                 value.name='aspect', value.factor=T, measure.var=planetsCombAsp, na.rm=T)
+    # remove ASP from the origin column name
+    planets.pred.aspects[, origin := substr(origin, 1, 4)]
     # melt orbs
     planets.pred.orbs <- melt(planets.pred, id.var=c('Date'), variable.name='origin', value.name='orb',
-                              measure.var=planetsCombLonOrbCols)
+                              measure.var=planetsCombOrb)
     # remove ORBS from the origin column name
-    planets.pred.orbs[, origin := substr(origin, 1, 10)]
+    planets.pred.orbs[, origin := substr(origin, 1, 4)]
     # join aspects & orbs
     planets.pred.aspen <- merge(planets.pred.aspects, planets.pred.orbs, by=c('Date', 'origin'))
     # add up / down energy cols inintially to 0
     planets.pred.aspen[, c('up', 'down') := list(0, 0)]
     # planets cols involved in the aspect
-    planets.pred.aspen[, plaone := substr(origin, 1, 5)]
-    planets.pred.aspen[, platwo := substr(origin, 6, 10)]
+    planets.pred.aspen[, plaone := substr(origin, 1, 2)]
+    planets.pred.aspen[, platwo := substr(origin, 3, 4)]
     planets.pred.aspen[, polarity := aspectspolarity['polarity', aspect]]
     # Energy is given to the two involved planets in an aspect then we need two tables
     planets.pred.aspen.one <- copy(planets.pred.aspen)
@@ -505,8 +508,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                                   dimnames = list(c('energy'), aspects))
 
     #planetszodenergy <- c(args$planetszodenergy, rep(1, lenZodEnergyMa))
-    planetszodenergymatrix <- matrix(args$planetszodenergy, nrow = length(planetsLonCols), ncol = 12, byrow = TRUE,
-                                     dimnames = list(planetsLonCols, zodSignsCols))
+    planetszodenergymatrix <- matrix(args$planetszodenergy, nrow = length(planetsBaseCols), ncol = 12, byrow = TRUE,
+                                     dimnames = list(planetsBaseCols, zodSignsCols))
 
     sout <- with(args, paste("testPlanetsSignificanceRelative('testSolution', securityfile=", shQuote(securityfile), ", planetsfile=", shQuote(planetsfile),
                              ", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate),
@@ -858,8 +861,8 @@ securityPeaksValleys <- function(security, span=50, plotfile="peaks_valleys") {
   planetsLonCols <- paste(planetsBaseCols, 'LON', sep='')
   planetsLonGCols <- paste(planetsBaseCols, 'LONG', sep='')
   planetsCombLon <- combn(paste(c("SU", "MO", "ME", "VE", "MA", "JU", "SA", "UR", "NE", "PL", "SN", "NN"), 'LON', sep=''), 2, simplify=F)
-  planetsCombLonCols <- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
-  cols <- c('Date', planetsLonGCols, planetsSpGCols, planetsCombLonCols)
+  planetsCombLon <- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
+  cols <- c('Date', planetsLonGCols, planetsSpGCols, planetsCombLon)
   pos.p <- peaks(security$Mid, span)
   pos.v <- peaks(-security$Mid, span)
   # take 2 days before exact peak - valley
@@ -890,7 +893,7 @@ securityPeaksValleys <- function(security, span=50, plotfile="peaks_valleys") {
   print(pl)
 
   # Aggregated Aspects
-  planets.pv.asp <- melt(planets.pv, id.var=c('Date', 'type'), measure.var=planetsCombLonCols)
+  planets.pv.asp <- melt(planets.pv, id.var=c('Date', 'type'), measure.var=planetsCombLon)
   planets.pv.asp <- planets.pv.asp[value != 'anon']
   pl <- ggplot(aes(x=value, fill=type), data=planets.pv.asp) + geom_bar(position = 'fill') + theme(axis.text.x = element_text(angle = 90, size = 9)) + xlab("Aggregated Planets Aspects")  + ggtitle(paste("Peaks VS Valleys Aggregated Planets (Percent)"))
   print(pl)
@@ -908,7 +911,7 @@ securityPeaksValleys <- function(security, span=50, plotfile="peaks_valleys") {
     }
   }
 
-  for (curcol in planetsCombLonCols) {
+  for (curcol in planetsCombLon) {
     if (curcol == 'Date') next
     ds <- planets.pv.asp[variable == curcol]
     if ( nrow(ds) > 0 ) {
@@ -953,7 +956,7 @@ planetsIndicatorsChart <- function(securityfile, sdate, indicators, clear=F) {
   security <- mainOpenSecurity(securityfile, 20, 50, "%Y-%m-%d", sdate)
   sp <- as.data.frame(merge(security, planets, by='Date'))
   # convert to xts class
-  sp <- xts(sp[, c('Open', 'High', 'Low', 'Close', planetsCombLonCols, planetsLonCols, planetsSpCols, planetsDecCols)], order.by=sp$Date)
+  sp <- xts(sp[, c('Open', 'High', 'Low', 'Close', planetsCombLon, planetsLonCols, planetsSpCols, planetsDecCols)], order.by=sp$Date)
   # chart
   barChart(OHLC(sp), log.scale=T)
   # build composite declinations
@@ -1028,87 +1031,87 @@ speedIndicators <- function() {
 }
 
 ecsuIndicators <- function() {
-  cols <- planetsCombLonCols[grep('ESLON', planetsCombLonCols, ignore.case=T)]
+  cols <- planetsCombLon[grep('ESLON', planetsCombLon, ignore.case=T)]
   cols <- cols[grep('EMLON|SULON|MOLON', cols, ignore.case=T, invert=T)]
   return(c(cols, 'ESLON'))
 }
 
 ecmoIndicators <- function() {
-  cols <- planetsCombLonCols[grep('EMLON', planetsCombLonCols, ignore.case=T)]
+  cols <- planetsCombLon[grep('EMLON', planetsCombLon, ignore.case=T)]
   cols <- cols[grep('EMLON|SULON|MOLON', cols, ignore.case=T, invert=T)]
   return(c(cols, 'EMLON'))
 }
 
 suIndicators <- function() {
-  cols <- planetsCombLonCols[grep('SULON', planetsCombLonCols, ignore.case=T)]
+  cols <- planetsCombLon[grep('SULON', planetsCombLon, ignore.case=T)]
   return(c(cols, 'SULON'))
 }
 
 meIndicators <- function() {
-  cols <- planetsCombLonCols[grep('MELON', planetsCombLonCols, ignore.case=T)]
+  cols <- planetsCombLon[grep('MELON', planetsCombLon, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
   return(c(cols, 'MELON', 'MESP'))
 }
 
 veIndicators <- function() {
-  cols <- planetsCombLonCols[grep('VELON', planetsCombLonCols, ignore.case=T)]
+  cols <- planetsCombLon[grep('VELON', planetsCombLon, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
   return(c(cols, 'VELON', 'VESP'))
 }
 
 maIndicators <- function() {
-  cols <- planetsCombLonCols[grep('MALON', planetsCombLonCols, ignore.case=T)]
+  cols <- planetsCombLon[grep('MALON', planetsCombLon, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
   return(c(cols, 'MALON', 'MASP'))
 }
 
 ceIndicators <- function() {
-  cols <- planetsCombLonCols[grep('CELON', planetsCombLonCols, ignore.case=T)]
+  cols <- planetsCombLon[grep('CELON', planetsCombLon, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
   return(c(cols, 'CELON', 'CESP'))
 }
 
 juIndicators <- function() {
-  cols <- planetsCombLonCols[grep('JULON', planetsCombLonCols, ignore.case=T)]
+  cols <- planetsCombLon[grep('JULON', planetsCombLon, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
   return(c(cols, 'JULON', 'JUSP'))
 }
 
 nnIndicators <- function() {
-  cols <- planetsCombLonCols[grep('NNLON', planetsCombLonCols, ignore.case=T)]
+  cols <- planetsCombLon[grep('NNLON', planetsCombLon, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
   return(c(cols, 'NNLON'))
 }
 
 saIndicators <- function() {
-  cols <- planetsCombLonCols[grep('SALON', planetsCombLonCols, ignore.case=T)]
+  cols <- planetsCombLon[grep('SALON', planetsCombLon, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
   return(c(cols, 'SALON', 'SASP'))
 }
 
 urIndicators <- function() {
-  cols <- planetsCombLonCols[grep('URLON', planetsCombLonCols, ignore.case=T)]
+  cols <- planetsCombLon[grep('URLON', planetsCombLon, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
   return(c(cols, 'URLON', 'URSP'))
 }
 
 neIndicators <- function() {
-  cols <- planetsCombLonCols[grep('NELON', planetsCombLonCols, ignore.case=T)]
+  cols <- planetsCombLon[grep('NELON', planetsCombLon, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
   return(c(cols, 'NELON', 'NESP'))
 }
 
 plIndicators <- function() {
-  cols <- planetsCombLonCols[grep('PLLON', planetsCombLonCols, ignore.case=T)]
+  cols <- planetsCombLon[grep('PLLON', planetsCombLon, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
   return(c(cols, 'PLLON', 'PLSP'))
