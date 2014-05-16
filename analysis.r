@@ -25,6 +25,7 @@ deforbs            <- c(12, 2, 2, 2, 2, 2, 7, 2, 2, 7,  2,  2,  7,  2,  2,  2,  
 buildPlanetsColsNames <- function(planetsBaseCols) {
   aspOrbsCols <<- as.character(apply(expand.grid(aspects, planetsBaseCols[1:(length(planetsBaseCols)-1)]), 1, function(x) paste(x[2], x[1], sep='')))
   planetsLonCols <<- paste(planetsBaseCols, 'LON', sep='')
+  planetsDecCols <<- paste(planetsBaseCols, 'DEC', sep='')
   planetsLonGCols <<- paste(planetsLonCols, 'G', sep='')
   planetsSpCols <<- paste(planetsBaseCols, 'SP', sep='')
   # Remove eclipse cols due it do not have speed
@@ -159,7 +160,7 @@ mainOpenPlanets <- function(planetsfile, cusorbs) {
   planetsfile <- npath(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""))
   planets <- fread(planetsfile, sep="\t", na.strings="", verbose = F)
   planets[, Date := as.Date(planets$Date, format="%Y-%m-%d")]
-  planets <- planets[, c('Date', planetsLonCols, planetsSpCols), with=F]
+  planets <- planets[, c('Date', planetsLonCols, planetsDecCols, planetsSpCols), with=F]
   #planets[, DateMT4 := as.character(format(Date, "%Y.%m.%d"))]
   planets[, Year := as.character(format(Date, "%Y"))]
   planets[, wday := format(Date, "%w")]
@@ -980,82 +981,82 @@ planetsIndicatorsAdd <- function(sp, indicators) {
   }
 }
 
-suCombPlanets <- function() {
+suIndicators <- function() {
   cols <- planetsCombLonCols[grep('SULON', planetsCombLonCols, ignore.case=T)]
   return(c(cols, 'SULON'))
 }
 
-meCombPlanets <- function() {
+meIndicators <- function() {
   cols <- planetsCombLonCols[grep('MELON', planetsCombLonCols, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
   return(c(cols, 'MELON', 'MESP'))
 }
 
-veCombPlanets <- function() {
+veIndicators <- function() {
   cols <- planetsCombLonCols[grep('VELON', planetsCombLonCols, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
   return(c(cols, 'VELON', 'VESP'))
 }
 
-maCombPlanets <- function() {
+maIndicators <- function() {
   cols <- planetsCombLonCols[grep('MALON', planetsCombLonCols, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
   return(c(cols, 'MALON', 'MASP'))
 }
 
-ceCombPlanets <- function() {
+ceIndicators <- function() {
   cols <- planetsCombLonCols[grep('CELON', planetsCombLonCols, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
   return(c(cols, 'CELON', 'CESP'))
 }
 
-juCombPlanets <- function() {
+juIndicators <- function() {
   cols <- planetsCombLonCols[grep('JULON', planetsCombLonCols, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
   return(c(cols, 'JULON', 'JUSP'))
 }
 
-nnCombPlanets <- function() {
+nnIndicators <- function() {
   cols <- planetsCombLonCols[grep('NNLON', planetsCombLonCols, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
   return(c(cols, 'NNLON'))
 }
 
-saCombPlanets <- function() {
+saIndicators <- function() {
   cols <- planetsCombLonCols[grep('SALON', planetsCombLonCols, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
   return(c(cols, 'SALON', 'SASP'))
 }
 
-urCombPlanets <- function() {
+urIndicators <- function() {
   cols <- planetsCombLonCols[grep('URLON', planetsCombLonCols, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
   return(c(cols, 'URLON', 'URSP'))
 }
 
-neCombPlanets <- function() {
+neIndicators <- function() {
   cols <- planetsCombLonCols[grep('NELON', planetsCombLonCols, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
   return(c(cols, 'NELON', 'NESP'))
 }
 
-plCombPlanets <- function() {
+plIndicators <- function() {
   cols <- planetsCombLonCols[grep('PLLON', planetsCombLonCols, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
   return(c(cols, 'PLLON', 'PLSP'))
 }
 
-ecsuCombPlanets <- function() {
+ecsuIndicators <- function() {
   cols <- planetsCombLonCols[grep('ESLON', planetsCombLonCols, ignore.case=T)]
   cols <- cols[grep('EMLON|SULON|MOLON', cols, ignore.case=T, invert=T)]
   return(c(cols, 'ESLON'))
