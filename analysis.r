@@ -28,8 +28,6 @@ buildPlanetsColsNames <- function(planetsBaseCols) {
   planetsDecCols <<- paste(planetsBaseCols, 'DEC', sep='')
   planetsLonGCols <<- paste(planetsLonCols, 'G', sep='')
   planetsSpCols <<- paste(planetsBaseCols, 'SP', sep='')
-  # Remove eclipse cols due it do not have speed
-  planetsSpCols <<- planetsSpCols[grep('^E', planetsSpCols, ignore.case=T, invert=T)]
   planetsSpGCols <<- paste(planetsSpCols, "G", sep="")
   planetsCombLon <<- combn(planetsLonCols, 2, simplify=F)
   planetsCombLonCols <<- as.character(lapply(planetsCombLon, function(x) paste(x[1], x[2], sep='')))
@@ -37,6 +35,9 @@ buildPlanetsColsNames <- function(planetsBaseCols) {
   zodSignsCols <<- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CP', 'AC', 'PI')
   lenZodEnergyMi <<- length(planetsBaseCols) * length(zodSignsCols)
   #lenZodEnergyMa <- (length(planetsLonCols) * length(zodSignsCols)) - lenZodEnergyMi
+  # Remove eclipse cols due it do not have speed
+  planetsSpCols <<- planetsSpCols[grep('^E', planetsSpCols, ignore.case=T, invert=T)]
+  planetsDecCols <<- planetsDecCols[grep('^E', planetsDecCols, ignore.case=T, invert=T)]
 }
 
 buildPlanetsColsNames(planetsBaseCols)
@@ -954,7 +955,7 @@ planetsIndicatorsChart <- function(securityfile, sdate, indicators, clear=F) {
   # convert to xts class
   sp <- xts(sp[, c('Open', 'High', 'Low', 'Close', planetsCombLonCols, planetsLonCols, planetsSpCols)], order.by=sp$Date)
   # chart
-  chartSeries(OHLC(sp))
+  barChart(OHLC(sp), log.scale=T)
   # draw indicators
   planetsIndicatorsAdd(sp, indicators)
   return(sp)
