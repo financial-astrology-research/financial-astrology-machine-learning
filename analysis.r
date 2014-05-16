@@ -956,6 +956,8 @@ planetsIndicatorsChart <- function(securityfile, sdate, indicators, clear=F) {
   sp <- xts(sp[, c('Open', 'High', 'Low', 'Close', planetsCombLonCols, planetsLonCols, planetsSpCols, planetsDecCols)], order.by=sp$Date)
   # chart
   barChart(OHLC(sp), log.scale=T)
+  # build composite declinations
+  sp <- buildCompositeCols(sp)
   # draw indicators
   planetsIndicatorsAdd(sp, indicators)
   return(sp)
@@ -980,6 +982,23 @@ planetsIndicatorsAdd <- function(sp, indicators) {
   for (expr in lines.exprs) {
     print(eval(parse(text = expr)))
   }
+}
+
+buildCompositeCols <- function(sp) {
+  # Calculate composite declinations
+  sp$DSUMEVE <- calculateComposite(sp, c('SUDEC', 'MEDEC', 'VEDEC'))
+  sp$DSUMEVEMACE <- calculateComposite(sp, c('SUDEC', 'MEDEC', 'VEDEC', 'MADEC', 'CEDEC'))
+  sp$DMAJUNNSA <- calculateComposite(sp, c('MADEC', 'JUDEC', 'NNDEC', 'SADEC'))
+  sp$DALL <- calculateComposite(sp, c('SUDEC', 'MEDEC', 'VEDEC', 'MADEC', 'CEDEC', 'JUDEC', 'NNDEC', 'SADEC', 'URDEC', 'NEDEC', 'PLDEC'))
+  return(sp)
+}
+
+calculateComposite <- function(sp, cols) {
+  return(rowMeans(sp[, cols]))
+}
+
+declinationCompositeIndicators <- function() {
+  return(c('DSUMEVE', 'DSUMEVEMACE', 'DMAJUNNSA', 'DALL'))
 }
 
 declinationIndicators <- function() {
