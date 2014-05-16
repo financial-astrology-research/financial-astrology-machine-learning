@@ -952,6 +952,8 @@ getMySymbolsData  <- function(listfile) {
 planetsIndicatorsChart <- function(securityfile, sdate, indicators, clear=F) {
   planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL', 'ES', 'EM')
   buildPlanetsColsNames(planetsBaseCols)
+  indicatorsfunc <- get(indicators)
+  indicators <- indicatorsfunc()
   planets <- openPlanets('planets_10', clear=clear)
   security <- mainOpenSecurity(securityfile, 20, 50, "%Y-%m-%d", sdate)
   sp <- as.data.frame(merge(security, planets, by='Date'))
@@ -1031,96 +1033,96 @@ speedIndicators <- function() {
 }
 
 ecsuIndicators <- function() {
-  cols <- planetsCombLon[grep('ESLON', planetsCombLon, ignore.case=T)]
-  cols <- cols[grep('EMLON|SULON|MOLON', cols, ignore.case=T, invert=T)]
-  return(c(cols, 'ESLON'))
+  cols <- planetsCombLon[grep('ES', planetsCombLon, ignore.case=T)]
+  cols <- cols[grep('EM|SU|MO', cols, ignore.case=T, invert=T)]
+  return(c(cols, 'ES'))
 }
 
 ecmoIndicators <- function() {
-  cols <- planetsCombLon[grep('EMLON', planetsCombLon, ignore.case=T)]
-  cols <- cols[grep('EMLON|SULON|MOLON', cols, ignore.case=T, invert=T)]
-  return(c(cols, 'EMLON'))
+  cols <- planetsCombLon[grep('EM', planetsCombLon, ignore.case=T)]
+  cols <- cols[grep('EM|SU|MO', cols, ignore.case=T, invert=T)]
+  return(c(cols, 'EM'))
 }
 
 suIndicators <- function() {
-  cols <- planetsCombLon[grep('SULON', planetsCombLon, ignore.case=T)]
-  return(c(cols, 'SULON'))
+  cols <- planetsCombLon[grep('SU', planetsCombLon, ignore.case=T)]
+  return(c(cols))
 }
 
 meIndicators <- function() {
-  cols <- planetsCombLon[grep('MELON', planetsCombLon, ignore.case=T)]
+  cols <- planetsCombLon[grep('ME', planetsCombLon, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
-  return(c(cols, 'MELON', 'MESP'))
+  return(c(cols, 'MESP'))
 }
 
 veIndicators <- function() {
-  cols <- planetsCombLon[grep('VELON', planetsCombLon, ignore.case=T)]
+  cols <- planetsCombLon[grep('VE', planetsCombLon, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
-  return(c(cols, 'VELON', 'VESP'))
+  return(c(cols, 'VESP'))
 }
 
 maIndicators <- function() {
-  cols <- planetsCombLon[grep('MALON', planetsCombLon, ignore.case=T)]
+  cols <- planetsCombLon[grep('MA', planetsCombLon, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
-  return(c(cols, 'MALON', 'MASP'))
+  return(c(cols, 'MASP'))
 }
 
 ceIndicators <- function() {
-  cols <- planetsCombLon[grep('CELON', planetsCombLon, ignore.case=T)]
+  cols <- planetsCombLon[grep('CE', planetsCombLon, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
-  return(c(cols, 'CELON', 'CESP'))
+  return(c(cols, 'CESP'))
 }
 
 juIndicators <- function() {
-  cols <- planetsCombLon[grep('JULON', planetsCombLon, ignore.case=T)]
+  cols <- planetsCombLon[grep('JU', planetsCombLon, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
-  return(c(cols, 'JULON', 'JUSP'))
+  return(c(cols, 'JUSP'))
 }
 
 nnIndicators <- function() {
-  cols <- planetsCombLon[grep('NNLON', planetsCombLon, ignore.case=T)]
+  cols <- planetsCombLon[grep('NN', planetsCombLon, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
-  return(c(cols, 'NNLON'))
+  return(c(cols, 'NNSP'))
 }
 
 saIndicators <- function() {
-  cols <- planetsCombLon[grep('SALON', planetsCombLon, ignore.case=T)]
+  cols <- planetsCombLon[grep('SA', planetsCombLon, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
-  return(c(cols, 'SALON', 'SASP'))
+  return(c(cols, 'SASP'))
 }
 
 urIndicators <- function() {
-  cols <- planetsCombLon[grep('URLON', planetsCombLon, ignore.case=T)]
+  cols <- planetsCombLon[grep('UR', planetsCombLon, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
-  return(c(cols, 'URLON', 'URSP'))
+  return(c(cols, 'URSP'))
 }
 
 neIndicators <- function() {
-  cols <- planetsCombLon[grep('NELON', planetsCombLon, ignore.case=T)]
+  cols <- planetsCombLon[grep('NE', planetsCombLon, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
-  return(c(cols, 'NELON', 'NESP'))
+  return(c(cols, 'NESP'))
 }
 
 plIndicators <- function() {
-  cols <- planetsCombLon[grep('PLLON', planetsCombLon, ignore.case=T)]
+  cols <- planetsCombLon[grep('PL', planetsCombLon, ignore.case=T)]
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
-  return(c(cols, 'PLLON', 'PLSP'))
+  return(c(cols, 'PLSP'))
 }
 
 removeEclipses <- function(cols) {
-  return(cols[grep('ESLON|EMLON', cols, ignore.case=T, invert=T)])
+  return(cols[grep('ES|EM', cols, ignore.case=T, invert=T)])
 }
 
 removeMoon <- function(cols) {
-  return(cols[grep('MOLON', cols, ignore.case=T, invert=T)])
+  return(cols[grep('MO', cols, ignore.case=T, invert=T)])
 }
