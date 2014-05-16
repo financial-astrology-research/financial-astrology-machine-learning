@@ -990,6 +990,16 @@ buildCompositeCols <- function(sp) {
   sp$DSUMEVEMACE <- calculateComposite(sp, c('SUDEC', 'MEDEC', 'VEDEC', 'MADEC', 'CEDEC'))
   sp$DMAJUNNSA <- calculateComposite(sp, c('MADEC', 'JUDEC', 'NNDEC', 'SADEC'))
   sp$DALL <- calculateComposite(sp, c('SUDEC', 'MEDEC', 'VEDEC', 'MADEC', 'CEDEC', 'JUDEC', 'NNDEC', 'SADEC', 'URDEC', 'NEDEC', 'PLDEC'))
+  # Calculate composite speeds
+  sp$SSUMEVE <- calculateComposite(sp, c('SUSP', 'MESP', 'VESP'))
+  sp$SSUMEVEMACE <- calculateComposite(sp, c('SUSP', 'MESP', 'VESP', 'MASP', 'CESP'))
+  sp$SMAJUNNSA <- calculateComposite(sp, c('MASP', 'JUSP', 'NNSP', 'SASP'))
+  sp$SALL <- calculateComposite(sp, c('SUSP', 'MESP', 'VESP', 'MASP', 'CESP', 'JUSP', 'NNSP', 'SASP', 'URSP', 'NESP', 'PLSP'))
+  # Calculate composite longitudes
+  sp$LSUMEVE <- calculateComposite(sp, c('SULON', 'MELON', 'VELON'))
+  sp$LSUMEVEMACE <- calculateComposite(sp, c('SULON', 'MELON', 'VELON', 'MALON', 'CELON'))
+  sp$LMAJUNNSA <- calculateComposite(sp, c('MALON', 'JULON', 'NNLON', 'SALON'))
+  sp$LALL <- calculateComposite(sp, c('SULON', 'MELON', 'VELON', 'MALON', 'CELON', 'JULON', 'NNLON', 'SALON', 'URLON', 'NELON', 'PLLON'))
   return(sp)
 }
 
@@ -999,6 +1009,14 @@ calculateComposite <- function(sp, cols) {
 
 declinationCompositeIndicators <- function() {
   return(c('DSUMEVE', 'DSUMEVEMACE', 'DMAJUNNSA', 'DALL'))
+}
+
+speedCompositeIndicators <- function() {
+  return(c('SSUMEVE', 'SSUMEVEMACE', 'SMAJUNNSA', 'SALL'))
+}
+
+longitudeCompositeIndicators <- function() {
+  return(c('LSUMEVE', 'LSUMEVEMACE', 'LMAJUNNSA', 'LALL'))
 }
 
 declinationIndicators <- function() {
