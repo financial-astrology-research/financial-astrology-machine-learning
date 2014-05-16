@@ -981,6 +981,26 @@ planetsIndicatorsAdd <- function(sp, indicators) {
   }
 }
 
+declinationIndicators <- function() {
+  return(planetsDecCols)
+}
+
+speedIndicators <- function() {
+  return(planetsSpCols)
+}
+
+ecsuIndicators <- function() {
+  cols <- planetsCombLonCols[grep('ESLON', planetsCombLonCols, ignore.case=T)]
+  cols <- cols[grep('EMLON|SULON|MOLON', cols, ignore.case=T, invert=T)]
+  return(c(cols, 'ESLON'))
+}
+
+ecmoIndicators <- function() {
+  cols <- planetsCombLonCols[grep('EMLON', planetsCombLonCols, ignore.case=T)]
+  cols <- cols[grep('EMLON|SULON|MOLON', cols, ignore.case=T, invert=T)]
+  return(c(cols, 'EMLON'))
+}
+
 suIndicators <- function() {
   cols <- planetsCombLonCols[grep('SULON', planetsCombLonCols, ignore.case=T)]
   return(c(cols, 'SULON'))
@@ -1054,12 +1074,6 @@ plIndicators <- function() {
   cols <- removeMoon(cols)
   cols <- removeEclipses(cols)
   return(c(cols, 'PLLON', 'PLSP'))
-}
-
-ecsuIndicators <- function() {
-  cols <- planetsCombLonCols[grep('ESLON', planetsCombLonCols, ignore.case=T)]
-  cols <- cols[grep('EMLON|SULON|MOLON', cols, ignore.case=T, invert=T)]
-  return(c(cols, 'ESLON'))
 }
 
 removeEclipses <- function(cols) {
