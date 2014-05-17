@@ -1154,19 +1154,22 @@ selectCols <- function(cols, usepat, ignpat) {
 }
 
 indicatorPeakValleyHist <- function(sp, indicator, span, width, ylim) {
-  ipeaks <- as.vector(sp[which(peaks(Op(sp), span=span)), c(indicator)])
-  ivalleys <- as.vector(sp[which(peaks(-Op(sp), span=span)), c(indicator)])
-  irandom <- as.vector(sp[sample(1:nrow(sp), length(ipeaks)), indicator])
+  wpeaks <- which(peaks(Op(sp), span=span))
+  wvalleys <- which(peaks(-Op(sp), span=span))
+  wmiddle <- round((wpeaks+wvalleys) / 2)
+  ipeaks <- as.vector(sp[wpeaks, c(indicator)])
+  ivalleys <- as.vector(sp[wvalleys, c(indicator)])
+  imiddle <- as.vector(sp[wmiddle, indicator])
   # cbind with ts so if different vector lengths we avoid recycle
-  pv <- data.table(cbind(peaks=ts(ipeaks), valleys=ts(ivalleys)), random=ts(irandom))
-  pv <- pv[!is.na(peaks) & !is.na(valleys),]
-  pv <- melt(pv, variable.name='type', value.name='value', measure.var=c('peaks', 'valleys', 'random'))
+  pv <- data.table(cbind(peaks=ts(ipeaks), valleys=ts(ivalleys)), middle=ts(imiddle))
+  pv <- pv[!is.na(peaks) & !is.na(valleys) & !is.na(middle),]
+  pv <- melt(pv, variable.name='type', value.name='value', measure.var=c('peaks', 'valleys', 'middle'))
   #grid.arrange(p1, p2, ncol=2, main = paste("Peaks & Valleys", indicator, "hist", sep=' '))
   p <- ggplot(pv, aes(x = value)) +
   geom_histogram(binwidth = width) +
   scale_y_continuous(breaks=seq(1, 20, by=2)) +
   scale_x_continuous(breaks=seq(0, 360, by=30), limits=ylim) +
-  ggtitle(paste("Peaks VS Valleys VS random - ", indicator, " - histogram")) +
+  ggtitle(paste("Peaks VS Valleys VS Middle - ", indicator, " - histogram")) +
   facet_grid(. ~ type)
   print(p)
 }
