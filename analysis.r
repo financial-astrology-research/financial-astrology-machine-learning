@@ -1152,3 +1152,20 @@ selectCols <- function(cols, usepat, ignpat) {
   cols <- cols[grep(ignpat, cols, invert=T)]
   return(cols)
 }
+
+indicatorPeakValleyHist <- function(sp, indicator, span, width, ylim) {
+  library(gridExtra)
+  peaks <- as.vector(sp[which(peaks(Op(sp), span=span)), c(indicator)])
+  valleys <- as.vector(sp[which(peaks(-Op(sp), span=span)), c(indicator)])
+  # cbind with ts so if different vector lengths we avoid recycle
+  pv <- data.table(cbind(peaks=ts(peaks), valleys=ts(valleys)))
+  pv <- pv[!is.na(peaks) & !is.na(valleys),]
+  pv <- melt(pv, variable.name='type', value.name='value', measure.var=c('peaks', 'valleys'))
+  #grid.arrange(p1, p2, ncol=2, main = paste("Peaks & Valleys", indicator, "hist", sep=' '))
+  p <- ggplot(pv, aes(x = value)) +
+  geom_histogram(binwidth = width) +
+  scale_y_continuous(breaks=seq(1, 20, by=2)) +
+  scale_x_continuous(breaks=seq(0, 360, by=30), limits=ylim) +
+  facet_grid(. ~ type)
+  print(p)
+}
