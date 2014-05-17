@@ -989,14 +989,29 @@ planetsIndicatorsAdd <- function(sp, indicators) {
   }
 }
 
-pricePeaksLinesAdd <- function(sp, span, invert=F) {
+peaksMiddleValleys <- function(sp, span) {
+  wpeaks <- sort.int(which(peaks(Op(sp), span=span)))
+  wvalleys <- sort.int(which(peaks(-Op(sp), span=span)))
+  # Remove valleys that are lower that first beak to try to sync the series
+  wvalleys <- wvalleys[wvalleys > wpeaks[1]]
+  pvi <- data.table(cbind(peaks=ts(wpeaks), valleys=ts(wvalleys)))
+  pvi[, middle := round((peaks+valleys)/2)]
+  pvi <- pvi[!is.na(wpeaks) & !is.na(valleys) & !is.na(middle),]
+}
+
+pricePeaksLinesAdd <- function(sp, span, type=c('p', 'v', 'm'), col='green') {
   lchob <- quantmod:::get.current.chob()
   windows <- seq(1, lchob@windows)
-  if (invert) {
-    lapply(windows, function(w) addLines(0, 0, which(peaks(-Op(sp), span=span)), on=w))
+  pvi <- peaksMiddleValleys(sp, span)
+
+  if (type == 'p') {
+    lapply(windows, function(w) addLines(0, NULL, pvi$peaks, col=col, on=w))
   }
-  else {
-    lapply(windows, function(w) addLines(0, 0, which(peaks(Op(sp), span=span)), on=w))
+  else if (type == 'v') {
+    lapply(windows, function(w) addLines(0, NULL, pvi$valleys, col=col, on=w))
+  }
+  else if (type == 'm') {
+    lapply(windows, function(w) addLines(0, NULL, pvi$middle, col=col, on=w))
   }
 }
 
@@ -1154,12 +1169,10 @@ selectCols <- function(cols, usepat, ignpat) {
 }
 
 indicatorPeakValleyHist <- function(sp, indicator, span, width, ylim) {
-  wpeaks <- which(peaks(Op(sp), span=span))
-  wvalleys <- which(peaks(-Op(sp), span=span))
-  wmiddle <- round((wpeaks+wvalleys) / 2)
-  ipeaks <- as.vector(sp[wpeaks, c(indicator)])
-  ivalleys <- as.vector(sp[wvalleys, c(indicator)])
-  imiddle <- as.vector(sp[wmiddle, indicator])
+  pvi <- peaksMiddleValleys(sp, span)
+  ipeaks <- as.vector(sp[pvi$peaks, c(indicator)])
+  ivalleys <- as.vector(sp[pvi$valleys, c(indicator)])
+  imiddle <- as.vector(sp[pvi$middle, indicator])
   # cbind with ts so if different vector lengths we avoid recycle
   pv <- data.table(cbind(peaks=ts(ipeaks), valleys=ts(ivalleys)), middle=ts(imiddle))
   pv <- pv[!is.na(peaks) & !is.na(valleys) & !is.na(middle),]
