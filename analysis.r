@@ -989,6 +989,17 @@ planetsIndicatorsAdd <- function(sp, indicators) {
   }
 }
 
+pricePeaksLinesAdd <- function(sp, span, invert=F) {
+  lchob <- quantmod:::get.current.chob()
+  windows <- seq(1, lchob@windows)
+  if (invert) {
+    lapply(windows, function(w) addLines(0, 0, which(peaks(-Op(sp), span=span)), on=w))
+  }
+  else {
+    lapply(windows, function(w) addLines(0, 0, which(peaks(Op(sp), span=span)), on=w))
+  }
+}
+
 buildCompositeCols <- function(sp) {
   # Calculate composite declinations
   sp$DSUMEVE <- calculateComposite(sp, c('SUDEC', 'MEDEC', 'VEDEC'))
@@ -1006,10 +1017,10 @@ buildCompositeCols <- function(sp) {
   sp$LMAJUNNSA <- calculateComposite(sp, c('MALON', 'JULON', 'NNLON', 'SALON'))
   sp$LALL <- calculateComposite(sp, c('SULON', 'MELON', 'VELON', 'MALON', 'CELON', 'JULON', 'NNLON', 'SALON', 'URLON', 'NELON', 'PLLON'))
   # Calculate composite aspects
-  sp$AALL <- calculateComposite(sp, selectCols(planetsCombLon, '*', 'MO|ME'))
-  sp$ASLOW <- calculateComposite(sp, selectCols(planetsCombLon, 'JU|NN|SA|UR|NE|PL', 'MO|ME'))
-  sp$AMIDSLOW <- calculateComposite(sp, selectCols(planetsCombLon, 'MA|JU|NN|SA', 'MO|ME'))
-  sp$AFAST <- calculateComposite(sp, selectCols(planetsCombLon, 'SU|ME|VE|MA', 'MO|ME'))
+  sp$AALL <- calculateComposite(sp, selectCols(planetsCombLon, '*', 'MO|ME|ES|EM'))
+  sp$ASLOW <- calculateComposite(sp, selectCols(planetsCombLon, 'JU|NN|SA|UR|NE|PL', 'MO|ME|ES|EM'))
+  sp$AMIDSLOW <- calculateComposite(sp, selectCols(planetsCombLon, 'MA|JU|NN|SA', 'MO|ME|ES|EM'))
+  sp$AFAST <- calculateComposite(sp, selectCols(planetsCombLon, 'SU|ME|VE|MA', 'MO|ME|ES|EM'))
   return(sp)
 }
 
