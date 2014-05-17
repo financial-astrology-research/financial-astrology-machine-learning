@@ -1005,11 +1005,20 @@ buildCompositeCols <- function(sp) {
   sp$LSUMEVEMACE <- calculateComposite(sp, c('SULON', 'MELON', 'VELON', 'MALON', 'CELON'))
   sp$LMAJUNNSA <- calculateComposite(sp, c('MALON', 'JULON', 'NNLON', 'SALON'))
   sp$LALL <- calculateComposite(sp, c('SULON', 'MELON', 'VELON', 'MALON', 'CELON', 'JULON', 'NNLON', 'SALON', 'URLON', 'NELON', 'PLLON'))
+  # Calculate composite aspects
+  sp$AALL <- calculateComposite(sp, removeMoon(planetsCombLon))
+  sp$ASLOW <- calculateComposite(sp, removeMoon(planetsCombLon[grep('JU|NN|SA|UR|NE|PL', planetsCombLon, ignore.case=T)]))
+  sp$AMAJUNNSA <- calculateComposite(sp, removeMoon(planetsCombLon[grep('MA|JU|NN|SA', planetsCombLon, ignore.case=T)]))
+  sp$AFAST <- calculateComposite(sp, removeMoon(planetsCombLon[grep('SU|ME|VE|MA', planetsCombLon, ignore.case=T)]))
   return(sp)
 }
 
 calculateComposite <- function(sp, cols) {
   return(rowMeans(sp[, cols]))
+}
+
+aspectsCompositeIndicators <- function() {
+  return(c('AALL', 'ASLOW', 'AMAJUNNSA', 'AFAST'))
 }
 
 declinationCompositeIndicators <- function() {
