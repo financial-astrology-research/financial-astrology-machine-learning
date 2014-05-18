@@ -1168,7 +1168,7 @@ selectCols <- function(cols, usepat, ignpat) {
   return(cols)
 }
 
-indicatorPeakValleyHist <- function(sp, indicator, span, width, ylim) {
+indicatorPeakValleyHist <- function(sp, indicator, span, width, ylim, ybreak) {
   pvi <- peaksMiddleValleys(sp, span)
   ipeaks <- as.vector(sp[pvi$peaks, c(indicator)])
   ivalleys <- as.vector(sp[pvi$valleys, c(indicator)])
@@ -1181,8 +1181,17 @@ indicatorPeakValleyHist <- function(sp, indicator, span, width, ylim) {
   p <- ggplot(pv, aes(x = value)) +
   geom_histogram(binwidth = width) +
   scale_y_continuous(breaks=seq(1, 20, by=2)) +
-  scale_x_continuous(breaks=seq(0, 360, by=30), limits=ylim) +
+  scale_x_continuous(breaks=seq(ybreak[1], ybreak[2], by=width), limits=ylim) +
   ggtitle(paste("Peaks VS Valleys VS Middle - ", indicator, " - histogram")) +
   facet_grid(. ~ type)
   print(p)
+}
+
+reportIndicatorsPeakValleyHist <- function(symbol, sp, span) {
+  planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL', 'ES', 'EM')
+  buildPlanetsColsNames(planetsBaseCols)
+  pdf(npath(paste("~/pvm_histograms_", symbol, ".pdf", sep='')), width = 11, height = 8, family='Helvetica', pointsize=15)
+  lapply(planetsCombLon, function(indicator) indicatorPeakValleyHist(sp, indicator, span, 15, c(1, 180), c(0, 180)))
+  lapply(planetsDecCols, function(indicator) indicatorPeakValleyHist(sp, indicator, span, 5, c(-30, 30), c(-30, 30)))
+  dev.off()
 }
