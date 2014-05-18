@@ -949,24 +949,28 @@ getMySymbolsData  <- function(listfile) {
   res <- lapply(symbolsls$V1, processGetSymbol)
 }
 
-planetsIndicatorsChart <- function(securityfile, sdate, indicators, clear=F) {
+buildSecurityPlanetsIndicators <- function(securityfile, sdate, mfs=20, msl=50, clear=F) {
   planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL', 'ES', 'EM')
   buildPlanetsColsNames(planetsBaseCols)
+  planets <- openPlanets('planets_10', clear=clear)
+  security <- mainOpenSecurity(securityfile, mfs, msl, "%Y-%m-%d", sdate)
+  sp <- merge(security, planets, by='Date')
+  # build composite indicators
+  sp <- buildCompositeCols(sp)
+  return(sp)
+}
 
+planetsIndicatorsChart <- function(securityfile, sdate, indicators, clear=F) {
   if (!is.vector(indicators)) {
     indicatorsfunc <- get(indicators)
     indicators <- indicatorsfunc()
   }
 
-  planets <- openPlanets('planets_10', clear=clear)
-  security <- mainOpenSecurity(securityfile, 20, 50, "%Y-%m-%d", sdate)
-  sp <- as.data.frame(merge(security, planets, by='Date'))
+  sp <- as.data.frame(buildSecurityPlanetsIndicators(securityfile, sdate, clear))
   # convert to xts class
   sp <- xts(sp[, c('Open', 'High', 'Low', 'Close', planetsCombLon, planetsLonCols, planetsSpCols, planetsDecCols)], order.by=sp$Date)
   # chart
   barChart(OHLC(sp), log.scale=T)
-  # build composite declinations
-  sp <- buildCompositeCols(sp)
   # draw indicators
   planetsIndicatorsAdd(sp, indicators)
   return(sp)
@@ -1044,7 +1048,7 @@ buildCompositeCols <- function(sp) {
 }
 
 calculateComposite <- function(sp, cols) {
-  return(rowMeans(sp[, cols]))
+  return(rowMeans(sp[, cols, with=F]))
 }
 
 aspectsCompositeIndicators <- function() {
@@ -1191,11 +1195,11 @@ indicatorPeakValleyHist <- function(sp, indicator, span, width, ylim, ybreak) {
   print(p)
 }
 
-significancePeakValleyFrequencies <- function(sp, indicators, span, width) {
+significancePeakValleyFrequencies <- function(sp, indicators, span, width, clear=F) {
   # Get peaks and valleys index
   pvi <- peaksMiddleValleys(sp, span)
-  # convert to data.table and identify peaks & valleys
-  pv <- data.table(as.data.frame(sp))
+  pv <- copy(sp)
+  # identify peaks & valleys
   pv[pvi$peaks, type := 'peaks']
   pv[pvi$valleys, type := 'valleys']
   pv <- pv[!is.na(type), c(indicators, 'type'), with=F]
