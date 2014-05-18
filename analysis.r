@@ -1191,6 +1191,23 @@ indicatorPeakValleyHist <- function(sp, indicator, span, width, ylim, ybreak) {
   print(p)
 }
 
+significancePeakValleyFrequencies <- function(sp, indicator, span, width) {
+  pvi <- peaksMiddleValleys(sp, span)
+  ipeaks <- as.vector(sp[pvi$peaks, c(indicator)])
+  ivalleys <- as.vector(sp[pvi$valleys, c(indicator)])
+  imiddle <- as.vector(sp[pvi$middle, indicator])
+  pv <- data.table(cbind(peaks=ts(ipeaks), valleys=ts(ivalleys)), middle=ts(imiddle))
+  pv <- pv[!is.na(peaks) & !is.na(valleys) & !is.na(middle),]
+
+  for (curcol in colnames(pv)) {
+    factorx <- pv[, factor(cut(get(curcol), breaks=seq(0, 180, by=width)))]
+    xout <- as.data.frame(table(factorx))
+    xout <- transform(xout, cumFreq=cumsum(Freq), relative=prop.table(Freq))
+    cat("----", curcol, "-----\n")
+    print(xout)
+  }
+}
+
 reportIndicatorsPeakValleyHist <- function(symbol, sp, span) {
   planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL', 'ES', 'EM')
   buildPlanetsColsNames(planetsBaseCols)
