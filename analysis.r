@@ -952,8 +952,12 @@ getMySymbolsData  <- function(listfile) {
 planetsIndicatorsChart <- function(securityfile, sdate, indicators, clear=F) {
   planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL', 'ES', 'EM')
   buildPlanetsColsNames(planetsBaseCols)
-  indicatorsfunc <- get(indicators)
-  indicators <- indicatorsfunc()
+
+  if (!is.vector(indicators)) {
+    indicatorsfunc <- get(indicators)
+    indicators <- indicatorsfunc()
+  }
+
   planets <- openPlanets('planets_10', clear=clear)
   security <- mainOpenSecurity(securityfile, 20, 50, "%Y-%m-%d", sdate)
   sp <- as.data.frame(merge(security, planets, by='Date'))
@@ -975,7 +979,7 @@ planetsIndicatorsAdd <- function(sp, indicators) {
   for (i in seq(1, length(indicators))) {
     name <- indicators[i]
     indicators.exprs[i] <- paste("addTA(sp[, c('", name, "')], legend='", name, "', col='yellow', type='p', pch=20, lwd=0.1)", sep="")
-    lines.exprs[i] <- paste("addLines(0, 90, NULL, col='red', on=", i+1, ")", sep="")
+    lines.exprs[i] <- paste("addLines(0, c(45, 90, 135), NULL, col='red', on=", i+1, ")", sep="")
   }
 
   # eval indicators expression
