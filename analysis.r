@@ -1191,21 +1191,27 @@ indicatorPeakValleyHist <- function(sp, indicator, span, width, ylim, ybreak) {
   print(p)
 }
 
-significancePeakValleyFrequencies <- function(sp, indicator, span, width) {
+significancePeakValleyFrequencies <- function(sp, indicators, span, width) {
+  # Get peaks and valleys index
   pvi <- peaksMiddleValleys(sp, span)
-  ipeaks <- as.vector(sp[pvi$peaks, c(indicator)])
-  ivalleys <- as.vector(sp[pvi$valleys, c(indicator)])
-  imiddle <- as.vector(sp[pvi$middle, indicator])
-  pv <- data.table(cbind(peaks=ts(ipeaks), valleys=ts(ivalleys)), middle=ts(imiddle))
-  pv <- pv[!is.na(peaks) & !is.na(valleys) & !is.na(middle),]
-
-  for (curcol in colnames(pv)) {
-    factorx <- pv[, factor(cut(get(curcol), breaks=seq(0, 180, by=width)))]
-    xout <- as.data.frame(table(factorx))
-    xout <- transform(xout, cumFreq=cumsum(Freq), relative=prop.table(Freq))
-    cat("----", curcol, "-----\n")
-    print(xout)
-  }
+  # convert to data.table and identify peaks & valleys
+  pv <- data.table(as.data.frame(sp))
+  pv[pvi$peaks, type := 'peaks']
+  pv[pvi$valleys, type := 'valleys']
+  pv <- pv[!is.na(type), c(indicators, 'type'), with=F]
+  # Convert the continuos values to cut factors
+  pv[, c(indicators) := lapply(.SD, function(x) cut(x, breaks=seq(0, 180, by=width))), .SDcols=indicators]
+  # Calculate the frequencies
+  pv <- melt(pv, id.var=c('type'), measure.var=indicators)
+  freq <- pv[, data.table(table(value, type)), by=c('variable')]
+  freq[, c('cumFreq', 'relFreq') := list(cumsum(N), prop.table(N)), by=c('variable', 'value')]
+  # join peaks & valleys cols in same rows
+  freq.pv <- merge(freq[value == 'peaks'], freq[value =='valleys'], by=c('variable', 'type'))
+  freq.pv[, value.x := NULL]
+  freq.pv[, value.y := NULL]
+  setnames(freq.pv, c('variable', 'value', 'Freq.p', 'cumFreq.p', 'relFreq.p', 'Freq.v', 'cumFreq.v', 'relFreq.v'))
+  freq.pv[, relsig := relFreq.p - relFreq.v]
+  return(freq.pv)
 }
 
 reportIndicatorsPeakValleyHist <- function(symbol, sp, span) {
