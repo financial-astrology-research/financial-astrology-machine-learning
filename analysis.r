@@ -1155,7 +1155,7 @@ plIndicators <- function() {
 }
 
 removeEclipses <- function(cols) {
-  return(cols[grep('ES|EM', cols, ignore.case=T, invert=T)])
+  return(cols[grep('^..ES|^ES|^..EM|^EM', cols, ignore.case=T, invert=T)])
 }
 
 removeMoon <- function(cols) {
