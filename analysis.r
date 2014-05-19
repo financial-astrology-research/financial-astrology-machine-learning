@@ -966,7 +966,7 @@ planetsIndicatorsChart <- function(securityfile, sdate, indicators, clear=F) {
     indicators <- indicatorsfunc()
   }
 
-  sp <- as.data.frame(buildSecurityPlanetsIndicators(securityfile, sdate, clear))
+  sp <- as.data.frame(buildSecurityPlanetsIndicators(securityfile, sdate, clear=clear))
   # convert to xts class
   sp <- xts(sp[, c('Open', 'High', 'Low', 'Close', planetsCombLon, planetsLonCols, planetsSpCols, planetsDecCols)], order.by=sp$Date)
   # chart
@@ -1204,27 +1204,27 @@ indicatorPeakValleyHist <- function(sp, indicator, span, width, ylim, ybreak) {
   print(p)
 }
 
-reportPeakValleyFreq <- function(sp, indicators, span, width) {
+reportPeakValleyFreq <- function(sp, indicators, span, width, breaks=c(-360, 360)) {
   # Get peaks and valleys index
   pvi <- idxPeaksMiddleValleys(sp, span)
   pv <- copy(sp)
-  return(frequenctyCalculation(pv, pvi$peaks, pvi$valleys, indicators, span, width))
+  return(frequenctyCalculation(pv, pvi$peaks, pvi$valleys, indicators, width, breaks))
 }
 
-reportUpDownsFreq <- function(sp, indicators, width) {
+reportUpDownsFreq <- function(sp, indicators, width, breaks=c(-360, 360)) {
   # Get peaks and valleys index
   pvi <- idxUpDowns(sp)
   pv <- copy(sp)
-  return(frequenctyCalculation(pv, pvi$ups, pvi$downs, indicators, span, width))
+  return(frequenctyCalculation(pv, pvi$ups, pvi$downs, indicators, width, breaks))
 }
 
-frequenctyCalculation <- function(pv, iup, idown, indicators, span, width) {
+frequenctyCalculation <- function(pv, iup, idown, indicators, width, breaks=c(-360, 360)) {
   # identify peaks & valleys
   pv[iup, type := 'peaks']
   pv[idown, type := 'valleys']
   pv <- pv[!is.na(type), c(indicators, 'type'), with=F]
   # Convert the continuos values to cut factors
-  pv[, c(indicators) := lapply(.SD, function(x) cut(x, breaks=seq(0, 180, by=width))), .SDcols=indicators]
+  pv[, c(indicators) := lapply(.SD, function(x) cut(x, breaks=seq(breaks[1], breaks[2], by=width))), .SDcols=indicators]
   # Calculate the frequencies
   pv <- melt(pv, id.var=c('type'), measure.var=indicators)
   freq <- pv[, data.table(table(value, type)), by=c('variable')]
