@@ -1228,12 +1228,12 @@ frequenctyCalculation <- function(pv, iup, idown, indicators, span, width) {
   # Calculate the frequencies
   pv <- melt(pv, id.var=c('type'), measure.var=indicators)
   freq <- pv[, data.table(table(value, type)), by=c('variable')]
-  freq[, c('cumFreq', 'relFreq') := list(cumsum(N), prop.table(N)), by=c('variable', 'value')]
+  freq[, relFreq := prop.table(N), by=c('variable', 'value')]
   # join peaks & valleys cols in same rows
   freq.pv <- merge(freq[value == 'peaks'], freq[value =='valleys'], by=c('variable', 'type'))
   freq.pv[, value.x := NULL]
   freq.pv[, value.y := NULL]
-  setnames(freq.pv, c('variable', 'value', 'Freq.p', 'cumFreq.p', 'relFreq.p', 'Freq.v', 'cumFreq.v', 'relFreq.v'))
+  setnames(freq.pv, c('variable', 'value', 'Freq.p', 'relFreq.p', 'Freq.v', 'relFreq.v'))
   freq.pv[, relsig := relFreq.p - relFreq.v]
   return(freq.pv)
 }
