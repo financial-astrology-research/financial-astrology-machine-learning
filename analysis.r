@@ -1011,8 +1011,8 @@ idxUpDowns <- function(sp) {
   wups <- which(sp$Eff=='up')
   wdowns <- which(sp$Eff=='down')
   maxlength <- ifelse(length(wups) < length(wdowns), length(wups), length(wdowns))
-  totake <- round(maxlength * 0.3)
-  # Choose 30% of observations of each group
+  totake <- round(maxlength * 0.5)
+  # Choose 50% of observations of each group
   pvi <- data.table(cbind(ups=sample(wups, totake), downs=sample(wdowns, totake)))
 }
 
@@ -1234,7 +1234,14 @@ frequenctyCalculation <- function(pv, iup, idown, indicators, span, width) {
   freq.pv[, value.x := NULL]
   freq.pv[, value.y := NULL]
   setnames(freq.pv, c('variable', 'value', 'Freq.p', 'relFreq.p', 'Freq.v', 'relFreq.v'))
+  # total and relative significance of the event
   freq.pv[, relsig := relFreq.p - relFreq.v]
+  freq.pv[Freq.p > Freq.v, sig := Freq.p / (Freq.p + Freq.v)]
+  freq.pv[Freq.p < Freq.v, sig := -(Freq.v / (Freq.p + Freq.v))]
+  freq.pv[Freq.p == Freq.v, sig := 0]
+  # round numeric cols
+  roundcols <- c('relFreq.p', 'relFreq.v', 'relsig', 'sig')
+  freq.pv[, c(roundcols) := lapply(.SD, function(x) round(x, digits=3)), .SDcols=roundcols]
   return(freq.pv)
 }
 
