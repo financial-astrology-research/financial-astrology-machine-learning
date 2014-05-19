@@ -997,7 +997,7 @@ planetsIndicatorsAdd <- function(sp, indicators) {
   }
 }
 
-peaksMiddleValleys <- function(sp, span) {
+idxPeaksMiddleValleys <- function(sp, span) {
   wpeaks <- sort.int(which(peaks(Op(sp), span=span)))
   wvalleys <- sort.int(which(peaks(-Op(sp), span=span)))
   # Remove valleys that are lower that first beak to try to sync the series
@@ -1007,10 +1007,19 @@ peaksMiddleValleys <- function(sp, span) {
   pvi <- pvi[!is.na(wpeaks) & !is.na(valleys) & !is.na(middle),]
 }
 
+idxUpDowns <- function(sp, span) {
+  wups <- which(sp$Eff=='up')
+  wdowns <- which(sp$Eff=='down')
+  # Remove downs that are lower that first beak to try to sync the series
+  wdowns <- wdowns[wdowns > wups[1]]
+  pvi <- data.table(cbind(ups=ts(wups), downs=ts(wdowns)))
+  pvi <- pvi[!is.na(wups) & !is.na(downs),]
+}
+
 pricePeaksLinesAdd <- function(sp, span, type=c('p', 'v', 'm'), col='green') {
   lchob <- quantmod:::get.current.chob()
   windows <- seq(1, lchob@windows)
-  pvi <- peaksMiddleValleys(sp, span)
+  pvi <- idxPeaksMiddleValleys(sp, span)
 
   if (type == 'p') {
     lapply(windows, function(w) addLines(0, NULL, pvi$peaks, col=col, on=w))
@@ -1177,7 +1186,7 @@ selectCols <- function(cols, usepat, ignpat) {
 }
 
 indicatorPeakValleyHist <- function(sp, indicator, span, width, ylim, ybreak) {
-  pvi <- peaksMiddleValleys(sp, span)
+  pvi <- idxPeaksMiddleValleys(sp, span)
   ipeaks <- sp[pvi$peaks,][[indicator]]
   ivalleys <- sp[pvi$valleys,][[indicator]]
   imiddle <- sp[pvi$middle,][[indicator]]
@@ -1197,11 +1206,15 @@ indicatorPeakValleyHist <- function(sp, indicator, span, width, ylim, ybreak) {
 
 reportPeakValleyFreq <- function(sp, indicators, span, width) {
   # Get peaks and valleys index
-  pvi <- peaksMiddleValleys(sp, span)
+  pvi <- idxPeaksMiddleValleys(sp, span)
   pv <- copy(sp)
+  return(frequenctyCalculation(pv, pvi$peaks, pvi$valleys, indicators, span, width))
+}
+
+frequenctyCalculation <- function(pv, iup, idown, indicators, span, width) {
   # identify peaks & valleys
-  pv[pvi$peaks, type := 'peaks']
-  pv[pvi$valleys, type := 'valleys']
+  pv[iup, type := 'peaks']
+  pv[idown, type := 'valleys']
   pv <- pv[!is.na(type), c(indicators, 'type'), with=F]
   # Convert the continuos values to cut factors
   pv[, c(indicators) := lapply(.SD, function(x) cut(x, breaks=seq(0, 180, by=width))), .SDcols=indicators]
