@@ -1188,7 +1188,7 @@ indicatorPeakValleyHist <- function(sp, indicator, span, width, ylim, ybreak) {
   #grid.arrange(p1, p2, ncol=2, main = paste("Peaks & Valleys", indicator, "hist", sep=' '))
   p <- ggplot(pv, aes(x = value)) +
   geom_histogram(binwidth = width) +
-  scale_y_continuous(breaks=seq(1, 20, by=2)) +
+  scale_y_continuous(breaks=seq(1, 100, by=2)) +
   scale_x_continuous(breaks=seq(ybreak[1], ybreak[2], by=width), limits=ylim) +
   ggtitle(paste("Peaks VS Valleys VS Middle - ", indicator, " - histogram")) +
   facet_grid(. ~ type)
