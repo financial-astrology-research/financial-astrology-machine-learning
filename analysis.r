@@ -1178,9 +1178,9 @@ selectCols <- function(cols, usepat, ignpat) {
 
 indicatorPeakValleyHist <- function(sp, indicator, span, width, ylim, ybreak) {
   pvi <- peaksMiddleValleys(sp, span)
-  ipeaks <- as.vector(sp[pvi$peaks, c(indicator)])
-  ivalleys <- as.vector(sp[pvi$valleys, c(indicator)])
-  imiddle <- as.vector(sp[pvi$middle, indicator])
+  ipeaks <- sp[pvi$peaks,][[indicator]]
+  ivalleys <- sp[pvi$valleys,][[indicator]]
+  imiddle <- sp[pvi$middle,][[indicator]]
   # cbind with ts so if different vector lengths we avoid recycle
   pv <- data.table(cbind(peaks=ts(ipeaks), valleys=ts(ivalleys)), middle=ts(imiddle))
   pv <- pv[!is.na(peaks) & !is.na(valleys) & !is.na(middle),]
@@ -1195,7 +1195,7 @@ indicatorPeakValleyHist <- function(sp, indicator, span, width, ylim, ybreak) {
   print(p)
 }
 
-significancePeakValleyFrequencies <- function(sp, indicators, span, width, clear=F) {
+reportPeakValleyFreq <- function(sp, indicators, span, width) {
   # Get peaks and valleys index
   pvi <- peaksMiddleValleys(sp, span)
   pv <- copy(sp)
