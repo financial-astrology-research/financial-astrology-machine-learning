@@ -1007,13 +1007,13 @@ idxPeaksMiddleValleys <- function(sp, span) {
   pvi <- pvi[!is.na(wpeaks) & !is.na(valleys) & !is.na(middle),]
 }
 
-idxUpDowns <- function(sp, span) {
+idxUpDowns <- function(sp) {
   wups <- which(sp$Eff=='up')
   wdowns <- which(sp$Eff=='down')
-  # Remove downs that are lower that first beak to try to sync the series
-  wdowns <- wdowns[wdowns > wups[1]]
-  pvi <- data.table(cbind(ups=ts(wups), downs=ts(wdowns)))
-  pvi <- pvi[!is.na(wups) & !is.na(downs),]
+  maxlength <- ifelse(length(wups) < length(wdowns), length(wups), length(wdowns))
+  totake <- round(maxlength * 0.3)
+  # Choose 30% of observations of each group
+  pvi <- data.table(cbind(ups=sample(wups, totake), downs=sample(wdowns, totake)))
 }
 
 pricePeaksLinesAdd <- function(sp, span, type=c('p', 'v', 'm'), col='green') {
@@ -1209,6 +1209,13 @@ reportPeakValleyFreq <- function(sp, indicators, span, width) {
   pvi <- idxPeaksMiddleValleys(sp, span)
   pv <- copy(sp)
   return(frequenctyCalculation(pv, pvi$peaks, pvi$valleys, indicators, span, width))
+}
+
+reportUpDownsFreq <- function(sp, indicators, width) {
+  # Get peaks and valleys index
+  pvi <- idxUpDowns(sp)
+  pv <- copy(sp)
+  return(frequenctyCalculation(pv, pvi$ups, pvi$downs, indicators, span, width))
 }
 
 frequenctyCalculation <- function(pv, iup, idown, indicators, span, width) {
