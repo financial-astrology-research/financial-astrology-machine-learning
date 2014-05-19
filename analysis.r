@@ -385,14 +385,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
       significance.days.idxs <- rbindlist(apply(planets.pred, 1, buildDailySignificanceIdxs))
       significance.days <- merge(significance.days.idxs, significance, by=c('keyidx'))
-      # build daily planets lon to calculate zodsign
-      planets.lon <- melt(planets.pred, id.var=c('Date'), measure.var=planetsLonCols)
-      planets.lon[, origin := substr(variable, 1, 2)]
-      planets.lon[, Date := as.character(Date, format="%Y-%m-%d")]
-      planets.lon[, variable := NULL]
-      setnames(planets.lon, c('Date', 'lon', 'origin'))
-      # merge significance with lon
-      significance.days <- merge(significance.days, planets.lon, by=c('Date', 'origin'))
       significance.days[, zsign := ceiling(lon/30)]
       setkeyv(significance.days, 'Date', 'origin')
 
