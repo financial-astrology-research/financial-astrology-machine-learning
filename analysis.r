@@ -7,6 +7,7 @@ library(microbenchmark)
 library(quantmod)
 library(reshape2)
 library(splus2R)
+library(stringr)
 # no scientific notation
 options(scipen=100)
 options(width=130)
@@ -158,6 +159,16 @@ processPlanetsAspects <- function(planetsorig, cusorbs) {
   return(planets)
 }
 
+mainProcessPlanetsDegSplit <- function(planetsorig, degsplit) {
+  # calculate the lon deg splits
+  calculateLonGroups <- function(x, degsplit) {
+    return(cut(x, seq(0, 360, by=degsplit)))
+  }
+
+  planets <- copy(planetsorig)
+  planets[, c(planetsLonGCols) := lapply(.SD, calculateLonGroups, degsplit=degsplit), .SDcols=planetsLonCols]
+}
+
 mainOpenPlanets <- function(planetsfile, cusorbs) {
   Date=DateMT4=Year=NULL
   planetsfile <- npath(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""))
@@ -232,6 +243,37 @@ mainOpenSecurity <- function(securityfile, mapricefs, mapricesl, dateformat="%Y.
   return(security)
 }
 
+mainPlanetsCompositeSignificance <- function(planets, security) {
+  planets  <- merge(planets, security, by='Date')
+  planets.long <- melt(planets, id.var=c('Date', 'Eff'), measure.var=planetsLonGCols)
+  # calculate the signficance for each long
+  significance <- planets.long[, cbind(as.list(prop.table(as.numeric(table(Eff)))), as.list(as.numeric(table(Eff)))), by=c('value')]
+  # calculate the middle lon for each group
+  significance[, c('lonx', 'lony') := data.table(str_split_fixed(value, ",", 2))]
+  significance[, lonx := as.numeric(str_replace(lonx, '\\]|\\[|\\(|\\)', ''))]
+  significance[, lony := as.numeric(str_replace(lony, '\\]|\\[|\\(|\\)', ''))]
+  significance[, lon := (lonx + lony) / 2]
+  # set names to table
+  setnames(significance, c('key', 'V1', 'V2', 'V3', 'V4', 'lonx', 'lony', 'lon'))
+  # calculate the difference
+  significance[, pdiff := V2 - V1]
+  return(significance)
+}
+
+mainPlanetsVarsSignificance <- function(planets, security) {
+  # build significance table for each planet
+  planetTable <- function(curcol) {
+    planet.significance <- copy(significance)
+    planet.significance[, origin := substr(curcol, 1 , 2)]
+    return(planet.significance)
+  }
+
+  significance <- mainPlanetsCompositeSignificance(planets, security)
+  significance.full <- rbindlist(lapply(planetsLonCols, planetTable))
+  significance.full[, keyidx := paste(key, origin, sep='_')]
+  return(significance.full)
+}
+
 cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   if (!hasArg('execfunc')) stop("Provide function to execute")
   ptm <- proc.time()
@@ -272,21 +314,13 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   # process the degsplit for a cloned original planets dt
   processPlanetsDegsplit <- function(planetsorig, degsplit) {
     args <- list(...)
-    # calculate the lon deg splits
-    calculateLonGroups <- function(x, degsplit) {
-      return(cut(x, seq(0, 360, by=degsplit)))
-    }
-
     ckey <- list('processPlanetsDegsplit', args$securityfile, planetsorig, degsplit)
     planets <- loadCache(key=ckey, dirs=c(args$securityfile), onError='print')
     if (is.null(planets)) {
       # If the cache file exists but no data was returned probably is corrupted
       pathname <- findCache(key=ckey, dirs=c(args$securityfile))
       if (!is.null(pathname)) file.remove(pathname)
-
-      planets <- copy(planetsorig)
-      planets[, c(planetsLonGCols) := lapply(.SD, calculateLonGroups, degsplit=degsplit), .SDcols=planetsLonCols]
-
+      planets <- mainProcessPlanetsDegSplit(planetsorig, degsplit)
       saveCache(planets, key=ckey, dirs=c(args$securityfile))
       cat("Set processPlanetsDegsplit cache\n")
     }
@@ -304,35 +338,20 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   planetsVarsSignificance <- function(planets, security) {
     args <- list(...)
-    # build significance table for each planet
-    planetTable <- function(curcol) {
-      planet.significance <- copy(significance)
-      planet.significance[, origin := substr(curcol, 1 , 2)]
-      return(planet.significance)
-    }
-
     ckey <- list('planetsVarsSignificance', args$securityfile, planets, security)
-    significance.full <- loadCache(key=ckey, dirs=c(args$securityfile), onError='print')
-    if (is.null(significance.full)) {
+    significance <- loadCache(key=ckey, dirs=c(args$securityfile), onError='print')
+    if (is.null(significance)) {
       pathname <- findCache(key=ckey, dirs=c(args$securityfile))
       if (!is.null(pathname)) file.remove(pathname)
-
-      planets  <- merge(planets, security, by='Date')
-      planets.long <- melt(planets, id.var=c('Date', 'Eff'), measure.var=planetsLonGCols)
-      # calculate the signficance for each long
-      significance <- planets.long[, cbind(as.list(prop.table(as.numeric(table(Eff)))), as.list(as.numeric(table(Eff)))), by=c('value')]
-      setnames(significance, c('key', 'V1', 'V2', 'V3', 'V4'))
-      significance.full <- rbindlist(lapply(planetsLonCols, planetTable))
-      significance.full[, c('pdiff', 'keyidx') := list(V2-V1, paste(key, origin, sep='_'))]
-
-      saveCache(significance.full, key=ckey, dirs=c(args$securityfile))
+      significance <- mainPlanetsVarsSignificance(planets, security)
+      saveCache(significance, key=ckey, dirs=c(args$securityfile))
       cat("Set planetsVarsSignificance cache\n")
     }
     else {
       cat("Get planetsVarsSignificance cache\n")
     }
 
-    return(significance.full)
+    return(significance)
   }
 
   planetsVarsSignificanceFilter <- function(significance, threshold) {
@@ -1252,4 +1271,12 @@ reportIndicatorsPeakValleyHist <- function(symbol, sp, span) {
   lapply(planetsCombLon, function(indicator) indicatorPeakValleyHist(sp, indicator, span, 15, c(1, 180), c(0, 180)))
   lapply(planetsDecCols, function(indicator) indicatorPeakValleyHist(sp, indicator, span, 5, c(-30, 30), c(-30, 30)))
   dev.off()
+}
+
+reportSignificantLongitudes <- function(securityfile, sdate, mfs, msl, degsplit, clear=F) {
+  planets <- openPlanets('planets_10', clear=clear)
+  planets <- mainProcessPlanetsDegSplit(planets, degsplit)
+  security <- mainOpenSecurity(securityfile, mfs, msl, "%Y-%m-%d", sdate)
+  freq <- mainPlanetsCompositeSignificance(planets, security)
+  return(freq)
 }
