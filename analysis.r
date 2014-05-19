@@ -318,6 +318,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       if (!is.null(pathname)) file.remove(pathname)
 
       planets  <- merge(planets, security, by='Date')
+      if (nrow(planets) == 0) {
+        stop('No planets / security merged rows by Date, error in calculate planetsVarsSignificance.')
+      }
+
       planets.long <- melt(planets, id.var=c('Date', 'Eff'), measure.var=planetsLonGCols)
       # calculate the signficance for each long
       significance <- planets.long[, cbind(as.list(prop.table(as.numeric(table(Eff)))), as.list(as.numeric(table(Eff)))), by=c('value')]
