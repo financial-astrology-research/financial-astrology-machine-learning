@@ -536,7 +536,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                              ", aspectsenergy=c(", paste(aspectsenergy, collapse=", "), ")",
                              ", planetszodenergy=c(", paste(planetszodenergy, collapse=", "), ")",
                              ", aspectspolarity=c(", paste(aspectspolarity, collapse=", "), ")",
-                             ", dateformat=", shQuote(dateformat), ", verbose=F", ", doplot=T", ", fittype=", shQuote(fittype), ")\n", sep=""))
+                             ", dateformat=", shQuote(dateformat), ", verbose=F", ", doplot=T, plotsol=F", ", fittype=", shQuote(fittype), ")\n", sep=""))
 
     sout <- paste("system version: ", branch.name, "\n\n", sout, sep="")
     # open planets file
@@ -574,22 +574,22 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # determine a factor prediction response
     planets.pred[, predFactor := cut(predEff, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
     # plot solution snippet if doplot is enabled
-    if (args$doplot) {
+    if (args$doplot && args$plotsol) {
       snippet <- paste(strwrap(sout, width=170), collapse="\n")
       plotSolutionSnippet(snippet)
     }
     # helper function to process predictions by year
     pltitle <- paste('Yearly prediction VS price movement for ', args$securityfile)
-    processYearPredictions <- function(x) processPredictions(x, pltitle, args$doplot)
+    processYearPredictions <- function(x, doplot) processPredictions(x, pltitle, doplot)
 
     # compute test predictions by year
     years.test <- format(seq(rdates[3], rdates[4], by='year'), '%Y')
     years.conf <- format(seq(rdates[5], rdates[6], by='year'), '%Y')
-    res.test <- planets.pred[Year.1 %in% years.test, processYearPredictions(.SD), by=Year.1]
+    res.test <- planets.pred[Year.1 %in% years.test, processYearPredictions(.SD, F), by=Year.1]
     resMean <- function(x) round(mean(x), digits=2)
     res.test.mean <- res.test[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.d=resMean(matches.d))]
     # compute confirmation predictions by year
-    res.conf <- planets.pred[Year.1 %in% years.conf, processYearPredictions(.SD), by=Year.1]
+    res.conf <- planets.pred[Year.1 %in% years.conf, processYearPredictions(.SD, args$doplot), by=Year.1]
     res.conf.mean <- res.conf[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.d=resMean(matches.d))]
 
     # use appropriate fitness type
@@ -799,7 +799,12 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   testSolution <- function(predfile, ...) {
     args <- list(...)
     if (!hasArg('dateformat')) stop("A dateformat is needed.")
-    if (args$doplot) pdf(paste("~/chart_", predfile, ".pdf", sep=""), width = 11, height = 8, family='Helvetica', pointsize=12)
+    predfile <- paste("~/", predfile, ".pdf", sep="")
+    # Create directory if do not exists
+    if (!file.exists(dirname(predfile))) {
+      dir.create(dirname(predfile), recursive=T)
+    }
+    if (args$doplot) pdf(predfile, width = 11, height = 8, family='Helvetica', pointsize=12)
     relativeTrend(args)
     if (args$doplot) dev.off()
   }
@@ -823,6 +828,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 dateformat=dateformat,
                 verbose=F,
                 doplot=F,
+                plotsol=F,
                 mapredsm=x[1],
                 degsplit=x[2],
                 threshold=x[3]/100,
