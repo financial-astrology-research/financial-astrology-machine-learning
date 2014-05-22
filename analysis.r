@@ -1229,17 +1229,17 @@ reportPeakValleyFreq <- function(sp, indicators, span, width, breaks=c(-360, 360
   # Get peaks and valleys index
   pvi <- idxPeaksMiddleValleys(sp, span)
   pv <- copy(sp)
-  return(frequenctyCalculation(pv, pvi$peaks, pvi$valleys, indicators, width, breaks))
+  return(frequencyCalculation(pv, pvi$peaks, pvi$valleys, indicators, width, breaks))
 }
 
 reportUpDownsFreq <- function(sp, indicators, width, breaks=c(-360, 360)) {
   # Get peaks and valleys index
   pvi <- idxUpDowns(sp)
   pv <- copy(sp)
-  return(frequenctyCalculation(pv, pvi$ups, pvi$downs, indicators, width, breaks))
+  return(frequencyCalculation(pv, pvi$ups, pvi$downs, indicators, width, breaks))
 }
 
-frequenctyCalculation <- function(pv, iup, idown, indicators, width, breaks=c(-360, 360)) {
+frequencyCalculation <- function(pv, iup, idown, indicators, width, breaks=c(-360, 360)) {
   # identify peaks & valleys
   pv[iup, type := 'peaks']
   pv[idown, type := 'valleys']
