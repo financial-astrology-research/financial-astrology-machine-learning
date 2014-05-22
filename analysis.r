@@ -26,6 +26,8 @@ deforbs            <- c(12, 2, 2, 2, 2, 2, 7, 2, 2, 7,  2,  2,  7,  2,  2,  2,  
 buildPlanetsColsNames <- function(planetsBaseCols) {
   aspOrbsCols <<- as.character(apply(expand.grid(aspects, planetsBaseCols[1:(length(planetsBaseCols)-1)]), 1, function(x) paste(x[2], x[1], sep='')))
   planetsLonCols <<- paste(planetsBaseCols, 'LON', sep='')
+  planetsLonDisCols <<- paste(planetsBaseCols, 'DIS', sep='')
+  planetsLonOrbCols <<- paste(planetsBaseCols, 'ORB', sep='')
   planetsAspCols <<- paste(planetsBaseCols, 'ASP', sep='')
   planetsDecCols <<- paste(planetsBaseCols, 'DEC', sep='')
   planetsLonGCols <<- paste(planetsLonCols, 'G', sep='')
@@ -52,6 +54,10 @@ maxn <- function(x, n) {
     n = length(order_x)
   }
   x[order_x[n]]
+}
+
+CJDT <- function(X, Y) {
+  setkey(X[,c(k=1, .SD)], k)[Y[,c(k=1, .SD)], allow.cartesian=TRUE][,k:=NULL]
 }
 
 decToDeg <- function(num) {
@@ -117,6 +123,12 @@ gaint_spCrossover <- function (object, parents, ...) {
 
 npath <- function(path) {
   normalizePath(path.expand(path))
+}
+
+normalizeDistance <- function(x) {
+  x[x > 180] <- abs(x[x > 180] - 360)
+  x[x < -180] <- abs(x[x < -180] + 360)
+  return(abs(x))
 }
 
 # calculate the planets aspects
@@ -185,12 +197,6 @@ mainOpenPlanets <- function(planetsfile, cusorbs) {
     col1 <- paste(substr(curcol, 1, 2), 'LON', sep='')
     col2 <- paste(substr(curcol, 3, 4), 'LON', sep='')
     planets[, c(curcol) := get(col1) - get(col2)]
-  }
-
-  normalizeDistance <- function(x) {
-    x[x > 180] <- abs(x[x > 180] - 360)
-    x[x < -180] <- abs(x[x < -180] + 360)
-    return(abs(x))
   }
 
   # Normalize to 180 degrees range
@@ -1282,4 +1288,31 @@ reportSignificantLongitudes <- function(securityfile, sdate, mfs, msl, degsplit,
   security <- mainOpenSecurity(securityfile, mfs, msl, "%Y-%m-%d", sdate)
   freq <- mainPlanetsCompositeSignificance(planets, security)
   return(freq)
+}
+
+significantLongitudesAspects <- function(..., clear=F) {
+  planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL', 'ES', 'EM')
+  buildPlanetsColsNames(planetsBaseCols)
+  planets <- openPlanets('planets_10', clear=clear)
+  # leave only the longitudes
+  planets <- planets[, c('Date', planetsLonCols), with=F]
+  siglons <- reportSignificantLongitudes(..., clear=clear)
+  # leave only the longitude col
+  siglons <- siglons[, c('lon'), with=F]
+  # cartesian join
+  siglons.day <- CJDT(siglons, planets)
+
+  # Calculate lon / planets distance
+  for (curcol in planetsLonDisCols) {
+    planetcol <- paste(substr(curcol, 1, 2), 'LON', sep='')
+    siglons.day[, c(curcol) := lon - get(planetcol)]
+  }
+
+  # Normalize to 180 degrees range
+  siglons.day[, c(planetsLonDisCols) := lapply(.SD, normalizeDistance), .SDcols=planetsLonDisCols]
+  # Copy to orbs
+  exprcopy <- paste("c(planetsLonOrbCols) := list(", paste(planetsLonDisCols, collapse=","), ")", sep="")
+  siglons.day[, eval(parse(text = exprcopy))]
+
+  return(siglons.day)
 }
