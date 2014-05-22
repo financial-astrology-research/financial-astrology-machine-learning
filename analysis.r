@@ -1290,13 +1290,13 @@ reportSignificantLongitudes <- function(securityfile, sdate, mfs, msl, degsplit,
   return(freq)
 }
 
-significantLongitudesAspects <- function(..., threshold=0.2, fwide=F, clear=F) {
+significantLongitudesAspects <- function(securityfile, sdate, mfs, msl, degsplit, threshold, fwide=F, clear=F) {
   planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL', 'ES', 'EM')
   buildPlanetsColsNames(planetsBaseCols)
   planets <- openPlanets('planets_10', clear=clear)
   # leave only the longitudes
   planets <- planets[, c('Date', planetsLonCols), with=F]
-  siglons <- reportSignificantLongitudes(..., clear=clear)
+  siglons <- reportSignificantLongitudes(securityfile, sdate, mfs, msl, degsplit, clear=clear)
   # leave only the longitude & pdiff that above threshold
   # TODO: sort by pdiff and take the top 15 points.
   siglons <- siglons[abs(pdiff) > threshold, c('lon', 'pdiff'), with=F]
@@ -1327,6 +1327,23 @@ significantLongitudesAspects <- function(..., threshold=0.2, fwide=F, clear=F) {
       planets <- merge(planets, siglons.day.cur, by=c('Date'))
     }
   }
+  else {
+    planets <- siglons.day
+  }
 
-  return(planets)
+  security <- mainOpenSecurity(securityfile, mfs, msl, "%Y-%m-%d", sdate)
+  sp <- merge(planets, security, by=c('Date'))
+
+  return(sp)
+}
+
+# Usage: freq <- reportSignificantLongitudeAspects("stocks/AA", "1970-01-01", 20, 50, 10, 0.1, 20)
+reportSignificantLongitudeAspects <- function(securityfile, sdate, mfs, msl, degsplit, threshold, width, clear=F) {
+  sp <- significantLongitudesAspects(securityfile, sdate, mfs, msl, degsplit, threshold, T, clear)
+  cols <- colnames(sp)
+  indicators <- cols[grep('DIS.', cols)]
+  pvi <- idxUpDowns(sp)
+  pv <- copy(sp)
+  freq <- frequencyCalculation(pv, pvi$ups, pvi$downs, indicators, width)
+  return(freq)
 }
