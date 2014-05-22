@@ -261,6 +261,7 @@ mainPlanetsCompositeSignificance <- function(planets, security) {
   setnames(significance, c('key', 'V1', 'V2', 'V3', 'V4', 'lonx', 'lony', 'lon'))
   # calculate the difference
   significance[, pdiff := V2 - V1]
+  significance <- significance[!is.na(key)]
   return(significance)
 }
 
