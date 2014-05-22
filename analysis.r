@@ -1346,3 +1346,16 @@ reportSignificantLongitudesAspects <- function(securityfile, sdate, mfs, msl, de
   freq <- frequencyCalculation(pv, pvi$ups, pvi$downs, indicators, width)
   return(freq)
 }
+
+# Usage: daily.freq <- reportDailySignificantLongitudesAspects("stocks/AA", "1970-01-01", 20, 50, 6, 10, 10)
+reportDailySignificantLongitudesAspects <- function(securityfile, sdate, mfs, msl, degsplit,
+                                                    topn, width, clear=F, breaks=c(-360, 360)) {
+  sp <- significantLongitudesAspects(securityfile, sdate, mfs, msl, degsplit, topn, T, clear)
+  cols <- colnames(sp)
+  indicators <- cols[grep('DIS.', cols)]
+  sp.long <- melt(sp, id.var=c('Date'), measure.var=indicators)
+  sp.long[, value := cut(value, breaks=seq(breaks[1], breaks[2], by=width))]
+  freq <- reportSignificantLongitudesAspects(securityfile, sdate, mfs, msl, degsplit, topn, width)
+  daily.freq <- merge(sp.long, freq, by=c('variable', 'value'))
+  return(daily.freq)
+}
