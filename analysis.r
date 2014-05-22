@@ -131,43 +131,42 @@ normalizeDistance <- function(x) {
   return(abs(x))
 }
 
+calculateAspects <- function(x, cusorbs) {
+  allidx <- rep(FALSE, length(x))
+  for (aspect in aspects) {
+    comborb <- cusorbs['orbs', as.character(aspect)]
+    rstart <- aspect-comborb
+    rend <- aspect+comborb
+    idx <- x >= rstart & x <= rend
+    x[idx] <- aspect
+    allidx[idx] <- TRUE
+  }
+  # put NA no aspects
+  x[!allidx] <- NA
+  return(x)
+}
+
+calculateAspectOrbs <- function(x, cusorbs) {
+  allidx <- rep(FALSE, length(x))
+  for (aspect in aspects) {
+    comborb <- cusorbs['orbs', as.character(aspect)]
+    rstart <- aspect-comborb
+    rend <- aspect+comborb
+    idx <- x >= rstart & x <= rend
+    x[idx] <- abs(x[idx] - aspect)
+    allidx[idx] <- TRUE
+  }
+  # put NA no aspects
+  x[!allidx] <- NA
+  return(x)
+}
+
 # calculate the planets aspects
 processPlanetsAspects <- function(planetsorig, cusorbs) {
   # clone original to ensure is no modified
   planets <- copy(planetsorig)
-
-  calculateAspects <- function(x) {
-    allidx <- rep(FALSE, length(x))
-    for (aspect in aspects) {
-      comborb <- cusorbs['orbs', as.character(aspect)]
-      rstart <- aspect-comborb
-      rend <- aspect+comborb
-      idx <- x >= rstart & x <= rend
-      x[idx] <- aspect
-      allidx[idx] <- TRUE
-    }
-    # put NA no aspects
-    x[!allidx] <- NA
-    return(x)
-  }
-
-  calculateAspectOrbs <- function(x) {
-    allidx <- rep(FALSE, length(x))
-    for (aspect in aspects) {
-      comborb <- cusorbs['orbs', as.character(aspect)]
-      rstart <- aspect-comborb
-      rend <- aspect+comborb
-      idx <- x >= rstart & x <= rend
-      x[idx] <- abs(x[idx] - aspect)
-      allidx[idx] <- TRUE
-    }
-    # put NA no aspects
-    x[!allidx] <- NA
-    return(x)
-  }
-
-  planets[, c(planetsCombAsp) := lapply(.SD, calculateAspects), .SDcols=planetsCombLon]
-  planets[, c(planetsCombOrb) := lapply(.SD, calculateAspectOrbs), .SDcols=planetsCombOrb]
+  planets[, c(planetsCombAsp) := lapply(.SD, calculateAspects, cusorbs=cusorbs), .SDcols=planetsCombLon]
+  planets[, c(planetsCombOrb) := lapply(.SD, calculateAspectOrbs, cusorbs=cusorbs), .SDcols=planetsCombOrb]
   return(planets)
 }
 
@@ -1290,15 +1289,15 @@ reportSignificantLongitudes <- function(securityfile, sdate, mfs, msl, degsplit,
   return(freq)
 }
 
-significantLongitudesAspects <- function(..., clear=F) {
+significantLongitudesAspects <- function(..., threshold=0.2, clear=F) {
   planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL', 'ES', 'EM')
   buildPlanetsColsNames(planetsBaseCols)
   planets <- openPlanets('planets_10', clear=clear)
   # leave only the longitudes
   planets <- planets[, c('Date', planetsLonCols), with=F]
   siglons <- reportSignificantLongitudes(..., clear=clear)
-  # leave only the longitude col
-  siglons <- siglons[, c('lon'), with=F]
+  # leave only the longitude & pdiff that above threshold
+  siglons <- siglons[abs(pdiff) > threshold, c('lon', 'pdiff'), with=F]
   # cartesian join
   siglons.day <- CJDT(siglons, planets)
 
