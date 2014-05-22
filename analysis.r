@@ -28,6 +28,7 @@ buildPlanetsColsNames <- function(planetsBaseCols) {
   planetsLonCols <<- paste(planetsBaseCols, 'LON', sep='')
   planetsLonDisCols <<- paste(planetsBaseCols, 'DIS', sep='')
   planetsLonOrbCols <<- paste(planetsBaseCols, 'ORB', sep='')
+  planetsLonAspCols <<- paste(planetsBaseCols, 'ASP', sep='')
   planetsAspCols <<- paste(planetsBaseCols, 'ASP', sep='')
   planetsDecCols <<- paste(planetsBaseCols, 'DEC', sep='')
   planetsLonGCols <<- paste(planetsLonCols, 'G', sep='')
@@ -1297,6 +1298,7 @@ significantLongitudesAspects <- function(..., threshold=0.2, clear=F) {
   planets <- planets[, c('Date', planetsLonCols), with=F]
   siglons <- reportSignificantLongitudes(..., clear=clear)
   # leave only the longitude & pdiff that above threshold
+  # TODO: sort by pdiff and take the top 15 points.
   siglons <- siglons[abs(pdiff) > threshold, c('lon', 'pdiff'), with=F]
   # cartesian join
   siglons.day <- CJDT(siglons, planets)
@@ -1309,9 +1311,11 @@ significantLongitudesAspects <- function(..., threshold=0.2, clear=F) {
 
   # Normalize to 180 degrees range
   siglons.day[, c(planetsLonDisCols) := lapply(.SD, normalizeDistance), .SDcols=planetsLonDisCols]
-  # Copy to orbs
-  exprcopy <- paste("c(planetsLonOrbCols) := list(", paste(planetsLonDisCols, collapse=","), ")", sep="")
-  siglons.day[, eval(parse(text = exprcopy))]
 
+  # Calculate the aspects & orbs
+  orbsmatrix <- matrix(deforbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
+  siglons.day[, c(planetsLonAspCols) := lapply(.SD, calculateAspects, cusorbs=orbsmatrix), .SDcols=planetsLonDisCols]
+  siglons.day[, c(planetsLonOrbCols) := lapply(.SD, calculateAspectOrbs, cusorbs=orbsmatrix), .SDcols=planetsLonDisCols]
+  #siglons[Date == as.Date('2014-05-21'), c('Date', 'lon', planetsLonAspCols), with=F]
   return(siglons.day)
 }
