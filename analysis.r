@@ -1290,7 +1290,7 @@ reportSignificantLongitudes <- function(securityfile, sdate, mfs, msl, degsplit,
   return(freq)
 }
 
-significantLongitudesAspects <- function(..., threshold=0.2, clear=F) {
+significantLongitudesAspects <- function(..., threshold=0.2, fwide=F, clear=F) {
   planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL', 'ES', 'EM')
   buildPlanetsColsNames(planetsBaseCols)
   planets <- openPlanets('planets_10', clear=clear)
@@ -1317,5 +1317,16 @@ significantLongitudesAspects <- function(..., threshold=0.2, clear=F) {
   siglons.day[, c(planetsLonAspCols) := lapply(.SD, calculateAspects, cusorbs=orbsmatrix), .SDcols=planetsLonDisCols]
   siglons.day[, c(planetsLonOrbCols) := lapply(.SD, calculateAspectOrbs, cusorbs=orbsmatrix), .SDcols=planetsLonDisCols]
   #siglons[Date == as.Date('2014-05-21'), c('Date', 'lon', planetsLonAspCols), with=F]
-  return(siglons.day)
+
+  # Format wide all the significant point aspects
+  if (fwide) {
+    for (curcol in unique(siglons.day$lon)) {
+      siglons.day.cur <- siglons.day[lon == curcol, c('Date', planetsLonDisCols), with=F]
+      curcolnames <- paste(planetsLonDisCols, '.', curcol, sep='')
+      setnames(siglons.day.cur, c('Date', curcolnames))
+      planets <- merge(planets, siglons.day.cur, by=c('Date'))
+    }
+  }
+
+  return(planets)
 }
