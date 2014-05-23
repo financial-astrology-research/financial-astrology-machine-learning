@@ -977,15 +977,13 @@ getMySymbolsData  <- function(listfile) {
   res <- lapply(symbolsls$V1, processGetSymbol)
 }
 
-buildSecurityPlanetsIndicators <- function(securityfile, sdate, mfs=20, msl=50, clear=F) {
+buildPlanetsIndicators <- function(clear=F) {
   planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL', 'ES', 'EM')
   buildPlanetsColsNames(planetsBaseCols)
   planets <- openPlanets('planets_10', clear=clear)
-  security <- mainOpenSecurity(securityfile, mfs, msl, "%Y-%m-%d", sdate)
-  sp <- merge(security, planets, by='Date')
   # build composite indicators
-  sp <- buildCompositeCols(sp)
-  return(sp)
+  planets <- buildCompositeCols(planets)
+  return(planets)
 }
 
 planetsIndicatorsChart <- function(securityfile, sdate, indicators, clear=F) {
@@ -994,7 +992,9 @@ planetsIndicatorsChart <- function(securityfile, sdate, indicators, clear=F) {
     indicators <- indicatorsfunc()
   }
 
-  sp <- as.data.frame(buildSecurityPlanetsIndicators(securityfile, sdate, clear=clear))
+  planets <- as.data.frame(buildPlanetsIndicators(securityfile, sdate, clear=clear))
+  security <- mainOpenSecurity(securityfile, 20, 50, "%Y-%m-%d", sdate)
+  sp <- merge(security, planets, by='Date')
   # convert to xts class
   sp <- xts(sp[, c('Open', 'High', 'Low', 'Close', planetsCombLon, planetsLonCols, planetsSpCols, planetsDecCols)], order.by=sp$Date)
   # chart
@@ -1345,32 +1345,43 @@ significantLongitudesAspects <- function(securityfile, sdate, edate, mfs, msl, d
   return(freq)
 }
 
-# Usage: daily.freq <- dailySignificantIndicators("stocks/AXP", "1970-01-01", "2001-01-01", 20, 50, 6, 10, 10)
-dailySignificantIndicators <- function(securityfile, sdate, edate, mfs, msl, degsplit, topn, width, clear=F, breaks=c(-360, 360)) {
+# Usage: daily.freq <- dailySignificantIndicators("stocks/AXP", "1970-01-01", "2001-01-01", 20, 50, 6, 10, 10, 5)
+dailySignificantIndicators <- function(securityfile, sdate, edate, mfs, msl, degsplit, topn, acut, dcut, clear=F, breaks=c(-360, 360)) {
   # Significant points aspects
   aspects.day <- buildSignificantLongitudesAspects(securityfile, sdate, mfs, msl, degsplit, topn, T, clear)
   cols <- colnames(aspects.day)
   indicators <- cols[grep('DIS.', cols)]
   planets.long <- melt(aspects.day, id.var=c('Date'), measure.var=indicators)
   planets.long[, rvalue := value]
-  planets.long[, value := cut(value, breaks=seq(breaks[1], breaks[2], by=width))]
-  freq <- significantLongitudesAspects(securityfile, sdate, edate, mfs, msl, degsplit, topn, width)
+  planets.long[, value := cut(value, breaks=seq(breaks[1], breaks[2], by=acut))]
+  freq <- significantLongitudesAspects(securityfile, sdate, edate, mfs, msl, degsplit, topn, acut)
   siglon.aspects.daily.freq <- merge(planets.long, freq, by=c('variable', 'value'))
 
-  # Planets aspects
-  sp <- buildSecurityPlanetsIndicators(securityfile, sdate, mfs, msl, clear=F)
-  indicators <- c(planetsCombLon, aspectsCompositeIndicators())
-  sp.long <- melt(sp, id.var=c('Date'), measure.var=indicators)
-  sp.long[, rvalue := value]
-  sp.long[, value := cut(value, breaks=seq(breaks[1], breaks[2], by=width))]
-  freq <- reportUpDownsFreq(sp, indicators, width, sdate, edate)
-  aspects.daily.freq <- merge(sp.long, freq, by=c('variable', 'value'))
+  # security / planets table
+  planets <- buildPlanetsIndicators(clear=F)
+  security <- mainOpenSecurity(securityfile, mfs, msl, "%Y-%m-%d", sdate)
+  sp <- merge(security, planets, by='Date')
 
-  # TODO: declinations indicator
+  # Planets aspects
+  indicators <- c(planetsCombLon, aspectsCompositeIndicators())
+  planets.long <- melt(planets, id.var=c('Date'), measure.var=indicators)
+  planets.long[, rvalue := value]
+  planets.long[, value := cut(value, breaks=seq(breaks[1], breaks[2], by=acut))]
+  freq <- reportUpDownsFreq(sp, indicators, acut, sdate, edate)
+  aspects.daily.freq <- merge(planets.long, freq, by=c('variable', 'value'))
+
+  # Declinations
+  indicators <- c(planetsDecCols, declinationCompositeIndicators())
+  planets.long <- melt(planets, id.var=c('Date'), measure.var=indicators)
+  planets.long[, rvalue := value]
+  planets.long[, value := cut(value, breaks=seq(breaks[1], breaks[2], by=dcut))]
+  freq <- reportUpDownsFreq(sp, indicators, dcut, sdate, edate)
+  declinations.freq <- merge(planets.long, freq, by=c('variable', 'value'))
+
   # TODO: longitude indicators
 
   # combine rows
-  daily.freq <- rbind(siglon.aspects.daily.freq, aspects.daily.freq)
+  daily.freq <- rbind(siglon.aspects.daily.freq, aspects.daily.freq, declinations.freq)
   return(daily.freq)
 }
 
@@ -1378,7 +1389,7 @@ dailySignificantIndicators <- function(securityfile, sdate, edate, mfs, msl, deg
 printDailySignificantIndicators <- function(daily.freq, sdate, edate, threshold) {
   printDay <- function(daily.freq.day, row.by) {
     cat("------------------------------", as.character(row.by[[1]]), "------------------------------\n")
-    print(daily.freq.day)
+    print(as.data.frame(daily.freq.day))
     print(colMeans(daily.freq.day[, 3:8, with=F]))
     return(list())
   }
