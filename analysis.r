@@ -1347,13 +1347,30 @@ significantLongitudesAspects <- function(securityfile, sdate, edate, mfs, msl, d
 
 # Usage: daily.freq <- dailySignificantIndicators("stocks/AXP", "1970-01-01", "2001-01-01", 20, 50, 6, 10, 10)
 dailySignificantIndicators <- function(securityfile, sdate, edate, mfs, msl, degsplit, topn, width, clear=F, breaks=c(-360, 360)) {
+  # Significant points aspects
   aspects.day <- buildSignificantLongitudesAspects(securityfile, sdate, mfs, msl, degsplit, topn, T, clear)
   cols <- colnames(aspects.day)
   indicators <- cols[grep('DIS.', cols)]
   planets.long <- melt(aspects.day, id.var=c('Date'), measure.var=indicators)
+  planets.long[, rvalue := value]
   planets.long[, value := cut(value, breaks=seq(breaks[1], breaks[2], by=width))]
   freq <- significantLongitudesAspects(securityfile, sdate, edate, mfs, msl, degsplit, topn, width)
-  daily.freq <- merge(planets.long, freq, by=c('variable', 'value'))
+  siglon.aspects.daily.freq <- merge(planets.long, freq, by=c('variable', 'value'))
+
+  # Planets aspects
+  sp <- buildSecurityPlanetsIndicators(securityfile, sdate, mfs, msl, clear=F)
+  indicators <- c(planetsCombLon, aspectsCompositeIndicators())
+  sp.long <- melt(sp, id.var=c('Date'), measure.var=indicators)
+  sp.long[, rvalue := value]
+  sp.long[, value := cut(value, breaks=seq(breaks[1], breaks[2], by=width))]
+  freq <- reportUpDownsFreq(sp, indicators, width, sdate, edate)
+  aspects.daily.freq <- merge(sp.long, freq, by=c('variable', 'value'))
+
+  # TODO: declinations indicator
+  # TODO: longitude indicators
+
+  # combine rows
+  daily.freq <- rbind(siglon.aspects.daily.freq, aspects.daily.freq)
   return(daily.freq)
 }
 
