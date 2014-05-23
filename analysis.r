@@ -1353,6 +1353,7 @@ dailySignificantIndicators <- function(securityfile, sdate, edate, mfs, msl, deg
   indicators <- cols[grep('DIS.', cols)]
   planets.long <- melt(aspects.day, id.var=c('Date'), measure.var=indicators)
   planets.long[, rvalue := value]
+  planets.long[, type := 'spaspect']
   planets.long[, value := cut(value, breaks=seq(breaks[1], breaks[2], by=acut))]
   freq <- significantLongitudesAspects(securityfile, sdate, edate, mfs, msl, degsplit, topn, acut)
   siglon.aspects.daily.freq <- merge(planets.long, freq, by=c('variable', 'value'))
@@ -1366,6 +1367,7 @@ dailySignificantIndicators <- function(securityfile, sdate, edate, mfs, msl, deg
   indicators <- c(planetsCombLon, aspectsCompositeIndicators())
   planets.long <- melt(planets, id.var=c('Date'), measure.var=indicators)
   planets.long[, rvalue := value]
+  planets.long[, type := 'aspect']
   planets.long[, value := cut(value, breaks=seq(breaks[1], breaks[2], by=acut))]
   freq <- reportUpDownsFreq(sp, indicators, acut, sdate, edate)
   aspects.daily.freq <- merge(planets.long, freq, by=c('variable', 'value'))
@@ -1374,6 +1376,7 @@ dailySignificantIndicators <- function(securityfile, sdate, edate, mfs, msl, deg
   indicators <- c(planetsDecCols, declinationCompositeIndicators())
   planets.long <- melt(planets, id.var=c('Date'), measure.var=indicators)
   planets.long[, rvalue := value]
+  planets.long[, type := 'declination']
   planets.long[, value := cut(value, breaks=seq(breaks[1], breaks[2], by=dcut))]
   freq <- reportUpDownsFreq(sp, indicators, dcut, sdate, edate)
   declinations.freq <- merge(planets.long, freq, by=c('variable', 'value'))
@@ -1390,7 +1393,7 @@ printDailySignificantIndicators <- function(daily.freq, sdate, edate, threshold)
   printDay <- function(daily.freq.day, row.by) {
     cat("------------------------------", as.character(row.by[[1]]), "------------------------------\n")
     print(as.data.frame(daily.freq.day))
-    print(colMeans(daily.freq.day[, 3:9, with=F]))
+    print(colMeans(daily.freq.day[, 5:10, with=F]))
     return(list())
   }
 
