@@ -1359,11 +1359,13 @@ dailySignificantIndicators <- function(securityfile, sdate, edate, mfs, msl, deg
 
 # Usage: printDailySignificantIndicators(daily.freq, "2014-04-01", "2014-05-01", 0.05)
 printDailySignificantIndicators <- function(daily.freq, sdate, edate, threshold) {
-  printDay <- function(dt.day, row.by) {
+  printDay <- function(daily.freq.day, row.by) {
     cat("------------------------------", as.character(row.by[[1]]), "------------------------------\n")
-    print(dt)
-    summary(dt.day)
+    print(daily.freq.day)
+    print(colMeans(daily.freq.day[, 3:8, with=F]))
+    return(list())
   }
 
+  setkey(daily.freq, Date)
   daily.freq[Date >= as.Date(sdate) & Date < as.Date(edate) & abs(relsig) >= threshold, printDay(.SD, .BY), by=as.character(Date)]
 }
