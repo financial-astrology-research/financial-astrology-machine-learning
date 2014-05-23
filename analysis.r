@@ -1390,7 +1390,7 @@ printDailySignificantIndicators <- function(daily.freq, sdate, edate, threshold)
   printDay <- function(daily.freq.day, row.by) {
     cat("------------------------------", as.character(row.by[[1]]), "------------------------------\n")
     print(as.data.frame(daily.freq.day))
-    print(colMeans(daily.freq.day[, 3:8, with=F]))
+    print(colMeans(daily.freq.day[, 3:9, with=F]))
     return(list())
   }
 
