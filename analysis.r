@@ -1400,3 +1400,26 @@ printDailySignificantIndicators <- function(daily.freq, sdate, edate, threshold)
   setkey(daily.freq, Date)
   daily.freq[Date >= as.Date(sdate) & Date < as.Date(edate) & abs(relsig) >= threshold, printDay(.SD, .BY), by=as.character(Date)]
 }
+
+# Usage: analizeIndicatorCorrelation(daily.freq, "stocks/AXP", 20, 50, 0.06, '>=', 'declination', 'relsig', 100, T)
+analizeIndicatorCorrelation <- function(daily.freq, securityfile, masl, mafs, th, op, ft, field='relsig', masig=50, doplot=F, browse=F) {
+  daily.freq.filt <- daily.freq[eval(parse(text=paste('abs(get(field))', op, 'th'))),]
+  if (ft != '') daily.freq.filt <- daily.freq.filt[grep(ft, type)]
+  sig <- daily.freq.filt[, mean(get(field)), by=Date]
+  security <- mainOpenSecurity(securityfile, masl, mafs, "%Y-%m-%d", "2002-01-01")
+  sig.sec <- merge(security, sig, by='Date')
+  sig.sec[, V1 := SMA(V1, masig)]
+  sig.sec.long <- melt(sig.sec, variable.name='type', value.name='value', measure.var=c('V1', 'MidMAS'))
+  sigcor <- sig.sec[, cor(MidMAS, V1, use="pairwise", method='spearman')]
+  print(sigcor)
+
+  if (browse) {
+    browser()
+  }
+
+  if (doplot) {
+    ggplot(data=sig.sec.long[Date >= as.Date("2000-01-01") & Date <= as.Date("2016-01-01"),]) +
+    geom_line(aes(x=Date, y=value)) +
+    facet_grid(type ~ ., scale='free')
+  }
+}
