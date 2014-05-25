@@ -1427,12 +1427,14 @@ printDailySignificantIndicators <- function(daily.freq, sdate, edate, threshold)
   daily.freq[Date >= as.Date(sdate) & Date < as.Date(edate) & abs(relsig) >= threshold, printDay(.SD, .BY), by=as.character(Date)]
 }
 
-# Usage: analizeIndicatorCorrelation(daily.freq, "stocks/AXP", 20, 50, 0.06, '>=', 'declination', 'relsig', 100, T)
-analizeIndicatorCorrelation <- function(daily.freq, securityfile, masl, mafs, th, op, ft, field='relsig', masig=50, doplot=F, browse=F) {
+# Usage: analizeIndicatorCorrelation(daily.freq, psl$security, "2001-01-01", "2015-01-01", 100, 0.55, '>=', 'declination', 'sig', 50, T)
+analizeIndicatorCorrelation <- function(daily.freq, securityorig, sdate, edate, masl, th, op, ft, field='relsig', masig=50, doplot=F, browse=F) {
   daily.freq.filt <- daily.freq[eval(parse(text=paste('abs(get(field))', op, 'th'))),]
   if (ft != '') daily.freq.filt <- daily.freq.filt[grep(ft, type)]
+  daily.freq.filt <- daily.freq.filt[Date >= as.Date(sdate) & Date < as.Date(edate),]
   sig <- daily.freq.filt[, mean(get(field)), by=Date]
-  security <- mainOpenSecurity(securityfile, masl, mafs, "%Y-%m-%d", "2002-01-01")
+  security <- copy(securityorig)
+  security[, MidMAS := SMA(Mid, masl)]
   sig.sec <- merge(security, sig, by='Date')
   sig.sec[, V1 := SMA(V1, masig)]
   sig.sec.long <- melt(sig.sec, variable.name='type', value.name='value', measure.var=c('V1', 'MidMAS'))
@@ -1444,7 +1446,7 @@ analizeIndicatorCorrelation <- function(daily.freq, securityfile, masl, mafs, th
   }
 
   if (doplot) {
-    ggplot(data=sig.sec.long[Date >= as.Date("2000-01-01") & Date <= as.Date("2016-01-01"),]) +
+    ggplot(data=sig.sec.long[Date >= as.Date(sdate) & Date < as.Date(edate),]) +
     geom_line(aes(x=Date, y=value)) +
     facet_grid(type ~ ., scale='free')
   }
