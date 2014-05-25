@@ -1433,7 +1433,7 @@ dailySignificantIndicators <- function(planets, security, sdate, edate, degsplit
   return(daily.freq)
 }
 
-# Usage: printDailySignificantIndicators(daily.freq, "2014-04-01", "2014-05-01", 0.05)
+# Usage: printDailySignificantIndicators(daily.freq, '2012-01-01', '2015-01-01', 0.60, '>=', 'spaspect|aspect|declination', 'sig', 100)
 printDailySignificantIndicators <- function(daily.freq, sdate, edate, th, op, ft, field='sig', masig) {
   printDay <- function(daily.freq.day, row.by) {
     cat("------------------------------", as.character(row.by[[1]]), "------------------------------\n")
