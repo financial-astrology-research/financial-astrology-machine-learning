@@ -1439,6 +1439,7 @@ printDailySignificantIndicators <- function(daily.freq, sdate, edate, th, op, ft
     cat("------------------------------", as.character(row.by[[1]]), "------------------------------\n")
     print(as.data.frame(daily.freq.day))
     print(colMeans(daily.freq.day[, 5:10, with=F]))
+    cat("\t###", daily.freq.aggr[Date == as.Date(row.by[[1]]), V1], "\n")
     return(list())
   }
 
