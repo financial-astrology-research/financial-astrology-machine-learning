@@ -1434,7 +1434,7 @@ dailySignificantIndicators <- function(planets, security, sdate, edate, degsplit
 }
 
 # Usage: printDailySignificantIndicators(daily.freq, '2012-01-01', '2015-01-01', 0.60, '>=', 'spaspect|aspect|declination', 'sig', 100)
-printDailySignificantIndicators <- function(daily.freq, sdate, edate, th, op, ft, field='sig', masig) {
+printDailySignificantIndicators <- function(daily.freq, sdate, edate, th, op, ft, field='sig', masig, doplot=F) {
   printDay <- function(daily.freq.day, row.by) {
     cat("------------------------------", as.character(row.by[[1]]), "------------------------------\n")
     print(as.data.frame(daily.freq.day))
@@ -1452,6 +1452,10 @@ printDailySignificantIndicators <- function(daily.freq, sdate, edate, th, op, ft
   daily.freq.aggr[, V1 := SMA(V1, masig)]
   # Print the daily report
   daily.freq.filt[, printDay(.SD, .BY), by=as.character(Date)]
+
+  if (doplot) {
+    ggplot(data=daily.freq.aggr) + geom_line(aes(x=Date, y=V1))
+  }
 }
 
 # Usage: analizeIndicatorCorrelation(daily.freq, psl$security, "2001-01-01", "2015-01-01", 100, 0.55, '>=', 'spaspect|aspect|declination', 'sig', 50, T)
