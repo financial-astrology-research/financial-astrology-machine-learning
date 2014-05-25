@@ -249,7 +249,7 @@ mainOpenSecurity <- function(securityfile, mapricefs=20, mapricesl=50, dateforma
   return(security)
 }
 
-
+# Usage: psl <- openPlanetsSecurity("stocks/AXP", 20, 50)
 openPlanetsSecurity <- function(securityfile, mafs=20, masl=50, dateformat="%Y-%m-%d", sdate='1970-01-01', planetsfile='planets_10', clear=F) {
   planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL', 'ES', 'EM')
   buildPlanetsColsNames(planetsBaseCols)
@@ -258,6 +258,7 @@ openPlanetsSecurity <- function(securityfile, mafs=20, masl=50, dateformat="%Y-%
   return(list(planets=planets, security=security))
 }
 
+# Usage: psl <- openPlanetsAll('planets_10')
 openPlanetsAll <- function(planetsfile='planets_10', clear=F) {
   planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL', 'ES', 'EM')
   buildPlanetsColsNames(planetsBaseCols)
@@ -1452,7 +1453,7 @@ printDailySignificantIndicators <- function(daily.freq, sdate, edate, th, op, ft
   daily.freq.filt[, printDay(.SD, .BY), by=as.character(Date)]
 }
 
-# Usage: analizeIndicatorCorrelation(daily.freq, psl$security, "2001-01-01", "2015-01-01", 100, 0.55, '>=', 'declination', 'sig', 50, T)
+# Usage: analizeIndicatorCorrelation(daily.freq, psl$security, "2001-01-01", "2015-01-01", 100, 0.55, '>=', 'spaspect|aspect|declination', 'sig', 50, T)
 analizeIndicatorCorrelation <- function(daily.freq, securityorig, sdate, edate, masl, th, op, ft, field='sig', masig=50, doplot=F, browse=F) {
   daily.freq.filt <- daily.freq[eval(parse(text=paste('abs(get(field))', op, 'th'))),]
   if (ft != '') daily.freq.filt <- daily.freq.filt[grep(ft, type)]
