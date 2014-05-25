@@ -249,7 +249,8 @@ mainOpenSecurity <- function(securityfile, mapricefs=20, mapricesl=50, dateforma
   return(security)
 }
 
-mainOpenPlanetsSecurity <- function(securityfile, mafs=20, masl=50, dateformat="%Y-%m-%d", sdate='1970-01-01', planetsfile='planets_10', clear=F) {
+
+openPlanetsSecurity <- function(securityfile, mafs=20, masl=50, dateformat="%Y-%m-%d", sdate='1970-01-01', planetsfile='planets_10', clear=F) {
   planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL', 'ES', 'EM')
   buildPlanetsColsNames(planetsBaseCols)
   planets <- mainOpenPlanetsAll(planetsfile, clear=clear)
@@ -257,14 +258,14 @@ mainOpenPlanetsSecurity <- function(securityfile, mafs=20, masl=50, dateformat="
   return(list(planets=planets, security=security))
 }
 
-mainOpenPlanetsAll <- function(planetsfile='planets_10', clear=F) {
+openPlanetsAll <- function(planetsfile='planets_10', clear=F) {
   planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL', 'ES', 'EM')
   buildPlanetsColsNames(planetsBaseCols)
   planets <- openPlanets(planetsfile, clear=clear)
   return(planets)
 }
 
-mainOpenPlanetsBasic <- function(planetsfile='planets_10', clear=F) {
+openPlanetsBasic <- function(planetsfile='planets_10', clear=F) {
   planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'NN', 'SA')
   buildPlanetsColsNames(planetsBaseCols)
   planets <- openPlanets(planetsfile, clear=clear)
@@ -1315,8 +1316,8 @@ buildSignificantLongitudes <- function(planets, security, degsplit) {
   return(freq)
 }
 
-# Usage: aspects.day <- buildSignificantLongitudesAspects(planets, security, 4, 10, F)
-buildSignificantLongitudesAspects <- function(planets, security, degsplit, topn, fwide=F) {
+# Usage: aspects.day <- mainBuildSignificantLongitudesAspects(planets, security, 4, 10, F)
+mainBuildSignificantLongitudesAspects <- function(planets, security, degsplit, topn, fwide=F) {
   # leave only the longitudes
   loncols <- colnames(planets)
   loncols <- loncols[grep('^..LON$', loncols)]
@@ -1363,7 +1364,8 @@ buildSignificantLongitudesAspects <- function(planets, security, degsplit, topn,
 }
 
 # Calculate aspects for the significant longitude points and cache
-mainBuildSignificantLongitudesAspects <- function(planets, security, degsplit, topn, fwide=F, clear=F) {
+# Usage: aspects.day <- buildSignificantLongitudesAspects(planets, security, 4, 10, F)
+buildSignificantLongitudesAspects <- function(planets, security, degsplit, topn, fwide=F, clear=F) {
   ckey <- list(planets, security, degsplit, topn, fwide)
   planets.aspsday <- loadCache(key=ckey)
   if (is.null(planets.aspsday) || clear) {
@@ -1377,7 +1379,7 @@ mainBuildSignificantLongitudesAspects <- function(planets, security, degsplit, t
   return(planets.aspsday)
 }
 
-# planets.aspect.day is build by mainBuildSignificantLongitudesAspects
+# planets.aspect.day is build by buildSignificantLongitudesAspects
 # Usage: siglonasps <- significantLongitudeAspects(planets, security, "1970-01-01", "2001-01-01", 6, 15, 20)
 significantLongitudeAspects <- function(planets.aspsday, security, sdate, edate, degsplit, topn, aspsplit, clear=F) {
   sp <- merge(planets.aspsday, security, by=c('Date'))
@@ -1390,7 +1392,7 @@ significantLongitudeAspects <- function(planets.aspsday, security, sdate, edate,
 # Usage: daily.freq <- dailySignificantIndicators(planets, security, "1970-01-01", "2001-01-01", 6, 10, 10, 5)
 dailySignificantIndicators <- function(planets, security, sdate, edate, degsplit, topn, aspsplit, decsplit, clear=F, breaks=c(-360, 360)) {
   # Significant points aspects
-  planets.aspsday <- mainBuildSignificantLongitudesAspects(planets, security, degsplit, topn, T)
+  planets.aspsday <- buildSignificantLongitudesAspects(planets, security, degsplit, topn, T)
   cols <- colnames(planets.aspsday)
   indicators <- cols[grep('DIS.', cols)]
   planets.long <- melt(planets.aspsday, id.var=c('Date'), measure.var=indicators)
@@ -1426,11 +1428,12 @@ dailySignificantIndicators <- function(planets, security, sdate, edate, degsplit
 
   # combine rows
   daily.freq <- rbind(siglon.aspects.daily.freq, aspects.daily.freq, declinations.freq)
+  setkey(daily.freq, Date)
   return(daily.freq)
 }
 
 # Usage: printDailySignificantIndicators(daily.freq, "2014-04-01", "2014-05-01", 0.05)
-printDailySignificantIndicators <- function(daily.freq, sdate, edate, threshold) {
+printDailySignificantIndicators <- function(daily.freq, sdate, edate, th, op, ft, field='sig', masig) {
   printDay <- function(daily.freq.day, row.by) {
     cat("------------------------------", as.character(row.by[[1]]), "------------------------------\n")
     print(as.data.frame(daily.freq.day))
@@ -1438,22 +1441,29 @@ printDailySignificantIndicators <- function(daily.freq, sdate, edate, threshold)
     return(list())
   }
 
-  setkey(daily.freq, Date)
-  daily.freq[Date >= as.Date(sdate) & Date < as.Date(edate) & abs(relsig) >= threshold, printDay(.SD, .BY), by=as.character(Date)]
-}
-
-# Usage: analizeIndicatorCorrelation(daily.freq, psl$security, "2001-01-01", "2015-01-01", 100, 0.55, '>=', 'declination', 'sig', 50, T)
-analizeIndicatorCorrelation <- function(daily.freq, securityorig, sdate, edate, masl, th, op, ft, field='relsig', masig=50, doplot=F, browse=F) {
+  # Filter the daily frequencies patterns
   daily.freq.filt <- daily.freq[eval(parse(text=paste('abs(get(field))', op, 'th'))),]
   if (ft != '') daily.freq.filt <- daily.freq.filt[grep(ft, type)]
   daily.freq.filt <- daily.freq.filt[Date >= as.Date(sdate) & Date < as.Date(edate),]
-  sig <- daily.freq.filt[, mean(get(field)), by=Date]
+  # Calculate aggregated significance with SMA
+  daily.freq.aggr <- daily.freq.filt[, mean(get(field)), by=Date]
+  daily.freq.aggr[, V1 := SMA(V1, masig)]
+  # Print the daily report
+  daily.freq.filt[, printDay(.SD, .BY), by=as.character(Date)]
+}
+
+# Usage: analizeIndicatorCorrelation(daily.freq, psl$security, "2001-01-01", "2015-01-01", 100, 0.55, '>=', 'declination', 'sig', 50, T)
+analizeIndicatorCorrelation <- function(daily.freq, securityorig, sdate, edate, masl, th, op, ft, field='sig', masig=50, doplot=F, browse=F) {
+  daily.freq.filt <- daily.freq[eval(parse(text=paste('abs(get(field))', op, 'th'))),]
+  if (ft != '') daily.freq.filt <- daily.freq.filt[grep(ft, type)]
+  daily.freq.filt <- daily.freq.filt[Date >= as.Date(sdate) & Date < as.Date(edate),]
+  daily.freq.aggr <- daily.freq.filt[, mean(get(field)), by=Date]
+  daily.freq.aggr[, V1 := SMA(V1, masig)]
   security <- copy(securityorig)
   security[, MidMAS := SMA(Mid, masl)]
-  sig.sec <- merge(security, sig, by='Date')
-  sig.sec[, V1 := SMA(V1, masig)]
-  sig.sec.long <- melt(sig.sec, variable.name='type', value.name='value', measure.var=c('V1', 'MidMAS'))
-  sigcor <- sig.sec[, cor(MidMAS, V1, use="pairwise", method='spearman')]
+  daily.freq.aggr.sec <- merge(security, daily.freq.aggr, by='Date')
+  daily.freq.a.sec.long <- melt(daily.freq.aggr.sec, variable.name='type', value.name='value', measure.var=c('V1', 'MidMAS'))
+  sigcor <- daily.freq.aggr.sec[, cor(MidMAS, V1, use="pairwise", method='spearman')]
   print(sigcor)
 
   if (browse) {
@@ -1461,8 +1471,6 @@ analizeIndicatorCorrelation <- function(daily.freq, securityorig, sdate, edate, 
   }
 
   if (doplot) {
-    ggplot(data=sig.sec.long[Date >= as.Date(sdate) & Date < as.Date(edate),]) +
-    geom_line(aes(x=Date, y=value)) +
-    facet_grid(type ~ ., scale='free')
+    ggplot(data=daily.freq.a.sec.long) + geom_line(aes(x=Date, y=value)) + facet_grid(type ~ ., scale='free')
   }
 }
