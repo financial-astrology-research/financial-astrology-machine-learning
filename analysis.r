@@ -1362,7 +1362,22 @@ buildSignificantLongitudesAspects <- function(planets, security, degsplit, topn,
   return(planets.aspsday)
 }
 
-# planets.aspect.day is build by buildSignificantLongitudesAspects
+# Calculate aspects for the significant longitude points and cache
+mainBuildSignificantLongitudesAspects <- function(planets, security, degsplit, topn, fwide=F, clear=F) {
+  ckey <- list(planets, security, degsplit, topn, fwide)
+  planets.aspsday <- loadCache(key=ckey)
+  if (is.null(planets.aspsday) || clear) {
+    planets.aspsday <- mainBuildSignificantLongitudesAspects(planets, security, degsplit, topn, fwide)
+    saveCache(planets.aspsday, key=ckey)
+    cat("Set buildSignificantLongitudesAspects cache\n")
+  }
+  else {
+    cat("Get buildSignificantLongitudesAspects cache\n")
+  }
+  return(planets.aspsday)
+}
+
+# planets.aspect.day is build by mainBuildSignificantLongitudesAspects
 # Usage: siglonasps <- significantLongitudeAspects(planets, security, "1970-01-01", "2001-01-01", 6, 15, 20)
 significantLongitudeAspects <- function(planets.aspsday, security, sdate, edate, degsplit, topn, aspsplit, clear=F) {
   sp <- merge(planets.aspsday, security, by=c('Date'))
@@ -1375,7 +1390,7 @@ significantLongitudeAspects <- function(planets.aspsday, security, sdate, edate,
 # Usage: daily.freq <- dailySignificantIndicators(planets, security, "1970-01-01", "2001-01-01", 6, 10, 10, 5)
 dailySignificantIndicators <- function(planets, security, sdate, edate, degsplit, topn, aspsplit, decsplit, clear=F, breaks=c(-360, 360)) {
   # Significant points aspects
-  planets.aspsday <- buildSignificantLongitudesAspects(planets, security, degsplit, topn, T)
+  planets.aspsday <- mainBuildSignificantLongitudesAspects(planets, security, degsplit, topn, T)
   cols <- colnames(planets.aspsday)
   indicators <- cols[grep('DIS.', cols)]
   planets.long <- melt(planets.aspsday, id.var=c('Date'), measure.var=indicators)
