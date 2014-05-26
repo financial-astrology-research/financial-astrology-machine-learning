@@ -37,7 +37,7 @@ buildPlanetsColsNames <- function(planetsBaseCols) {
   planetsComb <<- combn(planetsBaseCols, 2, simplify=F)
   planetsCombLon <<- as.character(lapply(planetsComb, function(x) paste(x[1], x[2], 'LON', sep='')))
   planetsCombAsp <<- as.character(lapply(planetsComb, function(x) paste(x[1], x[2], 'ASP', sep='')))
-  planetsCombOrb <<- paste(planetsCombLon, 'ORB', sep='')
+  planetsCombOrb <<- paste(planetsComb, 'ORB', sep='')
   zodSignsCols <<- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CP', 'AC', 'PI')
   lenZodEnergyMi <<- length(planetsBaseCols) * length(zodSignsCols)
   #lenZodEnergyMa <- (length(planetsLonCols) * length(zodSignsCols)) - lenZodEnergyMi
@@ -1353,8 +1353,8 @@ mainBuildSignificantLongitudesAspects <- function(planets, security, degsplit, t
   if (fwide) {
     planets.aspsday.wide <- data.table(Date=planets$Date)
     for (curcol in unique(planets.aspsday$lon)) {
-      planets.aspsday.cur <- planets.aspsday[lon == curcol, c('Date', planetsLonDisCols), with=F]
-      curcolnames <- paste(planetsLonDisCols, '.', curcol, sep='')
+      planets.aspsday.cur <- planets.aspsday[lon == curcol, c('Date', planetsLonDisCols, planetsLonAspCols, planetsLonOrbCols), with=F]
+      curcolnames <- paste(c(planetsLonDisCols, planetsLonAspCols, planetsLonOrbCols), '.', curcol, sep='')
       setnames(planets.aspsday.cur, c('Date', curcolnames))
       planets.aspsday.wide <- merge(planets.aspsday.wide, planets.aspsday.cur, by=c('Date'))
     }
@@ -1393,29 +1393,65 @@ significantLongitudeAspects <- function(planets.aspsday, security, sdate, edate,
 # Usage: daily.freq <- dailySignificantIndicators(planets, security, "1970-01-01", "2001-01-01", 6, 10, 10, 5)
 dailySignificantIndicators <- function(planets, security, sdate, edate, degsplit, topn, aspsplit, decsplit, clear=F, breaks=c(-360, 360)) {
   # Significant points aspects
-  planets.aspsday <- buildSignificantLongitudesAspects(planets, security, degsplit, topn, T)
-  browser()
+  planets.aspsday <- buildSignificantLongitudesAspects(planets, security, degsplit, topn, T, clear)
   cols <- colnames(planets.aspsday)
   indicators <- cols[grep('DIS.', cols)]
+  # Melt the distances
   planets.long <- melt(planets.aspsday, id.var=c('Date'), measure.var=indicators)
+  planets.long[, variable := paste(substr(variable, 1, 2), substr(variable, 6, 9), sep='')]
+  setkeyv(planets.long, c('Date', 'variable'))
+  # Melt the aspects
+  planets.long.asps <- melt(planets.aspsday, id.var=c('Date'), measure.var=cols[grep('ASP.', cols)])
+  planets.long.asps[, variable := paste(substr(variable, 1, 2), substr(variable, 6, 9), sep='')]
+  setnames(planets.long.asps, c('Date', 'variable', 'asp'))
+  setkeyv(planets.long.asps, c('Date', 'variable'))
+  # Melt the orbs
+  planets.long.orbs <- melt(planets.aspsday, id.var=c('Date'), measure.var=cols[grep('ORB.', cols)])
+  planets.long.orbs[, variable := paste(substr(variable, 1, 2), substr(variable, 6, 9), sep='')]
+  setnames(planets.long.orbs, c('Date', 'variable', 'orb'))
+  setkeyv(planets.long.orbs, c('Date', 'variable'))
+  # Set the real distance value
   planets.long[, rvalue := value]
+  # Set indicator type
   planets.long[, type := 'spaspect']
   planets.long[, value := cut(value, breaks=seq(breaks[1], breaks[2], by=aspsplit))]
   freq <- significantLongitudeAspects(planets.aspsday, security, sdate, edate, degsplit, topn, aspsplit)
+  freq[, variable := paste(substr(variable, 1, 2), substr(variable, 6, 9), sep='')]
   siglon.aspects.daily.freq <- merge(planets.long, freq, by=c('variable', 'value'))
+  # Add the orbs & aspects
+  siglon.aspects.daily.freq <- merge(siglon.aspects.daily.freq, planets.long.asps, by=c('Date', 'variable'))
+  siglon.aspects.daily.freq <- merge(siglon.aspects.daily.freq, planets.long.orbs, by=c('Date', 'variable'))
 
   # security / planets table
   planets <- buildCompositeCols(planets)
   sp <- merge(security, planets, by='Date')
+  cols <- colnames(planets)
 
   # Planets aspects
   indicators <- c(planetsCombLon, aspectsCompositeIndicators())
   planets.long <- melt(planets, id.var=c('Date'), measure.var=indicators)
+  planets.long[, variable := substr(variable, 1, 4)]
+  setkeyv(planets.long, c('Date', 'variable'))
+  # Melt the aspects
+  planets.long.asps <- melt(planets, id.var=c('Date'), measure.var=cols[grep('ASP$', cols)])
+  planets.long.asps[, variable := substr(variable, 1, 4)]
+  setnames(planets.long.asps, c('Date', 'variable', 'asp'))
+  setkeyv(planets.long.asps, c('Date', 'variable'))
+  # Melt the orbs
+  planets.long.orbs <- melt(planets, id.var=c('Date'), measure.var=cols[grep('ORB$', cols)])
+  planets.long.orbs[, variable := substr(variable, 1, 4)]
+  setnames(planets.long.orbs, c('Date', 'variable', 'orb'))
+  setkeyv(planets.long.orbs, c('Date', 'variable'))
+  # Set the real distance value
   planets.long[, rvalue := value]
   planets.long[, type := 'aspect']
   planets.long[, value := cut(value, breaks=seq(breaks[1], breaks[2], by=aspsplit))]
   freq <- reportUpDownsFreq(sp, indicators, aspsplit, sdate, edate)
+  freq[, variable := substr(variable, 1, 4)]
   aspects.daily.freq <- merge(planets.long, freq, by=c('variable', 'value'))
+  # Add the orbs & aspects
+  aspects.daily.freq <- merge(aspects.daily.freq, planets.long.asps, by=c('Date', 'variable'))
+  aspects.daily.freq <- merge(aspects.daily.freq, planets.long.orbs, by=c('Date', 'variable'))
 
   # Declinations
   indicators <- c(planetsDecCols, declinationCompositeIndicators())
@@ -1425,6 +1461,10 @@ dailySignificantIndicators <- function(planets, security, sdate, edate, degsplit
   planets.long[, value := cut(value, breaks=seq(breaks[1], breaks[2], by=decsplit))]
   freq <- reportUpDownsFreq(sp, indicators, decsplit, sdate, edate)
   declinations.freq <- merge(planets.long, freq, by=c('variable', 'value'))
+  declinations.freq[, asp := NA]
+  declinations.freq[, orb := NA]
+  # Use same cols order as pevious two tables
+  declinations.freq <- declinations.freq[, colnames(aspects.daily.freq), with=F]
 
   # TODO: longitude indicators
 
