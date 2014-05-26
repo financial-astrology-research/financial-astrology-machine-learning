@@ -253,7 +253,7 @@ mainOpenSecurity <- function(securityfile, mapricefs=20, mapricesl=50, dateforma
 openPlanetsSecurity <- function(securityfile, mafs=20, masl=50, dateformat="%Y-%m-%d", sdate='1970-01-01', planetsfile='planets_10', clear=F) {
   planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL', 'ES', 'EM')
   buildPlanetsColsNames(planetsBaseCols)
-  planets <- mainOpenPlanetsAll(planetsfile, clear=clear)
+  planets <- openPlanetsAll(planetsfile, clear=clear)
   security <- mainOpenSecurity(securityfile, mafs, masl, dateformat, sdate)
   return(list(planets=planets, security=security))
 }
@@ -1394,6 +1394,7 @@ significantLongitudeAspects <- function(planets.aspsday, security, sdate, edate,
 dailySignificantIndicators <- function(planets, security, sdate, edate, degsplit, topn, aspsplit, decsplit, clear=F, breaks=c(-360, 360)) {
   # Significant points aspects
   planets.aspsday <- buildSignificantLongitudesAspects(planets, security, degsplit, topn, T)
+  browser()
   cols <- colnames(planets.aspsday)
   indicators <- cols[grep('DIS.', cols)]
   planets.long <- melt(planets.aspsday, id.var=c('Date'), measure.var=indicators)
@@ -1433,8 +1434,8 @@ dailySignificantIndicators <- function(planets, security, sdate, edate, degsplit
   return(daily.freq)
 }
 
-# Usage: printDailySignificantIndicators(daily.freq, '2012-01-01', '2015-01-01', 0.60, '>=', 'spaspect|aspect|declination', 'sig', 100)
-printDailySignificantIndicators <- function(daily.freq, sdate, edate, th, op, ft, field='sig', masig, doplot=F) {
+# Usage: printDailySignificantIndicators('dailyf_AXP', daily.freq, '2001-01-01', '2015-01-01', 0.60, '>=', 'spaspect|aspect|declination', 'sig', 100, T)
+printDailySignificantIndicators <- function(outfile, daily.freq, sdate, edate, th, op, ft, field='sig', masig, doplot=F) {
   printDay <- function(daily.freq.day, row.by) {
     cat("------------------------------", as.character(row.by[[1]]), "------------------------------\n")
     print(as.data.frame(daily.freq.day))
@@ -1443,6 +1444,8 @@ printDailySignificantIndicators <- function(daily.freq, sdate, edate, th, op, ft
     return(list())
   }
 
+  # Redirect output
+  sink(npath(paste("~/trading/predict/", outfile, ".txt", sep='')), append=F)
   # Filter the daily frequencies patterns
   daily.freq.filt <- daily.freq[eval(parse(text=paste('abs(get(field))', op, 'th'))),]
   if (ft != '') daily.freq.filt <- daily.freq.filt[grep(ft, type)]
@@ -1452,6 +1455,7 @@ printDailySignificantIndicators <- function(daily.freq, sdate, edate, th, op, ft
   daily.freq.aggr[, V1 := SMA(V1, masig)]
   # Print the daily report
   daily.freq.filt[, printDay(.SD, .BY), by=as.character(Date)]
+  sink()
 
   if (doplot) {
     ggplot(data=daily.freq.aggr) + geom_line(aes(x=Date, y=V1))
