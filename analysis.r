@@ -132,6 +132,11 @@ normalizeDistance <- function(x) {
   return(abs(x))
 }
 
+# calculate the proportional energy of aspect based on the distance
+energyGrowth <- function(energy, distance, speed = 0.5) {
+  return(energy * (1 - speed) ^ abs(distance))
+}
+
 calculateAspects <- function(x, cusorbs) {
   allidx <- rep(FALSE, length(x))
   for (aspect in aspects) {
@@ -364,11 +369,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     }
 
     return(planets)
-  }
-
-  # calculate the proportional energy of aspect based on the distance
-  energyGrowth <- function(energy, distance, speed = 0.5) {
-    return(energy * (1 - speed) ^ abs(distance))
   }
 
   planetsVarsSignificance <- function(planets, security) {
