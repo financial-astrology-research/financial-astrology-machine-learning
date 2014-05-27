@@ -1502,7 +1502,7 @@ printDailySignificantIndicators <- function(outfile, daily.freq, sdate, edate, t
 }
 
 # Usage: analizeIndicatorCorrelation(daily.freq, psl$security, "2001-01-01", "2015-01-01", 100, 0.55, '>=', 'spaspect|aspect|declination', 'sig', 50, T)
-analizeIndicatorCorrelation <- function(daily.freq, securityorig, sdate, edate, masl, th, op, ft, field='sig', masig=50, doplot=F, browse=F) {
+analizeIndicatorCorrelation <- function(daily.freq, securityorig, sdate, edate, masl, th, op, ft, field='sig', masig=50, doplot=F, align=0, browse=F) {
   daily.freq.filt <- daily.freq[eval(parse(text=paste('abs(get(field))', op, 'th'))),]
   if (ft != '') daily.freq.filt <- daily.freq.filt[grep(ft, type)]
   daily.freq.filt <- daily.freq.filt[Date >= as.Date(sdate) & Date < as.Date(edate),]
@@ -1511,6 +1511,15 @@ analizeIndicatorCorrelation <- function(daily.freq, securityorig, sdate, edate, 
   security <- copy(securityorig)
   security[, MidMAS := SMA(Mid, masl)]
   daily.freq.aggr.sec <- merge(security, daily.freq.aggr, by='Date')
+
+  # apply alignment to left & right
+  if (align > 0) {
+    daily.freq.aggr.sec[, V1 := c(V1[(align+1):length(V1)], rep(NA, align))]
+  }
+  else if (align < 0) {
+    daily.freq.aggr.sec[, V1 := c(rep(NA, abs(align)), V1[1:(length(V1)-abs(align))])]
+  }
+
   daily.freq.a.sec.long <- melt(daily.freq.aggr.sec, variable.name='type', value.name='value', measure.var=c('V1', 'MidMAS'))
   sigcor <- daily.freq.aggr.sec[, cor(MidMAS, V1, use="pairwise", method='spearman')]
   print(sigcor)
