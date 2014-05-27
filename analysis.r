@@ -37,7 +37,7 @@ buildPlanetsColsNames <- function(planetsBaseCols) {
   planetsComb <<- combn(planetsBaseCols, 2, simplify=F)
   planetsCombLon <<- as.character(lapply(planetsComb, function(x) paste(x[1], x[2], 'LON', sep='')))
   planetsCombAsp <<- as.character(lapply(planetsComb, function(x) paste(x[1], x[2], 'ASP', sep='')))
-  planetsCombOrb <<- paste(planetsComb, 'ORB', sep='')
+  planetsCombOrb <<- as.character(lapply(planetsComb, function(x) paste(x[1], x[2], 'ORB', sep='')))
   zodSignsCols <<- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CP', 'AC', 'PI')
   lenZodEnergyMi <<- length(planetsBaseCols) * length(zodSignsCols)
   #lenZodEnergyMa <- (length(planetsLonCols) * length(zodSignsCols)) - lenZodEnergyMi
@@ -172,7 +172,7 @@ processPlanetsAspects <- function(planetsorig, cusorbs) {
   # clone original to ensure is no modified
   planets <- copy(planetsorig)
   planets[, c(planetsCombAsp) := lapply(.SD, calculateAspects, cusorbs=cusorbs), .SDcols=planetsCombLon]
-  planets[, c(planetsCombOrb) := lapply(.SD, calculateAspectOrbs, cusorbs=cusorbs), .SDcols=planetsCombOrb]
+  planets[, c(planetsCombOrb) := lapply(.SD, calculateAspectOrbs, cusorbs=cusorbs), .SDcols=planetsCombLon]
   return(planets)
 }
 
@@ -206,9 +206,6 @@ mainOpenPlanets <- function(planetsfile, cusorbs) {
 
   # Normalize to 180 degrees range
   planets[, c(planetsCombLon) := lapply(.SD, normalizeDistance), .SDcols=planetsCombLon]
-  # Copy to orbs
-  exprcopy <- paste("c(planetsCombOrb) := list(", paste(planetsCombLon, collapse=","), ")", sep="")
-  planets[, eval(parse(text = exprcopy))]
 
   # calculate aspects for max orbs
   orbsmatrix <- matrix(cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
