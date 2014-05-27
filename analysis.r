@@ -1016,11 +1016,11 @@ planetsIndicatorsChart <- function(securityfile, sdate, indicators, clear=F) {
     indicators <- indicatorsfunc()
   }
 
-  planets <- as.data.frame(buildPlanetsIndicators(securityfile, sdate, clear=clear))
+  planets <- buildPlanetsIndicators(clear=clear)
   security <- mainOpenSecurity(securityfile, 20, 50, "%Y-%m-%d", sdate)
   sp <- merge(security, planets, by='Date')
   # convert to xts class
-  sp <- xts(sp[, c('Open', 'High', 'Low', 'Close', planetsCombLon, planetsLonCols, planetsSpCols, planetsDecCols)], order.by=sp$Date)
+  sp <- xts(sp[, c('Open', 'High', 'Low', 'Close', planetsCombLon, planetsLonCols, planetsSpCols, planetsDecCols), with=F], order.by=sp$Date)
   # chart
   barChart(OHLC(sp), log.scale=T)
   # draw indicators
