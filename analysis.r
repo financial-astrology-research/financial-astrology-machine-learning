@@ -37,7 +37,7 @@ buildPlanetsColsNames <- function(planetsBaseCols) {
   planetsComb <<- combn(planetsBaseCols, 2, simplify=F)
   planetsCombLon <<- as.character(lapply(planetsComb, function(x) paste(x[1], x[2], 'LON', sep='')))
   planetsCombAsp <<- as.character(lapply(planetsComb, function(x) paste(x[1], x[2], 'ASP', sep='')))
-  planetsCombOrb <<- paste(planetsCombLon, 'ORB', sep='')
+  planetsCombOrb <<- as.character(lapply(planetsComb, function(x) paste(x[1], x[2], 'ORB', sep='')))
   zodSignsCols <<- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CP', 'AC', 'PI')
   lenZodEnergyMi <<- length(planetsBaseCols) * length(zodSignsCols)
   #lenZodEnergyMa <- (length(planetsLonCols) * length(zodSignsCols)) - lenZodEnergyMi
@@ -132,6 +132,11 @@ normalizeDistance <- function(x) {
   return(abs(x))
 }
 
+# calculate the proportional energy of aspect based on the distance
+energyGrowth <- function(energy, distance, speed = 0.5) {
+  return(energy * (1 - speed) ^ abs(distance))
+}
+
 calculateAspects <- function(x, cusorbs) {
   allidx <- rep(FALSE, length(x))
   for (aspect in aspects) {
@@ -167,7 +172,7 @@ processPlanetsAspects <- function(planetsorig, cusorbs) {
   # clone original to ensure is no modified
   planets <- copy(planetsorig)
   planets[, c(planetsCombAsp) := lapply(.SD, calculateAspects, cusorbs=cusorbs), .SDcols=planetsCombLon]
-  planets[, c(planetsCombOrb) := lapply(.SD, calculateAspectOrbs, cusorbs=cusorbs), .SDcols=planetsCombOrb]
+  planets[, c(planetsCombOrb) := lapply(.SD, calculateAspectOrbs, cusorbs=cusorbs), .SDcols=planetsCombLon]
   return(planets)
 }
 
@@ -201,9 +206,6 @@ mainOpenPlanets <- function(planetsfile, cusorbs) {
 
   # Normalize to 180 degrees range
   planets[, c(planetsCombLon) := lapply(.SD, normalizeDistance), .SDcols=planetsCombLon]
-  # Copy to orbs
-  exprcopy <- paste("c(planetsCombOrb) := list(", paste(planetsCombLon, collapse=","), ")", sep="")
-  planets[, eval(parse(text = exprcopy))]
 
   # calculate aspects for max orbs
   orbsmatrix <- matrix(cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
@@ -226,7 +228,7 @@ openPlanets <- function(planetsfile, cusorbs=deforbs, clear=F) {
   return(planets)
 }
 
-mainOpenSecurity <- function(securityfile, mapricefs, mapricesl, dateformat="%Y.%m.%d", sdate) {
+mainOpenSecurity <- function(securityfile, mapricefs=20, mapricesl=50, dateformat="%Y-%m-%d", sdate='1970-01-01') {
   filename <- npath(paste("~/trading/", securityfile, ".csv", sep=''))
   security <- fread(filename)
   security[, Date := as.Date(as.character(Date), format=dateformat)]
@@ -247,6 +249,30 @@ mainOpenSecurity <- function(securityfile, mapricefs, mapricesl, dateformat="%Y.
   security <- security[!is.na(val)]
   security[, Eff := cut(val, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
   return(security)
+}
+
+# Usage: psl <- openPlanetsSecurity("stocks/AXP", 20, 50)
+openPlanetsSecurity <- function(securityfile, mafs=20, masl=50, dateformat="%Y-%m-%d", sdate='1970-01-01', planetsfile='planets_10', clear=F) {
+  planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL', 'ES', 'EM')
+  buildPlanetsColsNames(planetsBaseCols)
+  planets <- openPlanetsAll(planetsfile, clear=clear)
+  security <- mainOpenSecurity(securityfile, mafs, masl, dateformat, sdate)
+  return(list(planets=planets, security=security))
+}
+
+# Usage: psl <- openPlanetsAll('planets_10')
+openPlanetsAll <- function(planetsfile='planets_10', clear=F) {
+  planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL', 'ES', 'EM')
+  buildPlanetsColsNames(planetsBaseCols)
+  planets <- openPlanets(planetsfile, clear=clear)
+  return(planets)
+}
+
+openPlanetsBasic <- function(planetsfile='planets_10', clear=F) {
+  planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'NN', 'SA')
+  buildPlanetsColsNames(planetsBaseCols)
+  planets <- openPlanets(planetsfile, clear=clear)
+  return(planets)
 }
 
 mainPlanetsCompositeSignificance <- function(planets, security) {
@@ -340,11 +366,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     }
 
     return(planets)
-  }
-
-  # calculate the proportional energy of aspect based on the distance
-  energyGrowth <- function(energy, distance, speed = 0.5) {
-    return(energy * (1 - speed) ^ abs(distance))
   }
 
   planetsVarsSignificance <- function(planets, security) {
@@ -960,6 +981,8 @@ processGetSymbol <- function(symbol) {
       symbol.df <- getSymbols(symbol, src="yahoo", from=startDate, env=NULL, return.class='data.frame')
       filename <- paste('./stocks/', symbol, ".csv", sep='')
       symbol.df <- cbind(rownames(symbol.df), symbol.df)
+      # Adjust the prices for splits / dividends
+      symbol.df[, 2:7] <- adjustOHLC(symbol.df[, 2:7], use.Adjusted=T)
       names(symbol.df) <- c('Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'Adj Close')
       write.csv(symbol.df, file=filename, row.names=F)
       cat("Sucessfully saved the stock data to ", filename, "\n")
@@ -992,11 +1015,11 @@ planetsIndicatorsChart <- function(securityfile, sdate, indicators, clear=F) {
     indicators <- indicatorsfunc()
   }
 
-  planets <- as.data.frame(buildPlanetsIndicators(securityfile, sdate, clear=clear))
+  planets <- buildPlanetsIndicators(clear=clear)
   security <- mainOpenSecurity(securityfile, 20, 50, "%Y-%m-%d", sdate)
   sp <- merge(security, planets, by='Date')
   # convert to xts class
-  sp <- xts(sp[, c('Open', 'High', 'Low', 'Close', planetsCombLon, planetsLonCols, planetsSpCols, planetsDecCols)], order.by=sp$Date)
+  sp <- xts(sp[, c('Open', 'High', 'Low', 'Close', planetsCombLon, planetsLonCols, planetsSpCols, planetsDecCols), with=F], order.by=sp$Date)
   # chart
   barChart(OHLC(sp), log.scale=T)
   # draw indicators
@@ -1284,133 +1307,212 @@ reportIndicatorsPeakValleyHist <- function(symbol, sp, span) {
   dev.off()
 }
 
-reportSignificantLongitudes <- function(securityfile, sdate, mfs, msl, degsplit, clear=F) {
-  planets <- openPlanets('planets_10', clear=clear)
+# Usage: buildSignificantLongitudes(planets, security, 6)
+buildSignificantLongitudes <- function(planets, security, degsplit) {
   planets <- mainProcessPlanetsDegSplit(planets, degsplit)
-  security <- mainOpenSecurity(securityfile, mfs, msl, "%Y-%m-%d", sdate)
   freq <- mainPlanetsCompositeSignificance(planets, security)
+  # sort by most significant
+  freq <- freq[, lon, pdiff][order(-abs(pdiff))]
   return(freq)
 }
 
-buildSignificantLongitudesAspects <- function(securityfile, sdate, mfs, msl, degsplit, topn=10, fwide=F, clear=F) {
-  planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL', 'ES', 'EM')
-  buildPlanetsColsNames(planetsBaseCols)
-  planets <- openPlanets('planets_10', clear=clear)
+# Usage: aspects.day <- mainBuildSignificantLongitudesAspects(planets, security, 4, 10, F)
+mainBuildSignificantLongitudesAspects <- function(planets, security, degsplit, topn, fwide=F) {
   # leave only the longitudes
-  planets <- planets[, c('Date', planetsLonCols), with=F]
-  siglons <- reportSignificantLongitudes(securityfile, sdate, mfs, msl, degsplit, clear=clear)
+  loncols <- colnames(planets)
+  loncols <- loncols[grep('^..LON$', loncols)]
+  planets <- planets[, c('Date', loncols), with=F]
+  siglons <- buildSignificantLongitudes(planets, security, degsplit)
   # leave only the top N significant points
-  siglons <- head(siglons[, lon, pdiff][order(-abs(pdiff))], topn)
+  siglons <- head(siglons, topn)
   # cartesian join
-  aspects.day <- CJDT(siglons, planets)
+  planets.aspsday <- CJDT(siglons, planets)
+
+  # build colnames based on the existing planets
+  planetsLonDisCols <- str_replace(loncols, 'LON', 'DIS')
+  planetsLonAspCols <- str_replace(loncols, 'LON', 'ASP')
+  planetsLonOrbCols <- str_replace(loncols, 'LON', 'ORB')
 
   # Calculate lon / planets distance
   for (curcol in planetsLonDisCols) {
     planetcol <- paste(substr(curcol, 1, 2), 'LON', sep='')
-    aspects.day[, c(curcol) := lon - get(planetcol)]
+    planets.aspsday[, c(curcol) := lon - get(planetcol)]
   }
 
   # Normalize to 180 degrees range
-  aspects.day[, c(planetsLonDisCols) := lapply(.SD, normalizeDistance), .SDcols=planetsLonDisCols]
+  planets.aspsday[, c(planetsLonDisCols) := lapply(.SD, normalizeDistance), .SDcols=planetsLonDisCols]
 
-  # Calculate the aspects.day & orbs
+  # Calculate the planets.aspsday & orbs
   orbsmatrix <- matrix(deforbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
-  aspects.day[, c(planetsLonAspCols) := lapply(.SD, calculateAspects, cusorbs=orbsmatrix), .SDcols=planetsLonDisCols]
-  aspects.day[, c(planetsLonOrbCols) := lapply(.SD, calculateAspectOrbs, cusorbs=orbsmatrix), .SDcols=planetsLonDisCols]
+  planets.aspsday[, c(planetsLonAspCols) := lapply(.SD, calculateAspects, cusorbs=orbsmatrix), .SDcols=planetsLonDisCols]
+  planets.aspsday[, c(planetsLonOrbCols) := lapply(.SD, calculateAspectOrbs, cusorbs=orbsmatrix), .SDcols=planetsLonDisCols]
   #siglons[Date == as.Date('2014-05-21'), c('Date', 'lon', planetsLonAspCols), with=F]
 
-  # Format wide all the significant point aspects.day
+  # Format wide all the significant point planets.aspsday
   if (fwide) {
-    aspects.day.wide <- data.table(Date=planets$Date)
-    for (curcol in unique(aspects.day$lon)) {
-      aspects.day.cur <- aspects.day[lon == curcol, c('Date', planetsLonDisCols), with=F]
-      curcolnames <- paste(planetsLonDisCols, '.', curcol, sep='')
-      setnames(aspects.day.cur, c('Date', curcolnames))
-      aspects.day.wide <- merge(aspects.day.wide, aspects.day.cur, by=c('Date'))
+    planets.aspsday.wide <- data.table(Date=planets$Date)
+    for (curcol in unique(planets.aspsday$lon)) {
+      planets.aspsday.cur <- planets.aspsday[lon == curcol, c('Date', planetsLonDisCols, planetsLonAspCols, planetsLonOrbCols), with=F]
+      curcolnames <- paste(c(planetsLonDisCols, planetsLonAspCols, planetsLonOrbCols), '.', curcol, sep='')
+      setnames(planets.aspsday.cur, c('Date', curcolnames))
+      planets.aspsday.wide <- merge(planets.aspsday.wide, planets.aspsday.cur, by=c('Date'))
     }
-    aspects.day <- aspects.day.wide
+    planets.aspsday <- planets.aspsday.wide
   }
 
-  return(aspects.day)
+  return(planets.aspsday)
 }
 
-# Usage: freq <- reportSignificantLongitudeAspects("stocks/AA", "1970-01-01", 20, 50, 10, 10, 20)
-significantLongitudesAspects <- function(securityfile, sdate, edate, mfs, msl, degsplit, topn, width, clear=F) {
-  aspects.day <- buildSignificantLongitudesAspects(securityfile, sdate, mfs, msl, degsplit, topn, T, clear)
-  security <- mainOpenSecurity(securityfile, mfs, msl, "%Y-%m-%d", sdate)
-  sp <- merge(aspects.day, security, by=c('Date'))
+# Calculate aspects for the significant longitude points and cache
+# Usage: aspects.day <- buildSignificantLongitudesAspects(planets, security, 4, 10, F)
+buildSignificantLongitudesAspects <- function(planets, security, degsplit, topn, fwide=F, clear=F) {
+  ckey <- list(planets, security, degsplit, topn, fwide)
+  planets.aspsday <- loadCache(key=ckey)
+  if (is.null(planets.aspsday) || clear) {
+    planets.aspsday <- mainBuildSignificantLongitudesAspects(planets, security, degsplit, topn, fwide)
+    saveCache(planets.aspsday, key=ckey)
+    cat("Set buildSignificantLongitudesAspects cache\n")
+  }
+  else {
+    cat("Get buildSignificantLongitudesAspects cache\n")
+  }
+  return(planets.aspsday)
+}
+
+# planets.aspect.day is build by buildSignificantLongitudesAspects
+# Usage: siglonasps <- significantLongitudeAspects(planets, security, "1970-01-01", "2001-01-01", 6, 15, 20)
+significantLongitudeAspects <- function(planets.aspsday, security, sdate, edate, degsplit, topn, aspsplit, clear=F) {
+  sp <- merge(planets.aspsday, security, by=c('Date'))
   cols <- colnames(sp)
   indicators <- cols[grep('DIS.', cols)]
-  freq <- reportUpDownsFreq(sp, indicators, width, sdate, edate)
+  freq <- reportUpDownsFreq(sp, indicators, aspsplit, sdate, edate)
   return(freq)
 }
 
-# Usage: daily.freq <- dailySignificantIndicators("stocks/AXP", "1970-01-01", "2001-01-01", 20, 50, 6, 10, 10, 5)
-dailySignificantIndicators <- function(securityfile, sdate, edate, mfs, msl, degsplit, topn, acut, dcut, clear=F, breaks=c(-360, 360)) {
+# Usage: daily.freq <- dailySignificantIndicators(planets, security, "1970-01-01", "2001-01-01", 6, 10, 10, 5)
+dailySignificantIndicators <- function(planets, security, sdate, edate, degsplit, topn, aspsplit, decsplit, clear=F, breaks=c(-360, 360)) {
   # Significant points aspects
-  aspects.day <- buildSignificantLongitudesAspects(securityfile, sdate, mfs, msl, degsplit, topn, T, clear)
-  cols <- colnames(aspects.day)
+  planets.aspsday <- buildSignificantLongitudesAspects(planets, security, degsplit, topn, T, clear)
+  cols <- colnames(planets.aspsday)
   indicators <- cols[grep('DIS.', cols)]
-  planets.long <- melt(aspects.day, id.var=c('Date'), measure.var=indicators)
+  # Melt the distances
+  planets.long <- melt(planets.aspsday, id.var=c('Date'), measure.var=indicators)
+  planets.long[, variable := paste(substr(variable, 1, 2), substr(variable, 6, 9), sep='')]
+  setkeyv(planets.long, c('Date', 'variable'))
+  # Melt the aspects
+  planets.long.asps <- melt(planets.aspsday, id.var=c('Date'), measure.var=cols[grep('ASP.', cols)])
+  planets.long.asps[, variable := paste(substr(variable, 1, 2), substr(variable, 6, 9), sep='')]
+  setnames(planets.long.asps, c('Date', 'variable', 'asp'))
+  setkeyv(planets.long.asps, c('Date', 'variable'))
+  # Melt the orbs
+  planets.long.orbs <- melt(planets.aspsday, id.var=c('Date'), measure.var=cols[grep('ORB.', cols)])
+  planets.long.orbs[, variable := paste(substr(variable, 1, 2), substr(variable, 6, 9), sep='')]
+  setnames(planets.long.orbs, c('Date', 'variable', 'orb'))
+  setkeyv(planets.long.orbs, c('Date', 'variable'))
+  # Set the real distance value
   planets.long[, rvalue := value]
+  # Set indicator type
   planets.long[, type := 'spaspect']
-  planets.long[, value := cut(value, breaks=seq(breaks[1], breaks[2], by=acut))]
-  freq <- significantLongitudesAspects(securityfile, sdate, edate, mfs, msl, degsplit, topn, acut)
+  planets.long[, value := cut(value, breaks=seq(breaks[1], breaks[2], by=aspsplit))]
+  freq <- significantLongitudeAspects(planets.aspsday, security, sdate, edate, degsplit, topn, aspsplit)
+  freq[, variable := paste(substr(variable, 1, 2), substr(variable, 6, 9), sep='')]
   siglon.aspects.daily.freq <- merge(planets.long, freq, by=c('variable', 'value'))
+  # Add the orbs & aspects
+  siglon.aspects.daily.freq <- merge(siglon.aspects.daily.freq, planets.long.asps, by=c('Date', 'variable'))
+  siglon.aspects.daily.freq <- merge(siglon.aspects.daily.freq, planets.long.orbs, by=c('Date', 'variable'))
 
   # security / planets table
-  planets <- buildPlanetsIndicators(clear=F)
-  security <- mainOpenSecurity(securityfile, mfs, msl, "%Y-%m-%d", sdate)
+  planets <- buildCompositeCols(planets)
   sp <- merge(security, planets, by='Date')
+  cols <- colnames(planets)
 
   # Planets aspects
   indicators <- c(planetsCombLon, aspectsCompositeIndicators())
   planets.long <- melt(planets, id.var=c('Date'), measure.var=indicators)
+  planets.long[, variable := substr(variable, 1, 4)]
+  setkeyv(planets.long, c('Date', 'variable'))
+  # Melt the aspects
+  planets.long.asps <- melt(planets, id.var=c('Date'), measure.var=cols[grep('ASP$', cols)])
+  planets.long.asps[, variable := substr(variable, 1, 4)]
+  setnames(planets.long.asps, c('Date', 'variable', 'asp'))
+  setkeyv(planets.long.asps, c('Date', 'variable'))
+  # Melt the orbs
+  planets.long.orbs <- melt(planets, id.var=c('Date'), measure.var=cols[grep('ORB$', cols)])
+  planets.long.orbs[, variable := substr(variable, 1, 4)]
+  setnames(planets.long.orbs, c('Date', 'variable', 'orb'))
+  setkeyv(planets.long.orbs, c('Date', 'variable'))
+  # Set the real distance value
   planets.long[, rvalue := value]
   planets.long[, type := 'aspect']
-  planets.long[, value := cut(value, breaks=seq(breaks[1], breaks[2], by=acut))]
-  freq <- reportUpDownsFreq(sp, indicators, acut, sdate, edate)
+  planets.long[, value := cut(value, breaks=seq(breaks[1], breaks[2], by=aspsplit))]
+  freq <- reportUpDownsFreq(sp, indicators, aspsplit, sdate, edate)
+  freq[, variable := substr(variable, 1, 4)]
   aspects.daily.freq <- merge(planets.long, freq, by=c('variable', 'value'))
+  # Add the orbs & aspects
+  aspects.daily.freq <- merge(aspects.daily.freq, planets.long.asps, by=c('Date', 'variable'))
+  aspects.daily.freq <- merge(aspects.daily.freq, planets.long.orbs, by=c('Date', 'variable'))
 
   # Declinations
   indicators <- c(planetsDecCols, declinationCompositeIndicators())
   planets.long <- melt(planets, id.var=c('Date'), measure.var=indicators)
   planets.long[, rvalue := value]
   planets.long[, type := 'declination']
-  planets.long[, value := cut(value, breaks=seq(breaks[1], breaks[2], by=dcut))]
-  freq <- reportUpDownsFreq(sp, indicators, dcut, sdate, edate)
+  planets.long[, value := cut(value, breaks=seq(breaks[1], breaks[2], by=decsplit))]
+  freq <- reportUpDownsFreq(sp, indicators, decsplit, sdate, edate)
   declinations.freq <- merge(planets.long, freq, by=c('variable', 'value'))
+  declinations.freq[, asp := NA]
+  declinations.freq[, orb := NA]
+  # Use same cols order as pevious two tables
+  declinations.freq <- declinations.freq[, colnames(aspects.daily.freq), with=F]
 
   # TODO: longitude indicators
 
   # combine rows
   daily.freq <- rbind(siglon.aspects.daily.freq, aspects.daily.freq, declinations.freq)
+  setkey(daily.freq, Date)
   return(daily.freq)
 }
 
-# Usage: printDailySignificantIndicators(daily.freq, "2014-04-01", "2014-05-01", 0.05)
-printDailySignificantIndicators <- function(daily.freq, sdate, edate, threshold) {
+# Usage: printDailySignificantIndicators('dailyf_AXP', daily.freq, '2001-01-01', '2015-01-01', 0.60, '>=', 'spaspect|aspect|declination', 'sig', 100, T)
+printDailySignificantIndicators <- function(outfile, daily.freq, sdate, edate, th, op, ft, field='sig', masig, doplot=F) {
   printDay <- function(daily.freq.day, row.by) {
     cat("------------------------------", as.character(row.by[[1]]), "------------------------------\n")
     print(as.data.frame(daily.freq.day))
     print(colMeans(daily.freq.day[, 5:10, with=F]))
+    cat("\t###", daily.freq.aggr[Date == as.Date(row.by[[1]]), V1], "\n")
     return(list())
   }
 
-  setkey(daily.freq, Date)
-  daily.freq[Date >= as.Date(sdate) & Date < as.Date(edate) & abs(relsig) >= threshold, printDay(.SD, .BY), by=as.character(Date)]
-}
-
-# Usage: analizeIndicatorCorrelation(daily.freq, "stocks/AXP", 20, 50, 0.06, '>=', 'declination', 'relsig', 100, T)
-analizeIndicatorCorrelation <- function(daily.freq, securityfile, masl, mafs, th, op, ft, field='relsig', masig=50, doplot=F, browse=F) {
+  # Redirect output
+  sink(npath(paste("~/trading/predict/", outfile, ".txt", sep='')), append=F)
+  # Filter the daily frequencies patterns
   daily.freq.filt <- daily.freq[eval(parse(text=paste('abs(get(field))', op, 'th'))),]
   if (ft != '') daily.freq.filt <- daily.freq.filt[grep(ft, type)]
-  sig <- daily.freq.filt[, mean(get(field)), by=Date]
-  security <- mainOpenSecurity(securityfile, masl, mafs, "%Y-%m-%d", "2002-01-01")
-  sig.sec <- merge(security, sig, by='Date')
-  sig.sec[, V1 := SMA(V1, masig)]
-  sig.sec.long <- melt(sig.sec, variable.name='type', value.name='value', measure.var=c('V1', 'MidMAS'))
-  sigcor <- sig.sec[, cor(MidMAS, V1, use="pairwise", method='spearman')]
+  daily.freq.filt <- daily.freq.filt[Date >= as.Date(sdate) & Date < as.Date(edate),]
+  # Calculate aggregated significance with SMA
+  daily.freq.aggr <- daily.freq.filt[, mean(get(field)), by=Date]
+  daily.freq.aggr[, V1 := SMA(V1, masig)]
+  # Print the daily report
+  daily.freq.filt[, printDay(.SD, .BY), by=as.character(Date)]
+  sink()
+
+  if (doplot) {
+    ggplot(data=daily.freq.aggr) + geom_line(aes(x=Date, y=V1))
+  }
+}
+
+# Usage: analizeIndicatorCorrelation(daily.freq, psl$security, "2001-01-01", "2015-01-01", 100, 0.55, '>=', 'spaspect|aspect|declination', 'sig', 50, T)
+analizeIndicatorCorrelation <- function(daily.freq, securityorig, sdate, edate, masl, th, op, ft, field='sig', masig=50, doplot=F, browse=F) {
+  daily.freq.filt <- daily.freq[eval(parse(text=paste('abs(get(field))', op, 'th'))),]
+  if (ft != '') daily.freq.filt <- daily.freq.filt[grep(ft, type)]
+  daily.freq.filt <- daily.freq.filt[Date >= as.Date(sdate) & Date < as.Date(edate),]
+  daily.freq.aggr <- daily.freq.filt[, mean(get(field)), by=Date]
+  daily.freq.aggr[, V1 := SMA(V1, masig)]
+  security <- copy(securityorig)
+  security[, MidMAS := SMA(Mid, masl)]
+  daily.freq.aggr.sec <- merge(security, daily.freq.aggr, by='Date')
+  daily.freq.a.sec.long <- melt(daily.freq.aggr.sec, variable.name='type', value.name='value', measure.var=c('V1', 'MidMAS'))
+  sigcor <- daily.freq.aggr.sec[, cor(MidMAS, V1, use="pairwise", method='spearman')]
   print(sigcor)
 
   if (browse) {
@@ -1418,8 +1520,6 @@ analizeIndicatorCorrelation <- function(daily.freq, securityfile, masl, mafs, th
   }
 
   if (doplot) {
-    ggplot(data=sig.sec.long[Date >= as.Date("2000-01-01") & Date <= as.Date("2016-01-01"),]) +
-    geom_line(aes(x=Date, y=value)) +
-    facet_grid(type ~ ., scale='free')
+    ggplot(data=daily.freq.a.sec.long) + geom_line(aes(x=Date, y=value)) + facet_grid(type ~ ., scale='free')
   }
 }
