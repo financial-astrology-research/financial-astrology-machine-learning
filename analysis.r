@@ -984,6 +984,8 @@ processGetSymbol <- function(symbol) {
       symbol.df <- getSymbols(symbol, src="yahoo", from=startDate, env=NULL, return.class='data.frame')
       filename <- paste('./stocks/', symbol, ".csv", sep='')
       symbol.df <- cbind(rownames(symbol.df), symbol.df)
+      # Adjust the prices for splits / dividends
+      symbol.df[, 2:7] <- adjustOHLC(symbol.df[, 2:7], use.Adjusted=T)
       names(symbol.df) <- c('Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'Adj Close')
       write.csv(symbol.df, file=filename, row.names=F)
       cat("Sucessfully saved the stock data to ", filename, "\n")
