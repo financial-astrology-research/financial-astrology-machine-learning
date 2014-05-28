@@ -1262,6 +1262,7 @@ reportPeakValleyFreq <- function(sp, indicators, span, width, breaks=c(-360, 360
   return(frequencyCalculation(pv, pvi$peaks, pvi$valleys, indicators, width, breaks))
 }
 
+# Usage: reportUpDownsFreq(sp, indicators, 10, "1970-01-01", "2001-01-01")
 reportUpDownsFreq <- function(sp, indicators, width, sdate, edate, breaks=c(-360, 360)) {
   # Split the training data
   sp <- sp[Date >= as.Date(sdate) & Date < as.Date(edate),]
@@ -1270,16 +1271,23 @@ reportUpDownsFreq <- function(sp, indicators, width, sdate, edate, breaks=c(-360
   return(frequencyCalculation(sp, pvi$ups, pvi$downs, indicators, width, breaks))
 }
 
-frequencyCalculation <- function(sp, iup, idown, indicators, width, breaks=c(-360, 360)) {
+frequencyCalculation <- function(sp, iup, idown, indicators, wcut, breaks=c(-360, 360)) {
   pv <- copy(sp)
   # identify peaks & valleys
   pv[iup, type := 'peaks']
   pv[idown, type := 'valleys']
   pv <- pv[!is.na(type), c(indicators, 'type'), with=F]
-  # Convert the continuos values to cut factors
-  pv[, c(indicators) := lapply(.SD, function(x) cut(x, breaks=seq(breaks[1], breaks[2], by=width))), .SDcols=indicators]
+
+  if (wcut != 0) {
+    # if wcut is zero then we expect a factors indicators
+    # Convert the continuos values to cut factors
+    pv[, c(indicators) := lapply(.SD, function(x) cut(x, breaks=seq(breaks[1], breaks[2], by=wcut))), .SDcols=indicators]
+  }
+
   # Calculate the frequencies
   pv <- melt(pv, id.var=c('type'), measure.var=indicators)
+  # Remove NAS
+  pv <- pv[!is.na(value),]
   freq <- pv[, data.table(table(value, type)), by=c('variable')]
   freq[, relFreq := prop.table(N), by=c('variable', 'value')]
   # join peaks & valleys cols in same rows
