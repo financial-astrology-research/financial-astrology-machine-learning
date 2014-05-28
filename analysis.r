@@ -1236,7 +1236,7 @@ selectCols <- function(cols, usepat, ignpat) {
   return(cols)
 }
 
-indicatorPeakValleyHist <- function(sp, indicator, span, width, ylim, ybreak) {
+indicatorPeakValleyHist <- function(sp, indicator, span, wcut, ylim, ybreak) {
   pvi <- idxPeaksMiddleValleys(sp, span)
   ipeaks <- sp[pvi$peaks,][[indicator]]
   ivalleys <- sp[pvi$valleys,][[indicator]]
@@ -1247,28 +1247,28 @@ indicatorPeakValleyHist <- function(sp, indicator, span, width, ylim, ybreak) {
   pv <- melt(pv, variable.name='type', value.name='value', measure.var=c('peaks', 'valleys', 'middle'))
   #grid.arrange(p1, p2, ncol=2, main = paste("Peaks & Valleys", indicator, "hist", sep=' '))
   p <- ggplot(pv, aes(x = value)) +
-  geom_histogram(binwidth = width) +
+  geom_histogram(binwidth = wcut) +
   scale_y_continuous(breaks=seq(1, 100, by=2)) +
-  scale_x_continuous(breaks=seq(ybreak[1], ybreak[2], by=width), limits=ylim) +
+  scale_x_continuous(breaks=seq(ybreak[1], ybreak[2], by=wcut), limits=ylim) +
   ggtitle(paste("Peaks VS Valleys VS Middle - ", indicator, " - histogram")) +
   facet_grid(. ~ type)
   print(p)
 }
 
-reportPeakValleyFreq <- function(sp, indicators, span, width, breaks=c(-360, 360)) {
+reportPeakValleyFreq <- function(sp, indicators, span, wcut, breaks=c(-360, 360)) {
   # Get peaks and valleys index
   pvi <- idxPeaksMiddleValleys(sp, span)
   pv <- copy(sp)
-  return(frequencyCalculation(pv, pvi$peaks, pvi$valleys, indicators, width, breaks))
+  return(frequencyCalculation(pv, pvi$peaks, pvi$valleys, indicators, wcut, breaks))
 }
 
-# Usage: reportUpDownsFreq(sp, indicators, 10, "1970-01-01", "2001-01-01")
-reportUpDownsFreq <- function(sp, indicators, width, sdate, edate, breaks=c(-360, 360)) {
+# Usage: freq <- reportUpDownsFreq(sp, indicators, 10, "1970-01-01", "2001-01-01")
+reportUpDownsFreq <- function(sp, indicators, wcut, sdate, edate, breaks=c(-360, 360)) {
   # Split the training data
   sp <- sp[Date >= as.Date(sdate) & Date < as.Date(edate),]
   # Get peaks and valleys index
   pvi <- idxUpDowns(sp)
-  return(frequencyCalculation(sp, pvi$ups, pvi$downs, indicators, width, breaks))
+  return(frequencyCalculation(sp, pvi$ups, pvi$downs, indicators, wcut, breaks))
 }
 
 frequencyCalculation <- function(sp, iup, idown, indicators, wcut, breaks=c(-360, 360)) {
@@ -1387,18 +1387,8 @@ buildSignificantLongitudesAspects <- function(planets, security, degsplit, topn,
   return(planets.aspsday)
 }
 
-# planets.aspect.day is build by buildSignificantLongitudesAspects
-# Usage: siglonasps <- significantLongitudeAspects(planets, security, "1970-01-01", "2001-01-01", 6, 15, 20)
-significantLongitudeAspects <- function(planets.aspsday, security, sdate, edate, degsplit, topn, aspsplit, clear=F) {
-  sp <- merge(planets.aspsday, security, by=c('Date'))
-  cols <- colnames(sp)
-  indicators <- cols[grep('DIS.', cols)]
-  freq <- reportUpDownsFreq(sp, indicators, aspsplit, sdate, edate)
-  return(freq)
-}
-
-# Usage: daily.freq <- dailySignificantIndicators(planets, security, "1970-01-01", "2001-01-01", 6, 10, 10, 5)
-dailySignificantIndicators <- function(planets, security, sdate, edate, degsplit, topn, aspsplit, decsplit, clear=F, breaks=c(-360, 360)) {
+# Usage: daily.freq <- dailySignificantCutIndicators(planets, security, "1970-01-01", "2001-01-01", 6, 10, 10, 5)
+dailySignificantCutIndicators <- function(planets, security, sdate, edate, degsplit, topn, aspsplit, decsplit, clear=F, breaks=c(-360, 360)) {
   # Significant points aspects
   planets.aspsday <- buildSignificantLongitudesAspects(planets, security, degsplit, topn, T, clear)
   cols <- colnames(planets.aspsday)
@@ -1422,7 +1412,8 @@ dailySignificantIndicators <- function(planets, security, sdate, edate, degsplit
   # Set indicator type
   planets.long[, type := 'spaspect']
   planets.long[, value := cut(value, breaks=seq(breaks[1], breaks[2], by=aspsplit))]
-  freq <- significantLongitudeAspects(planets.aspsday, security, sdate, edate, degsplit, topn, aspsplit)
+  sp <- merge(planets.aspsday, security, by=c('Date'))
+  freq <- reportUpDownsFreq(sp, indicators, aspsplit, sdate, edate)
   freq[, variable := paste(substr(variable, 1, 2), substr(variable, 6, 9), sep='')]
   siglon.aspects.daily.freq <- merge(planets.long, freq, by=c('variable', 'value'))
   # Add the orbs & aspects
@@ -1479,6 +1470,41 @@ dailySignificantIndicators <- function(planets, security, sdate, edate, degsplit
   daily.freq <- rbind(siglon.aspects.daily.freq, aspects.daily.freq, declinations.freq)
   setkey(daily.freq, Date)
   return(daily.freq)
+}
+
+# Usage: daily.freq <- dailySignificantAspectsIndicators(planets, security, "1970-01-01", "2001-01-01", 6, 10)
+dailySignificantAspectsIndicators <- function(planets, security, sdate, edate, degsplit, topn, clear=F) {
+  # Significant points aspects
+  planets.aspsday <- buildSignificantLongitudesAspects(planets, security, degsplit, topn, T, clear)
+  cols <- colnames(planets.aspsday)
+  indicators <- cols[grep('ASP.', cols)]
+  # Melt the distances
+  planets.long <- melt(planets.aspsday, id.var=c('Date'), measure.var=indicators)
+  planets.long[, variable := paste(substr(variable, 1, 2), substr(variable, 6, 9), sep='')]
+  planets.long <- planets.long[!is.na(value),]
+  planets.long <- planets.long[, value := as.factor(value)]
+  setkeyv(planets.long, c('Date', 'variable'))
+  # Melt the aspects
+  planets.long.asps <- melt(planets.aspsday, id.var=c('Date'), measure.var=cols[grep('ASP.', cols)])
+  planets.long.asps[, variable := paste(substr(variable, 1, 2), substr(variable, 6, 9), sep='')]
+  setnames(planets.long.asps, c('Date', 'variable', 'asp'))
+  setkeyv(planets.long.asps, c('Date', 'variable'))
+  # Melt the orbs
+  planets.long.orbs <- melt(planets.aspsday, id.var=c('Date'), measure.var=cols[grep('ORB.', cols)])
+  planets.long.orbs[, variable := paste(substr(variable, 1, 2), substr(variable, 6, 9), sep='')]
+  setnames(planets.long.orbs, c('Date', 'variable', 'orb'))
+  setkeyv(planets.long.orbs, c('Date', 'variable'))
+  # Calculate frequencies
+  sp <- merge(planets.aspsday, security, by=c('Date'))
+  freq <- reportUpDownsFreq(sp, indicators, 0, sdate, edate)
+  freq[, variable := paste(substr(variable, 1, 2), substr(variable, 6, 9), sep='')]
+  siglon.aspects.daily.freq <- merge(planets.long, freq, by=c('variable', 'value'))
+  # Add the orbs & aspects
+  siglon.aspects.daily.freq <- merge(siglon.aspects.daily.freq, planets.long.asps, by=c('Date', 'variable'))
+  siglon.aspects.daily.freq <- merge(siglon.aspects.daily.freq, planets.long.orbs, by=c('Date', 'variable'))
+
+  setkey(siglon.aspects.daily.freq, Date)
+  return(siglon.aspects.daily.freq)
 }
 
 # Usage: printDailySignificantIndicators('dailyf_AXP', daily.freq, '2001-01-01', '2015-01-01', 0.60, '>=', 'spaspect|aspect|declination', 'sig', 100, T)
