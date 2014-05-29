@@ -1062,6 +1062,7 @@ idxUpDowns <- function(sp) {
   wups <- which(sp$Eff=='up')
   wdowns <- which(sp$Eff=='down')
   maxlength <- ifelse(length(wups) < length(wdowns), length(wups), length(wdowns))
+  # TODO: test with more data
   totake <- round(maxlength * 0.5)
   # Choose 50% of observations of each group
   pvi <- data.table(cbind(ups=sample(wups, totake), downs=sample(wdowns, totake)))
