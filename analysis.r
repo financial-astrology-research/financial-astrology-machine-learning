@@ -1577,9 +1577,10 @@ printDailySignificantIndicators <- function(outfile, daily.freq, sdate, edate, t
   }
 }
 
-# Usage: analizeIndicatorCorrelation(daily.freq, psl$security, "2001-01-01", "2015-01-01", 100, 0.55, '>=', 'spaspect|aspect|declination', 'sig', 50, T)
-analizeIndicatorCorrelation <- function(daily.freq, securityorig, sdate, edate, masl, th, op, ft, field='sig', masig=50, doplot=F, align=0, browse=F) {
-  daily.freq.filt <- daily.freq[eval(parse(text=paste('abs(get(field))', op, 'th'))),]
+# Usage: analizeIndicatorCorrelation(daily.freq, psl$security, "2001-01-01", "2015-01-01", 100, 'spaspect|aspect|declination', 'sig', 50, T)
+# analizeIndicatorCorrelation(daily.freq[value %in% c(0, 90, 180) & abs(sig) >= 0.6,], psl$security, "2001-01-01", "2015-01-01", 50, 'spaspect', 'sig', 50, T)
+analizeIndicatorCorrelation <- function(daily.freq, securityorig, sdate, edate, masl, ft, field='sig', masig=50, doplot=F, align=0, browse=F) {
+  daily.freq.filt <- daily.freq
   if (ft != '') daily.freq.filt <- daily.freq.filt[grep(ft, type)]
   daily.freq.filt <- daily.freq.filt[Date >= as.Date(sdate) & Date < as.Date(edate),]
   daily.freq.aggr <- daily.freq.filt[, mean(get(field)), by=Date]
