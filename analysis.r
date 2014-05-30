@@ -1325,6 +1325,67 @@ buildSignificantLongitudes <- function(planets, security, degsplit) {
   return(freq)
 }
 
+calculatePointsPlanetsAspects <- function(points.planets, fwide=F) {
+  loncols <- colnames(points.planets)
+  loncols <- loncols[grep('^..LON$', loncols)]
+
+  # build colnames based on the existing planets
+  planetsLonDisCols <- str_replace(loncols, 'LON', 'DIS')
+  planetsLonAspCols <- str_replace(loncols, 'LON', 'ASP')
+  planetsLonOrbCols <- str_replace(loncols, 'LON', 'ORB')
+
+  # Calculate lon / planets distance
+  for (curcol in planetsLonDisCols) {
+    planetcol <- paste(substr(curcol, 1, 2), 'LON', sep='')
+    points.planets[, c(curcol) := lon - get(planetcol)]
+  }
+
+  # Normalize to 180 degrees range
+  points.planets[, c(planetsLonDisCols) := lapply(.SD, normalizeDistance), .SDcols=planetsLonDisCols]
+
+  # Calculate the points.planets & orbs
+  orbsmatrix <- matrix(deforbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
+  points.planets[, c(planetsLonAspCols) := lapply(.SD, calculateAspects, cusorbs=orbsmatrix), .SDcols=planetsLonDisCols]
+  points.planets[, c(planetsLonOrbCols) := lapply(.SD, calculateAspectOrbs, cusorbs=orbsmatrix), .SDcols=planetsLonDisCols]
+  #siglons[Date == as.Date('2014-05-21'), c('Date', 'lon', planetsLonAspCols), with=F]
+
+  # Format wide all the significant point points.planets
+  if (fwide) {
+    points.planets.wide <- data.table(Date=unique(points.planets$Date))
+    for (curcol in unique(points.planets$lon)) {
+      points.planets.cur <- points.planets[lon == curcol, c('Date', planetsLonDisCols, planetsLonAspCols, planetsLonOrbCols), with=F]
+      curcolnames <- paste(c(planetsLonDisCols, planetsLonAspCols, planetsLonOrbCols), '.', curcol, sep='')
+      setnames(points.planets.cur, c('Date', curcolnames))
+      points.planets.wide <- merge(points.planets.wide, points.planets.cur, by=c('Date'))
+    }
+    points.planets <- points.planets.wide
+  }
+
+  return(points.planets)
+}
+
+# Calculate transits to natal position (symbol incorporation chart) aspects
+# Usage: mainBuildNatalLongitudeAspects('AXP', planets)
+mainBuildNatalLongitudeAspects <- function(symbol, planets, fwide=F) {
+  # open the stocks incorporation date planets positions
+  natalfile <- npath(paste("~/trading/charts/stocksinc.tsv", sep=""))
+  natal <- fread(natalfile, sep="\t", na.strings="", verbose = F)
+  loncols <- colnames(natal)
+  loncols <- loncols[grep('^..LON$', loncols)]
+  natal.long <- melt(natal, id.var=c('Symbol'), measure.var=loncols)
+  natal.symbol <- natal.long[Symbol == symbol,]
+  setnames(natal.symbol, c('Symbol', 'variable', 'lon'))
+
+  # extract only the planets longitudes
+  planets <- planets[, c('Date', planetsLonCols), with=F]
+  # cartesian join
+  natal.symbol.planets <- CJDT(natal.symbol, planets)
+  # calculate aspects
+  planets.natal.aspsday <- calculatePointsPlanetsAspects(natal.symbol.planets, fwide)
+
+  return(planets.natal.aspsday)
+}
+
 # Usage: aspects.day <- mainBuildSignificantLongitudesAspects(planets, security, 4, 10, F)
 mainBuildSignificantLongitudesAspects <- function(planets, security, degsplit, topn, fwide=F) {
   # leave only the longitudes
@@ -1336,38 +1397,8 @@ mainBuildSignificantLongitudesAspects <- function(planets, security, degsplit, t
   siglons <- head(siglons, topn)
   # cartesian join
   planets.aspsday <- CJDT(siglons, planets)
-
-  # build colnames based on the existing planets
-  planetsLonDisCols <- str_replace(loncols, 'LON', 'DIS')
-  planetsLonAspCols <- str_replace(loncols, 'LON', 'ASP')
-  planetsLonOrbCols <- str_replace(loncols, 'LON', 'ORB')
-
-  # Calculate lon / planets distance
-  for (curcol in planetsLonDisCols) {
-    planetcol <- paste(substr(curcol, 1, 2), 'LON', sep='')
-    planets.aspsday[, c(curcol) := lon - get(planetcol)]
-  }
-
-  # Normalize to 180 degrees range
-  planets.aspsday[, c(planetsLonDisCols) := lapply(.SD, normalizeDistance), .SDcols=planetsLonDisCols]
-
-  # Calculate the planets.aspsday & orbs
-  orbsmatrix <- matrix(deforbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
-  planets.aspsday[, c(planetsLonAspCols) := lapply(.SD, calculateAspects, cusorbs=orbsmatrix), .SDcols=planetsLonDisCols]
-  planets.aspsday[, c(planetsLonOrbCols) := lapply(.SD, calculateAspectOrbs, cusorbs=orbsmatrix), .SDcols=planetsLonDisCols]
-  #siglons[Date == as.Date('2014-05-21'), c('Date', 'lon', planetsLonAspCols), with=F]
-
-  # Format wide all the significant point planets.aspsday
-  if (fwide) {
-    planets.aspsday.wide <- data.table(Date=planets$Date)
-    for (curcol in unique(planets.aspsday$lon)) {
-      planets.aspsday.cur <- planets.aspsday[lon == curcol, c('Date', planetsLonDisCols, planetsLonAspCols, planetsLonOrbCols), with=F]
-      curcolnames <- paste(c(planetsLonDisCols, planetsLonAspCols, planetsLonOrbCols), '.', curcol, sep='')
-      setnames(planets.aspsday.cur, c('Date', curcolnames))
-      planets.aspsday.wide <- merge(planets.aspsday.wide, planets.aspsday.cur, by=c('Date'))
-    }
-    planets.aspsday <- planets.aspsday.wide
-  }
+  # calculate aspects
+  planets.aspsday <- calculatePointsPlanetsAspects(planets.aspsday, fwide)
 
   return(planets.aspsday)
 }
