@@ -1504,35 +1504,49 @@ dailySignificantCutIndicators <- function(planets, security, sdate, edate, degsp
   return(daily.freq)
 }
 
-# Usage: daily.freq <- dailySignificantAspectsIndicators(planets, security, "1970-01-01", "2001-01-01", 6, 10)
-dailySignificantAspectsIndicators <- function(planets, security, sdate, edate, degsplit, topn, clear=F) {
-  # Significant points aspects
-  planets.aspsday <- buildSignificantLongitudesAspects(planets, security, degsplit, topn, T, clear)
-  cols <- colnames(planets.aspsday)
+# build the daily planets longitude aspects with frequencies
+buildLongitudeAspectsFrequencies <- function(points.planets, security, sdate, edate) {
+  cols <- colnames(points.planets)
   indicators <- cols[grep('ASP.', cols)]
   # Melt the distances
-  planets.long <- melt(planets.aspsday, id.var=c('Date'), measure.var=indicators)
+  planets.long <- melt(points.planets, id.var=c('Date'), measure.var=indicators)
   planets.long[, type := 'spaspect']
   planets.long[, variable := paste(substr(variable, 1, 2), substr(variable, 6, 9), sep='')]
   planets.long <- planets.long[!is.na(value),]
   planets.long <- planets.long[, value := as.factor(value)]
   setkeyv(planets.long, c('Date', 'variable'))
   # Melt the orbs
-  planets.long.orbs <- melt(planets.aspsday, id.var=c('Date'), measure.var=cols[grep('ORB.', cols)])
+  planets.long.orbs <- melt(points.planets, id.var=c('Date'), measure.var=cols[grep('ORB.', cols)])
   planets.long.orbs[, variable := paste(substr(variable, 1, 2), substr(variable, 6, 9), sep='')]
   setnames(planets.long.orbs, c('Date', 'variable', 'orb'))
   setkeyv(planets.long.orbs, c('Date', 'variable'))
   # Calculate frequencies
-  sp <- merge(planets.aspsday, security, by=c('Date'))
+  sp <- merge(points.planets, security, by=c('Date'))
   freq <- reportUpDownsFreq(sp, indicators, 0, sdate, edate)
   freq[, variable := paste(substr(variable, 1, 2), substr(variable, 6, 9), sep='')]
-  siglon.aspects.daily.freq <- merge(planets.long, freq, by=c('variable', 'value'))
+  aspects.daily.freq <- merge(planets.long, freq, by=c('variable', 'value'))
   # Add the orbs & aspects
-  siglon.aspects.daily.freq <- merge(siglon.aspects.daily.freq, planets.long.orbs, by=c('Date', 'variable'))
-  siglon.aspects.daily.freq[, orbdif := round(orb - Lag(orb), digits=2), by=c('variable', 'value')]
+  aspects.daily.freq <- merge(aspects.daily.freq, planets.long.orbs, by=c('Date', 'variable'))
+  aspects.daily.freq[, orbdif := round(orb - Lag(orb), digits=2), by=c('variable', 'value')]
+  setkey(aspects.daily.freq, Date)
 
-  setkey(siglon.aspects.daily.freq, Date)
-  return(siglon.aspects.daily.freq)
+  return(aspects.daily.freq)
+}
+
+# Usage: daily.freq <- dailySignificantAspectsIndicators(planets, security, "1970-01-01", "2001-01-01", 6, 10)
+dailySignificantAspectsIndicators <- function(planets, security, sdate, edate, degsplit, topn, clear=F) {
+  # Significant points aspects
+  points.planets <- buildSignificantLongitudesAspects(planets, security, degsplit, topn, T, clear)
+  aspects.daily.freq <- buildLongitudeAspectsFrequencies(points.planets, security, sdate, edate)
+  return(aspects.daily.freq)
+}
+
+# Usage: daily.freq <- dailyNatalAspectsIndicators(symbol, planets, security, "1970-01-01", "2001-01-01")
+dailyNatalAspectsIndicators <- function(symbol, planets, security, sdate, edate, clear=F) {
+  # Significant points aspects
+  points.planets <- mainBuildNatalLongitudeAspects(symbol, planets, T)
+  aspects.daily.freq <- buildLongitudeAspectsFrequencies(points.planets, security, sdate, edate)
+  return(aspects.daily.freq)
 }
 
 # Usage: printDailySignificantIndicators('dailyf_AXP', daily.freq, '2001-01-01', '2015-01-01', 0.60, '>=', 'spaspect|aspect|declination', 'sig', 100, T)
