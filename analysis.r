@@ -1511,19 +1511,19 @@ buildLongitudeAspectsFrequencies <- function(points.planets, security, sdate, ed
   # Melt the distances
   planets.long <- melt(points.planets, id.var=c('Date'), measure.var=indicators)
   planets.long[, type := 'spaspect']
-  planets.long[, variable := paste(substr(variable, 1, 2), substr(variable, 6, 9), sep='')]
+  planets.long[, variable := paste(substr(variable, 1, 2), substr(variable, 6, 12), sep='')]
   planets.long <- planets.long[!is.na(value),]
   planets.long <- planets.long[, value := as.factor(value)]
   setkeyv(planets.long, c('Date', 'variable'))
   # Melt the orbs
   planets.long.orbs <- melt(points.planets, id.var=c('Date'), measure.var=cols[grep('ORB.', cols)])
-  planets.long.orbs[, variable := paste(substr(variable, 1, 2), substr(variable, 6, 9), sep='')]
+  planets.long.orbs[, variable := paste(substr(variable, 1, 2), substr(variable, 6, 12), sep='')]
   setnames(planets.long.orbs, c('Date', 'variable', 'orb'))
   setkeyv(planets.long.orbs, c('Date', 'variable'))
   # Calculate frequencies
   sp <- merge(points.planets, security, by=c('Date'))
   freq <- reportUpDownsFreq(sp, indicators, 0, sdate, edate)
-  freq[, variable := paste(substr(variable, 1, 2), substr(variable, 6, 9), sep='')]
+  freq[, variable := paste(substr(variable, 1, 2), substr(variable, 6, 12), sep='')]
   aspects.daily.freq <- merge(planets.long, freq, by=c('variable', 'value'))
   # Add the orbs & aspects
   aspects.daily.freq <- merge(aspects.daily.freq, planets.long.orbs, by=c('Date', 'variable'))
