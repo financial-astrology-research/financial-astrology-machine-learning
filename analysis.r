@@ -621,13 +621,12 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     res.conf.mean <- res.conf[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.d=resMean(matches.d))]
 
     # use appropriate fitness type
-    matches <- round(res.test.mean$correlation, digits=3)
-    correlation <- round(res.test.mean$matches.d, digits=3)
-    matches.total <- round((res.test.mean$correlation + res.conf.mean$correlation) / 2, digits=3)
-    correlation.total <- round((res.test.mean$matches.d + res.conf.mean$matches.d) / 2, digits=3)
+    correlation <- round(res.test.mean$correlation, digits=3)
+    matches <- round(res.test.mean$matches.d, digits=3)
+    correlation.total <- round((res.test.mean$correlation + res.conf.mean$correlation) / 2, digits=3)
+    matches.total <- round((res.test.mean$matches.d + res.conf.mean$matches.d) / 2, digits=3)
     fitness <- (matches + correlation) / 2
     fitness.total <- (matches.total + correlation.total) / 2
-
 
     ckey <- list('fitnessBest')
     fitness.best <- loadCache(key=ckey, dirs=c(args$securityfile), onError='print')
@@ -683,7 +682,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       volatility <- 0
     }
     else {
-      correlation <- planets.pred[!is.na(Mid), cor(predval, Mid, use="pairwise", method='spearman')]
+      correlation <- (planets.pred[!is.na(Mid), cor(predval, Mid, use="pairwise", method='spearman')] * 100)
       volatility <- planets.pred[!is.na(Mid), mean(Mid) / sd(Mid)]
     }
 
