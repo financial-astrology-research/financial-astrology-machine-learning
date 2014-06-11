@@ -845,39 +845,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     if (args$doplot) dev.off()
   }
 
-  testSolutionDebug <- function(planetsfile, securityfile, tsdate, tedate, vsdate, vedate, csdate, cedate, fittype, dateformat, predfile, x) {
-    # build the parameters based on GA indexes
-    co.e = 5+length(deforbs)
-    api.e = co.e+length(aspects)-1
-    ae.e = api.e+length(aspects)
-    pze.e = ae.e+lenZodEnergyMi
-
-    args <-list(securityfile=securityfile,
-                planetsfile=planetsfile,
-                tsdate=tsdate,
-                tedate=tedate,
-                vsdate=vsdate,
-                vedate=vedate,
-                csdate=csdate,
-                cedate=cedate,
-                fittype=fittype,
-                dateformat=dateformat,
-                verbose=F,
-                doplot=F,
-                plotsol=F,
-                mapredsm=x[1],
-                degsplit=x[2],
-                threshold=x[3]/100,
-                energymode=x[4],
-                cusorbs=x[5:(co.e-1)],
-                aspectspolarity=x[co.e:(api.e-1)],
-                aspectsenergy=adjustEnergy(x[api.e:(ae.e-1)]),
-                planetszodenergy=adjustEnergy(x[ae.e:(pze.e-1)]))
-
-    if (!hasArg('dateformat')) stop("A dateformat is needed.")
-    relativeTrend(args)
-  }
-
   clearCache <- function(path=getCachePath()) {
     answer <- '.'
     allFiles <- system2('lsfs', paste(getCachePath(), "| grep '^file' | awk '{print $2};'"), stdout=T)
