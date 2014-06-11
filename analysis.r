@@ -311,6 +311,23 @@ mainPlanetsVarsSignificance <- function(planets, security) {
   return(significance.full)
 }
 
+clearCache <- function(path=getCachePath()) {
+  answer <- '.'
+  allFiles <- system2('lsfs', paste(getCachePath(), "| grep '^file' | awk '{print $2};'"), stdout=T)
+  while (!(answer %in% c('y', 'n', ''))) {
+    cat(sprintf("Are you really sure you want to delete %d files in '%s'? [y/N]: ", length(allFiles), path))
+    answer <- tolower(readline())
+  }
+  if (answer != 'y') {
+    return(invisible(NULL))
+  }
+  # remove files and count op results
+  removed <- file.remove(allFiles)
+  sucess <- length(removed[removed==TRUE])
+  failed <- length(removed[removed==FALSE])
+  cat(sprintf("%d files had been removed %d failed.\n", sucess, failed))
+}
+
 cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   if (!hasArg('execfunc')) stop("Provide function to execute")
   ptm <- proc.time()
@@ -843,23 +860,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     if (args$doplot) pdf(predfile, width = 11, height = 8, family='Helvetica', pointsize=12)
     relativeTrend(args)
     if (args$doplot) dev.off()
-  }
-
-  clearCache <- function(path=getCachePath()) {
-    answer <- '.'
-    allFiles <- system2('lsfs', paste(getCachePath(), "| grep '^file' | awk '{print $2};'"), stdout=T)
-    while (!(answer %in% c('y', 'n', ''))) {
-      cat(sprintf("Are you really sure you want to delete %d files in '%s'? [y/N]: ", length(allFiles), path))
-      answer <- tolower(readline())
-    }
-    if (answer != 'y') {
-      return(invisible(NULL))
-    }
-    # remove files and count op results
-    removed <- file.remove(allFiles)
-    sucess <- length(removed[removed==TRUE])
-    failed <- length(removed[removed==FALSE])
-    cat(sprintf("%d files had been removed %d failed.\n", sucess, failed))
   }
 
   execfunc <- get(get('execfunc'))
