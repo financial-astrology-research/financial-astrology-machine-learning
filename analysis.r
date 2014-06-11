@@ -564,7 +564,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                              ", aspectsenergy=c(", paste(aspectsenergy, collapse=", "), ")",
                              ", planetszodenergy=c(", paste(planetszodenergy, collapse=", "), ")",
                              ", aspectspolarity=c(", paste(aspectspolarity, collapse=", "), ")",
-                             ", dateformat=", shQuote(dateformat), ", verbose=F", ", doplot=T, plotsol=F", ")\n", sep=""))
+                             ", dateformat=", shQuote(dateformat), ", verbose=F", ", doplot=T, plotsol=F", ", fittype=", shQuote(fittype), ")\n", sep=""))
 
     sout <- paste("system version: ", branch.name, "\n\n", sout, sep="")
     # open planets file
@@ -621,12 +621,25 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     res.conf.mean <- res.conf[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.d=resMean(matches.d))]
 
     # use appropriate fitness type
-    correlation <- round(res.test.mean$correlation, digits=3)
-    matches <- round(res.test.mean$matches.d, digits=3)
-    correlation.total <- round((res.test.mean$correlation + res.conf.mean$correlation) / 2, digits=3)
-    matches.total <- round((res.test.mean$matches.d + res.conf.mean$matches.d) / 2, digits=3)
-    fitness <- (matches + correlation) / 2
-    fitness.total <- (matches.total + correlation.total) / 2
+    if (args$fittype == 'correlation') {
+      fitness <- round(res.test.mean$correlation * 100, digits=0)
+      fitness.total <- round(((res.test.mean$correlation + res.conf.mean$correlation) * 100) / 2, digits=0)
+    }
+    else if (args$fittype == 'matches') {
+      fitness <- round(res.test.mean$matches.d, digits=0)
+      fitness.total <- round((res.test.mean$matches.d + res.conf.mean$matches.d) / 2, digits=0)
+    }
+    else if (args$fittype == 'matcor') {
+      correlation <- round(res.test.mean$correlation, digits=3)
+      matches <- round(res.test.mean$matches.d, digits=3)
+      correlation.total <- round((res.test.mean$correlation + res.conf.mean$correlation) / 2, digits=3)
+      matches.total <- round((res.test.mean$matches.d + res.conf.mean$matches.d) / 2, digits=3)
+      fitness <- (matches + correlation) / 2
+      fitness.total <- (matches.total + correlation.total) / 2
+    }
+    else {
+      stop("No valid fittype provided")
+    }
 
     ckey <- list('fitnessBest')
     fitness.best <- loadCache(key=ckey, dirs=c(args$securityfile), onError='print')
@@ -746,7 +759,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   relativeTrendFitness <- function(x, securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate,
-                                   dateformat, mapricefs, mapricesl) {
+                                   fittype, dateformat, mapricefs, mapricesl) {
     # build the parameters based on GA indexes
     co.e = 5+length(deforbs)
     api.e = co.e+length(aspects)-1
@@ -763,6 +776,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 cedate=cedate,
                 mapricefs=mapricefs,
                 mapricesl=mapricesl,
+                fittype=fittype,
                 dateformat=dateformat,
                 verbose=F,
                 doplot=F,
@@ -782,7 +796,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     x / 10
   }
 
-  optimizeRelativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate,
+  optimizeRelativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, fittype,
                                     mapricefs, mapricesl, dateformat) {
     cat("---------------------------- Initialize optimization ----------------------------------\n\n")
     orbsmin <- rep(0, length(deforbs))
@@ -811,7 +825,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
        popSize=1000, elitism = 100, pcrossover = 0.9, pmutation = 0.1,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
        securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate,
-       vedate=vedate, csdate=csdate, cedate=cedate, mapricefs=mapricefs, mapricesl=mapricesl, dateformat=dateformat)
+       vedate=vedate, csdate=csdate, cedate=cedate, fittype=fittype, mapricefs=mapricefs, mapricesl=mapricesl, dateformat=dateformat)
 
     if (exists('sinkfile', envir=parent.frame())) {
       sink()
@@ -829,6 +843,39 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     if (args$doplot) pdf(predfile, width = 11, height = 8, family='Helvetica', pointsize=12)
     relativeTrend(args)
     if (args$doplot) dev.off()
+  }
+
+  testSolutionDebug <- function(planetsfile, securityfile, tsdate, tedate, vsdate, vedate, csdate, cedate, fittype, dateformat, predfile, x) {
+    # build the parameters based on GA indexes
+    co.e = 5+length(deforbs)
+    api.e = co.e+length(aspects)-1
+    ae.e = api.e+length(aspects)
+    pze.e = ae.e+lenZodEnergyMi
+
+    args <-list(securityfile=securityfile,
+                planetsfile=planetsfile,
+                tsdate=tsdate,
+                tedate=tedate,
+                vsdate=vsdate,
+                vedate=vedate,
+                csdate=csdate,
+                cedate=cedate,
+                fittype=fittype,
+                dateformat=dateformat,
+                verbose=F,
+                doplot=F,
+                plotsol=F,
+                mapredsm=x[1],
+                degsplit=x[2],
+                threshold=x[3]/100,
+                energymode=x[4],
+                cusorbs=x[5:(co.e-1)],
+                aspectspolarity=x[co.e:(api.e-1)],
+                aspectsenergy=adjustEnergy(x[api.e:(ae.e-1)]),
+                planetszodenergy=adjustEnergy(x[ae.e:(pze.e-1)]))
+
+    if (!hasArg('dateformat')) stop("A dateformat is needed.")
+    relativeTrend(args)
   }
 
   clearCache <- function(path=getCachePath()) {
