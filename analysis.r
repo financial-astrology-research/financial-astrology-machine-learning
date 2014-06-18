@@ -501,7 +501,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   # aggregate the daily energy and apply it with the daily significance energy
   # to calculate the final prediction
-  calculatePrediction <- function(significance.days, energy.days, energymode) {
+  calculatePrediction <- function(significance.days, energy.days) {
     energy.sum <- energy.days[, list(sum(up), sum(down)), by=list(Date, origin)]
     energy.sum[, Date := as.character(Date)]
     setnames(energy.sum, c('Date', 'origin', 'up', 'down'))
@@ -509,31 +509,14 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     significance.days[, Date := as.character(Date)]
     significance.days <- merge(significance.days, energy.sum, by=c('Date', 'origin'))
     setkeyv(significance.days, c('Date', 'Eff'))
+    # Multiply by zodiacal energy for each significant row
     significance.days[, c('up', 'down') := list(up * abs(energy), down * abs(energy))]
-
-    if (energymode == 1) {
-      # add more energy to the lower part based on bad aspects and to the upper part with good aspects
-      # energy influence by count
-      significance.days[Eff == 'up', c('energy1', 'energy2') := list(down, up)]
-      significance.days[Eff == 'down', c('energy1', 'energy2') := list(up, down)]
-    }
-    else if (energymode == 2) {
-      # add more energy to the lower part based on good aspects and to the upper part with bad aspects
-      # energy influence by countu
-      significance.days[Eff == 'down', c('energy1', 'energy2') := list(down, up)]
-      significance.days[Eff == 'up', c('energy1', 'energy2') := list(up, down)]
-    }
-    else {
-      stop("No valid energy mode was provided.")
-    }
-
     # to prevent division by zero
-    significance.days[, c('PE1', 'PE2') := list(V1 * energy1, V2 * energy2)]
-    prediction <- significance.days[, list(down = sum(PE1)/sum(energy1), up = sum(PE2)/sum(energy2)), by='Date']
+    prediction <- significance.days[, list(down = sum(down), up = sum(up)), by='Date']
     prediction[is.nan(down), down := 0]
     prediction[is.nan(up), up := 0]
     prediction[, Date := as.Date(Date, format="%Y-%m-%d")]
-    prediction[, predRaw := (up-down) * 100]
+    prediction[, predRaw := (up-down)]
     return(prediction)
   }
 
@@ -576,7 +559,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                              ", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate),
                              ", mapredsm=", mapredsm, ", mapricefs=", mapricefs, ", mapricesl=", mapricesl,
                              ", degsplit=", degsplit, ", threshold=", threshold,
-                             ", energymode=", energymode,
                              ", cusorbs=c(", paste(cusorbs, collapse=", "), ")",
                              ", aspectsenergy=c(", paste(aspectsenergy, collapse=", "), ")",
                              ", planetszodenergy=c(", paste(planetszodenergy, collapse=", "), ")",
@@ -607,9 +589,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # Daily aspects energy
     energy.days <- dayAspectsEnergy(planets.pred, aspectspolaritymatrix, aspectsenergymatrix,
                                     planetszodenergymatrix, orbsmatrix)
-
-    # calculate prediction
-    prediction <- calculatePrediction(significance.daysen, energy.days, args$energymode)
+    # Calculate prediction
+    prediction <- calculatePrediction(significance.daysen, energy.days)
     planets.pred <- planets.pred[prediction]
     planets.pred <- security[planets.pred]
     setkeyv(planets.pred, c('Date', 'Year.1'))
@@ -778,7 +759,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   relativeTrendFitness <- function(x, securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate,
                                    fittype, dateformat, mapricefs, mapricesl) {
     # build the parameters based on GA indexes
-    co.e = 5+length(deforbs)
+    co.e = 4+length(deforbs)
     api.e = co.e+length(aspects)-1
     ae.e = api.e+length(aspects)
     pze.e = ae.e+lenZodEnergyMi
@@ -800,8 +781,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 mapredsm=x[1],
                 degsplit=x[2],
                 threshold=x[3]/100,
-                energymode=x[4],
-                cusorbs=x[5:(co.e-1)],
+                cusorbs=x[4:(co.e-1)],
                 aspectspolarity=x[co.e:(api.e-1)],
                 aspectsenergy=adjustEnergy(x[api.e:(ae.e-1)]),
                 planetszodenergy=adjustEnergy(x[ae.e:(pze.e-1)]))
@@ -825,8 +805,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planetzodenergymin <- rep(-30, lenZodEnergyMi)
     planetzodenergymax <- rep(30, lenZodEnergyMi)
 
-    minvals <- c( 2, 1,  0, 1, orbsmin, polaritymin, aspectenergymin, planetzodenergymin)
-    maxvals <- c(10, 5, 20, 2, orbsmax, polaritymax, aspectenergymax, planetzodenergymax)
+    minvals <- c( 2, 1,  0, orbsmin, polaritymin, aspectenergymin, planetzodenergymin)
+    maxvals <- c(10, 5, 20, orbsmax, polaritymax, aspectenergymax, planetzodenergymax)
 
     # Clear the cache directory before start
     clearCache()
