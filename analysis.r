@@ -513,8 +513,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     significance.days[, c('up', 'down') := list(up * abs(energy), down * abs(energy))]
     # to prevent division by zero
     prediction <- significance.days[, list(down = sum(down), up = sum(up)), by='Date']
-    prediction[is.nan(down), down := 0]
-    prediction[is.nan(up), up := 0]
     prediction[, Date := as.Date(Date, format="%Y-%m-%d")]
     prediction[, predRaw := (up-down)]
     return(prediction)
