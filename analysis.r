@@ -19,8 +19,8 @@ maxretry <- 1
 `%ni%` <- Negate(`%in%`)
 planetsBaseCols <- c('SU', 'MO', 'ME', 'VE', 'MA', 'JU', 'NN', 'SA')
 # Aspects and orbs
-aspects            <- c(0,30,60,90,120,150,180)
-deforbs            <- c(8, 5, 5, 8,  5,  5,  8)
+aspects            <- c( 0,30,45,52,60,72,90,103,120,135,144,150,180)
+deforbs            <- c(10, 3, 3, 3, 6, 3,10,  3,  6,  3,  3,  6, 10)
 
 # columns names
 buildPlanetsColsNames <- function(planetsBaseCols) {
@@ -476,11 +476,11 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # TODO: verify that the filtered aspects correspond to the maximum orb
     planets.pred.aspen <- planets.pred.aspen[orb <= orbs['orbs', aspect]]
     # compute the given energy based on the aspect orb distance
-    planets.pred.aspen[, disenergy := energyGrowth(energy, orb)]
+    #planets.pred.aspen[, disenergy := energyGrowth(energy, orb)]
     # set energy up / down based on polarities
-    planets.pred.aspen[polarity == 0, c('up', 'down') := list(0, disenergy)]
-    planets.pred.aspen[polarity == 1, c('up', 'down') := list(disenergy, 0)]
-    planets.pred.aspen[polarity == 2, c('up', 'down') := list(disenergy, disenergy)]
+    planets.pred.aspen[polarity == 0, c('up', 'down') := list(0, energy)]
+    planets.pred.aspen[polarity == 1, c('up', 'down') := list(energy, 0)]
+    planets.pred.aspen[polarity == 2, c('up', 'down') := list(energy, energy)]
 
     return(planets.pred.aspen)
   }
