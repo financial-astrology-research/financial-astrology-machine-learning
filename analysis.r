@@ -745,10 +745,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     # calculate the matches difference
     if (matches.t == 0 && matches.f == 0) {
-      matches.d <- 0
+      matches.d <- as.integer(0)
     }
     else {
-      matches.d <- (matches.t / (matches.t + matches.f)) * 100
+      matches.d <- as.integer((matches.t / (matches.t + matches.f)) * 100)
     }
 
     return(list(correlation=correlation, volatility=volatility, matches.t=matches.t, matches.f=matches.f, matches.d=matches.d))
