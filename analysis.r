@@ -328,6 +328,23 @@ clearCache <- function(path=getCachePath()) {
   cat(sprintf("%d files had been removed %d failed.\n", sucess, failed))
 }
 
+# open a security historic file
+openSecurity <- function(securityfile, mapricefs, mapricesl, dateformat="%Y.%m.%d", sdate) {
+  ckey <- list('openSecurity', securityfile, mapricefs, mapricesl, sdate)
+  security <- loadCache(key=ckey, dirs=c(securityfile), onError='print')
+  if (is.null(security)) {
+    security <- mainOpenSecurity(securityfile, mapricefs, mapricesl, dateformat, sdate)
+    saveCache(security, key=ckey, dirs=c(securityfile))
+    cat("Set openSecurity cache\n")
+  }
+  else {
+    cat("Get openSecurity cache\n")
+  }
+
+  return(security)
+}
+
+# Prediction Moddel with GA optimization
 cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   if (!hasArg('execfunc')) stop("Provide function to execute")
   ptm <- proc.time()
@@ -347,22 +364,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   # If master or HEAD try the tag name
   if (branch.name == 'undefined') {
     branch.name <- getSystemName("describe --tags --exact-match")
-  }
-
-  # open a security historic file
-  openSecurity <- function(securityfile, mapricefs, mapricesl, dateformat="%Y.%m.%d", sdate) {
-    ckey <- list('openSecurity', securityfile, mapricefs, mapricesl, sdate)
-    security <- loadCache(key=ckey, dirs=c(securityfile), onError='print')
-    if (is.null(security)) {
-      security <- mainOpenSecurity(securityfile, mapricefs, mapricesl, dateformat, sdate)
-      saveCache(security, key=ckey, dirs=c(securityfile))
-      cat("Set openSecurity cache\n")
-    }
-    else {
-      cat("Get openSecurity cache\n")
-    }
-
-    return(security)
   }
 
   # process the degsplit for a cloned original planets dt
