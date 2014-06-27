@@ -344,11 +344,8 @@ openSecurity <- function(securityfile, mapricefs, mapricesl, dateformat="%Y.%m.%
   return(security)
 }
 
-# Prediction Moddel with GA optimization
-cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
-  if (!hasArg('execfunc')) stop("Provide function to execute")
-  ptm <- proc.time()
-
+# Get the current git repository branch / tag name
+branchName <- function() {
   # Get the git branch / tag system name
   getSystemName <- function(strparams) {
     tryCatch(system2("git", strparams, stdout=T),
@@ -365,6 +362,15 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   if (branch.name == 'undefined') {
     branch.name <- getSystemName("describe --tags --exact-match")
   }
+
+  return(branch.name)
+}
+
+# Prediction Moddel with GA optimization
+cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
+  if (!hasArg('execfunc')) stop("Provide function to execute")
+  ptm <- proc.time()
+  branch.name <- branchName()
 
   # process the degsplit for a cloned original planets dt
   processPlanetsDegsplit <- function(planetsorig, degsplit) {
