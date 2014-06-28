@@ -49,6 +49,12 @@ buildPlanetsColsNames <- function(planetsBaseCols) {
 
 buildPlanetsColsNames(planetsBaseCols)
 
+# Build a data table unique vector by taking first and last rows plus nrows and ncols
+# faster for performance to build the unique cache key
+dataTableUniqueVector <- function(DT) {
+  return(c(DT[1,], DT[nrow(DT),], nrow(DT), ncol(DT)))
+}
+
 # a function that returns the position of n-th largest
 maxn <- function(x, n) {
   order_x <- order(x, decreasing = TRUE)
@@ -187,7 +193,7 @@ mainProcessPlanetsDegSplit <- function(planetsorig, degsplit) {
   planets[, c(planetsLonGCols) := lapply(.SD, calculateLonGroups, degsplit=degsplit), .SDcols=planetsLonCols]
 }
 
-mainOpenPlanets <- function(planetsfile, cusorbs) {
+mainOpenPlanets <- function(planetsfile, cusorbs, calcasps=T) {
   Date=DateMT4=Year=NULL
   planetsfile <- npath(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""))
   planets <- fread(planetsfile, sep="\t", na.strings="", verbose = F)
@@ -198,28 +204,32 @@ mainOpenPlanets <- function(planetsfile, cusorbs) {
   planets[, wday := format(Date, "%w")]
   setkey(planets, 'Date')
 
-  # calculate longitudinal differences
-  for (curcol in planetsCombLon) {
-    col1 <- paste(substr(curcol, 1, 2), 'LON', sep='')
-    col2 <- paste(substr(curcol, 3, 4), 'LON', sep='')
-    planets[, c(curcol) := get(col1) - get(col2)]
+  # Only calculate transit aspects if needed
+  if (calcasps) {
+    # calculate longitudinal differences
+    for (curcol in planetsCombLon) {
+      col1 <- paste(substr(curcol, 1, 2), 'LON', sep='')
+      col2 <- paste(substr(curcol, 3, 4), 'LON', sep='')
+      planets[, c(curcol) := get(col1) - get(col2)]
+    }
+
+    # Normalize to 180 degrees range
+    planets[, c(planetsCombLon) := lapply(.SD, normalizeDistance), .SDcols=planetsCombLon]
+
+    # calculate aspects for max orbs
+    orbsmatrix <- matrix(cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
+    planets <- processPlanetsAspects(planets, orbsmatrix)
   }
 
-  # Normalize to 180 degrees range
-  planets[, c(planetsCombLon) := lapply(.SD, normalizeDistance), .SDcols=planetsCombLon]
-
-  # calculate aspects for max orbs
-  orbsmatrix <- matrix(cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
-  planets <- processPlanetsAspects(planets, orbsmatrix)
   return(planets)
 }
 
 # Open planets file and handle caching
-openPlanets <- function(planetsfile, cusorbs=deforbs, clear=F) {
+openPlanets <- function(planetsfile, cusorbs=deforbs, calcasps=T, clear=F) {
   ckey <- list(planetsfile, cusorbs)
   planets <- loadCache(key=ckey)
   if (is.null(planets) || clear) {
-    planets <- mainOpenPlanets(planetsfile, cusorbs)
+    planets <- mainOpenPlanets(planetsfile, cusorbs, calcasps)
     saveCache(planets, key=ckey)
     cat("Set openPlanets cache\n")
   }
@@ -375,18 +385,22 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
   # process the daily aspects energy
   dayAspectsEnergy <- function(planets.pred, aspectspolarity, aspectsenergy, zodenergy, sigpenergy, orbs) {
+    # reduce the needed columns
     # melt aspects
-    planets.pred.aspects <- melt(planets.pred, id.var=c('Date', 'lon'), variable.name='origin', value.name='aspect', value.factor=T, measure.var=planetsAspCols, na.rm=T)
+    planets.pred.aspects <- melt(planets.pred, id.var=c('Date', 'lon'), variable.name='origin',
+                                 value.name='aspect', value.factor=T, measure.var=planetsAspCols, na.rm=T)
     # remove ASP from the origin column name
     planets.pred.aspects[, origin := substr(origin, 1, 2)]
 
     # melt orbs
-    planets.pred.orbs <- melt(planets.pred, id.var=c('Date', 'lon'), variable.name='origin', value.name='orb', measure.var=planetsOrbCols)
+    planets.pred.orbs <- melt(planets.pred, id.var=c('Date', 'lon'), variable.name='origin',
+                              value.name='orb', measure.var=planetsOrbCols)
     # remove ORBS from the origin column name
     planets.pred.orbs[, origin := substr(origin, 1, 2)]
 
     # melt longitudes
-    planets.pred.longs <- melt(planets.pred, id.var=c('Date', 'lon'), variable.name='origin', value.name='tlon', measure.var=planetsLonCols)
+    planets.pred.longs <- melt(planets.pred, id.var=c('Date', 'lon'), variable.name='origin',
+                               value.name='tlon', measure.var=planetsLonCols)
     # avoid lon 0 that cause 0 sign when divide celing(0/30)
     planets.pred.longs[tlon == 0, tlon := 1]
     # remove LON from the origin column name
@@ -457,10 +471,12 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     rdates <- as.Date(with(args, c(tsdate, tedate, vsdate, vedate, csdate, cedate)))
     new.fitness.best <- ""
 
-    # open planets file
-    planets <- openPlanets(args$planetsfile, deforbs)
-    # load the security data
+    # open planets file and leave only needed cols for better speed
+    planets <- openPlanets(args$planetsfile, deforbs, calcasps=F)
+    planets <- planets[, c('Date', 'Year', 'wday', planetsLonCols), with=F]
+    # load the security data and leave only needed cols
     security <- with(args, openSecurity(securityfile, mapricefs, mapricesl, dateformat, tsdate))
+    security <- security[, c('Date', 'Year', 'Mid', 'MidMAF', 'MidMAS', 'Eff'), with=F]
     # calculate daily aspects
     aspects.day <- buildSignificantLongitudesAspects(planets, security, 6, rdates[1], rdates[2], 15, F)
     # build significant points vector
@@ -1286,7 +1302,10 @@ mainBuildSignificantLongitudesAspects <- function(planets, security, degsplit, t
 # Calculate aspects for the significant longitude points and cache
 # Usage: aspects.day <- buildSignificantLongitudesAspects(planets, security, 4, 10, F)
 buildSignificantLongitudesAspects <- function(planets, security, degsplit, tsdate, tedate, topn, fwide=F, clear=F) {
-  ckey <- list(planets, security, degsplit, topn, fwide)
+  # To improve cache lookup use first and last rows and the number of rows and cols
+  planetskey <- dataTableUniqueVector(planets)
+  securitykey <- dataTableUniqueVector(security)
+  ckey <- list(planetskey, securitykey, degsplit, topn, fwide)
   planets.aspsday <- loadCache(key=ckey)
   if (is.null(planets.aspsday) || clear) {
     planets.aspsday <- mainBuildSignificantLongitudesAspects(planets, security, degsplit, tsdate, tedate, topn, fwide)
