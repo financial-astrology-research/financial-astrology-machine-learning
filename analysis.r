@@ -721,9 +721,9 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     polaritymax <- rep(1, length(aspects)-1)
     aspectenergymin <- rep(0, length(aspects))
     aspectenergymax <- rep(30, length(aspects))
-    planetzodenergymin <- rep(-30, lenZodEnergyMi)
+    planetzodenergymin <- rep(0, lenZodEnergyMi)
     planetzodenergymax <- rep(30, lenZodEnergyMi)
-    sigpenergymin <- rep(-30, 15)
+    sigpenergymin <- rep(0, 15)
     sigpenergymax <- rep(30, 15)
 
     minvals <- c( 2, 1,  0, orbsmin, polaritymin, aspectenergymin, planetzodenergymin, sigpenergymin)
