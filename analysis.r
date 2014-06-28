@@ -342,10 +342,10 @@ clearCache <- function(path=getCachePath()) {
 # open a security historic file
 openSecurity <- function(securityfile, mapricefs, mapricesl, dateformat="%Y.%m.%d", sdate) {
   ckey <- list('openSecurity', securityfile, mapricefs, mapricesl, sdate)
-  security <- loadCache(key=ckey, dirs=c(securityfile), onError='print')
+  security <- loadCache(key=ckey, onError='print')
   if (is.null(security)) {
     security <- mainOpenSecurity(securityfile, mapricefs, mapricesl, dateformat, sdate)
-    saveCache(security, key=ckey, dirs=c(securityfile))
+    saveCache(security, key=ckey)
     cat("Set openSecurity cache\n")
   }
   else {
@@ -383,37 +383,54 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   ptm <- proc.time()
   branch.name <- branchName()
 
+  # Build a long data table with daily aspects, orbs and longitudes
+  meltedAndMergedDayAspects <- function(aspects.day) {
+    ckey <- list('meltedAndMergedDayAspects', dataTableUniqueVector(aspects.day))
+    aspects.day.long <- loadCache(key=ckey, onError='print')
+
+    if (is.null(aspects.day.long)) {
+      # melt aspects
+      aspects <- melt(aspects.day, id.var=c('Date', 'lon'), variable.name='origin',
+                      value.name='aspect', value.factor=T, measure.var=planetsAspCols, na.rm=T)
+      # remove ASP from the origin column name
+      aspects[, origin := substr(origin, 1, 2)]
+
+      # melt orbs
+      orbs <- melt(aspects.day, id.var=c('Date', 'lon'), variable.name='origin',
+                   value.name='orb', measure.var=planetsOrbCols)
+      # remove ORBS from the origin column name
+      orbs[, origin := substr(origin, 1, 2)]
+
+      # melt longitudes
+      longs <- melt(aspects.day, id.var=c('Date', 'lon'), variable.name='origin',
+                    value.name='tlon', measure.var=planetsLonCols)
+      # avoid lon 0 that cause 0 sign when divide celing(0/30)
+      longs[tlon == 0, tlon := 1]
+      # remove LON from the origin column name
+      longs[, origin := substr(origin, 1, 2)]
+      # Calculate zod signs for each transit planet
+      longs[, tzsign := ceiling(tlon/30)]
+
+      # join aspects & orbs & transit longs
+      aspects.day.long <- merge(aspects, orbs, by=c('Date', 'lon', 'origin'))
+      aspects.day.long <- merge(aspects.day.long, longs, by=c('Date', 'lon', 'origin'))
+      # add up / down energy cols inintially to 0
+      aspects.day.long[, c('up', 'down') := list(0, 0)]
+
+      saveCache(aspects.day.long, key=ckey)
+      cat("Set meltedAndMergedDayAspects cache\n")
+    }
+    else {
+      cat("Get meltedAndMergedDayAspects cache\n")
+    }
+
+    return(aspects.day.long)
+  }
+
   # process the daily aspects energy
   dayAspectsEnergy <- function(planets.pred, aspectspolarity, aspectsenergy, zodenergy, sigpenergy, orbs) {
-    # reduce the needed columns
-    # melt aspects
-    planets.pred.aspects <- melt(planets.pred, id.var=c('Date', 'lon'), variable.name='origin',
-                                 value.name='aspect', value.factor=T, measure.var=planetsAspCols, na.rm=T)
-    # remove ASP from the origin column name
-    planets.pred.aspects[, origin := substr(origin, 1, 2)]
-
-    # melt orbs
-    planets.pred.orbs <- melt(planets.pred, id.var=c('Date', 'lon'), variable.name='origin',
-                              value.name='orb', measure.var=planetsOrbCols)
-    # remove ORBS from the origin column name
-    planets.pred.orbs[, origin := substr(origin, 1, 2)]
-
-    # melt longitudes
-    planets.pred.longs <- melt(planets.pred, id.var=c('Date', 'lon'), variable.name='origin',
-                               value.name='tlon', measure.var=planetsLonCols)
-    # avoid lon 0 that cause 0 sign when divide celing(0/30)
-    planets.pred.longs[tlon == 0, tlon := 1]
-    # remove LON from the origin column name
-    planets.pred.longs[, origin := substr(origin, 1, 2)]
-    # Calculate zod signs for each transit planet
-    planets.pred.longs[, tzsign := ceiling(tlon/30)]
-
-    # join aspects & orbs & transit longs
-    planets.pred.aspen <- merge(planets.pred.aspects, planets.pred.orbs, by=c('Date', 'lon', 'origin'))
-    planets.pred.aspen <- merge(planets.pred.aspen, planets.pred.longs, by=c('Date', 'lon', 'origin'))
-    # add up / down energy cols inintially to 0
-    planets.pred.aspen[, c('up', 'down') := list(0, 0)]
-
+    # convert aspects, orbs and longitudes to long format
+    planets.pred.aspen <- meltedAndMergedDayAspects(planets.pred)
     # Add the aspects polarity
     planets.pred.aspen[, polarity := aspectspolarity['polarity', aspect]]
     # Calculate the transit planet zoodiacal energy
