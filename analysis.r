@@ -538,12 +538,15 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     # Calculate prediction
     prediction <- calculatePrediction(energy.days)
-    planets.pred <- merge(prediction, security, by=c('Date'))
+    # join the security table with prediction
+    planets.pred <- security[prediction]
     # smoth the prediction serie and remove resulting NAS
     planets.pred[, predval := SMA(predRaw, args$mapredsm)]
     planets.pred <- planets.pred[!is.na(predval),]
     # determine a factor prediction response
     planets.pred[, predFactor := cut(predval, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
+    # Add the Year for projected predictions rows
+    planets.pred[is.na(Year), Year := as.character(format(Date, "%Y"))]
 
     # plot solution snippet if doplot is enabled
     if (args$doplot && args$plotsol) {
