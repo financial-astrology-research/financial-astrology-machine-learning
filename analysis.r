@@ -495,7 +495,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     security <- with(args, openSecurity(securityfile, mapricefs, mapricesl, dateformat, tsdate))
     security <- security[, c('Date', 'Year', 'Mid', 'MidMAF', 'MidMAS', 'Eff'), with=F]
     # calculate daily aspects
-    aspects.day <- buildSignificantLongitudesAspects(planets, security, 6, rdates[1], rdates[2], 15, F)
+    aspects.day <- buildSignificantLongitudesAspects(planets, security, 6, rdates[1], rdates[2], args$topn, F)
     # build significant points vector
     sigpoints <- unique(aspects.day$lon)
 
@@ -527,7 +527,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                              ", sigpenergy=c(", paste(sigpenergy, collapse=", "), ")",
                              ", planetszodenergy=c(", paste(planetszodenergy, collapse=", "), ")",
                              ", aspectspolarity=c(", paste(aspectspolarity, collapse=", "), ")",
-                             ", dateformat=", shQuote(dateformat), ", verbose=F", ", doplot=T, plotsol=F", ", fittype=", shQuote(fittype), ")\n", sep=""))
+                             ", dateformat=", shQuote(dateformat), ", verbose=F", ", doplot=T, plotsol=F",
+                             ", fittype=", shQuote(fittype), ", topn=", topn, ")\n", sep=""))
 
     sout <- paste("system version: ", branch.name, "\n\n", sout, sep="")
 
@@ -710,7 +711,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   relativeTrendFitness <- function(x, securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate,
-                                   fittype, dateformat, mapricefs, mapricesl) {
+                                   fittype, dateformat, mapricefs, mapricesl, topn) {
     # build the parameters based on GA indexes
     co.e = 4+length(deforbs)
     api.e = co.e+length(aspects)-1
@@ -728,6 +729,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 cedate=cedate,
                 mapricefs=mapricefs,
                 mapricesl=mapricesl,
+                topn=topn,
                 fittype=fittype,
                 dateformat=dateformat,
                 verbose=F,
@@ -749,7 +751,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   optimizeRelativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, fittype,
-                                    mapricefs, mapricesl, dateformat) {
+                                    mapricefs, mapricesl, topn, dateformat) {
     cat("---------------------------- Initialize optimization ----------------------------------\n\n")
     orbsmin <- rep(0, length(deforbs))
     orbsmax <- deforbs
@@ -778,7 +780,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     ga("real-valued", fitness=relativeTrendFitness, parallel=TRUE, monitor=gaMonitor, maxiter=60, run=50, min=minvals, max=maxvals,
        popSize=1000, elitism = 100, pcrossover = 0.9, pmutation = 0.1,
        selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
-       securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate,
+       topn=topn, securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate,
        vedate=vedate, csdate=csdate, cedate=cedate, fittype=fittype, mapricefs=mapricefs, mapricesl=mapricesl, dateformat=dateformat)
 
     if (exists('sinkfile', envir=parent.frame())) {
