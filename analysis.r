@@ -226,7 +226,7 @@ mainOpenPlanets <- function(planetsfile, cusorbs, calcasps=T) {
 
 # Open planets file and handle caching
 openPlanets <- function(planetsfile, cusorbs=deforbs, calcasps=T, clear=F) {
-  ckey <- list(planetsfile, cusorbs)
+  ckey <- list(as.character(c('openPlanets', planetsfile, cusorbs)))
   planets <- loadCache(key=ckey)
   if (is.null(planets) || clear) {
     planets <- mainOpenPlanets(planetsfile, cusorbs, calcasps)
@@ -341,7 +341,7 @@ clearCache <- function(path=getCachePath()) {
 
 # open a security historic file
 openSecurity <- function(securityfile, mapricefs, mapricesl, dateformat="%Y.%m.%d", sdate) {
-  ckey <- list('openSecurity', securityfile, mapricefs, mapricesl, sdate)
+  ckey <- list(as.character(c('openSecurity', securityfile, mapricefs, mapricesl, sdate)))
   security <- loadCache(key=ckey, onError='print')
   if (is.null(security)) {
     security <- mainOpenSecurity(securityfile, mapricefs, mapricesl, dateformat, sdate)
@@ -384,11 +384,18 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   branch.name <- branchName()
 
   # Build a long data table with daily aspects, orbs and longitudes
-  meltedAndMergedDayAspects <- function(aspects.day) {
-    ckey <- list('meltedAndMergedDayAspects', dataTableUniqueVector(aspects.day))
+  meltedAndMergedDayAspects <- function(planets, security, degsplit, tsdate, tedate, psdate, pedate, topn) {
+    planetskey <- dataTableUniqueVector(planets)
+    securitykey <- dataTableUniqueVector(security)
+    ckey <- list(as.character(c('meltedAndMergedDayAspects', planetskey, securitykey, degsplit, tsdate, tedate, psdate, pedate, topn)))
     aspects.day.long <- loadCache(key=ckey, onError='print')
 
     if (is.null(aspects.day.long)) {
+      # calculate daily aspects
+      aspects.day <- buildSignificantLongitudesAspects(planets, security, degsplit, tsdate, tedate, topn, F)
+      # leave only the aspects for prediction range dates
+      aspects.day <- aspects.day[Date > psdate & Date <= pedate & wday %in% c(1, 2, 3, 4, 5)]
+
       # melt aspects
       aspects <- melt(aspects.day, id.var=c('Date', 'lon'), variable.name='origin',
                       value.name='aspect', value.factor=T, measure.var=planetsAspCols, na.rm=T)
@@ -428,9 +435,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   }
 
   # process the daily aspects energy
-  dayAspectsEnergy <- function(planets.pred, aspectspolarity, aspectsenergy, zodenergy, sigpenergy, orbs) {
-    # convert aspects, orbs and longitudes to long format
-    planets.pred.aspen <- meltedAndMergedDayAspects(planets.pred)
+  dayAspectsEnergy <- function(planets, security, degsplit, tsdate, tedate, psdate, pedate, topn,
+                               aspectspolarity, aspectsenergy, zodenergy, sigpenergy, orbs) {
+    # aspects, orbs and longitudes in long format
+    planets.pred.aspen <- meltedAndMergedDayAspects(planets, security, degsplit, tsdate, tedate, psdate, pedate, topn)
     # Add the aspects polarity
     planets.pred.aspen[, polarity := aspectspolarity['polarity', aspect]]
     # Calculate the transit planet zoodiacal energy
@@ -494,10 +502,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # load the security data and leave only needed cols
     security <- with(args, openSecurity(securityfile, mapricefs, mapricesl, dateformat, tsdate))
     security <- security[, c('Date', 'Year', 'Mid', 'MidMAF', 'MidMAS', 'Eff'), with=F]
-    # calculate daily aspects
-    aspects.day <- buildSignificantLongitudesAspects(planets, security, 6, rdates[1], rdates[2], args$topn, F)
     # build significant points vector
-    sigpoints <- unique(aspects.day$lon)
+    siglons <- buildSignificantLongitudes(planets, security, args$degsplit, rdates[1], rdates[2])
+    # leave only the top N significant points
+    siglons <- head(siglons, args$topn)
 
     # build matrix
     orbsmatrix <- matrix(args$cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE,
@@ -512,7 +520,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                                   dimnames = list(c('energy'), aspects))
 
     sigpenergymatrix <- matrix(args$sigpenergy, nrow = 1, ncol = length(args$sigpenergy), byrow = TRUE,
-                                  dimnames = list(c('energy'), sigpoints))
+                                  dimnames = list(c('energy'), siglons$lon))
 
     planetszodenergymatrix <- matrix(args$planetszodenergy, nrow = length(planetsBaseCols), ncol = 12, byrow = TRUE,
                                      dimnames = list(planetsBaseCols, zodSignsCols))
@@ -533,9 +541,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     sout <- paste("system version: ", branch.name, "\n\n", sout, sep="")
 
     # Calculate daily aspects energy for predict dates
-    aspects.day.pred <- aspects.day[Date > rdates[3] & Date <= rdates[6] & wday %in% c(1, 2, 3, 4, 5)]
-    energy.days <- dayAspectsEnergy(aspects.day.pred, aspectspolaritymatrix, aspectsenergymatrix,
-                                    planetszodenergymatrix, sigpenergymatrix, orbsmatrix)
+    energy.days <- dayAspectsEnergy(planets, security, args$degsplit, rdates[1], rdates[2], rdates[3], rdates[6], args$topn,
+                                    aspectspolaritymatrix, aspectsenergymatrix, planetszodenergymatrix, sigpenergymatrix, orbsmatrix)
 
     # Calculate prediction
     prediction <- calculatePrediction(energy.days)
@@ -764,8 +771,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     sigpenergymin <- rep(0, 15)
     sigpenergymax <- rep(30, 15)
 
-    minvals <- c( 2, 1,  0, orbsmin, polaritymin, aspectenergymin, planetzodenergymin, sigpenergymin)
-    maxvals <- c(10, 5, 20, orbsmax, polaritymax, aspectenergymax, planetzodenergymax, sigpenergymax)
+    minvals <- c( 2,  4,  0, orbsmin, polaritymin, aspectenergymin, planetzodenergymin, sigpenergymin)
+    maxvals <- c(10, 12, 20, orbsmax, polaritymax, aspectenergymax, planetzodenergymax, sigpenergymax)
 
     # Clear the cache directory before start
     clearCache()
@@ -1230,12 +1237,33 @@ reportIndicatorsPeakValleyHist <- function(symbol, sp, span) {
   dev.off()
 }
 
-# Usage: buildSignificantLongitudes(planets, security, 6)
-buildSignificantLongitudes <- function(planets, security, degsplit) {
-  planets <- mainProcessPlanetsDegSplit(planets, degsplit)
-  freq <- mainPlanetsCompositeSignificance(planets, security)
-  # sort by most significant
-  freq <- freq[, lon, pdiff][order(-abs(pdiff))]
+# Usage: buildSignificantLongitudes(planets, security, 6, '1970-01-01', '1995-01-01')
+buildSignificantLongitudes <- function(planets, security, degsplit, tsdate, tedate, clear=F) {
+  planetskey <- dataTableUniqueVector(planets)
+  securitykey <- dataTableUniqueVector(security)
+  ckey <- list(as.character(c('buildSignificantLongitudes', planetskey, securitykey, degsplit, tsdate, tedate)))
+  freq <- loadCache(key=ckey)
+
+  if (is.null(freq) || clear) {
+    # split a training set to build the composite significance points
+    planets.train <- planets[Date > tsdate & Date <= tedate & wday %in% c(1, 2, 3, 4, 5)]
+    # leave only the longitudes
+    loncols <- colnames(planets)
+    loncols <- loncols[grep('^..LON$', loncols)]
+    planets.train <- planets.train[, c('Date', loncols), with=F]
+    # build the deg splits
+    planets <- mainProcessPlanetsDegSplit(planets, degsplit)
+    freq <- mainPlanetsCompositeSignificance(planets, security)
+    # sort by most significant
+    freq <- freq[, lon, pdiff][order(-abs(pdiff))]
+
+    saveCache(freq, key=ckey)
+    cat("Set buildSignificantLongitudes cache\n")
+  }
+  else {
+    cat("Get buildSignificantLongitudes cache\n")
+  }
+
   return(freq)
 }
 
@@ -1300,37 +1328,24 @@ mainBuildNatalLongitudeAspects <- function(symbol, planets, fwide=F) {
   return(planets.natal.aspsday)
 }
 
-# Usage: aspects.day <- mainBuildSignificantLongitudesAspects(planets, security, 4, 10, F)
-mainBuildSignificantLongitudesAspects <- function(planets, security, degsplit, tsdate, tedate, topn, fwide=F) {
-  # split a training set to build the composite significance points
-  planets.train <- planets[Date > tsdate & Date <= tedate & wday %in% c(1, 2, 3, 4, 5)]
-  # leave only the longitudes
-  loncols <- colnames(planets)
-  loncols <- loncols[grep('^..LON$', loncols)]
-  planets.train <- planets.train[, c('Date', loncols), with=F]
-
-  # calculate the significance points
-  siglons <- buildSignificantLongitudes(planets.train, security, degsplit)
-  # leave only the top N significant points
-  siglons <- head(siglons, topn)
-  # cartesian join
-  planets.aspsday <- CJDT(siglons, planets)
-  # calculate aspects
-  planets.aspsday <- calculatePointsPlanetsAspects(planets.aspsday, fwide)
-
-  return(planets.aspsday)
-}
-
 # Calculate aspects for the significant longitude points and cache
 # Usage: aspects.day <- buildSignificantLongitudesAspects(planets, security, 4, 10, F)
 buildSignificantLongitudesAspects <- function(planets, security, degsplit, tsdate, tedate, topn, fwide=F, clear=F) {
   # To improve cache lookup use first and last rows and the number of rows and cols
   planetskey <- dataTableUniqueVector(planets)
   securitykey <- dataTableUniqueVector(security)
-  ckey <- list(planetskey, securitykey, degsplit, topn, fwide)
+  ckey <- list(as.character(c('buildSignificantLongitudesAspects', planetskey, securitykey, degsplit, tsdate, tedate, topn, fwide)))
   planets.aspsday <- loadCache(key=ckey)
   if (is.null(planets.aspsday) || clear) {
-    planets.aspsday <- mainBuildSignificantLongitudesAspects(planets, security, degsplit, tsdate, tedate, topn, fwide)
+    # calculate the significance points
+    siglons <- buildSignificantLongitudes(planets, security, degsplit, tsdate, tedate)
+    # leave only the top N significant points
+    siglons <- head(siglons, topn)
+    # cartesian join
+    planets.aspsday <- CJDT(siglons, planets)
+    # calculate aspects
+    planets.aspsday <- calculatePointsPlanetsAspects(planets.aspsday, fwide)
+
     saveCache(planets.aspsday, key=ckey)
     cat("Set buildSignificantLongitudesAspects cache\n")
   }
