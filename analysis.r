@@ -1248,12 +1248,12 @@ buildSignificantLongitudes <- function(planets, security, degsplit, tsdate, teda
     # split a training set to build the composite significance points
     planets.train <- planets[Date > tsdate & Date <= tedate & wday %in% c(1, 2, 3, 4, 5)]
     # leave only the longitudes
-    loncols <- colnames(planets)
+    loncols <- colnames(planets.train)
     loncols <- loncols[grep('^..LON$', loncols)]
     planets.train <- planets.train[, c('Date', loncols), with=F]
     # build the deg splits
-    planets <- mainProcessPlanetsDegSplit(planets, degsplit)
-    freq <- mainPlanetsCompositeSignificance(planets, security)
+    planets.train <- mainProcessPlanetsDegSplit(planets.train, degsplit)
+    freq <- mainPlanetsCompositeSignificance(planets.train, security)
     # sort by most significant
     freq <- freq[, lon, pdiff][order(-abs(pdiff))]
 
