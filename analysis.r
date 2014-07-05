@@ -227,7 +227,7 @@ mainOpenPlanets <- function(planetsfile, cusorbs, calcasps=T) {
 # Open planets file and handle caching
 openPlanets <- function(planetsfile, cusorbs=deforbs, calcasps=T, clear=F) {
   ckey <- list(as.character(c('openPlanets', planetsfile, cusorbs)))
-  planets <- loadCache(key=ckey)
+  planets <- secureLoadCache(key=ckey)
   if (is.null(planets) || clear) {
     planets <- mainOpenPlanets(planetsfile, cusorbs, calcasps)
     saveCache(planets, key=ckey)
@@ -339,10 +339,22 @@ clearCache <- function(path=getCachePath()) {
   cat(sprintf("%d files had been removed %d failed.\n", sucess, failed))
 }
 
+secureLoadCache <- function(key) {
+  cached.data <- loadCache(key=key, onError='print')
+  if (is.null(cached.data)) {
+    # Check if there is a corrupted cache
+    pathname <- findCache(key=key)
+    if (!is.null(pathname)) file.remove(pathname)
+    return(NULL)
+  }
+
+  return(cached.data)
+}
+
 # open a security historic file
 openSecurity <- function(securityfile, mapricefs, mapricesl, dateformat="%Y.%m.%d", sdate) {
   ckey <- list(as.character(c('openSecurity', securityfile, mapricefs, mapricesl, sdate)))
-  security <- loadCache(key=ckey, onError='print')
+  security <- secureLoadCache(key=ckey)
   if (is.null(security)) {
     security <- mainOpenSecurity(securityfile, mapricefs, mapricesl, dateformat, sdate)
     saveCache(security, key=ckey)
@@ -388,7 +400,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planetskey <- dataTableUniqueVector(planets)
     securitykey <- dataTableUniqueVector(security)
     ckey <- list(as.character(c('meltedAndMergedDayAspects', planetskey, securitykey, degsplit, tsdate, tedate, psdate, pedate, topn)))
-    aspects.day.long <- loadCache(key=ckey, onError='print')
+    aspects.day.long <- secureLoadCache(key=ckey)
 
     if (is.null(aspects.day.long)) {
       # calculate daily aspects
@@ -596,15 +608,13 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       stop("No valid fittype provided")
     }
 
-    ckey <- list('fitnessBest')
-    fitness.best <- loadCache(key=ckey, dirs=c(args$securityfile), onError='print')
+    ckey <- list('fitnessBest', args$securityfile)
+    fitness.best <- secureLoadCache(key=ckey)
     if (is.null(fitness.best)) {
-      pathname <- findCache(key=ckey, dirs=c(args$securityfile))
-      if (!is.null(pathname)) file.remove(pathname)
-      saveCache(-100, key=ckey, dirs=c(args$securityfile))
+      saveCache(-100, key=ckey)
     }
     else if (fitness.total > fitness.best) {
-      saveCache(fitness.total, key=ckey, dirs=c(args$securityfile))
+      saveCache(fitness.total, key=ckey)
       new.fitness.best <- "best solution --- "
     }
 
@@ -1240,7 +1250,7 @@ buildSignificantLongitudes <- function(planets, security, degsplit, tsdate, teda
   planetskey <- dataTableUniqueVector(planets)
   securitykey <- dataTableUniqueVector(security)
   ckey <- list(as.character(c('buildSignificantLongitudes', planetskey, securitykey, degsplit, tsdate, tedate)))
-  freq <- loadCache(key=ckey)
+  freq <- secureLoadCache(key=ckey)
 
   if (is.null(freq) || clear) {
     # split a training set to build the composite significance points
@@ -1333,7 +1343,7 @@ buildSignificantLongitudesAspects <- function(planets, security, degsplit, tsdat
   planetskey <- dataTableUniqueVector(planets)
   securitykey <- dataTableUniqueVector(security)
   ckey <- list(as.character(c('buildSignificantLongitudesAspects', planetskey, securitykey, degsplit, tsdate, tedate, topn, fwide)))
-  planets.aspsday <- loadCache(key=ckey)
+  planets.aspsday <- secureLoadCache(key=ckey)
   if (is.null(planets.aspsday) || clear) {
     # calculate the significance points
     siglons <- buildSignificantLongitudes(planets, security, degsplit, tsdate, tedate)
