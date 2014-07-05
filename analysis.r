@@ -528,8 +528,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     sout <- with(args, paste("testPlanetsSignificanceRelative('testSolution', securityfile=", shQuote(securityfile), ", planetsfile=", shQuote(planetsfile),
                              ", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate),
                              ", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate),
-                             ", mapredsm=", mapredsm, ", mapricefs=", mapricefs, ", mapricesl=", mapricesl,
-                             ", degsplit=", degsplit, ", threshold=", threshold,
+                             ", mapredsm=", mapredsm, ", mapricefs=", mapricefs, ", mapricesl=", mapricesl, ", degsplit=", degsplit,
                              ", cusorbs=c(", paste(cusorbs, collapse=", "), ")",
                              ", aspectsenergy=c(", paste(aspectsenergy, collapse=", "), ")",
                              ", sigpenergy=c(", paste(sigpenergy, collapse=", "), ")",
@@ -720,11 +719,11 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
   relativeTrendFitness <- function(x, securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate,
                                    fittype, dateformat, mapricefs, mapricesl, topn) {
     # build the parameters based on GA indexes
-    co.e = 4+length(deforbs)
+    co.e = 3+length(deforbs)
     api.e = co.e+length(aspects)-1
     ae.e = api.e+length(aspects)
     pze.e = ae.e+lenZodEnergyMi
-    spe.e = pze.e+15
+    spe.e = pze.e+topn
 
     args <-list(securityfile=securityfile,
                 planetsfile=planetsfile,
@@ -743,8 +742,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                 doplot=F,
                 mapredsm=x[1],
                 degsplit=x[2],
-                threshold=x[3]/100,
-                cusorbs=x[4:(co.e-1)],
+                cusorbs=x[3:(co.e-1)],
                 aspectspolarity=x[co.e:(api.e-1)],
                 aspectsenergy=adjustEnergy(x[api.e:(ae.e-1)]),
                 planetszodenergy=adjustEnergy(x[ae.e:(pze.e-1)]),
@@ -768,11 +766,11 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     aspectenergymax <- rep(30, length(aspects))
     planetzodenergymin <- rep(0, lenZodEnergyMi)
     planetzodenergymax <- rep(30, lenZodEnergyMi)
-    sigpenergymin <- rep(0, 15)
-    sigpenergymax <- rep(30, 15)
+    sigpenergymin <- rep(0, topn)
+    sigpenergymax <- rep(30, topn)
 
-    minvals <- c( 2,  4,  0, orbsmin, polaritymin, aspectenergymin, planetzodenergymin, sigpenergymin)
-    maxvals <- c(10, 12, 20, orbsmax, polaritymax, aspectenergymax, planetzodenergymax, sigpenergymax)
+    minvals <- c( 2, 4, orbsmin, polaritymin, aspectenergymin, planetzodenergymin, sigpenergymin)
+    maxvals <- c(10, 8, orbsmax, polaritymax, aspectenergymax, planetzodenergymax, sigpenergymax)
 
     # Clear the cache directory before start
     clearCache()
