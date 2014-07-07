@@ -779,7 +779,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     sigpenergymin <- rep(0, topn)
     sigpenergymax <- rep(30, topn)
 
-    minvals <- c( 2, 2, orbsmin, polaritymin, aspectenergymin, planetzodenergymin, sigpenergymin)
+    minvals <- c( 2, 5, orbsmin, polaritymin, aspectenergymin, planetzodenergymin, sigpenergymin)
     maxvals <- c(10, 6, orbsmax, polaritymax, aspectenergymax, planetzodenergymax, sigpenergymax)
 
     # Clear the cache directory before start
