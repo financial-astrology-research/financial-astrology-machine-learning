@@ -464,7 +464,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planets.pred.aspen[, spenergy := sigpenergy['energy', as.character(lon)], by=c('lon')]
 
     # Calculate the energy considering significant point / transit / aspect energy
-    planets.pred.aspen[, energy :=  (aenergy + tenergy) * spenergy]
+    planets.pred.aspen[, energy :=  aenergy * tenergy * spenergy]
 
     # use only aspects that are in the allowed orb for specific aspect
     # TODO: verify that the filtered aspects correspond to the maximum orb
