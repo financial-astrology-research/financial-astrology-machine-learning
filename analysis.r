@@ -19,8 +19,8 @@ maxretry <- 1
 `%ni%` <- Negate(`%in%`)
 planetsBaseCols <- c('SU', 'MO', 'ME', 'VE', 'MA', 'JU', 'NN', 'SA')
 # Aspects and orbs
-aspects            <- c( 0,30,45,52,60,72,90,103,120,135,144,150,180)
-deforbs            <- c(10, 3, 3, 3, 6, 3,10,  3,  6,  3,  3,  6, 10)
+aspects            <- c(360, 0,36,40,45,51,60,72,80,90,103,108,120,135,144,154,160,180,200,206,216,225,240,252,257,270,280,288,300,309,315,320,324)
+deforbs            <- c( 12,12, 2, 2, 2, 2, 4, 4, 2, 7,  2,  2,  7,  2,  4,  2,  2, 12,  2,  2,  4,  2,  7,  2,  2,  7,  2,  2,  4,  2,  2,  2,  2)
 
 # columns names
 buildPlanetsColsNames <- function(planetsBaseCols) {
@@ -214,7 +214,7 @@ mainOpenPlanets <- function(planetsfile, cusorbs, calcasps=T) {
     }
 
     # Normalize to 180 degrees range
-    planets[, c(planetsCombLon) := lapply(.SD, normalizeDistance), .SDcols=planetsCombLon]
+    #planets[, c(planetsCombLon) := lapply(.SD, normalizeDistance), .SDcols=planetsCombLon]
 
     # calculate aspects for max orbs
     orbsmatrix <- matrix(cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
@@ -524,7 +524,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                          dimnames = list('orbs', aspects))
 
     # aspects polarities
-    aspectspolarity <- c(2, args$aspectspolarity)
+    aspectspolarity <- c(2, 2, args$aspectspolarity)
     aspectspolaritymatrix <- matrix(aspectspolarity, nrow = 1, ncol = length(aspects), byrow = TRUE,
                                     dimnames = list('polarity', aspects))
 
@@ -730,7 +730,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                                    fittype, dateformat, mapricefs, mapricesl, topn) {
     # build the parameters based on GA indexes
     co.e = 3+length(deforbs)
-    api.e = co.e+length(aspects)-1
+    api.e = co.e+length(aspects)-2
     ae.e = api.e+length(aspects)
     pze.e = ae.e+lenZodEnergyMi
     spe.e = pze.e+topn
@@ -770,8 +770,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     cat("---------------------------- Initialize optimization ----------------------------------\n\n")
     orbsmin <- rep(0, length(deforbs))
     orbsmax <- deforbs
-    polaritymin <- rep(0, length(aspects)-1)
-    polaritymax <- rep(1, length(aspects)-1)
+    polaritymin <- rep(0, length(aspects)-2)
+    polaritymax <- rep(1, length(aspects)-2)
     aspectenergymin <- rep(0, length(aspects))
     aspectenergymax <- rep(30, length(aspects))
     planetzodenergymin <- rep(0, lenZodEnergyMi)
@@ -1291,7 +1291,7 @@ calculatePointsPlanetsAspects <- function(points.planets, fwide=F) {
   }
 
   # Normalize to 180 degrees range
-  points.planets[, c(planetsLonDisCols) := lapply(.SD, normalizeDistance), .SDcols=planetsLonDisCols]
+  #points.planets[, c(planetsLonDisCols) := lapply(.SD, normalizeDistance), .SDcols=planetsLonDisCols]
 
   # Calculate the points.planets & orbs
   orbsmatrix <- matrix(deforbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
