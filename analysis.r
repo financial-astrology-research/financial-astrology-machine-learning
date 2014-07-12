@@ -560,6 +560,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     # join the security table with prediction
     planets.pred <- security[prediction]
     # smoth the prediction serie and remove resulting NAS
+    # TODO: test correlation with lowess smooth
+    #planets.pred[, predval := lowess(planets.pred$predRaw, f=1/200, delta=5)$y]
     planets.pred[, predval := SMA(predRaw, args$mapredsm)]
     planets.pred <- planets.pred[!is.na(predval),]
     # determine a factor prediction response
