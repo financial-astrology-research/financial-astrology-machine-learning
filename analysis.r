@@ -390,7 +390,7 @@ branchName <- function() {
 }
 
 # Prediction Moddel with GA optimization
-cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
+cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
   if (!hasArg('execfunc')) stop("Provide function to execute")
   ptm <- proc.time()
   branch.name <- branchName()
@@ -541,8 +541,12 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     planetszodenergymatrix <- matrix(args$planetszodenergy, nrow = length(planetsBaseCols), ncol = 12, byrow = TRUE,
                                      dimnames = list(planetsBaseCols, zodSignsCols))
 
-    sout <- with(args, paste("testPlanetsSignificanceRelative('testSolution', securityfile=", shQuote(securityfile), ", planetsfile=", shQuote(planetsfile),
-                             ", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate), ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate),
+    sout <- with(args, paste("testPlanetsSignificanceRelative('testSolution'",
+                             ", securityfile=", shQuote(securityfile),
+                             ", planetsfile=", shQuote(planetsfile),
+                             ", predfile=", shQuote(predfile),
+                             ", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate),
+                             ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate),
                              ", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate),
                              ", mapredsm=", mapredsm, ", mapricefs=", mapricefs, ", mapricesl=", mapricesl, ", degsplit=", degsplit,
                              ", cusorbs=c(", paste(cusorbs, collapse=", "), ")",
@@ -725,7 +729,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     return(list(correlation=correlation, volatility=volatility, matches.t=matches.t, matches.f=matches.f, matches.d=matches.d))
   }
 
-  relativeTrendFitness <- function(x, securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate,
+  relativeTrendFitness <- function(x, securityfile, planetsfile, predfile, tsdate, tedate, vsdate, vedate, csdate, cedate,
                                    fittype, dateformat, mapricefs, mapricesl, topn) {
     # build the parameters based on GA indexes
     co.e = 3+length(deforbs)
@@ -736,6 +740,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     args <-list(securityfile=securityfile,
                 planetsfile=planetsfile,
+                predfile=predfile,
                 tsdate=tsdate,
                 tedate=tedate,
                 vsdate=vsdate,
@@ -764,7 +769,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
     x / 10
   }
 
-  optimizeRelativeTrend <- function(securityfile, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, fittype,
+  optimizeRelativeTrend <- function(benchno, sectype, secsymbols, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, fittype,
                                     mapricefs, mapricesl, topn, dateformat) {
     cat("---------------------------- Initialize optimization ----------------------------------\n\n")
     orbsmin <- rep(0, length(deforbs))
@@ -783,29 +788,33 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
 
     # Clear the cache directory before start
     clearCache()
-    # Create the cache directories structure
-    getCachePath(dirs=c(securityfile))
-    # Redirect output to file
-    if (exists('sinkfile', envir=parent.frame())) {
-      sinkpathfile <- npath(paste("~/trading/predict/", sinkfile, ".txt", sep=''))
+
+    for (symbol in secsymbols) {
+      cat("Starting GA optimization for ", symbol, "\n")
+      # Redirect output to file
+      #if (exists('sinkfile', envir=parent.frame())) {
+      # redirect the output to symbol sink file
+      sinkpathfile <- npath(paste("~/trading/predict/b", benchno, "_", sectype, "_", symbol, ".txt", sep=''))
       sink(sinkpathfile, append=T)
-    }
+      # buid securityfile and predfile paths
+      securityfile <- paste(sectype, symbol, sep="/")
+      predfile <- paste('b', benchno, '/', symbol, '_', benchno, sep="")
 
-    ga("real-valued", fitness=relativeTrendFitness, parallel=TRUE, monitor=gaMonitor, maxiter=60, run=50, min=minvals, max=maxvals,
-       popSize=1000, elitism = 100, pcrossover = 0.9, pmutation = 0.1,
-       selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
-       topn=topn, securityfile=securityfile, planetsfile=planetsfile, tsdate=tsdate, tedate=tedate, vsdate=vsdate,
-       vedate=vedate, csdate=csdate, cedate=cedate, fittype=fittype, mapricefs=mapricefs, mapricesl=mapricesl, dateformat=dateformat)
+      ga("real-valued", fitness=relativeTrendFitness, parallel=TRUE, monitor=gaMonitor, maxiter=60, run=50, min=minvals, max=maxvals,
+         popSize=1000, elitism = 100, pcrossover = 0.9, pmutation = 0.1,
+         selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
+         topn=topn, securityfile=securityfile, planetsfile=planetsfile, predfile=predfile,
+         tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate, csdate=csdate, cedate=cedate,
+         fittype=fittype, mapricefs=mapricefs, mapricesl=mapricesl, dateformat=dateformat)
 
-    if (exists('sinkfile', envir=parent.frame())) {
       sink()
     }
   }
 
-  testSolution <- function(predfile, ...) {
+  testSolution <- function(...) {
     args <- list(...)
     if (!hasArg('dateformat')) stop("A dateformat is needed.")
-    predfile <- paste("~/", predfile, ".pdf", sep="")
+    predfile <- paste("~/", args$predfile, ".pdf", sep="")
     # Create directory if do not exists
     if (!file.exists(dirname(predfile))) {
       dir.create(dirname(predfile), recursive=T)
