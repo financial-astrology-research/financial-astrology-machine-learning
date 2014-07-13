@@ -553,8 +553,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
                              ", dateformat=", shQuote(dateformat), ", verbose=F", ", doplot=T, plotsol=F",
                              ", fittype=", shQuote(fittype), ", topn=", topn, ")\n", sep=""))
 
-    sout <- paste("system version: ", branch.name, "\n\n", sout, sep="")
-
     # Calculate daily aspects energy for predict dates
     energy.days <- dayAspectsEnergy(planets, security, args$degsplit, rdates[1], rdates[2], rdates[3], rdates[6], args$topn,
                                     aspectspolaritymatrix, aspectsenergymatrix, planetszodenergymatrix, sigpenergymatrix, orbsmatrix)
@@ -624,19 +622,14 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, sinkfile, ...) {
       new.fitness.best <- "best solution --- "
     }
 
-    cat("\n---------------------------------------------------------------------------------\n")
-    cat(sout)
-    cat("\n")
-    print(orbsmatrix)
-    cat("\n")
-    print(aspectspolaritymatrix)
-    cat("\n")
-    print(aspectsenergymatrix)
-    cat("\n")
-    print(sigpenergymatrix)
-    cat("\n")
-    print(planetszodenergymatrix)
-    cat("\n")
+    sout <- cat("--------------------------------------------------", branch.name, sout, sep="\n")
+    mout <- capture.output(print(orbsmatrix),
+                           print(aspectspolaritymatrix),
+                           print(aspectsenergymatrix),
+                           print(sigpenergymatrix),
+                           print(planetszodenergymatrix))
+    # print buffered output
+    cat(sout, mout, "\n", sep="\n")
 
     # print yearly summary
     apply(res.test, 1, printPredYearSummary, type="Optimization")
