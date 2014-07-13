@@ -233,9 +233,7 @@ openPlanets <- function(planetsfile, cusorbs=deforbs, calcasps=T, clear=F) {
     saveCache(planets, key=ckey)
     cat("Set openPlanets cache\n")
   }
-  else {
-    cat("Get openPlanets cache\n")
-  }
+
   return(planets)
 }
 
@@ -360,9 +358,6 @@ openSecurity <- function(securityfile, mapricefs, mapricesl, dateformat="%Y.%m.%
     saveCache(security, key=ckey)
     cat("Set openSecurity cache\n")
   }
-  else {
-    cat("Get openSecurity cache\n")
-  }
 
   return(security)
 }
@@ -438,9 +433,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
 
       saveCache(aspects.day.long, key=ckey)
       cat("Set meltedAndMergedDayAspects cache\n")
-    }
-    else {
-      cat("Get meltedAndMergedDayAspects cache\n")
     }
 
     return(aspects.day.long)
@@ -1276,9 +1268,6 @@ buildSignificantLongitudes <- function(planets, security, degsplit, tsdate, teda
     saveCache(freq, key=ckey)
     cat("Set buildSignificantLongitudes cache\n")
   }
-  else {
-    cat("Get buildSignificantLongitudes cache\n")
-  }
 
   return(freq)
 }
@@ -1365,9 +1354,7 @@ buildSignificantLongitudesAspects <- function(planets, security, degsplit, tsdat
     saveCache(planets.aspsday, key=ckey)
     cat("Set buildSignificantLongitudesAspects cache\n")
   }
-  else {
-    cat("Get buildSignificantLongitudesAspects cache\n")
-  }
+
   return(planets.aspsday)
 }
 
