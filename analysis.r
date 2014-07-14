@@ -387,6 +387,7 @@ branchName <- function() {
 # Prediction Moddel with GA optimization
 cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
   if (!hasArg('execfunc')) stop("Provide function to execute")
+  ptm <- proc.time()
   branch.name <- branchName()
 
   # Build a long data table with daily aspects, orbs and longitudes
@@ -794,8 +795,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     clearCache()
 
     for (symbol in secsymbols) {
-      # Start timer for each symbol GA optimization
-      ptm <- proc.time()
+      # Restart timer for each symbol GA optimization
+      ptm <<- proc.time()
       # Redirect output to file
       #if (exists('sinkfile', envir=parent.frame())) {
       # redirect the output to symbol sink file
