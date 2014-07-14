@@ -428,6 +428,15 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
       # join aspects & orbs & transit longs
       aspects.day.long <- merge(aspects, orbs, by=c('Date', 'lon', 'origin'))
       aspects.day.long <- merge(aspects.day.long, longs, by=c('Date', 'lon', 'origin'))
+
+      # Use only the applicative aspects
+      aspects.day.long[, orbdir := sign(orb - Lag(orb)), by=c('lon', 'origin', 'aspect')]
+      aspects.day.long[orbdir == 0, orbdir := 1]
+      # For the initial row that is NA due Lag orb calculation use the next row value
+      aspects.day.long[, norbdir := Next(orbdir), by=c('lon', 'origin', 'aspect')]
+      aspects.day.long[is.na(orbdir), orbdir := norbdir]
+      aspects.day.long[, norbdir := NULL]
+
       # add up / down energy cols inintially to 0
       aspects.day.long[, c('up', 'down') := list(0, 0)]
 
@@ -443,6 +452,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
                                aspectspolarity, aspectsenergy, zodenergy, sigpenergy, orbs) {
     # aspects, orbs and longitudes in long format
     planets.pred.aspen <- meltedAndMergedDayAspects(planets, security, degsplit, tsdate, tedate, psdate, pedate, topn)
+
+    # Use only the applying aspects & separative with at much 1 deg of orb
+    planets.pred.aspen <- planets.pred.aspen[orbdir == -1 | (orbdir == 1 & orb <= 1 ),]
+
     # Add the aspects polarity
     planets.pred.aspen[, polarity := aspectspolarity['polarity', aspect]]
     # Calculate the transit planet zoodiacal energy
