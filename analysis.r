@@ -453,8 +453,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     # aspects, orbs and longitudes in long format
     planets.pred.aspen <- meltedAndMergedDayAspects(planets, security, degsplit, tsdate, tedate, psdate, pedate, topn)
 
-    # Use only the applying aspects & separative with at much 1 deg of orb
-    planets.pred.aspen <- planets.pred.aspen[orbdir == -1 | (orbdir == 1 & orb <= 1 ),]
+    # Use only the separating aspects & applying with at much 1 deg of orb
+    planets.pred.aspen <- planets.pred.aspen[orbdir == 1 | (orbdir == -1 & orb <= 1 ),]
 
     # Add the aspects polarity
     planets.pred.aspen[, polarity := aspectspolarity['polarity', aspect]]
