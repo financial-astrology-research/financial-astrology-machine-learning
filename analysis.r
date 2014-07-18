@@ -17,7 +17,7 @@ startDate = as.Date("1970-01-01")
 maxretry <- 1
 
 `%ni%` <- Negate(`%in%`)
-planetsBaseCols <- c('SU', 'MO', 'ME', 'VE', 'MA', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL')
+planetsBaseCols <- c('SU', 'MO', 'ME', 'VE', 'MA', 'JU', 'NN', 'SA')
 # Aspects and orbs
 aspects            <- c( 0,30,36,40,45,51,60,72,80,90,103,108,120,135,144,154,160,180)
 deforbs            <- c(12, 2, 2, 2, 2, 2, 5, 5, 2, 7,  2,  2,  7,  2,  5,  2,  2, 12)
