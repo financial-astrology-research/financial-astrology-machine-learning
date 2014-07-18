@@ -602,8 +602,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
 
     # use appropriate fitness type
     if (args$fittype == 'correlation') {
-      fitness <- round(res.test.mean$correlation * 100, digits=0)
-      fitness.total <- round(((res.test.mean$correlation + res.conf.mean$correlation) * 100) / 2, digits=0)
+      fitness <- round(res.test.mean$correlation, digits=0)
+      fitness.total <- round((res.test.mean$correlation + res.conf.mean$correlation) / 2, digits=0)
     }
     else if (args$fittype == 'matches') {
       fitness <- round(res.test.mean$matches.d, digits=0)
@@ -671,7 +671,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
       volatility <- 0
     }
     else {
-      correlation <- (planets.pred[!is.na(Mid), cor(predval, Mid, use="pairwise", method='spearman')] * 100)
+      correlation <- (planets.pred[!is.na(Mid), cor(predval, MidMAF, use="pairwise", method='spearman')] * 100)
       volatility <- planets.pred[!is.na(Mid), mean(Mid) / sd(Mid)]
     }
 
@@ -789,7 +789,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     sigpenergymax <- rep(30, topn)
 
     minvals <- c( 2, 5, orbsmin, polaritymin, aspectenergymin, planetzodenergymin, sigpenergymin)
-    maxvals <- c(10, 6, orbsmax, polaritymax, aspectenergymax, planetzodenergymax, sigpenergymax)
+    maxvals <- c(50, 6, orbsmax, polaritymax, aspectenergymax, planetzodenergymax, sigpenergymax)
 
     # Clear the cache directory before start
     clearCache()
