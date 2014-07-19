@@ -593,9 +593,16 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     years <- format(seq(rdates[3], rdates[4], by='year'), '%Y')
     # 50% of the years are used for optimization
     years.test <- years[1:round(length(years) * .5)]
-    # take from cross-validation years a 40% random years for cross-validation
-    years.cv <- years[years %ni% years.test]
-    years.conf <- years.cv[sample(1:length(years.cv), round(length(years.cv) * .4))]
+
+    # When doplot is enabled use for confirmation all the available years
+    if (args$doplot) {
+      years.conf <- years[years %ni% years.test]
+    }
+    else {
+      # take from cross-validation years a 40% random years for cross-validation
+      years.cv <- years[years %ni% years.test]
+      years.conf <- years.cv[sample(1:length(years.cv), round(length(years.cv) * .4))]
+    }
 
     # compute test predictions by year
     res.test <- planets.pred[Year %in% years.test, processYearPredictions(.SD, F), by=Year]
