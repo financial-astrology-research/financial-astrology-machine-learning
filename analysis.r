@@ -514,7 +514,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
 
   relativeTrend <- function(args) {
     looptm <- proc.time()
-    rdates <- as.Date(with(args, c(tsdate, tedate, vsdate, vedate, csdate, cedate)))
+    rdates <- as.Date(with(args, c(tsdate, tedate, vsdate, vedate)))
     new.fitness.best <- ""
 
     # open planets file and leave only needed cols for better speed
@@ -552,7 +552,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
                              ", predfile=", shQuote(predfile),
                              ", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate),
                              ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate),
-                             ", csdate=", shQuote(csdate), ", cedate=", shQuote(cedate),
                              ", mapredsm=", mapredsm, ", mapricefs=", mapricefs, ", mapricesl=", mapricesl, ", degsplit=", degsplit,
                              ", cusorbs=c(", paste(cusorbs, collapse=", "), ")",
                              ", aspectsenergy=c(", paste(aspectsenergy, collapse=", "), ")",
@@ -563,7 +562,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
                              ", fittype=", shQuote(fittype), ", topn=", topn, ")\n", sep=""))
 
     # Calculate daily aspects energy for predict dates
-    energy.days <- dayAspectsEnergy(planets, security, args$degsplit, rdates[1], rdates[2], rdates[3], rdates[6], args$topn,
+    energy.days <- dayAspectsEnergy(planets, security, args$degsplit, rdates[1], rdates[2], rdates[3], rdates[4], args$topn,
                                     aspectspolaritymatrix, aspectsenergymatrix, planetszodenergymatrix, sigpenergymatrix, orbsmatrix)
 
     # Calculate prediction
@@ -590,9 +589,15 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     pltitle <- paste('Yearly prediction VS price movement for ', args$securityfile)
     processYearPredictions <- function(x, doplot) processPredictions(x, pltitle, doplot)
 
+    # Split optimization from cross-validation years data
+    years <- format(seq(rdates[3], rdates[4], by='year'), '%Y')
+    # 50% of the years are used for optimization
+    years.test <- years[1:round(length(years) * .5)]
+    # take from cross-validation years a 40% random years for cross-validation
+    years.cv <- years[years %ni% years.test]
+    years.conf <- years.cv[sample(1:length(years.cv), round(length(years.cv) * .4))]
+
     # compute test predictions by year
-    years.test <- format(seq(rdates[3], rdates[4], by='year'), '%Y')
-    years.conf <- format(seq(rdates[5], rdates[6], by='year'), '%Y')
     res.test <- planets.pred[Year %in% years.test, processYearPredictions(.SD, F), by=Year]
     resMean <- function(x) round(mean(x), digits=2)
     res.test.mean <- res.test[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.d=resMean(matches.d))]
@@ -602,33 +607,18 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
 
     # use appropriate fitness type
     if (args$fittype == 'correlation') {
-      fitness <- round(res.test.mean$correlation, digits=0)
-      fitness.total <- round((res.test.mean$correlation + res.conf.mean$correlation) / 2, digits=0)
+      fitness <- round((res.test.mean$correlation + res.conf.mean$correlation) / 2, digits=0)
     }
     else if (args$fittype == 'matches') {
-      fitness <- round(res.test.mean$matches.d, digits=0)
-      fitness.total <- round((res.test.mean$matches.d + res.conf.mean$matches.d) / 2, digits=0)
+      fitness <- round((res.test.mean$matches.d + res.conf.mean$matches.d) / 2, digits=0)
     }
     else if (args$fittype == 'matcor') {
-      correlation <- round(res.test.mean$correlation, digits=3)
-      matches <- round(res.test.mean$matches.d, digits=3)
-      correlation.total <- round((res.test.mean$correlation + res.conf.mean$correlation) / 2, digits=3)
-      matches.total <- round((res.test.mean$matches.d + res.conf.mean$matches.d) / 2, digits=3)
+      correlation <- round((res.test.mean$correlation + res.conf.mean$correlation) / 2, digits=3)
+      matches <- round((res.test.mean$matches.d + res.conf.mean$matches.d) / 2, digits=3)
       fitness <- (matches + correlation) / 2
-      fitness.total <- (matches.total + correlation.total) / 2
     }
     else {
       stop("No valid fittype provided")
-    }
-
-    ckey <- list('fitnessBest', args$securityfile)
-    fitness.best <- secureLoadCache(key=ckey)
-    if (is.null(fitness.best)) {
-      saveCache(-100, key=ckey)
-    }
-    else if (fitness.total > fitness.best) {
-      saveCache(fitness.total, key=ckey)
-      new.fitness.best <- "best solution --- "
     }
 
     sout <- cat("--------------------------------------------------", branch.name, sout, sep="\n")
@@ -642,10 +632,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
 
     # print yearly summary
     apply(res.test, 1, printPredYearSummary, type="Optimization")
-    with(res.test.mean, cat("\tvolatility =", volatility, " - correlation =", correlation, " - matches.d =", matches.d, " - ### = ", fitness, "\n"))
+    with(res.test.mean, cat("\tvolatility =", volatility, " - correlation =", correlation, " - matches.d =", matches.d, "\n"))
     apply(res.conf, 1, printPredYearSummary, type="Confirmation")
     with(res.conf.mean, cat("\tvolatility =", volatility, " - correlation =", correlation, " - matches.d =", matches.d, "\n"))
-    cat("\n\t", new.fitness.best, "Total fitness - %%% = ", fitness.total, "\n")
+    cat("\n\t", new.fitness.best, "Total fitness - %%% = ", fitness, "\n")
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
     # TODO: Need a new way to calculate train rows used to generate composite sigpoints
     #cat("\t Trained significance table with: ", nrow(planets.train), " days", "\n")
@@ -734,7 +724,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     return(list(correlation=correlation, volatility=volatility, matches.t=matches.t, matches.f=matches.f, matches.d=matches.d))
   }
 
-  relativeTrendFitness <- function(x, securityfile, planetsfile, predfile, tsdate, tedate, vsdate, vedate, csdate, cedate,
+  relativeTrendFitness <- function(x, securityfile, planetsfile, predfile, tsdate, tedate, vsdate, vedate,
                                    fittype, dateformat, mapricefs, mapricesl, topn) {
     # build the parameters based on GA indexes
     co.e = 3+length(deforbs)
@@ -750,8 +740,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
                 tedate=tedate,
                 vsdate=vsdate,
                 vedate=vedate,
-                csdate=csdate,
-                cedate=cedate,
                 mapricefs=mapricefs,
                 mapricesl=mapricesl,
                 topn=topn,
@@ -774,7 +762,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     x / 10
   }
 
-  optimizeRelativeTrend <- function(benchno, sectype, secsymbols, planetsfile, tsdate, tedate, vsdate, vedate, csdate, cedate, fittype,
+  optimizeRelativeTrend <- function(benchno, sectype, secsymbols, planetsfile, tsdate, tedate, vsdate, vedate, fittype,
                                     mapricefs, mapricesl, topn, dateformat) {
     cat("---------------------------- Initialize optimization ----------------------------------\n\n")
     orbsmin <- rep(0, length(deforbs))
@@ -812,7 +800,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
          popSize=1000, elitism = 100, pcrossover = 0.9, pmutation = 0.1,
          selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
          topn=topn, securityfile=securityfile, planetsfile=planetsfile, predfile=predfile,
-         tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate, csdate=csdate, cedate=cedate,
+         tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
          fittype=fittype, mapricefs=mapricefs, mapricesl=mapricesl, dateformat=dateformat)
 
       sink()
