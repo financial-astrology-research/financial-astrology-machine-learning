@@ -784,7 +784,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     sigpenergymax <- rep(30, topn)
 
     minvals <- c( 2, 5, orbsmin, polaritymin, aspectenergymin, planetzodenergymin, sigpenergymin)
-    maxvals <- c(50, 6, orbsmax, polaritymax, aspectenergymax, planetzodenergymax, sigpenergymax)
+    maxvals <- c(20, 6, orbsmax, polaritymax, aspectenergymax, planetzodenergymax, sigpenergymax)
 
     # Clear the cache directory before start
     clearCache()
