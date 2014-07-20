@@ -515,7 +515,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
   relativeTrend <- function(args) {
     looptm <- proc.time()
     rdates <- as.Date(with(args, c(tsdate, tedate, vsdate, vedate)))
-    new.fitness.best <- ""
 
     # open planets file and leave only needed cols for better speed
     planets <- openPlanets(args$planetsfile, deforbs, calcasps=F)
@@ -614,7 +613,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
 
     # use appropriate fitness type
     if (args$fittype == 'correlation') {
-      fitness <- round((res.test.mean$correlation + res.conf.mean$correlation) / 2, digits=0)
+      fitness <- planets.pred[!is.na(MidMAF) & Year %in% c(years.test, years.conf), cor(predval, MidMAF, use="pairwise", method='spearman')] * 100
     }
     else if (args$fittype == 'matches') {
       fitness <- round((res.test.mean$matches.d + res.conf.mean$matches.d) / 2, digits=0)
@@ -642,7 +641,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     with(res.test.mean, cat("\tvolatility =", volatility, " - correlation =", correlation, " - matches.d =", matches.d, "\n"))
     apply(res.conf, 1, printPredYearSummary, type="Confirmation")
     with(res.conf.mean, cat("\tvolatility =", volatility, " - correlation =", correlation, " - matches.d =", matches.d, "\n"))
-    cat("\n\t", new.fitness.best, "Total fitness - %%% = ", fitness, "\n")
+    cat("\n\t Totals: fitness = ", fitness, "\n")
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
     # TODO: Need a new way to calculate train rows used to generate composite sigpoints
     #cat("\t Trained significance table with: ", nrow(planets.train), " days", "\n")
