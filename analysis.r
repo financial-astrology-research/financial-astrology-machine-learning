@@ -618,6 +618,16 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     else if (args$fittype == 'matches') {
       fitness <- round((res.test.mean$matches.d + res.conf.mean$matches.d) / 2, digits=0)
     }
+    else if (args$fittype == 'sdmatches') {
+      matches.mean <- mean(c(res.test$matches.d, res.conf$matches.d))
+      matches.sd <- sd(c(res.test$matches.d, res.conf$matches.d))
+      if (matches.sd == 0) {
+        fitness <- -abs(1 / matches.mean) * 100
+      }
+      else {
+        fitness <- -abs(matches.sd / matches.mean) * 100
+      }
+    }
     else if (args$fittype == 'matcor') {
       correlation <- round((res.test.mean$correlation + res.conf.mean$correlation) / 2, digits=3)
       matches <- round((res.test.mean$matches.d + res.conf.mean$matches.d) / 2, digits=3)
