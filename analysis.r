@@ -622,10 +622,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
       matches.mean <- mean(c(res.test$matches.d, res.conf$matches.d))
       matches.sd <- sd(c(res.test$matches.d, res.conf$matches.d))
       if (matches.sd == 0) {
-        fitness <- -abs(1 / matches.mean) * 100
+        fitness <- -abs(1 / (matches.mean^2)) * 100
       }
       else {
-        fitness <- -abs(matches.sd / matches.mean) * 100
+        fitness <- -abs(matches.sd / (matches.mean^2)) * 100
       }
     }
     else if (args$fittype == 'matcor') {
