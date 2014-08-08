@@ -477,14 +477,15 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
 
     # Adjust conjuntion polarity based on involved planets: MA, SA, PL are
     # considered as a negative, others as positive.
-    planets.pred.aspen[polarity == 2 & origin %in% c('MA', 'SA', 'PL'), polarity := 0]
-    planets.pred.aspen[polarity == 2 & origin %ni% c('MA', 'SA', 'PL'), polarity := 1]
+    #planets.pred.aspen[polarity == 2 & origin %in% c('MA', 'SA', 'PL'), polarity := 0]
+    #planets.pred.aspen[polarity == 2 & origin %ni% c('MA', 'SA', 'PL'), polarity := 1]
 
     # compute the given energy based on the aspect orb distance
     #planets.pred.aspen[, disenergy := energyGrowth(energy, orb)]
     # set energy up / down based on polarities
     planets.pred.aspen[polarity == 0, c('up', 'down') := list(0, energy)]
     planets.pred.aspen[polarity == 1, c('up', 'down') := list(energy, 0)]
+    planets.pred.aspen[polarity == 2, c('up', 'down') := list(energy, energy)]
 
     return(planets.pred.aspen)
   }
