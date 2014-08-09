@@ -513,7 +513,9 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     text(10, 10, snippet, pos=3)
   }
 
-  relativeTrend <- function(args) {
+  relativeTrend <- function(x, ...) {
+    # Build the params sets
+    args <- processParams(x, ...)
     looptm <- proc.time()
     rdates <- as.Date(with(args, c(tsdate, tedate, vsdate, vedate)))
 
@@ -647,11 +649,14 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     # print buffered output
     cat(sout, mout, "\n", sep="\n")
 
-    # print yearly summary
-    apply(res.test, 1, printPredYearSummary, type="Optimization")
-    with(res.test.mean, cat("\tvolatility =", volatility, " - correlation =", correlation, " - matches.d =", matches.d, "\n"))
-    apply(res.conf, 1, printPredYearSummary, type="Confirmation")
-    with(res.conf.mean, cat("\tvolatility =", volatility, " - correlation =", correlation, " - matches.d =", matches.d, "\n"))
+    if (args$doplot) {
+      # print yearly summary
+      apply(res.test, 1, printPredYearSummary, type="Optimization")
+      with(res.test.mean, cat("\tvolatility =", volatility, " - correlation =", correlation, " - matches.d =", matches.d, "\n"))
+      apply(res.conf, 1, printPredYearSummary, type="Confirmation")
+      with(res.conf.mean, cat("\tvolatility =", volatility, " - correlation =", correlation, " - matches.d =", matches.d, "\n"))
+    }
+
     cat("\n\t Totals: fitness = ", fitness, "\n")
     cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
     # TODO: Need a new way to calculate train rows used to generate composite sigpoints
@@ -741,8 +746,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     return(list(correlation=correlation, volatility=volatility, matches.t=matches.t, matches.f=matches.f, matches.d=matches.d))
   }
 
-  relativeTrendFitness <- function(x, securityfile, planetsfile, predfile, tsdate, tedate, vsdate, vedate,
-                                   fittype, dateformat, mapricefs, mapricesl, topn) {
+  processParams <- function(x, securityfile, planetsfile, predfile, tsdate, tedate, vsdate, vedate,
+                            fittype, dateformat, mapricefs, mapricesl, topn) {
     # build the parameters based on GA indexes
     co.e = 3+length(deforbs)
     api.e = co.e+length(aspects)-1
@@ -772,7 +777,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
                 planetszodenergy=adjustEnergy(x[ae.e:(pze.e-1)]),
                 sigpenergy=adjustEnergy(x[pze.e:(spe.e-1)]))
 
-    return(relativeTrend(args))
+    return(args)
   }
 
   adjustEnergy <- function(x) {
@@ -813,12 +818,14 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
       securityfile <- paste(sectype, symbol, sep="/")
       predfile <- paste('b', benchno, '/', symbol, '_', benchno, sep="")
 
-      ga("real-valued", fitness=relativeTrendFitness, parallel=TRUE, monitor=gaMonitor, maxiter=50, run=50, min=minvals, max=maxvals,
-         popSize=1000, elitism = 100, pcrossover = 0.9, pmutation = 0.1,
-         selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
-         topn=topn, securityfile=securityfile, planetsfile=planetsfile, predfile=predfile,
-         tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
-         fittype=fittype, mapricefs=mapricefs, mapricesl=mapricesl, dateformat=dateformat)
+      gar <- ga("real-valued", fitness=relativeTrend, parallel=TRUE, monitor=gaMonitor, maxiter=50, run=50, min=minvals, max=maxvals,
+                popSize=1000, elitism = 100, pcrossover = 0.9, pmutation = 0.1,
+                selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
+                topn=topn, securityfile=securityfile, planetsfile=planetsfile, predfile=predfile,
+                tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
+                fittype=fittype, mapricefs=mapricefs, mapricesl=mapricesl, dateformat=dateformat)
+
+      browser()
 
       sink()
     }
