@@ -642,9 +642,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     }
 
     if (args$doplot) {
+      sout <- stringSolution(args)
+
       # plot solution snippet if doplot is enabled
       if (args$plotsol) {
-        sout <- stringSolution(args)
         snippet <- paste(strwrap(sout, width=170), collapse="\n")
         plotSolutionSnippet(snippet)
       }
@@ -655,7 +656,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
                              print(sigpenergymatrix),
                              print(planetszodenergymatrix))
       # print buffered output
-      cat(mout, "\n", sep="\n")
+      cat(sout, mout, "\n", sep="\n")
 
       # print yearly summary
       apply(res.test, 1, printPredYearSummary, type="Optimization")
@@ -665,7 +666,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
       # totals and execution time
       cat("\n\t Totals: fitness = ", fitness, "\n")
       cat("\t Optimized and confirmed with: ", nrow(planets.pred), " days", "\n")
-      cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
+      cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n\n")
     }
 
     return(fitness)
@@ -811,7 +812,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     clearCache()
 
     # redirect the output to symbol sink file
-    sinkpathfile <- npath(paste("~/trading/predict/b", benchno, "_", sectype, ".txt", sep=''))
+    sinkpathfile <- npath(paste("~/trading/benchmarks/b", benchno, "_", sectype, ".txt", sep=''))
     # Redirect output to file
     #if (exists('sinkfile', envir=parent.frame())) {
     sink(sinkpathfile, append=T)
