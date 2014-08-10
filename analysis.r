@@ -513,9 +513,32 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     text(10, 10, snippet, pos=3)
   }
 
-  relativeTrend <- function(x, ...) {
+  stringSolution <- function(args) {
+    sol <- with(args, paste("testPlanetsSignificanceRelative('testSolution'",
+                            ", securityfile=", shQuote(securityfile),
+                            ", planetsfile=", shQuote(planetsfile),
+                            ", predfile=", shQuote(predfile),
+                            ", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate),
+                            ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate),
+                            ", mapredsm=", mapredsm, ", mapricefs=", mapricefs, ", mapricesl=", mapricesl, ", degsplit=", degsplit,
+                            ", cusorbs=c(", paste(cusorbs, collapse=", "), ")",
+                            ", aspectsenergy=c(", paste(aspectsenergy, collapse=", "), ")",
+                            ", sigpenergy=c(", paste(sigpenergy, collapse=", "), ")",
+                            ", planetszodenergy=c(", paste(planetszodenergy, collapse=", "), ")",
+                            ", aspectspolarity=c(", paste(aspectspolarity, collapse=", "), ")",
+                            ", dateformat=", shQuote(dateformat), ", verbose=F", ", doplot=T, plotsol=F",
+                            ", fittype=", shQuote(fittype), ", topn=", topn, ")\n", sep=""))
+    return(sol)
+  }
+
+  relativeTrendExec <- function(x, ...) {
     # Build the params sets
     args <- processParams(x, ...)
+    # Execute
+    return(relativeTrend(args))
+  }
+
+  relativeTrend <- function(args) {
     looptm <- proc.time()
     rdates <- as.Date(with(args, c(tsdate, tedate, vsdate, vedate)))
 
@@ -548,21 +571,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     planetszodenergymatrix <- matrix(args$planetszodenergy, nrow = length(planetsBaseCols), ncol = 12, byrow = TRUE,
                                      dimnames = list(planetsBaseCols, zodSignsCols))
 
-    sout <- with(args, paste("testPlanetsSignificanceRelative('testSolution'",
-                             ", securityfile=", shQuote(securityfile),
-                             ", planetsfile=", shQuote(planetsfile),
-                             ", predfile=", shQuote(predfile),
-                             ", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate),
-                             ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate),
-                             ", mapredsm=", mapredsm, ", mapricefs=", mapricefs, ", mapricesl=", mapricesl, ", degsplit=", degsplit,
-                             ", cusorbs=c(", paste(cusorbs, collapse=", "), ")",
-                             ", aspectsenergy=c(", paste(aspectsenergy, collapse=", "), ")",
-                             ", sigpenergy=c(", paste(sigpenergy, collapse=", "), ")",
-                             ", planetszodenergy=c(", paste(planetszodenergy, collapse=", "), ")",
-                             ", aspectspolarity=c(", paste(aspectspolarity, collapse=", "), ")",
-                             ", dateformat=", shQuote(dateformat), ", verbose=F", ", doplot=T, plotsol=F",
-                             ", fittype=", shQuote(fittype), ", topn=", topn, ")\n", sep=""))
-
     # Calculate daily aspects energy for predict dates
     energy.days <- dayAspectsEnergy(planets, security, args$degsplit, rdates[1], rdates[2], rdates[3], rdates[4], args$topn,
                                     aspectspolaritymatrix, aspectsenergymatrix, planetszodenergymatrix, sigpenergymatrix, orbsmatrix)
@@ -580,13 +588,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     planets.pred[, predFactor := cut(predval, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
     # Add the Year for projected predictions rows
     planets.pred[is.na(Year), Year := as.character(format(Date, "%Y"))]
-
-    # plot solution snippet if doplot is enabled
-    if (args$doplot && args$plotsol) {
-      snippet <- paste(strwrap(sout, width=170), collapse="\n")
-      plotSolutionSnippet(snippet)
-    }
-
     # helper function to process predictions by year
     pltitle <- paste('Yearly prediction VS price movement for ', args$securityfile)
     processYearPredictions <- function(x, doplot) processPredictions(x, pltitle, doplot)
@@ -640,28 +641,33 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
       stop("No valid fittype provided")
     }
 
-    sout <- cat("--------------------------------------------------", branch.name, sout, sep="\n")
-    mout <- capture.output(print(orbsmatrix),
-                           print(aspectspolaritymatrix),
-                           print(aspectsenergymatrix),
-                           print(sigpenergymatrix),
-                           print(planetszodenergymatrix))
-    # print buffered output
-    cat(sout, mout, "\n", sep="\n")
-
     if (args$doplot) {
+      # plot solution snippet if doplot is enabled
+      if (args$plotsol) {
+        sout <- stringSolution(args)
+        snippet <- paste(strwrap(sout, width=170), collapse="\n")
+        plotSolutionSnippet(snippet)
+      }
+
+      mout <- capture.output(print(orbsmatrix),
+                             print(aspectspolaritymatrix),
+                             print(aspectsenergymatrix),
+                             print(sigpenergymatrix),
+                             print(planetszodenergymatrix))
+      # print buffered output
+      cat(mout, "\n", sep="\n")
+
       # print yearly summary
       apply(res.test, 1, printPredYearSummary, type="Optimization")
       with(res.test.mean, cat("\tvolatility =", volatility, " - correlation =", correlation, " - matches.d =", matches.d, "\n"))
       apply(res.conf, 1, printPredYearSummary, type="Confirmation")
       with(res.conf.mean, cat("\tvolatility =", volatility, " - correlation =", correlation, " - matches.d =", matches.d, "\n"))
+      # totals and execution time
+      cat("\n\t Totals: fitness = ", fitness, "\n")
+      cat("\t Optimized and confirmed with: ", nrow(planets.pred), " days", "\n")
+      cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
     }
 
-    cat("\n\t Totals: fitness = ", fitness, "\n")
-    cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n")
-    # TODO: Need a new way to calculate train rows used to generate composite sigpoints
-    #cat("\t Trained significance table with: ", nrow(planets.train), " days", "\n")
-    cat("\t Optimized and confirmed with: ", nrow(planets.pred), " days", "\n")
     return(fitness)
   }
 
@@ -799,34 +805,42 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     sigpenergymax <- rep(30, topn)
 
     minvals <- c( 2, 5, orbsmin, polaritymin, aspectenergymin, planetzodenergymin, sigpenergymin)
-    maxvals <- c(20, 6, orbsmax, polaritymax, aspectenergymax, planetzodenergymax, sigpenergymax)
+    maxvals <- c(10, 6, orbsmax, polaritymax, aspectenergymax, planetzodenergymax, sigpenergymax)
 
     # Clear the cache directory before start
     clearCache()
 
+    # redirect the output to symbol sink file
+    sinkpathfile <- npath(paste("~/trading/predict/b", benchno, "_", sectype, ".txt", sep=''))
+    # Redirect output to file
+    #if (exists('sinkfile', envir=parent.frame())) {
+    sink(sinkpathfile, append=T)
+    cat("# version: ", branch.name, "\n")
+    cat("#", tsdate, '-', tedate, 'FIT /', vsdate, '-', vedate, 'OPTwCV -', fittype, 'fit -', mapricefs, '-', mapricesl, 'MAS -', topn, 'TOPN', '\n\n')
+    sink()
+
     for (symbol in secsymbols) {
       # Restart timer for each symbol GA optimization
       ptm <<- proc.time()
-      # Redirect output to file
-      #if (exists('sinkfile', envir=parent.frame())) {
-      # redirect the output to symbol sink file
-      sinkpathfile <- npath(paste("~/trading/predict/b", benchno, "_", sectype, "_", symbol, ".txt", sep=''))
       cat("Starting GA optimization for ", symbol, " - ", sinkpathfile, "\n")
 
-      sink(sinkpathfile, append=T)
       # buid securityfile and predfile paths
       securityfile <- paste(sectype, symbol, sep="/")
       predfile <- paste('b', benchno, '/', symbol, '_', benchno, sep="")
 
-      gar <- ga("real-valued", fitness=relativeTrend, parallel=TRUE, monitor=gaMonitor, maxiter=50, run=50, min=minvals, max=maxvals,
+      gar <- ga("real-valued", fitness=relativeTrendExec, parallel=TRUE, monitor=gaMonitor, maxiter=60, run=50, min=minvals, max=maxvals,
                 popSize=1000, elitism = 100, pcrossover = 0.9, pmutation = 0.1,
                 selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
                 topn=topn, securityfile=securityfile, planetsfile=planetsfile, predfile=predfile,
                 tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
                 fittype=fittype, mapricefs=mapricefs, mapricesl=mapricesl, dateformat=dateformat)
 
-      browser()
-
+      # output the solution string
+      sink(sinkpathfile, append=T)
+      x <- gar@solution[1,]
+      args <- processParams(x, securityfile, planetsfile, predfile, tsdate, tedate, vsdate, vedate, fittype, dateformat, mapricefs, mapricesl, topn)
+      cat(stringSolution(args))
+      cat("# Fitness = ", gar@fitnessValue, "\n\n")
       sink()
     }
   }
