@@ -591,35 +591,37 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     # helper function to process predictions by year
     pltitle <- paste('Yearly prediction VS price movement for ', args$securityfile)
     processYearPredictions <- function(x, doplot) processPredictions(x, pltitle, doplot)
-
-    # Split optimization from cross-validation years data
-    years <- format(seq(rdates[3], rdates[4], by='year'), '%Y')
-    # 50% of the years are used for optimization
-    years.test <- years[1:round(length(years) * .5)]
+    # split data in optimization and cross validation
+    planets.pred.opt <- planets.pred[1:round(nrow(planets.pred)/2),]
+    planets.pred.cv <- planets.pred[round(nrow(planets.pred)/2):nrow(planets.pred),]
+    # Identify years with alone observations that can affect the years fitness mean
+    years.opt <- table(planets.pred.opt$Year)
+    years.cv <- table(planets.pred.cv$Year)
 
     # When doplot is enabled use for confirmation all the available years
     if (args$doplot) {
-      years.conf <- years[years %ni% years.test]
+      sample.opt <- planets.pred.opt
+      sample.cv <- planets.pred.cv
     }
     else {
-      # take from cross-validation years a 40% random years for cross-validation
-      years.cv <- years[years %ni% years.test]
-      years.conf <- years.cv[sample(1:length(years.cv), round(length(years.cv) * .4))]
+      # use sample of 50% optimization data
+      sample.opt <- planets.pred.opt[Year %in% names(years.opt[years.opt > 20]),]
+      sample.opt <- sample.opt[, .SD[sample(.N, round(nrow(sample.opt) * .5))]]
+      # and 40% of cross validation data
+      sample.cv <- planets.pred.cv[Year %in% names(years.cv[years.cv > 20]),]
+      sample.cv <- sample.cv[, .SD[sample(.N, round(nrow(sample.cv) * .4))]]
     }
 
     # compute test predictions by year
-    res.test <- planets.pred[Year %in% years.test, processYearPredictions(.SD, F), by=Year]
+    res.test <- sample.opt[, processYearPredictions(.SD, F), by=Year]
     resMean <- function(x) round(mean(x), digits=2)
     res.test.mean <- res.test[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.d=resMean(matches.d))]
     # compute confirmation predictions by year
-    res.conf <- planets.pred[Year %in% years.conf, processYearPredictions(.SD, args$doplot), by=Year]
+    res.conf <- sample.cv[, processYearPredictions(.SD, args$doplot), by=Year]
     res.conf.mean <- res.conf[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.d=resMean(matches.d))]
 
     # use appropriate fitness type
-    if (args$fittype == 'correlation') {
-      fitness <- planets.pred[!is.na(MidMAF) & Year %in% c(years.test, years.conf), cor(predval, MidMAF, use="pairwise", method='spearman')] * 100
-    }
-    else if (args$fittype == 'matches') {
+    if (args$fittype == 'matches') {
       fitness <- round((res.test.mean$matches.d + res.conf.mean$matches.d) / 2, digits=0)
     }
     else if (args$fittype == 'sdmatches') {
@@ -776,6 +778,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
                 dateformat=dateformat,
                 verbose=F,
                 doplot=F,
+                plotsol=F,
                 mapredsm=x[1],
                 degsplit=x[2],
                 cusorbs=x[3:(co.e-1)],
