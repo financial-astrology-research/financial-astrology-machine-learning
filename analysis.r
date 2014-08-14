@@ -600,8 +600,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
 
     # When doplot is enabled use for confirmation all the available years
     if (args$doplot) {
-      sample.opt <- planets.pred.opt
-      sample.cv <- planets.pred.cv
+      sample.opt <- planets.pred.opt[Year %in% names(years.opt[years.opt > 20]),]
+      sample.cv <- planets.pred.cv[Year %in% names(years.cv[years.cv > 20]),]
     }
     else {
       # use sample of 50% optimization data
@@ -729,19 +729,17 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     t1 <- with(planets.pred, table(Eff, Eff == predFactor))
 
     # fix any missing row or column in the table
-    if ('down' %ni% rownames(t1)) {
-      t1['down', 'FALSE'] <- as.integer(0)
-      t1['down', 'TRUE'] <- as.integer(0)
-    }
-    if ('up' %ni% rownames(t1)) {
-      t1['up', 'FALSE'] <- as.integer(0)
-      t1['up', 'TRUE'] <- as.integer(0)
-    }
     if ('FALSE' %ni% colnames(t1)) {
-      t1[, 'FALSE'] <- c(down=as.integer(0), up=as.integer(0))
+      t1 <- cbind(t1, 'FALSE' = c(as.integer(0), as.integer(0)))
     }
     if ('TRUE' %ni% colnames(t1)) {
-      t1[, 'TRUE'] <- c(down=as.integer(0), up=as.integer(0))
+      t1 <- cbind(t1, 'TRUE' = c(as.integer(0), as.integer(0)))
+    }
+    if ('down' %ni% rownames(t1)) {
+      t1 <- rbind(t1, 'down' = c(as.integer(0), as.integer(0)))
+    }
+    if ('up' %ni% rownames(t1)) {
+      t1 <- rbind(t1, 'up' = c(as.integer(0), as.integer(0)))
     }
 
     # add table margins
