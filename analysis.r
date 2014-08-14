@@ -748,8 +748,18 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     # calculate the percentage matches for each direction
     matches.u <- as.integer(t1['up', 'TRUE'] / t1['up', 'Sum'] * 100)
     matches.d <- as.integer(t1['down', 'TRUE'] / t1['down', 'Sum'] * 100)
-    matches.t <- (matches.u + matches.d) / 2
     matches.r <- t1['Sum', 'Sum']
+
+    # If a year has a single trend direction then only use that matches side
+    if (t1['down', 'Sum'] == 0) {
+      matches.t <- matches.u
+    }
+    else if (t1['up', 'Sum'] == 0) {
+      matches.t <- matches.d
+    }
+    else {
+      matches.t <- as.integer((matches.u + matches.d) / 2)
+    }
 
     return(list(correlation=correlation, volatility=volatility, matches.r=matches.r, matches.u=matches.u, matches.d=matches.d, matches.t=matches.t))
   }
