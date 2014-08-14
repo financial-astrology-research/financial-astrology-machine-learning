@@ -503,7 +503,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
   # print a year solution summary
   printPredYearSummary <- function(x, type) {
     cat("\t ", x['Year'], " - ", type ,": vol =", x['volatility'], " - cor =", x['correlation'])
-    cat(" - matches.t =", x['matches.t'], " - matches.f =", x['matches.f'], " - matches.d =", x['matches.d'], "\n")
+    cat(" - matches.r =", x['matches.r'], " - matches.u =", x['matches.u'], " - matches.d =", x['matches.d'], " - matches.t =", x['matches.t'], "\n")
   }
 
   # Plot the solution snippet
@@ -615,18 +615,18 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     # compute test predictions by year
     res.test <- sample.opt[, processYearPredictions(.SD, F), by=Year]
     resMean <- function(x) round(mean(x), digits=2)
-    res.test.mean <- res.test[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.d=resMean(matches.d))]
+    res.test.mean <- res.test[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.t=resMean(matches.t))]
     # compute confirmation predictions by year
     res.conf <- sample.cv[, processYearPredictions(.SD, args$doplot), by=Year]
-    res.conf.mean <- res.conf[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.d=resMean(matches.d))]
+    res.conf.mean <- res.conf[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.t=resMean(matches.t))]
 
     # use appropriate fitness type
     if (args$fittype == 'matches') {
-      fitness <- round((res.test.mean$matches.d + res.conf.mean$matches.d) / 2, digits=0)
+      fitness <- round((res.test.mean$matches.t + res.conf.mean$matches.t) / 2, digits=0)
     }
     else if (args$fittype == 'sdmatches') {
-      matches.mean <- mean(c(res.test$matches.d, res.conf$matches.d))
-      matches.sd <- sd(c(res.test$matches.d, res.conf$matches.d))
+      matches.mean <- mean(c(res.test$matches.t, res.conf$matches.t))
+      matches.sd <- sd(c(res.test$matches.t, res.conf$matches.t))
       if (matches.sd == 0) {
         fitness <- -abs(1 / (matches.mean^2)) * 100
       }
@@ -636,7 +636,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     }
     else if (args$fittype == 'matcor') {
       correlation <- round((res.test.mean$correlation + res.conf.mean$correlation) / 2, digits=3)
-      matches <- round((res.test.mean$matches.d + res.conf.mean$matches.d) / 2, digits=3)
+      matches <- round((res.test.mean$matches.t + res.conf.mean$matches.t) / 2, digits=3)
       fitness <- (matches + correlation) / 2
     }
     else {
@@ -662,9 +662,9 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
 
       # print yearly summary
       apply(res.test, 1, printPredYearSummary, type="Optimization")
-      with(res.test.mean, cat("\tvolatility =", volatility, " - correlation =", correlation, " - matches.d =", matches.d, "\n"))
+      with(res.test.mean, cat("\tvol =", volatility, " - cor =", correlation, " - matches.t =", matches.t, "\n"))
       apply(res.conf, 1, printPredYearSummary, type="Confirmation")
-      with(res.conf.mean, cat("\tvolatility =", volatility, " - correlation =", correlation, " - matches.d =", matches.d, "\n"))
+      with(res.conf.mean, cat("\tvol =", volatility, " - cor =", correlation, " - matches.t =", matches.t, "\n"))
       # totals and execution time
       cat("\n\t Totals: fitness = ", fitness, "\n")
       cat("\t Optimized and confirmed with: ", nrow(planets.pred), " days", "\n")
@@ -676,7 +676,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
 
   processPredictions <- function(planets.test, pltitle, doplot) {
     planets.pred <- copy(planets.test)
-    zerores <- list(correlation=0.0, volatility=0.0, matches.t=as.integer(0), matches.f=as.integer(0), matches.d=as.integer(0))
+    zerores <- list(correlation=0.0, volatility=0.0, matches.r=as.integer(0), matches.u=as.integer(0), matches.d=as.integer(0))
 
     if (nrow(planets.pred) == 0) {
       return(zerores)
@@ -726,33 +726,34 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     }
 
     # calculate accuracy
-    t1 <- with(planets.pred, table(Eff==predFactor))
-    if (all(c('TRUE', 'FALSE') %in% names(t1))) {
-      matches.t <- t1[['TRUE']]
-      matches.f <- t1[['FALSE']]
+    t1 <- with(planets.pred, table(Eff, Eff == predFactor))
+
+    # fix any missing row or column in the table
+    if ('down' %ni% rownames(t1)) {
+      t1['down', 'FALSE'] <- as.integer(0)
+      t1['down', 'TRUE'] <- as.integer(0)
     }
-    else if ('TRUE' %in% names(t1)) {
-      matches.t <- t1[['TRUE']]
-      matches.f <- as.integer(0)
+    if ('up' %ni% rownames(t1)) {
+      t1['up', 'FALSE'] <- as.integer(0)
+      t1['up', 'TRUE'] <- as.integer(0)
     }
-    else if ('FALSE' %in% names(t1)) {
-      matches.t <- as.integer(0)
-      matches.f <- t1[['FALSE']]
+    if ('FALSE' %ni% colnames(t1)) {
+      t1[, 'FALSE'] <- c(down=as.integer(0), up=as.integer(0))
     }
-    else {
-      matches.t <- as.integer(0)
-      matches.f <- as.integer(0)
+    if ('TRUE' %ni% colnames(t1)) {
+      t1[, 'TRUE'] <- c(down=as.integer(0), up=as.integer(0))
     }
 
-    # calculate the matches difference
-    if (matches.t == 0 && matches.f == 0) {
-      matches.d <- as.integer(0)
-    }
-    else {
-      matches.d <- as.integer((matches.t / (matches.t + matches.f)) * 100)
-    }
+    # add table margins
+    t1 <- addmargins(t1)
 
-    return(list(correlation=correlation, volatility=volatility, matches.t=matches.t, matches.f=matches.f, matches.d=matches.d))
+    # calculate the percentage matches for each direction
+    matches.u <- as.integer(t1['up', 'TRUE'] / t1['up', 'Sum'] * 100)
+    matches.d <- as.integer(t1['down', 'TRUE'] / t1['down', 'Sum'] * 100)
+    matches.t <- (matches.u + matches.d) / 2
+    matches.r <- t1['Sum', 'Sum']
+
+    return(list(correlation=correlation, volatility=volatility, matches.r=matches.r, matches.u=matches.u, matches.d=matches.d, matches.t=matches.t))
   }
 
   processParams <- function(x, securityfile, planetsfile, predfile, tsdate, tedate, vsdate, vedate,
