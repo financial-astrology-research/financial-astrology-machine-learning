@@ -40,6 +40,8 @@ buildPlanetsColsNames <- function(planetsBaseCols) {
   planetsCombAsp <<- as.character(lapply(planetsComb, function(x) paste(x[1], x[2], 'ASP', sep='')))
   planetsCombOrb <<- as.character(lapply(planetsComb, function(x) paste(x[1], x[2], 'ORB', sep='')))
   zodSignsCols <<- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CP', 'AC', 'PI')
+  lenZodEnergyMi <<- length(planetsBaseCols) * length(zodSignsCols)
+  #lenZodEnergyMa <- (length(planetsLonCols) * length(zodSignsCols)) - lenZodEnergyMi
   # Remove eclipse cols due it do not have speed
   planetsSpCols <<- planetsSpCols[grep('^E', planetsSpCols, ignore.case=T, invert=T)]
   planetsDecCols <<- planetsDecCols[grep('^E', planetsDecCols, ignore.case=T, invert=T)]
@@ -447,7 +449,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
 
   # process the daily aspects energy
   dayAspectsEnergy <- function(planets, security, degsplit, tsdate, tedate, psdate, pedate, topn,
-                               aspectspolarity, aspectsenergy, planetsenergy, sigpenergy, orbs) {
+                               aspectspolarity, aspectsenergy, zodenergy, sigpenergy, orbs) {
     # aspects, orbs and longitudes in long format
     planets.pred.aspen <- meltedAndMergedDayAspects(planets, security, degsplit, tsdate, tedate, psdate, pedate, topn)
 
@@ -456,9 +458,13 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
 
     # Add the aspects polarity
     planets.pred.aspen[, polarity := aspectspolarity['polarity', aspect]]
+    # Calculate the transit planet zoodiacal energy
+    processAspEnergy <- function(asp.row, by.row) {
+      zodenergy[by.row[[1]], asp.row[[1]]]
+    }
 
     # Set columns with transit zodiacal energy / aspect energy / sigpoints energy
-    planets.pred.aspen[, tenergy := planetsenergy['energy', origin], by=c('origin')]
+    planets.pred.aspen[, tenergy := processAspEnergy(.SD, .BY), by=c('origin'), .SDcols=c('tzsign')]
     planets.pred.aspen[, aenergy := aspectsenergy['energy', aspect], by=c('aspect')]
     planets.pred.aspen[, spenergy := sigpenergy['energy', as.character(lon)], by=c('lon')]
 
@@ -518,9 +524,9 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
                             ", cusorbs=c(", paste(cusorbs, collapse=", "), ")",
                             ", aspectsenergy=c(", paste(aspectsenergy, collapse=", "), ")",
                             ", sigpenergy=c(", paste(sigpenergy, collapse=", "), ")",
-                            ", planetsenergy=c(", paste(planetsenergy, collapse=", "), ")",
+                            ", planetszodenergy=c(", paste(planetszodenergy, collapse=", "), ")",
                             ", aspectspolarity=c(", paste(aspectspolarity, collapse=", "), ")",
-                            ", dateformat=", shQuote(dateformat), ", verbose=T", ", doplot=T, plotsol=F",
+                            ", dateformat=", shQuote(dateformat), ", verbose=F", ", doplot=T, plotsol=F",
                             ", fittype=", shQuote(fittype), ", topn=", topn, ")\n", sep=""))
     return(sol)
   }
@@ -562,12 +568,12 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     sigpenergymatrix <- matrix(args$sigpenergy, nrow = 1, ncol = length(args$sigpenergy), byrow = TRUE,
                                   dimnames = list(c('energy'), siglons$lon))
 
-    planetsenergymatrix <- matrix(args$planetsenergy, nrow = 1, ncol = length(planetsBaseCols), byrow = TRUE,
-                                     dimnames = list(c('energy'), planetsBaseCols))
+    planetszodenergymatrix <- matrix(args$planetszodenergy, nrow = length(planetsBaseCols), ncol = 12, byrow = TRUE,
+                                     dimnames = list(planetsBaseCols, zodSignsCols))
 
     # Calculate daily aspects energy for predict dates
     energy.days <- dayAspectsEnergy(planets, security, args$degsplit, rdates[1], rdates[2], rdates[3], rdates[4], args$topn,
-                                    aspectspolaritymatrix, aspectsenergymatrix, planetsenergymatrix, sigpenergymatrix, orbsmatrix)
+                                    aspectspolaritymatrix, aspectsenergymatrix, planetszodenergymatrix, sigpenergymatrix, orbsmatrix)
 
     # Calculate prediction
     prediction <- calculatePrediction(energy.days)
@@ -637,7 +643,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
       stop("No valid fittype provided")
     }
 
-    if (args$verbose) {
+    if (args$doplot) {
       sout <- stringSolution(args)
 
       # plot solution snippet if doplot is enabled
@@ -650,7 +656,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
                              print(aspectspolaritymatrix),
                              print(aspectsenergymatrix),
                              print(sigpenergymatrix),
-                             print(planetsenergymatrix))
+                             print(planetszodenergymatrix))
       # print buffered output
       cat(sout, mout, "\n", sep="\n")
 
@@ -756,8 +762,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     co.e = 3+length(deforbs)
     api.e = co.e+length(aspects)-1
     ae.e = api.e+length(aspects)
-    pe.e = ae.e+length(planetsBaseCols)
-    spe.e = pe.e+topn
+    pze.e = ae.e+lenZodEnergyMi
+    spe.e = pze.e+topn
 
     args <-list(securityfile=securityfile,
                 planetsfile=planetsfile,
@@ -779,8 +785,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
                 cusorbs=x[3:(co.e-1)],
                 aspectspolarity=x[co.e:(api.e-1)],
                 aspectsenergy=adjustEnergy(x[api.e:(ae.e-1)]),
-                planetsenergy=adjustEnergy(x[ae.e:(pe.e-1)]),
-                sigpenergy=adjustEnergy(x[pe.e:(spe.e-1)]))
+                planetszodenergy=adjustEnergy(x[ae.e:(pze.e-1)]),
+                sigpenergy=adjustEnergy(x[pze.e:(spe.e-1)]))
 
     return(args)
   }
@@ -798,13 +804,13 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     polaritymax <- rep(1, length(aspects)-1)
     aspectenergymin <- rep(0, length(aspects))
     aspectenergymax <- rep(30, length(aspects))
-    planetenergymin <- rep(0, length(planetsBaseCols))
-    planetenergymax <- rep(30, length(planetsBaseCols))
+    planetzodenergymin <- rep(0, lenZodEnergyMi)
+    planetzodenergymax <- rep(30, lenZodEnergyMi)
     sigpenergymin <- rep(0, topn)
     sigpenergymax <- rep(30, topn)
 
-    minvals <- c( 2, 5, orbsmin, polaritymin, aspectenergymin, planetenergymin, sigpenergymin)
-    maxvals <- c(10, 6, orbsmax, polaritymax, aspectenergymax, planetenergymax, sigpenergymax)
+    minvals <- c( 2, 5, orbsmin, polaritymin, aspectenergymin, planetzodenergymin, sigpenergymin)
+    maxvals <- c(10, 6, orbsmax, polaritymax, aspectenergymax, planetzodenergymax, sigpenergymax)
 
     # Clear the cache directory before start
     clearCache()
