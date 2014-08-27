@@ -609,6 +609,10 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
       sample.cv <- sample.cv[, .SD[sample(.N, round(nrow(sample.cv) * .4))]]
     }
 
+    # Sort samples by Date
+    setkey(sample.opt, 'Date')
+    setkey(sample.cv, 'Date')
+
     # compute test predictions by year
     res.test <- sample.opt[, processYearPredictions(.SD, F), by=Year]
     resMean <- function(x) round(mean(x), digits=2)
