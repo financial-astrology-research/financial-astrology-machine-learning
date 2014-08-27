@@ -391,15 +391,14 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
   branch.name <- branchName()
 
   # Build a long data table with daily aspects, orbs and longitudes
-  meltedAndMergedDayAspects <- function(planets, security, degsplit, tsdate, tedate, psdate, pedate, topn) {
+  meltedAndMergedDayAspects <- function(planets, symbol, psdate, pedate) {
     planetskey <- dataTableUniqueVector(planets)
-    securitykey <- dataTableUniqueVector(security)
-    ckey <- list(as.character(c('meltedAndMergedDayAspects', planetskey, securitykey, degsplit, tsdate, tedate, psdate, pedate, topn)))
+    ckey <- list(as.character(c('meltedAndMergedDayAspects', planetskey, psdate, pedate)))
     aspects.day.long <- secureLoadCache(key=ckey)
 
     if (is.null(aspects.day.long)) {
       # calculate daily aspects
-      aspects.day <- buildSignificantLongitudesAspects(planets, security, degsplit, tsdate, tedate, topn, F)
+      aspects.day <- buildNatalLongitudeAspects(symbol, planets, F)
       # leave only the aspects for prediction range dates
       aspects.day <- aspects.day[Date > psdate & Date <= pedate & wday %in% c(1, 2, 3, 4, 5)]
 
@@ -417,6 +416,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
 
       # melt longitudes
       longs <- melt(aspects.day, id.var=c('Date', 'lon'), variable.name='origin',
+
                     value.name='tlon', measure.var=planetsLonCols)
       # avoid lon 0 that cause 0 sign when divide celing(0/30)
       longs[tlon == 0, tlon := 1]
@@ -448,10 +448,9 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
   }
 
   # process the daily aspects energy
-  dayAspectsEnergy <- function(planets, security, degsplit, tsdate, tedate, psdate, pedate, topn,
-                               aspectspolarity, aspectsenergy, zodenergy, sigpenergy, orbs) {
+  dayAspectsEnergy <- function(planets, symbol, psdate, pedate, aspectspolarity, aspectsenergy, zodenergy, sigpenergy, orbs) {
     # aspects, orbs and longitudes in long format
-    planets.pred.aspen <- meltedAndMergedDayAspects(planets, security, degsplit, tsdate, tedate, psdate, pedate, topn)
+    planets.pred.aspen <- meltedAndMergedDayAspects(planets, symbol, psdate, pedate)
 
     # Use only the separating aspects & applying with at much 1 deg of orb
     #planets.pred.aspen <- planets.pred.aspen[orbdir == 1 | (orbdir == -1 & orb <= 1 ),]
@@ -515,19 +514,19 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
 
   stringSolution <- function(args) {
     sol <- with(args, paste("testPlanetsSignificanceRelative('testSolution'",
+                            ", symbol=", shQuote(symbol),
                             ", securityfile=", shQuote(securityfile),
                             ", planetsfile=", shQuote(planetsfile),
                             ", predfile=", shQuote(predfile),
-                            ", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate),
                             ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate),
-                            ", mapredsm=", mapredsm, ", mapricefs=", mapricefs, ", mapricesl=", mapricesl, ", degsplit=", degsplit,
+                            ", mapredsm=", mapredsm, ", mapricefs=", mapricefs, ", mapricesl=", mapricesl,
                             ", cusorbs=c(", paste(cusorbs, collapse=", "), ")",
                             ", aspectsenergy=c(", paste(aspectsenergy, collapse=", "), ")",
                             ", sigpenergy=c(", paste(sigpenergy, collapse=", "), ")",
                             ", planetszodenergy=c(", paste(planetszodenergy, collapse=", "), ")",
                             ", aspectspolarity=c(", paste(aspectspolarity, collapse=", "), ")",
                             ", dateformat=", shQuote(dateformat), ", verbose=F", ", doplot=T, plotsol=F",
-                            ", fittype=", shQuote(fittype), ", topn=", topn, ")\n", sep=""))
+                            ", fittype=", shQuote(fittype), ")\n", sep=""))
     return(sol)
   }
 
@@ -540,18 +539,16 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
 
   relativeTrend <- function(args) {
     looptm <- proc.time()
-    rdates <- as.Date(with(args, c(tsdate, tedate, vsdate, vedate)))
+    rdates <- as.Date(with(args, c(vsdate, vedate)))
 
     # open planets file and leave only needed cols for better speed
     planets <- openPlanets(args$planetsfile, deforbs, calcasps=F)
     planets <- planets[, c('Date', 'Year', 'wday', planetsLonCols), with=F]
     # load the security data and leave only needed cols
-    security <- with(args, openSecurity(securityfile, mapricefs, mapricesl, dateformat, tsdate))
+    security <- with(args, openSecurity(securityfile, mapricefs, mapricesl, dateformat, vsdate))
     security <- security[, c('Date', 'Year', 'Mid', 'MidMAF', 'MidMAS', 'Eff'), with=F]
     # build significant points vector
-    siglons <- buildSignificantLongitudes(planets, security, args$degsplit, rdates[1], rdates[2])
-    # leave only the top N significant points
-    siglons <- head(siglons, args$topn)
+    siglons <- buildNatalLongitudes(args$symbol)
 
     # build matrix
     orbsmatrix <- matrix(args$cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE,
@@ -572,8 +569,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
                                      dimnames = list(planetsBaseCols, zodSignsCols))
 
     # Calculate daily aspects energy for predict dates
-    energy.days <- dayAspectsEnergy(planets, security, args$degsplit, rdates[1], rdates[2], rdates[3], rdates[4], args$topn,
-                                    aspectspolaritymatrix, aspectsenergymatrix, planetszodenergymatrix, sigpenergymatrix, orbsmatrix)
+    energy.days <- dayAspectsEnergy(planets, args$symbol, rdates[1], rdates[2], aspectspolaritymatrix, aspectsenergymatrix,
+                                    planetszodenergymatrix, sigpenergymatrix, orbsmatrix)
 
     # Calculate prediction
     prediction <- calculatePrediction(energy.days)
@@ -643,7 +640,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
       stop("No valid fittype provided")
     }
 
-    if (args$doplot) {
+    if (args$verbose) {
       sout <- stringSolution(args)
 
       # plot solution snippet if doplot is enabled
@@ -756,33 +753,30 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     return(list(correlation=correlation, volatility=volatility, matches.r=matches.r, matches.u=matches.u, matches.d=matches.d, matches.t=matches.t))
   }
 
-  processParams <- function(x, securityfile, planetsfile, predfile, tsdate, tedate, vsdate, vedate,
-                            fittype, dateformat, mapricefs, mapricesl, topn) {
+  processParams <- function(x, symbol, securityfile, planetsfile, predfile, vsdate, vedate, fittype, dateformat, mapricefs, mapricesl) {
     # build the parameters based on GA indexes
-    co.e = 3+length(deforbs)
+    co.e = 2+length(deforbs)
     api.e = co.e+length(aspects)-1
     ae.e = api.e+length(aspects)
     pze.e = ae.e+lenZodEnergyMi
-    spe.e = pze.e+topn
+    # 14 natal points
+    spe.e = pze.e+14
 
-    args <-list(securityfile=securityfile,
+    args <-list(symbol=symbol,
+                securityfile=securityfile,
                 planetsfile=planetsfile,
                 predfile=predfile,
-                tsdate=tsdate,
-                tedate=tedate,
                 vsdate=vsdate,
                 vedate=vedate,
                 mapricefs=mapricefs,
                 mapricesl=mapricesl,
-                topn=topn,
                 fittype=fittype,
                 dateformat=dateformat,
                 verbose=F,
                 doplot=F,
                 plotsol=F,
                 mapredsm=x[1],
-                degsplit=x[2],
-                cusorbs=x[3:(co.e-1)],
+                cusorbs=x[2:(co.e-1)],
                 aspectspolarity=x[co.e:(api.e-1)],
                 aspectsenergy=adjustEnergy(x[api.e:(ae.e-1)]),
                 planetszodenergy=adjustEnergy(x[ae.e:(pze.e-1)]),
@@ -795,8 +789,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     x / 10
   }
 
-  optimizeRelativeTrend <- function(benchno, sectype, secsymbols, planetsfile, tsdate, tedate, vsdate, vedate, fittype,
-                                    mapricefs, mapricesl, topn, dateformat) {
+  optimizeRelativeTrend <- function(benchno, sectype, secsymbols, planetsfile, vsdate, vedate, fittype, mapricefs, mapricesl, dateformat) {
     cat("---------------------------- Initialize optimization ----------------------------------\n\n")
     orbsmin <- rep(0, length(deforbs))
     orbsmax <- deforbs
@@ -806,11 +799,12 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     aspectenergymax <- rep(30, length(aspects))
     planetzodenergymin <- rep(0, lenZodEnergyMi)
     planetzodenergymax <- rep(30, lenZodEnergyMi)
-    sigpenergymin <- rep(0, topn)
-    sigpenergymax <- rep(30, topn)
+    # 14 natal points
+    sigpenergymin <- rep(0, 14)
+    sigpenergymax <- rep(30, 14)
 
-    minvals <- c( 2, 5, orbsmin, polaritymin, aspectenergymin, planetzodenergymin, sigpenergymin)
-    maxvals <- c(10, 6, orbsmax, polaritymax, aspectenergymax, planetzodenergymax, sigpenergymax)
+    minvals <- c( 2, orbsmin, polaritymin, aspectenergymin, planetzodenergymin, sigpenergymin)
+    maxvals <- c(10, orbsmax, polaritymax, aspectenergymax, planetzodenergymax, sigpenergymax)
 
     # Clear the cache directory before start
     clearCache()
@@ -821,7 +815,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     #if (exists('sinkfile', envir=parent.frame())) {
     sink(sinkpathfile, append=T)
     cat("# version: ", branch.name, "\n")
-    cat("#", tsdate, '-', tedate, 'FIT /', vsdate, '-', vedate, 'OPTwCV -', fittype, 'fit -', mapricefs, '-', mapricesl, 'MAS -', topn, 'TOPN', '\n\n')
+    cat("#", vsdate, '-', vedate, 'OPTwCV -', fittype, 'fit -', mapricefs, '-', mapricesl, 'MAS', '\n\n')
     sink()
 
     for (symbol in secsymbols) {
@@ -836,14 +830,13 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
       gar <- ga("real-valued", fitness=relativeTrendExec, parallel=TRUE, monitor=gaMonitor, maxiter=60, run=50, min=minvals, max=maxvals,
                 popSize=1000, elitism = 100, pcrossover = 0.9, pmutation = 0.1,
                 selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
-                topn=topn, securityfile=securityfile, planetsfile=planetsfile, predfile=predfile,
-                tsdate=tsdate, tedate=tedate, vsdate=vsdate, vedate=vedate,
-                fittype=fittype, mapricefs=mapricefs, mapricesl=mapricesl, dateformat=dateformat)
+                symbol=symbol, securityfile=securityfile, planetsfile=planetsfile, predfile=predfile,
+                vsdate=vsdate, vedate=vedate, fittype=fittype, mapricefs=mapricefs, mapricesl=mapricesl, dateformat=dateformat)
 
       # output the solution string
       sink(sinkpathfile, append=T)
       x <- gar@solution[1,]
-      args <- processParams(x, securityfile, planetsfile, predfile, tsdate, tedate, vsdate, vedate, fittype, dateformat, mapricefs, mapricesl, topn)
+      args <- processParams(x, symbol, securityfile, planetsfile, predfile, vsdate, vedate, fittype, dateformat, mapricefs, mapricesl)
       cat(stringSolution(args))
       cat("# Fitness = ", gar@fitnessValue, "\n\n")
       sink()
@@ -1358,15 +1351,12 @@ calculatePointsPlanetsAspects <- function(points.planets, fwide=F) {
   return(points.planets)
 }
 
-# Calculate transits to natal position (symbol incorporation chart) aspects
-# Usage: buildNatalLongitudeAspects('AXP', planets)
-buildNatalLongitudeAspects <- function(symbol, planets, fwide=F, clear=F) {
-  planetskey <- dataTableUniqueVector(planets)
-  securitykey <- dataTableUniqueVector(security)
-  ckey <- list(as.character(c('buildNatalLongitudeAspects', planetskey, securitykey, degsplit, tsdate, tedate, topn, fwide)))
-  planets.natal.aspsday <- secureLoadCache(key=ckey)
+# Build the natal positions table for a given symbol
+buildNatalLongitudes <- function(symbol, clear=F) {
+  ckey <- list(as.character(c('buildNatalLongitudes', symbol)))
+  natal.symbol <- secureLoadCache(key=ckey)
 
-  if (is.null(planets.aspsday) || clear) {
+  if (is.null(natal.symbol) || clear) {
     # open the stocks incorporation date planets positions
     natalfile <- npath(paste("~/trading/charts/stocksinc.tsv", sep=""))
     natal <- fread(natalfile, sep="\t", na.strings="", verbose = F)
@@ -1376,8 +1366,25 @@ buildNatalLongitudeAspects <- function(symbol, planets, fwide=F, clear=F) {
     natal.symbol <- natal.long[Symbol == symbol,]
     setnames(natal.symbol, c('Symbol', 'variable', 'lon'))
 
+    saveCache(natal.symbol, key=ckey)
+    cat("Set buildNatalLongitudes cache\n")
+  }
+
+  return(natal.symbol)
+}
+
+# Calculate transits to natal position (symbol incorporation chart) aspects
+# Usage: buildNatalLongitudeAspects('AXP', planets)
+buildNatalLongitudeAspects <- function(symbol, planets, fwide=F, clear=F) {
+  planetskey <- dataTableUniqueVector(planets)
+  ckey <- list(as.character(c('buildNatalLongitudeAspects', symbol, planetskey, fwide)))
+  planets.natal.aspsday <- secureLoadCache(key=ckey)
+
+  if (is.null(planets.natal.aspsday) || clear) {
+    # build natal positions
+    natal.symbol <- buildNatalLongitudes(symbol)
     # extract only the planets longitudes
-    planets <- planets[, c('Date', planetsLonCols), with=F]
+    planets <- planets[, c('Date', 'wday', planetsLonCols), with=F]
     # cartesian join
     natal.symbol.planets <- CJDT(natal.symbol, planets)
     # calculate aspects
