@@ -1359,23 +1359,33 @@ calculatePointsPlanetsAspects <- function(points.planets, fwide=F) {
 }
 
 # Calculate transits to natal position (symbol incorporation chart) aspects
-# Usage: mainBuildNatalLongitudeAspects('AXP', planets)
-mainBuildNatalLongitudeAspects <- function(symbol, planets, fwide=F) {
-  # open the stocks incorporation date planets positions
-  natalfile <- npath(paste("~/trading/charts/stocksinc.tsv", sep=""))
-  natal <- fread(natalfile, sep="\t", na.strings="", verbose = F)
-  loncols <- colnames(natal)
-  loncols <- loncols[grep('^..LON$', loncols)]
-  natal.long <- melt(natal, id.var=c('Symbol'), measure.var=loncols)
-  natal.symbol <- natal.long[Symbol == symbol,]
-  setnames(natal.symbol, c('Symbol', 'variable', 'lon'))
+# Usage: buildNatalLongitudeAspects('AXP', planets)
+buildNatalLongitudeAspects <- function(symbol, planets, fwide=F, clear=F) {
+  planetskey <- dataTableUniqueVector(planets)
+  securitykey <- dataTableUniqueVector(security)
+  ckey <- list(as.character(c('buildNatalLongitudeAspects', planetskey, securitykey, degsplit, tsdate, tedate, topn, fwide)))
+  planets.natal.aspsday <- secureLoadCache(key=ckey)
 
-  # extract only the planets longitudes
-  planets <- planets[, c('Date', planetsLonCols), with=F]
-  # cartesian join
-  natal.symbol.planets <- CJDT(natal.symbol, planets)
-  # calculate aspects
-  planets.natal.aspsday <- calculatePointsPlanetsAspects(natal.symbol.planets, fwide)
+  if (is.null(planets.aspsday) || clear) {
+    # open the stocks incorporation date planets positions
+    natalfile <- npath(paste("~/trading/charts/stocksinc.tsv", sep=""))
+    natal <- fread(natalfile, sep="\t", na.strings="", verbose = F)
+    loncols <- colnames(natal)
+    loncols <- loncols[grep('^..LON$', loncols)]
+    natal.long <- melt(natal, id.var=c('Symbol'), measure.var=loncols)
+    natal.symbol <- natal.long[Symbol == symbol,]
+    setnames(natal.symbol, c('Symbol', 'variable', 'lon'))
+
+    # extract only the planets longitudes
+    planets <- planets[, c('Date', planetsLonCols), with=F]
+    # cartesian join
+    natal.symbol.planets <- CJDT(natal.symbol, planets)
+    # calculate aspects
+    planets.natal.aspsday <- calculatePointsPlanetsAspects(natal.symbol.planets, fwide)
+
+    saveCache(planets.natal.aspsday, key=ckey)
+    cat("Set buildNatalLongitudeAspects cache\n")
+  }
 
   return(planets.natal.aspsday)
 }
@@ -1388,6 +1398,7 @@ buildSignificantLongitudesAspects <- function(planets, security, degsplit, tsdat
   securitykey <- dataTableUniqueVector(security)
   ckey <- list(as.character(c('buildSignificantLongitudesAspects', planetskey, securitykey, degsplit, tsdate, tedate, topn, fwide)))
   planets.aspsday <- secureLoadCache(key=ckey)
+
   if (is.null(planets.aspsday) || clear) {
     # calculate the significance points
     siglons <- buildSignificantLongitudes(planets, security, degsplit, tsdate, tedate)
@@ -1530,7 +1541,7 @@ dailySignificantAspectsIndicators <- function(planets, security, sdate, edate, d
 # Usage: daily.freq <- dailyNatalAspectsIndicators(symbol, planets, security, "1970-01-01", "2001-01-01")
 dailyNatalAspectsIndicators <- function(symbol, planets, security, sdate, edate, clear=F) {
   # Significant points aspects
-  points.planets <- mainBuildNatalLongitudeAspects(symbol, planets, T)
+  points.planets <- buildNatalLongitudeAspects(symbol, planets, T)
   aspects.daily.freq <- buildLongitudeAspectsFrequencies(points.planets, security, sdate, edate)
   return(aspects.daily.freq)
 }
