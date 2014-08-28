@@ -393,7 +393,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
   # Build a long data table with daily aspects, orbs and longitudes
   meltedAndMergedDayAspects <- function(planets, symbol, psdate, pedate) {
     planetskey <- dataTableUniqueVector(planets)
-    ckey <- list(as.character(c('meltedAndMergedDayAspects', planetskey, psdate, pedate)))
+    ckey <- list(as.character(c('meltedAndMergedDayAspects', planetskey, symbol, psdate, pedate)))
     aspects.day.long <- secureLoadCache(key=ckey)
 
     if (is.null(aspects.day.long)) {
@@ -525,7 +525,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
                             ", sigpenergy=c(", paste(sigpenergy, collapse=", "), ")",
                             ", planetszodenergy=c(", paste(planetszodenergy, collapse=", "), ")",
                             ", aspectspolarity=c(", paste(aspectspolarity, collapse=", "), ")",
-                            ", dateformat=", shQuote(dateformat), ", verbose=F", ", doplot=T, plotsol=F",
+                            ", dateformat=", shQuote(dateformat), ", verbose=T", ", doplot=T, plotsol=F",
                             ", fittype=", shQuote(fittype), ")\n", sep=""))
     return(sol)
   }
