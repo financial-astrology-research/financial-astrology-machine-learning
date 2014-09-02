@@ -574,8 +574,9 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
 
     # Calculate prediction
     prediction <- calculatePrediction(energy.days)
-    # join the security table with prediction
+    # join the security table with prediction and remove NAS caused by join
     planets.pred <- security[prediction]
+    planets.pred <- planets.pred[!is.na(Mid),]
     # smoth the prediction serie and remove resulting NAS
     # TODO: test correlation with lowess smooth
     #planets.pred[, predval := lowess(planets.pred$predRaw, f=1/200, delta=5)$y]
