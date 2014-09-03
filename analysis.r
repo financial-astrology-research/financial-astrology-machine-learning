@@ -546,7 +546,8 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     planets <- planets[, c('Date', 'Year', 'wday', planetsLonCols), with=F]
     # load the security data and leave only needed cols
     security <- with(args, openSecurity(securityfile, mapricefs, mapricesl, dateformat, vsdate))
-    security <- security[, c('Date', 'Year', 'Mid', 'MidMAF', 'MidMAS', 'Eff'), with=F]
+    security <- security[, c('Date', 'Year', 'Open', 'High', 'Low', 'Close', 'Mid', 'MidMAF', 'MidMAS', 'Eff'), with=F]
+
     # build significant points vector
     siglons <- buildNatalLongitudes(args$symbol)
 
@@ -595,10 +596,17 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     years.opt <- table(planets.pred.opt$Year)
     years.cv <- table(planets.pred.cv$Year)
 
-    # When doplot is enabled use for confirmation all the available years
     if (args$doplot) {
+      # When doplot is enabled use for confirmation all the available years
       sample.opt <- planets.pred.opt[Year %in% names(years.opt[years.opt > 20]),]
       sample.cv <- planets.pred.cv[Year %in% names(years.cv[years.cv > 20]),]
+
+      # plot CV years
+      sp <- xts(sample.cv[, c('Open', 'High', 'Low', 'Close', 'predval'), with=F], order.by=sample.cv$Date)
+      for (year in names(years.cv[years.cv > 20])) {
+        barChart(sp, log.scale=T, subset=year, TA='addSMA(20, col="red");addSMA(40, col="green");addAspEnergy();
+                 addRSI(14);addATR(14);addPVLines("p",31,"green",c(1,2,3));addPVLines("v",31,"red",c(1,2,3))')
+      }
     }
     else {
       # use sample of 50% optimization data
@@ -695,35 +703,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     else {
       correlation <- (planets.pred[!is.na(Mid), cor(predval, MidMAF, use="pairwise", method='spearman')] * 100)
       volatility <- planets.pred[!is.na(Mid), mean(Mid) / sd(Mid)]
-    }
-
-    # if plot is enabled
-    if (doplot) {
-      interval <- abs(as.integer((min(planets.pred$Date)-max(planets.pred$Date))/80))
-      x_dates <- seq(min(planets.pred$Date), max(planets.pred$Date), by=interval)
-
-      if (all(is.na(planets.pred$Mid))) {
-        p1 <- ggplot() + geom_path(data = planets.pred, aes(Date, predval), size=1)
-      }
-      else {
-        # split security & prediction data with it's corresponding MAs
-        planets.sec.plot <- planets.pred[, c('Date', 'Mid', 'MidMAF', 'MidMAS'), with=F]
-        planets.sec.plot[, type := 'security']
-        setnames(planets.sec.plot, c('Date', 'val', 'valMAF', 'valMAS', 'type'))
-        planets.pred.plot <- planets.pred[, c('Date', 'predval', 'predval', 'predval'), with=F]
-        planets.pred.plot[, type := 'prediction']
-        setnames(planets.pred.plot, c('Date', 'val', 'valMAF', 'valMAS', 'type'))
-        planets.plot <- rbindlist(list(planets.pred.plot, planets.sec.plot))
-        # facet plot
-        p1 <- ggplot() + facet_grid(type ~ ., scale = "free") +
-        geom_path(data=planets.plot, aes(Date, val), size = 1, na.rm=T) +
-        geom_path(data = planets.plot, aes(Date, valMAF), colour="blue", size=0.7, na.rm=T) +
-        geom_path(data = planets.plot, aes(Date, valMAS), colour="red", size=0.7, na.rm=T)
-      }
-
-      p1 <- p1 + theme(axis.text.x = element_text(angle = 90, size = 7), text=element_text(size=10)) +
-      ggtitle(pltitle) + scale_fill_grey() + scale_shape_identity() + scale_x_date(breaks=x_dates)
-      print(p1)
     }
 
     # calculate accuracy
@@ -1056,6 +1035,50 @@ pricePeaksLinesAdd <- function(sp, span, type=c('p', 'v', 'm'), col='green') {
     lapply(windows, function(w) addLines(0, NULL, pvi$middle, col=col, on=w))
   }
 }
+
+addPVLines <- function (type=c('p', 'v'), span=21, col = "blue", on = 1, overlay = TRUE) {
+  lchob <- quantmod:::get.current.chob()
+  x <- as.matrix(lchob@xdata)
+  xsub <- as.matrix(lchob@xdata[lchob@xsubset,])
+
+  if (type == 'p') {
+    # Calculate peaks
+    pv <- which(peaks(Op(x), span=span))
+  }
+  else if (type == 'v') {
+    # Calculate valleys
+    pv <- which(peaks(-Op(x), span=span))
+  }
+
+  # Determine the peak/valleys index positions in the subset
+  xsub[rownames(xsub) %in% names(pv),]
+  v <- which(rownames(xsub) %in% names(pv))
+
+  chobTA <- new("chobTA")
+  chobTA@new <- !overlay
+  chobTA@TA.values <- NULL
+  chobTA@name <- "chartLines"
+  chobTA@call <- match.call()
+  chobTA@on <- on
+  chobTA@params <- list(xrange = lchob@xrange, colors = lchob@colors, color.vol = lchob@color.vol, multi.col = lchob@multi.col,
+                        spacing = lchob@spacing, width = lchob@width, bp = lchob@bp, x.labels = lchob@x.labels, time.scale = lchob@time.scale,
+                        col = col, h = 0, x = NULL, v = v)
+
+  if (is.null(sys.call(-1))) {
+    TA <- lchob@passed.args$TA
+    lchob@passed.args$TA <- c(TA, chobTA)
+    lchob@windows <- lchob@windows + ifelse(chobTA@new, 1, 0)
+    do.call("chartSeries.chob", list(lchob))
+    invisible(chobTA)
+  }
+  else {
+    return(chobTA)
+  }
+}
+
+# Aspect Energy Indicator
+aspEnergy <- function(x) { x[,'predval'] }
+addAspEnergy <- newTA(aspEnergy, type='l', col='white')
 
 buildCompositeCols <- function(sp) {
   # Calculate composite declinations
