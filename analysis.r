@@ -384,6 +384,89 @@ branchName <- function() {
   return(branch.name)
 }
 
+# print a year solution summary
+printPredYearSummary <- function(x, type) {
+  cat("\t ", x['Year'], " - ", type ,": vol =", x['volatility'], " - cor =", x['correlation'])
+  cat(" - matches.r =", x['matches.r'], " - matches.u =", x['matches.u'], " - matches.d =", x['matches.d'], " - matches.t =", x['matches.t'], "\n")
+}
+
+# Plot the solution snippet
+plotSolutionSnippet <- function(snippet) {
+  plot(0:20, type = "n", xaxt="n", yaxt="n", bty="n", xlab = "", ylab = "")
+  par(ps = 8, cex = 1, cex.main = 1)
+  text(10, 10, snippet, pos=3)
+}
+
+processPredictions <- function(planets.test) {
+  planets.pred <- copy(planets.test)
+  zerores <- list(correlation=0.0, volatility=0.0, matches.r=as.integer(0), matches.u=as.integer(0), matches.d=as.integer(0))
+
+  if (nrow(planets.pred) == 0) {
+    return(zerores)
+  }
+
+  # in case that all predictions are 0 we skip this solution
+  if (all(planets.pred$predRaw == 0)) {
+    return(zerores)
+  }
+
+  if (all(is.na(planets.pred$Mid))) {
+    correlation <- 0
+    volatility <- 0
+  }
+  else {
+    correlation <- (planets.pred[!is.na(Mid), cor(predval, MidMAF, use="pairwise", method='spearman')] * 100)
+    volatility <- planets.pred[!is.na(Mid), mean(Mid) / sd(Mid)]
+  }
+
+  # calculate accuracy
+  t1 <- with(planets.pred, table(Eff, Eff == predFactor))
+
+  # fix any missing row or column in the table
+  if ('FALSE' %ni% colnames(t1)) {
+    t1 <- cbind(t1, 'FALSE' = c(as.integer(0), as.integer(0)))
+  }
+  if ('TRUE' %ni% colnames(t1)) {
+    t1 <- cbind(t1, 'TRUE' = c(as.integer(0), as.integer(0)))
+  }
+  if ('down' %ni% rownames(t1)) {
+    t1 <- rbind(t1, 'down' = c(as.integer(0), as.integer(0)))
+  }
+  if ('up' %ni% rownames(t1)) {
+    t1 <- rbind(t1, 'up' = c(as.integer(0), as.integer(0)))
+  }
+
+  # add table margins
+  t1 <- addmargins(t1)
+
+  # calculate the percentage matches for each direction
+  matches.u <- as.integer(t1['up', 'TRUE'] / t1['up', 'Sum'] * 100)
+  matches.d <- as.integer(t1['down', 'TRUE'] / t1['down', 'Sum'] * 100)
+  matches.r <- t1['Sum', 'Sum']
+
+  # Percentage of correctly day responses from the total year days
+  matches.t <- as.integer((t1['Sum', 'TRUE'] / matches.r) * 100)
+
+  return(list(correlation=correlation, volatility=volatility, matches.r=matches.r, matches.u=matches.u, matches.d=matches.d, matches.t=matches.t))
+}
+
+adjustEnergy <- function(x) {
+  x / 10
+}
+
+testSolution <- function(...) {
+  args <- list(...)
+  if (!hasArg('dateformat')) stop("A dateformat is needed.")
+  predfile <- paste("~/", args$predfile, ".pdf", sep="")
+  # Create directory if do not exists
+  if (!file.exists(dirname(predfile))) {
+    dir.create(dirname(predfile), recursive=T)
+  }
+  if (args$doplot) pdf(predfile, width = 11, height = 8, family='Helvetica', pointsize=12)
+  relativeTrend(args)
+  if (args$doplot) dev.off()
+}
+
 # Prediction Moddel with GA optimization
 cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
   if (!hasArg('execfunc')) stop("Provide function to execute")
@@ -499,19 +582,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     return(prediction)
   }
 
-  # print a year solution summary
-  printPredYearSummary <- function(x, type) {
-    cat("\t ", x['Year'], " - ", type ,": vol =", x['volatility'], " - cor =", x['correlation'])
-    cat(" - matches.r =", x['matches.r'], " - matches.u =", x['matches.u'], " - matches.d =", x['matches.d'], " - matches.t =", x['matches.t'], "\n")
-  }
-
-  # Plot the solution snippet
-  plotSolutionSnippet <- function(snippet) {
-    plot(0:20, type = "n", xaxt="n", yaxt="n", bty="n", xlab = "", ylab = "")
-    par(ps = 8, cex = 1, cex.main = 1)
-    text(10, 10, snippet, pos=3)
-  }
-
   stringSolution <- function(args) {
     sol <- with(args, paste("testPlanetsSignificanceRelative('testSolution'",
                             ", symbol=", shQuote(symbol),
@@ -587,8 +657,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     # Add the Year for projected predictions rows
     planets.pred[is.na(Year), Year := as.character(format(Date, "%Y"))]
     # helper function to process predictions by year
-    pltitle <- paste('Yearly prediction VS price movement for ', args$securityfile)
-    processYearPredictions <- function(x, doplot) processPredictions(x, pltitle, doplot)
+    #pltitle <- paste('Yearly prediction VS price movement for ', args$securityfile)
     # split data in optimization and cross validation
     planets.pred.opt <- planets.pred[1:round(nrow(planets.pred)/2),]
     planets.pred.cv <- planets.pred[round(nrow(planets.pred)/2):nrow(planets.pred),]
@@ -622,7 +691,7 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     setkey(sample.cv, 'Date')
 
     # compute test predictions by year
-    res.test <- sample.opt[, processYearPredictions(.SD, F), by=Year]
+    res.test <- sample.opt[, processPredictions(.SD), by=Year]
     resMean <- function(x) round(mean(x), digits=2)
     res.test.mean <- res.test[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.t=resMean(matches.t))]
     # compute confirmation predictions by year
@@ -683,59 +752,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
     return(fitness)
   }
 
-  processPredictions <- function(planets.test, pltitle, doplot) {
-    planets.pred <- copy(planets.test)
-    zerores <- list(correlation=0.0, volatility=0.0, matches.r=as.integer(0), matches.u=as.integer(0), matches.d=as.integer(0))
-
-    if (nrow(planets.pred) == 0) {
-      return(zerores)
-    }
-
-    # in case that all predictions are 0 we skip this solution
-    if (all(planets.pred$predRaw == 0)) {
-      return(zerores)
-    }
-
-    if (all(is.na(planets.pred$Mid))) {
-      correlation <- 0
-      volatility <- 0
-    }
-    else {
-      correlation <- (planets.pred[!is.na(Mid), cor(predval, MidMAF, use="pairwise", method='spearman')] * 100)
-      volatility <- planets.pred[!is.na(Mid), mean(Mid) / sd(Mid)]
-    }
-
-    # calculate accuracy
-    t1 <- with(planets.pred, table(Eff, Eff == predFactor))
-
-    # fix any missing row or column in the table
-    if ('FALSE' %ni% colnames(t1)) {
-      t1 <- cbind(t1, 'FALSE' = c(as.integer(0), as.integer(0)))
-    }
-    if ('TRUE' %ni% colnames(t1)) {
-      t1 <- cbind(t1, 'TRUE' = c(as.integer(0), as.integer(0)))
-    }
-    if ('down' %ni% rownames(t1)) {
-      t1 <- rbind(t1, 'down' = c(as.integer(0), as.integer(0)))
-    }
-    if ('up' %ni% rownames(t1)) {
-      t1 <- rbind(t1, 'up' = c(as.integer(0), as.integer(0)))
-    }
-
-    # add table margins
-    t1 <- addmargins(t1)
-
-    # calculate the percentage matches for each direction
-    matches.u <- as.integer(t1['up', 'TRUE'] / t1['up', 'Sum'] * 100)
-    matches.d <- as.integer(t1['down', 'TRUE'] / t1['down', 'Sum'] * 100)
-    matches.r <- t1['Sum', 'Sum']
-
-    # Percentage of correctly day responses from the total year days
-    matches.t <- as.integer((t1['Sum', 'TRUE'] / matches.r) * 100)
-
-    return(list(correlation=correlation, volatility=volatility, matches.r=matches.r, matches.u=matches.u, matches.d=matches.d, matches.t=matches.t))
-  }
-
   processParams <- function(x, symbol, securityfile, planetsfile, predfile, vsdate, vedate, fittype, dateformat, mapricefs, mapricesl) {
     # build the parameters based on GA indexes
     co.e = 2+length(deforbs)
@@ -766,10 +782,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
                 sigpenergy=adjustEnergy(x[pze.e:(spe.e-1)]))
 
     return(args)
-  }
-
-  adjustEnergy <- function(x) {
-    x / 10
   }
 
   optimizeRelativeTrend <- function(benchno, sectype, secsymbols, planetsfile, vsdate, vedate, fittype, mapricefs, mapricesl, dateformat) {
@@ -824,19 +836,6 @@ cmpTestPlanetsSignificanceRelative <- function(execfunc, ...) {
       cat("# Fitness = ", gar@fitnessValue, "\n\n")
       sink()
     }
-  }
-
-  testSolution <- function(...) {
-    args <- list(...)
-    if (!hasArg('dateformat')) stop("A dateformat is needed.")
-    predfile <- paste("~/", args$predfile, ".pdf", sep="")
-    # Create directory if do not exists
-    if (!file.exists(dirname(predfile))) {
-      dir.create(dirname(predfile), recursive=T)
-    }
-    if (args$doplot) pdf(predfile, width = 11, height = 8, family='Helvetica', pointsize=12)
-    relativeTrend(args)
-    if (args$doplot) dev.off()
   }
 
   execfunc <- get(get('execfunc'))
