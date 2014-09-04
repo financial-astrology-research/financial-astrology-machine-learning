@@ -181,7 +181,6 @@ cmpTopNSigAspectsModel <- function(execfunc, ...) {
     planets.pred[is.na(Year), Year := as.character(format(Date, "%Y"))]
     # helper function to process predictions by year
     pltitle <- paste('Yearly prediction VS price movement for ', args$securityfile)
-    processYearPredictions <- function(x, doplot) processPredictions(x, pltitle, doplot)
     # split data in optimization and cross validation
     planets.pred.opt <- planets.pred[1:round(nrow(planets.pred)/2),]
     planets.pred.cv <- planets.pred[round(nrow(planets.pred)/2):nrow(planets.pred),]
@@ -204,11 +203,11 @@ cmpTopNSigAspectsModel <- function(execfunc, ...) {
     }
 
     # compute test predictions by year
-    res.test <- sample.opt[, processYearPredictions(.SD, F), by=Year]
+    res.test <- sample.opt[, processPredictions(.SD), by=Year]
     resMean <- function(x) round(mean(x), digits=2)
     res.test.mean <- res.test[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.t=resMean(matches.t))]
     # compute confirmation predictions by year
-    res.conf <- sample.cv[, processYearPredictions(.SD, args$doplot), by=Year]
+    res.conf <- sample.cv[, processPredictions(.SD), by=Year]
     res.conf.mean <- res.conf[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.t=resMean(matches.t))]
 
     # use appropriate fitness type

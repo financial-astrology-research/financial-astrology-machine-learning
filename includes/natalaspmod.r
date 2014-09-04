@@ -205,7 +205,7 @@ cmpNatalAspectsModel <- function(execfunc, ...) {
       sp <- xts(sample.cv[, c('Open', 'High', 'Low', 'Close', 'predval'), with=F], order.by=sample.cv$Date)
       for (year in names(years.cv[years.cv > 20])) {
         barChart(sp, log.scale=T, subset=year, TA='addSMA(20, col="red");addSMA(40, col="green");addAspEnergy();
-                 addRSI(14);addATR(14);addPVLines("p",31,"green",c(1,2,3));addPVLines("v",31,"red",c(1,2,3))')
+                 addRSI(14);addPVLines("p",31,"green",c(1,2,3));addPVLines("v",31,"red",c(1,2,3))')
       }
     }
     else {
@@ -226,7 +226,7 @@ cmpNatalAspectsModel <- function(execfunc, ...) {
     resMean <- function(x) round(mean(x), digits=2)
     res.test.mean <- res.test[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.t=resMean(matches.t))]
     # compute confirmation predictions by year
-    res.conf <- sample.cv[, processYearPredictions(.SD, args$doplot), by=Year]
+    res.conf <- sample.cv[, processPredictions(.SD), by=Year]
     res.conf.mean <- res.conf[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.t=resMean(matches.t))]
 
     # use appropriate fitness type
@@ -367,6 +367,19 @@ cmpNatalAspectsModel <- function(execfunc, ...) {
       cat("# Fitness = ", gar@fitnessValue, "\n\n")
       sink()
     }
+  }
+
+  testSolution <- function(...) {
+    args <- list(...)
+    if (!hasArg('dateformat')) stop("A dateformat is needed.")
+    predfile <- paste("~/", args$predfile, ".pdf", sep="")
+    # Create directory if do not exists
+    if (!file.exists(dirname(predfile))) {
+      dir.create(dirname(predfile), recursive=T)
+    }
+    if (args$doplot) pdf(predfile, width = 11, height = 8, family='Helvetica', pointsize=12)
+    relativeTrend(args)
+    if (args$doplot) dev.off()
   }
 
   execfunc <- get(get('execfunc'))

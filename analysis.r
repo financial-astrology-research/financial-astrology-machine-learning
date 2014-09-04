@@ -459,19 +459,6 @@ adjustEnergy <- function(x) {
   x / 10
 }
 
-testSolution <- function(...) {
-  args <- list(...)
-  if (!hasArg('dateformat')) stop("A dateformat is needed.")
-  predfile <- paste("~/", args$predfile, ".pdf", sep="")
-  # Create directory if do not exists
-  if (!file.exists(dirname(predfile))) {
-    dir.create(dirname(predfile), recursive=T)
-  }
-  if (args$doplot) pdf(predfile, width = 11, height = 8, family='Helvetica', pointsize=12)
-  relativeTrend(args)
-  if (args$doplot) dev.off()
-}
-
 securityPeaksValleys <- function(security, span=50, plotfile="peaks_valleys") {
   planets <- openPlanets("~/trading/dplanets/planets_4.tsv", orbs, aspects, 5, 10)
   planetsBaseCols <- c("SU", "ME", "VE", "MA", "JU", "SA", "NN")
@@ -695,6 +682,10 @@ addPVLines <- function (type=c('p', 'v'), span=21, col = "blue", on = 1, overlay
 # Aspect Energy Indicator
 aspEnergy <- function(x) { x[,'predval'] }
 addAspEnergy <- newTA(aspEnergy, type='l', col='white')
+
+# Aspect Energy RSI Indicator
+aspEnergyRSI <- function(x) { RSI(x[,'predval']) }
+addAspEnergyRSI <- newTA(aspEnergyRSI, type='l', col='white')
 
 buildCompositeCols <- function(sp) {
   # Calculate composite declinations
