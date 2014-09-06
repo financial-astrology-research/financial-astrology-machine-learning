@@ -4,6 +4,10 @@ cmpTopNSigAspectsModel <- function(execfunc, ...) {
   ptm <- proc.time()
   branch.name <- branchName()
 
+  # Aspects and orbs
+  aspects            <- c( 0,30,36,40,45,51,60,72,80,90,103,108,120,135,144,154,160,180)
+  deforbs            <- c(12, 2, 2, 2, 2, 2, 5, 5, 2, 7,  2,  2,  7,  2,  5,  2,  2, 12)
+
   # Build a long data table with daily aspects, orbs and longitudes
   meltedAndMergedDayAspects <- function(planets, security, degsplit, tsdate, tedate, psdate, pedate, topn) {
     planetskey <- dataTableUniqueVector(planets)
@@ -104,6 +108,16 @@ cmpTopNSigAspectsModel <- function(execfunc, ...) {
     return(planets.pred.aspen)
   }
 
+  # aggregate the daily energy and apply it with the daily significance energy
+  # to calculate the final prediction
+  calculatePrediction <- function(energy.days) {
+    # to prevent division by zero
+    prediction <- energy.days[, list(down = sum(down), up = sum(up)), by='Date']
+    #prediction[, Date := as.Date(Date, format="%Y-%m-%d")]
+    prediction[, predRaw := (up-down)]
+    return(prediction)
+  }
+
   stringSolution <- function(args) {
     sol <- with(args, paste("testPlanetsSignificanceRelative('testSolution'",
                             ", securityfile=", shQuote(securityfile),
@@ -126,7 +140,9 @@ cmpTopNSigAspectsModel <- function(execfunc, ...) {
     # Build the params sets
     args <- processParams(x, ...)
     # Execute
-    return(relativeTrend(args))
+    res <- relativeTrend(args)
+    # Return only the fitness
+    return(res$fitness)
   }
 
   relativeTrend <- function(args) {
@@ -138,7 +154,7 @@ cmpTopNSigAspectsModel <- function(execfunc, ...) {
     planets <- planets[, c('Date', 'Year', 'wday', planetsLonCols), with=F]
     # load the security data and leave only needed cols
     security <- with(args, openSecurity(securityfile, mapricefs, mapricesl, dateformat, tsdate))
-    security <- security[, c('Date', 'Year', 'Mid', 'MidMAF', 'MidMAS', 'Eff'), with=F]
+    security <- security[, c('Date', 'Year', 'Open', 'High', 'Low', 'Close', 'Mid', 'MidMAF', 'MidMAS', 'Eff'), with=F]
     # build significant points vector
     siglons <- buildSignificantLongitudes(planets, security, args$degsplit, rdates[1], rdates[2])
     # leave only the top N significant points
@@ -192,6 +208,13 @@ cmpTopNSigAspectsModel <- function(execfunc, ...) {
     if (args$doplot) {
       sample.opt <- planets.pred.opt[Year %in% names(years.opt[years.opt > 20]),]
       sample.cv <- planets.pred.cv[Year %in% names(years.cv[years.cv > 20]),]
+
+      # plot CV years
+      sp <- xts(sample.cv[, c('Open', 'High', 'Low', 'Close', 'predval'), with=F], order.by=sample.cv$Date)
+      for (year in names(years.cv[years.cv > 20])) {
+        barChart(sp, log.scale=T, subset=year, TA='addSMA(20, col="red");addSMA(40, col="green");addAspEnergy();
+                 addRSI(14);addPVLines("p",31,"green",c(1,2,3));addPVLines("v",31,"red",c(1,2,3))')
+      }
     }
     else {
       # use sample of 50% optimization data
@@ -261,7 +284,7 @@ cmpTopNSigAspectsModel <- function(execfunc, ...) {
       cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n\n")
     }
 
-    return(fitness)
+    return(list(fitness=fitness, pred=planets.pred))
   }
 
   processParams <- function(x, securityfile, planetsfile, predfile, tsdate, tedate, vsdate, vedate,
@@ -356,6 +379,24 @@ cmpTopNSigAspectsModel <- function(execfunc, ...) {
       cat("# Fitness = ", gar@fitnessValue, "\n\n")
       sink()
     }
+  }
+
+  testSolution <- function(...) {
+    args <- list(...)
+    if (!hasArg('dateformat')) stop("A dateformat is needed.")
+    predfile <- paste("~/", args$predfile, ".pdf", sep="")
+
+    # Create directory if do not exists
+    if (!file.exists(dirname(predfile))) {
+      dir.create(dirname(predfile), recursive=T)
+    }
+
+    if (args$doplot) pdf(predfile, width = 11, height = 8, family='Helvetica', pointsize=12)
+    res <- relativeTrend(args)
+    if (args$doplot) dev.off()
+
+    # Return a response
+    return(res)
   }
 
   execfunc <- get(get('execfunc'))
