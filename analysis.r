@@ -1,5 +1,6 @@
 library(GA)
 library(R.cache)
+library(SIT)
 library(compiler)
 library(data.table)
 library(ggplot2)
@@ -23,9 +24,19 @@ maxretry <- 1
 
 `%ni%` <- Negate(`%in%`)
 planetsBaseCols <- c('SU', 'MO', 'ME', 'VE', 'MA', 'JU', 'NN', 'SA')
-# Aspects and orbs
-aspects            <- c( 0,30,45,52,60,72,90,103,120,135,144,150,180)
-deforbs            <- c(10, 3, 3, 3, 6, 3,10,  3,  6,  3,  3,  6, 10)
+
+setAllAspectsSet <- function() {
+  # Aspects and orbs
+  aspects <<- c( 0,30,36,40,45,51,60,72,80,90,103,108,120,135,144,154,160,180)
+  deforbs <<- c(12, 2, 2, 2, 2, 2, 5, 5, 2, 7,  2,  2,  7,  2,  5,  2,  2, 12)
+}
+
+setModernAspectsSet <- function() {
+  aspects <<- c( 0,30,45,52,60,72,90,103,120,135,144,150,180)
+  deforbs <<- c(10, 3, 3, 3, 6, 3,10,  3,  6,  3,  3,  6, 10)
+}
+
+setModernAspectsSet()
 
 # columns names
 buildPlanetsColsNames <- function(planetsBaseCols) {
@@ -1260,8 +1271,6 @@ openSecurityOnEnv <- function(securityfile, dates = '2011::') {
 }
 
 testStrategy <- function(data, benchno, symbol, ps, dates = '2011::') {
-  library(SIT)
-
   # Code Strategies
   pvperiod <- 20
   prices = data$prices
