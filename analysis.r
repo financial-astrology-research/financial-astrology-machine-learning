@@ -1259,6 +1259,18 @@ analizeIndicatorCorrelation <- function(daily.freq, securityorig, sdate, edate, 
   }
 }
 
+significantPlanetsLongChart <- function(planets) {
+  #planets.security <- merge(planets, security, by='Date')
+  #planets.security <- subset(planets.security, !is.na(Eff) & Date >= as.Date(tsdate) & Date <= as.Date(tedate))
+  #pdf(npath(paste("~/", plotfile, "_SMA", mapricefs, ".pdf", sep='')), width = 11, height = 8, family='Helvetica', pointsize=12)
+  #for (curcol in planetsLonGCols) {
+  #  p1 <- ggplot(aes_string(x=curcol, fill="Eff"), data=planets.security) + geom_bar(position="fill") + theme(axis.text.x = element_text(angle = 90, size = 5)) + xlab(curcol)  + ggtitle(paste("Significance Planets LONG groups SMA", mapricefs)) + geom_hline(yintercept=seq(0, 1, by=0.1)) + scale_fill_grey()
+  #  #p1 <- qplot(x=get(curcol), y=val2, geom='boxplot', data=planets.security) + theme(axis.text.x = element_text(angle = 85, size = 7)) + xlab(curcol) + ggtitle(paste("Significance Planets LONG groups SMA", mapricefs))
+  #  print(p1)
+  #}
+  #dev.off()
+}
+
 openSecurityOnEnv <- function(securityfile, dates = '2011::') {
   # Load security data table
   security <- mainOpenSecurity(securityfile, 20, 50, "%Y-%m-%d", "1970-01-01")
