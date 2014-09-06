@@ -1248,16 +1248,18 @@ analizeIndicatorCorrelation <- function(daily.freq, securityorig, sdate, edate, 
   }
 }
 
-getMySymbolsDataEnv <- function(symbol) {
+openSecurityOnEnv <- function(securityfile, dates = '2011::') {
+  # Load security data table
+  security <- mainOpenSecurity(securityfile, 20, 50, "%Y-%m-%d", "1970-01-01")
+  sp <- xts(security[, c('Open', 'High', 'Low', 'Close'), with=F], order.by=security$Date)
+  # Put in a new environment as required by SIT
   data <- new.env()
-  getSymbols(symbol, src = 'yahoo', from = '1970-01-01', env = data, auto.assign = T)
-  for(i in ls(data)) data[[i]] = adjustOHLC(data[[i]], use.Adjusted=T)
-  dates = '2011::'
+  assign(securityfile, sp, env=data)
   bt.prep(data, align='keep.all', dates=dates)
   return(data)
 }
 
-testStrategy <- function(data, symbol, ps) {
+testStrategy <- function(data, benchno, symbol, ps, dates = '2011::') {
   library(SIT)
 
   # Code Strategies
@@ -1305,7 +1307,14 @@ testStrategy <- function(data, symbol, ps) {
   print(bt.detail.summary(models$astro.valley.peak, trade.summary=models$astro.valley.peak$trade.summary))
 
   # Build report
-  pdf(npath(paste("~/backtest_", symbol, ".pdf", sep='')), width = 11, height = 8, family='Helvetica', pointsize=15)
+  repfile <- paste('~/b', benchno, '/', symbol, '_', benchno, '_bt.pdf', sep="")
+
+  # Create directory if do not exists
+  if (!file.exists(dirname(repfile))) {
+    dir.create(dirname(repfile), recursive=T)
+  }
+
+  pdf(npath(repfile), width = 11, height = 8, family='Helvetica', pointsize=15)
 
   strategy.performance.snapshoot(models, T)
   bt.stop.strategy.plot(data, models$buy.hold, dates = dates, layout=T, main = 'Buy & Hold', plotX = F)
