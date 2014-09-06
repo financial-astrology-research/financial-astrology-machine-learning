@@ -1247,3 +1247,71 @@ analizeIndicatorCorrelation <- function(daily.freq, securityorig, sdate, edate, 
     ggplot(data=daily.freq.a.sec.long) + geom_line(aes(x=Date, y=value)) + facet_grid(type ~ ., scale='free')
   }
 }
+
+getMySymbolsDataEnv <- function(symbol) {
+  data <- new.env()
+  getSymbols(symbol, src = 'yahoo', from = '1970-01-01', env = data, auto.assign = T)
+  for(i in ls(data)) data[[i]] = adjustOHLC(data[[i]], use.Adjusted=T)
+  dates = '2011::'
+  bt.prep(data, align='keep.all', dates=dates)
+  return(data)
+}
+
+testStrategy <- function(data, symbol, ps) {
+  library(SIT)
+
+  # Code Strategies
+  pvperiod <- 20
+  prices = data$prices
+  models = list()
+
+  # Buy and Hold model
+  data$weight[] = NA
+  data$weight[] = 1
+  models$buy.hold = bt.run.share(data, clean.signal=T)
+  # Summary
+  cat("Buy & Hold\n\n")
+  print(bt.detail.summary(models$buy.hold, trade.summary=models$buy.hold$trade.summary))
+
+  # Astroenergy strategy with valley buy SMA cross sell
+  ps$predmom <- ps[, (Next(predval,5)+Next(predval,10)+Next(predval,15)+Next(predval,20))/5]
+  ps$predvalley <- peaks(-ps$predval, pvperiod)
+  ps$crossdn <- cross.dn(ps$MidMAF, ps$MidMAS)
+  # Compund signal
+  ps[, signal := iif(predvalley==TRUE & predmom > predval, 1, iif(crossdn==TRUE, 0, NA))]
+  # Get the signal only to the test period
+  signal <- ps[Date %in% data$dates, signal, by=Date]
+  # Prepare signal to run
+  data$weight[] = NA
+  data$weight[] = signal$signal
+  models$astro.valley.sma = bt.run.share(data, clean.signal=T)
+  # Summary
+  cat("Astroenergy Valley & SMA cross\n\n")
+  print(bt.detail.summary(models$astro.valley.sma, trade.summary=models$astro.valley.sma$trade.summary))
+
+  # Astroenergy strategy with valley buy & peak sell
+  ps$predvalley <- peaks(-ps$predval, pvperiod)
+  ps$predpeak <- peaks(ps$predval, pvperiod)
+  # Compund signal
+  ps[, signal := iif(predvalley==TRUE, 1, iif(predpeak==TRUE, 0, NA))]
+  # Get the signal only to the test period
+  signal <- ps[Date %in% data$dates, signal, by=Date]
+  # Prepare signal to run
+  data$weight[] = NA
+  data$weight[] = signal$signal
+  models$astro.valley.peak = bt.run.share(data, clean.signal=T)
+  # Summary
+  cat("Astroenergy Valley & Peak cross\n\n")
+  print(bt.detail.summary(models$astro.valley.peak, trade.summary=models$astro.valley.peak$trade.summary))
+
+  # Build report
+  pdf(npath(paste("~/backtest_", symbol, ".pdf", sep='')), width = 11, height = 8, family='Helvetica', pointsize=15)
+
+  strategy.performance.snapshoot(models, T)
+  bt.stop.strategy.plot(data, models$buy.hold, dates = dates, layout=T, main = 'Buy & Hold', plotX = F)
+  bt.stop.strategy.plot(data, models$astro.valley.sma, dates = dates, layout=T, main = 'Astroen Valley & SMA cross', plotX = F)
+  bt.stop.strategy.plot(data, models$astro.valley.peak, dates = dates, layout=T, main = 'Astroen Valley & Peak', plotX = F)
+  plotbt.custom.report.part1(models)
+
+  dev.off()
+}
