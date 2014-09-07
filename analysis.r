@@ -1349,4 +1349,6 @@ testStrategy <- function(data, benchno, symbol, ps) {
   plotbt.custom.report.part1(models)
 
   dev.off()
+
+  return(models)
 }
