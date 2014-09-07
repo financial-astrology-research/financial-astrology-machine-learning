@@ -470,6 +470,227 @@ adjustEnergy <- function(x) {
   x / 10
 }
 
+setModelData <- function(args) {
+  args$rdates <- as.Date(with(args, c(tsdate, tedate, vsdate, vedate)))
+  # open planets file and leave only needed cols for better speed
+  planets <- openPlanets(args$planetsfile, deforbs, calcasps=F)
+  args$planets <- planets[, c('Date', 'Year', 'wday', planetsLonCols), with=F]
+  # load the security data and leave only needed cols
+  security <- with(args, openSecurity(securityfile, mapricefs, mapricesl, dateformat, rdates[1]))
+  args$security <- security[, c('Date', 'Year', 'Open', 'High', 'Low', 'Close', 'Mid', 'MidMAF', 'MidMAS', 'Eff'), with=F]
+  return(args)
+}
+
+# aggregate the daily energy and apply it with the daily significance energy
+# to calculate the final prediction
+calculateUpDownEnergy <- function(energy.days) {
+  # to prevent division by zero
+  prediction <- energy.days[, list(down = sum(down), up = sum(up)), by='Date']
+  #prediction[, Date := as.Date(Date, format="%Y-%m-%d")]
+  prediction[, predRaw := (up-down)]
+  return(prediction)
+}
+
+# Process the yearly predictions and calculate the sample fitness
+calculateSamplesFitness <- function(args, samples) {
+  # compute test predictions by year
+  res.test <- samples$opt[, processPredictions(.SD), by=Year]
+  resMean <- function(x) round(mean(x), digits=2)
+  res.test.mean <- res.test[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.t=resMean(matches.t))]
+  # compute confirmation predictions by year
+  res.conf <- samples$cv[, processPredictions(.SD), by=Year]
+  res.conf.mean <- res.conf[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.t=resMean(matches.t))]
+
+  # use appropriate fitness type
+  if (args$fittype == 'matches') {
+    fitness <- round((res.test.mean$matches.t + res.conf.mean$matches.t) / 2, digits=0)
+  }
+  else if (args$fittype == 'sdmatches') {
+    matches.mean <- mean(c(res.test$matches.t, res.conf$matches.t))
+    matches.sd <- sd(c(res.test$matches.t, res.conf$matches.t))
+    if (matches.sd == 0) {
+      fitness <- -abs(1 / (matches.mean^2)) * 100
+    }
+    else {
+      fitness <- -abs(matches.sd / (matches.mean^2)) * 100
+    }
+  }
+  else if (args$fittype == 'matcor') {
+    correlation <- round((res.test.mean$correlation + res.conf.mean$correlation) / 2, digits=3)
+    matches <- round((res.test.mean$matches.t + res.conf.mean$matches.t) / 2, digits=3)
+    fitness <- (matches + correlation) / 2
+  }
+  else {
+    stop("No valid fittype provided")
+  }
+
+  if (args$doplot) {
+    # plot solution snippet if doplot is enabled
+    if (args$plotsol) {
+      snippet <- paste(strwrap(sout, width=170), collapse="\n")
+      plotSolutionSnippet(snippet)
+    }
+
+    mout <- with(args, capture.output(print(cusorbs),
+                                      print(aspectspolarity),
+                                      print(aspectsenergy),
+                                      print(sigpenergy),
+                                      print(planetszodenergy)))
+
+    # print buffered output
+    cat(args$strsol, mout, "\n", sep="\n")
+
+    # print yearly summary
+    apply(res.test, 1, printPredYearSummary, type="Optimization")
+    with(res.test.mean, cat("\tvol =", volatility, " - cor =", correlation, " - matches.t =", matches.t, "\n"))
+    apply(res.conf, 1, printPredYearSummary, type="Confirmation")
+    with(res.conf.mean, cat("\tvol =", volatility, " - cor =", correlation, " - matches.t =", matches.t, "\n"))
+
+    # totals and execution time
+    cat("\n\t Totals: fitness = ", fitness, "\n")
+    cat("\t Optimized and confirmed with: ", nrow(samples$opt) + nrow(samples$cv), " days", "\n")
+  }
+
+  return(fitness)
+}
+
+# Build a long data table with daily aspects, orbs and longitudes
+meltedAndMergedDayAspects <- function(planets, security, degsplit, tsdate, tedate, psdate, pedate, topn) {
+  planetskey <- dataTableUniqueVector(planets)
+  securitykey <- dataTableUniqueVector(security)
+  ckey <- list(as.character(c('meltedAndMergedDayAspects', planetskey, securitykey, degsplit, tsdate, tedate, psdate, pedate, topn)))
+  aspects.day.long <- secureLoadCache(key=ckey)
+
+  if (is.null(aspects.day.long)) {
+    # calculate daily aspects
+    aspects.day <- buildSignificantLongitudesAspects(planets, security, degsplit, tsdate, tedate, topn, F)
+    # leave only the aspects for prediction range dates
+    aspects.day <- aspects.day[Date > psdate & Date <= pedate & wday %in% c(1, 2, 3, 4, 5)]
+
+    # melt aspects
+    aspects <- melt(aspects.day, id.var=c('Date', 'lon'), variable.name='origin',
+                    value.name='aspect', value.factor=T, measure.var=planetsAspCols, na.rm=T)
+    # remove ASP from the origin column name
+    aspects[, origin := substr(origin, 1, 2)]
+
+    # melt orbs
+    orbs <- melt(aspects.day, id.var=c('Date', 'lon'), variable.name='origin',
+                 value.name='orb', measure.var=planetsOrbCols)
+    # remove ORBS from the origin column name
+    orbs[, origin := substr(origin, 1, 2)]
+
+    # melt longitudes
+    longs <- melt(aspects.day, id.var=c('Date', 'lon'), variable.name='origin',
+                  value.name='tlon', measure.var=planetsLonCols)
+    # avoid lon 0 that cause 0 sign when divide celing(0/30)
+    longs[tlon == 0, tlon := 1]
+    # remove LON from the origin column name
+    longs[, origin := substr(origin, 1, 2)]
+    # Calculate zod signs for each transit planet
+    longs[, tzsign := ceiling(tlon/30)]
+
+    # join aspects & orbs & transit longs
+    aspects.day.long <- merge(aspects, orbs, by=c('Date', 'lon', 'origin'))
+    aspects.day.long <- merge(aspects.day.long, longs, by=c('Date', 'lon', 'origin'))
+
+    # Use only the applicative aspects
+    aspects.day.long[, orbdir := sign(orb - Lag(orb)), by=c('lon', 'origin', 'aspect')]
+    aspects.day.long[orbdir == 0, orbdir := 1]
+    # For the initial row that is NA due Lag orb calculation use the next row value
+    aspects.day.long[, norbdir := Next(orbdir), by=c('lon', 'origin', 'aspect')]
+    aspects.day.long[is.na(orbdir), orbdir := norbdir]
+    aspects.day.long[, norbdir := NULL]
+
+    # add up / down energy cols inintially to 0
+    aspects.day.long[, c('up', 'down') := list(0, 0)]
+
+    saveCache(aspects.day.long, key=ckey)
+    cat("Set meltedAndMergedDayAspects cache\n")
+  }
+
+  return(aspects.day.long)
+}
+
+# process the daily aspects energy
+dayAspectsEnergy <- function(args) {
+  # aspects, orbs and longitudes in long format
+  planets.pred.aspen <- with(args, meltedAndMergedDayAspects(planets, security, degsplit, rdates[1], rdates[2], rdates[3], rdates[4], topn))
+
+  # Use only the separating aspects & applying with at much 1 deg of orb
+  #planets.pred.aspen <- planets.pred.aspen[orbdir == 1 | (orbdir == -1 & orb <= 1 ),]
+
+  # Add the aspects polarity
+  planets.pred.aspen[, polarity := args$aspectspolarity['polarity', aspect]]
+  # Calculate the transit planet zoodiacal energy
+  processAspEnergy <- function(asp.row, by.row) {
+    args$planetszodenergy[by.row[[1]], asp.row[[1]]]
+  }
+
+  # Set columns with transit zodiacal energy / aspect energy / sigpoints energy
+  planets.pred.aspen[, tenergy := processAspEnergy(.SD, .BY), by=c('origin'), .SDcols=c('tzsign')]
+  planets.pred.aspen[, aenergy := args$aspectsenergy['energy', aspect], by=c('aspect')]
+  planets.pred.aspen[, spenergy := args$sigpenergy['energy', as.character(lon)], by=c('lon')]
+
+  # Calculate the energy considering significant point / transit / aspect energy
+  planets.pred.aspen[, energy :=  aenergy * tenergy * spenergy]
+
+  # use only aspects that are in the allowed orb for specific aspect
+  # TODO: verify that the filtered aspects correspond to the maximum orb
+  planets.pred.aspen <- planets.pred.aspen[orb <= args$cusorbs['orbs', aspect]]
+
+  if (args$conpolarity) {
+    # Adjust conjuntion polarity based on involved planets: MA, SA, PL are
+    # considered as a negative, others as positive.
+    planets.pred.aspen[polarity == 2 & origin %in% c('MA', 'SA', 'PL'), polarity := 0]
+    planets.pred.aspen[polarity == 2 & origin %ni% c('MA', 'SA', 'PL'), polarity := 1]
+
+  }
+
+  # compute the given energy based on the aspect orb distance
+  #planets.pred.aspen[, disenergy := energyGrowth(energy, orb)]
+
+  # set energy up / down based on polarities
+  planets.pred.aspen[polarity == 0, c('up', 'down') := list(0, energy)]
+  planets.pred.aspen[polarity == 1, c('up', 'down') := list(energy, 0)]
+  planets.pred.aspen[polarity == 2, c('up', 'down') := list(energy, energy)]
+
+  return(planets.pred.aspen)
+}
+
+# Split the data in optimization and CV by sample split
+dataOptCVSampleSplit <- function(args, planets.pred) {
+  # split data in optimization and cross validation
+  planets.pred.opt <- planets.pred[1:round(nrow(planets.pred)/2),]
+  planets.pred.cv <- planets.pred[round(nrow(planets.pred)/2):nrow(planets.pred),]
+  # Identify years with alone observations that can affect the years fitness mean
+  years.opt <- table(planets.pred.opt$Year)
+  years.cv <- table(planets.pred.cv$Year)
+
+  # When doplot is enabled use for confirmation all the available years
+  if (args$doplot) {
+    sample.opt <- planets.pred.opt[Year %in% names(years.opt[years.opt > 20]),]
+    sample.cv <- planets.pred.cv[Year %in% names(years.cv[years.cv > 20]),]
+
+    # plot CV years
+    sp <- xts(sample.cv[, c('Open', 'High', 'Low', 'Close', 'predval'), with=F], order.by=sample.cv$Date)
+    for (year in names(years.cv[years.cv > 20])) {
+      barChart(sp, log.scale=T, subset=year, TA='addSMA(20, col="red");addSMA(40, col="green");addAspEnergy();
+               addRSI(14);addPVLines("p",31,"green",c(1,2,3));addPVLines("v",31,"red",c(1,2,3))')
+    }
+  }
+  else {
+    # use sample of 50% optimization data
+    sample.opt <- planets.pred.opt[Year %in% names(years.opt[years.opt > 20]),]
+    sample.opt <- sample.opt[, .SD[sample(.N, round(nrow(sample.opt) * .5))]]
+    # and 40% of cross validation data
+    sample.cv <- planets.pred.cv[Year %in% names(years.cv[years.cv > 20]),]
+    sample.cv <- sample.cv[, .SD[sample(.N, round(nrow(sample.cv) * .4))]]
+  }
+
+  return(list(opt=sample.opt, cv=sample.cv))
+}
+
+
 securityPeaksValleys <- function(security, span=50, plotfile="peaks_valleys") {
   planets <- openPlanets("~/trading/dplanets/planets_4.tsv", orbs, aspects, 5, 10)
   planetsBaseCols <- c("SU", "ME", "VE", "MA", "JU", "SA", "NN")
