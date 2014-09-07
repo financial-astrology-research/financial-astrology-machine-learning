@@ -1282,11 +1282,16 @@ openSecurityOnEnv <- function(securityfile, dates = '2011::') {
   return(data)
 }
 
-testStrategy <- function(data, benchno, symbol, ps, dates = '2011::') {
+testStrategy <- function(data, benchno, symbol, ps) {
   # Code Strategies
   pvperiod <- 20
   prices = data$prices
   models = list()
+
+  # Check thare is prediction data for the expected dates
+  if (nrow(ps[Date %in% data$dates,]) == 0) {
+    stop("No data on ps data.table for expected dates")
+  }
 
   # Buy and Hold model
   data$weight[] = NA
@@ -1338,9 +1343,9 @@ testStrategy <- function(data, benchno, symbol, ps, dates = '2011::') {
   pdf(npath(repfile), width = 11, height = 8, family='Helvetica', pointsize=15)
 
   strategy.performance.snapshoot(models, T)
-  bt.stop.strategy.plot(data, models$buy.hold, dates = dates, layout=T, main = 'Buy & Hold', plotX = F)
-  bt.stop.strategy.plot(data, models$astro.valley.sma, dates = dates, layout=T, main = 'Astroen Valley & SMA cross', plotX = F)
-  bt.stop.strategy.plot(data, models$astro.valley.peak, dates = dates, layout=T, main = 'Astroen Valley & Peak', plotX = F)
+  bt.stop.strategy.plot(data, models$buy.hold, layout=T, main = 'Buy & Hold', plotX = F)
+  bt.stop.strategy.plot(data, models$astro.valley.sma, layout=T, main = 'Astroen Valley & SMA cross', plotX = F)
+  bt.stop.strategy.plot(data, models$astro.valley.peak, layout=T, main = 'Astroen Valley & Peak', plotX = F)
   plotbt.custom.report.part1(models)
 
   dev.off()
