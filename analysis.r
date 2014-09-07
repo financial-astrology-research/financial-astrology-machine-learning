@@ -1352,3 +1352,16 @@ testStrategy <- function(data, benchno, symbol, ps) {
 
   return(models)
 }
+
+# Display multiples securities backtest mean summary
+testStrategyAllMean <- function(bt) {
+  displayMean <- function(property) {
+    cat("Buy & Hold", property, mean(unlist(lapply(bt, function(x) bt.detail.summary(x$buy.hold)$System[property]))), "\n")
+    cat("Astro Valley & SMA", property, mean(unlist(lapply(bt, function(x) bt.detail.summary(x$astro.valley.sma)$System[property]))), "\n")
+    cat("Astro Valley & Peak", property, mean(unlist(lapply(bt, function(x) bt.detail.summary(x$astro.valley.peak)$System[property]))), "\n\n")
+  }
+
+  displayMean('Cagr')
+  displayMean('MaxDD')
+  displayMean('AvgDD')
+}
