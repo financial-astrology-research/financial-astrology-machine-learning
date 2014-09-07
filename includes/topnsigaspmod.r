@@ -17,7 +17,7 @@ setSigLons <- function(args) {
   return(args)
 }
 
-setParamsPAPAEPZSPMatrix <- function(args) {
+setParamsPAPAEPZSP <- function(args) {
   # build matrix
   args$cusorbs <- matrix(args$cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE,
                          dimnames = list('orbs', aspects))
@@ -34,6 +34,23 @@ setParamsPAPAEPZSPMatrix <- function(args) {
 
   args$planetszodenergy <- matrix(args$planetszodenergy, nrow = length(planetsBaseCols), ncol = 12, byrow = TRUE,
                                   dimnames = list(planetsBaseCols, zodSignsCols))
+
+  # Generate the string solution for for the given model parameters
+  args$strsol <- with(args, paste("cmpTopNSigAspectsModel('testSolution'",
+                               ", securityfile=", shQuote(securityfile),
+                               ", planetsfile=", shQuote(planetsfile),
+                               ", predfile=", shQuote(predfile),
+                               ", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate),
+                               ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate),
+                               ", mapredsm=", mapredsm, ", mapricefs=", mapricefs, ", mapricesl=", mapricesl, ", degsplit=", degsplit,
+                               ", cusorbs=c(", paste(cusorbs, collapse=", "), ")",
+                               ", aspectsenergy=c(", paste(aspectsenergy, collapse=", "), ")",
+                               ", sigpenergy=c(", paste(sigpenergy, collapse=", "), ")",
+                               ", planetszodenergy=c(", paste(planetszodenergy, collapse=", "), ")",
+                               ", aspectspolarity=c(", paste(aspectspolarity, collapse=", "), ")",
+                               ", dateformat=", shQuote(dateformat), ", verbose=F", ", doplot=T, plotsol=F",
+                               ", fittype=", shQuote(fittype), ", topn=", topn, ")\n", sep=""))
+
   return(args)
 }
 
@@ -72,25 +89,9 @@ processParamsPAPAEPZSP <- function(x, securityfile, planetsfile, predfile, tsdat
               planetszodenergy=adjustEnergy(x[ae.e:(pze.e-1)]),
               sigpenergy=adjustEnergy(x[pze.e:(spe.e-1)]))
 
-  # Generate the string solution for for the given model parameters
-  args$strsol <- with(args, paste("cmpTopNSigAspectsModel('testSolution'",
-                               ", securityfile=", shQuote(securityfile),
-                               ", planetsfile=", shQuote(planetsfile),
-                               ", predfile=", shQuote(predfile),
-                               ", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate),
-                               ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate),
-                               ", mapredsm=", mapredsm, ", mapricefs=", mapricefs, ", mapricesl=", mapricesl, ", degsplit=", degsplit,
-                               ", cusorbs=c(", paste(cusorbs, collapse=", "), ")",
-                               ", aspectsenergy=c(", paste(aspectsenergy, collapse=", "), ")",
-                               ", sigpenergy=c(", paste(sigpenergy, collapse=", "), ")",
-                               ", planetszodenergy=c(", paste(planetszodenergy, collapse=", "), ")",
-                               ", aspectspolarity=c(", paste(aspectspolarity, collapse=", "), ")",
-                               ", dateformat=", shQuote(dateformat), ", verbose=F", ", doplot=T, plotsol=F",
-                               ", fittype=", shQuote(fittype), ", topn=", topn, ")\n", sep=""))
-
   args <- setModelData(args)
   args <- setSigLons(args)
-  args <- setParamsPAPAEPZSPMatrix(args)
+  args <- setParamsPAPAEPZSP(args)
 
   # Conjunction energy as neutral
   args$conpolarity <- FALSE
@@ -433,7 +434,7 @@ cmpTopNSigAspectsModel <- function(execfunc, ...) {
     # Build the params sets
     args <- setModelData(args)
     args <- setSigLons(args)
-    args <- setParamsPAPAEPZSPMatrix(args)
+    args <- setParamsPAPAEPZSP(args)
     # By default use conjunction neutral energy
     args$conpolarity <- FALSE
 
