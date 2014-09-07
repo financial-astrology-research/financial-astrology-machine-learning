@@ -1333,7 +1333,7 @@ testStrategy <- function(data, benchno, symbol, ps) {
   print(bt.detail.summary(models$astro.valley.peak, trade.summary=models$astro.valley.peak$trade.summary))
 
   # Build report
-  repfile <- paste('~/', benchno, '/', symbol, '_', benchno, '_bt.pdf', sep="")
+  repfile <- paste('~/b', benchno, '/', symbol, '_', benchno, '_bt.pdf', sep="")
 
   # Create directory if do not exists
   if (!file.exists(dirname(repfile))) {
