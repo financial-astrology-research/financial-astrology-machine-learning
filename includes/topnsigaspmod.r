@@ -379,6 +379,8 @@ cmpTopNSigAspectsModel <- function(execfunc, ...) {
     sink(sinkpathfile, append=T)
     cat("# version: ", branch.name, "\n")
     cat("#", tsdate, '-', tedate, 'FIT /', vsdate, '-', vedate, 'OPTwCV -', fittype, 'fit -', mapricefs, '-', mapricesl, 'MAS -', topn, 'TOPN', '\n\n')
+    cat("setModernAspectsSet()\n")
+    cat("bt <- list()\n")
     sink()
 
     for (symbol in secsymbols) {
@@ -401,8 +403,9 @@ cmpTopNSigAspectsModel <- function(execfunc, ...) {
       sink(sinkpathfile, append=T)
       x <- gar@solution[1,]
       args <- processParamsPAPAEPZSP(x, securityfile, planetsfile, predfile, tsdate, tedate, vsdate, vedate, fittype, dateformat, mapricefs, mapricesl, topn)
-      cat(args$strsol)
-      cat("# Fitness = ", gar@fitnessValue, "\n\n")
+      cat("res <-", args$strsol)
+      cat("# Fitness = ", gar@fitnessValue, "\n")
+      cat("bt$symbol <- testStrategy(openSecurityOnEnv(", shQuote(securityfile), "),", shQuote(benchno), shQuote(symbol), "res$pred)\n\n")
       sink()
     }
   }
