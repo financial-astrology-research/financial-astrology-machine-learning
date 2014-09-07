@@ -73,7 +73,7 @@ processParamsPAPAEPZSP <- function(x, securityfile, planetsfile, predfile, tsdat
               sigpenergy=adjustEnergy(x[pze.e:(spe.e-1)]))
 
   # Generate the string solution for for the given model parameters
-  args$strsol <- with(args, paste("testPlanetsSignificanceRelative('testSolution'",
+  args$strsol <- with(args, paste("cmpTopNSigAspectsModel('testSolution'",
                                ", securityfile=", shQuote(securityfile),
                                ", planetsfile=", shQuote(planetsfile),
                                ", predfile=", shQuote(predfile),
