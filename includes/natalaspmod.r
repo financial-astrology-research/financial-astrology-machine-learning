@@ -33,7 +33,7 @@ cmpNatalAspectsModel <- function(execfunc, ...) {
                                     dimnames = list(planetsBaseCols, zodSignsCols))
 
     # Generate the string solution for for the given model parameters
-    args$sol <- with(args, paste("natalAspectsModel('testSolution'",
+    args$strsol <- with(args, paste("natalAspectsModel('testSolution'",
                             ", symbol=", shQuote(symbol),
                             ", securityfile=", shQuote(securityfile),
                             ", planetsfile=", shQuote(planetsfile),
@@ -221,7 +221,7 @@ cmpNatalAspectsModel <- function(execfunc, ...) {
       # output the solution string
       sink(sinkpathfile, append=T)
       x <- gar@solution[1,]
-      args <- processParamsPAPAEPZSP(x, symbol, securityfile, planetsfile, predfile, tsdate, tedate, fittype, dateformat, mapricefs, mapricesl, topn)
+      args <- processParamsPAPAEPZSP(x, symbol, securityfile, planetsfile, predfile, tsdate, tedate, fittype, dateformat, mapricefs, mapricesl)
       cat("res <-", args$strsol)
       cat("# Fitness = ", gar@fitnessValue, "\n")
       cat("bt$symbol <- testStrategy(openSecurityOnEnv(", shQuote(securityfile), "),", shQuote(benchno), shQuote(symbol), "res$pred)\n\n")
