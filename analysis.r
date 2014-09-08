@@ -471,12 +471,15 @@ adjustEnergy <- function(x) {
 }
 
 setModelData <- function(args) {
-  args$rdates <- as.Date(with(args, c(tsdate, tedate, vsdate, vedate)))
+  if (!is.null(args$tsdate)) args$tsdate <- as.Date(args$tsdate)
+  if (!is.null(args$tedate)) args$tedate <- as.Date(args$tedate)
+  if (!is.null(args$vsdate)) args$vsdate <- as.Date(args$vsdate)
+  if (!is.null(args$vedate)) args$vedate <- as.Date(args$vedate)
   # open planets file and leave only needed cols for better speed
   planets <- openPlanets(args$planetsfile, deforbs, calcasps=F)
   args$planets <- planets[, c('Date', 'Year', 'wday', planetsLonCols), with=F]
   # load the security data and leave only needed cols
-  security <- with(args, openSecurity(securityfile, mapricefs, mapricesl, dateformat, rdates[1]))
+  security <- with(args, openSecurity(securityfile, mapricefs, mapricesl, dateformat, tsdate))
   args$security <- security[, c('Date', 'Year', 'Open', 'High', 'Low', 'Close', 'Mid', 'MidMAF', 'MidMAS', 'Eff'), with=F]
   return(args)
 }
@@ -555,15 +558,14 @@ calculateSamplesFitness <- function(args, samples) {
 }
 
 # Build a long data table with daily aspects, orbs and longitudes
-meltedAndMergedDayAspects <- function(planets, security, degsplit, tsdate, tedate, psdate, pedate, topn) {
+meltedAndMergedDayAspects <- function(aspects.day, planets, security, psdate, pedate) {
+  aspectskey <- dataTableUniqueVector(aspects.day)
   planetskey <- dataTableUniqueVector(planets)
   securitykey <- dataTableUniqueVector(security)
-  ckey <- list(as.character(c('meltedAndMergedDayAspects', planetskey, securitykey, degsplit, tsdate, tedate, psdate, pedate, topn)))
+  ckey <- list(as.character(c('meltedAndMergedDayAspects', aspectskey, planetskey, securitykey, psdate, pedate)))
   aspects.day.long <- secureLoadCache(key=ckey)
 
   if (is.null(aspects.day.long)) {
-    # calculate daily aspects
-    aspects.day <- buildSignificantLongitudesAspects(planets, security, degsplit, tsdate, tedate, topn, F)
     # leave only the aspects for prediction range dates
     aspects.day <- aspects.day[Date > psdate & Date <= pedate & wday %in% c(1, 2, 3, 4, 5)]
 
@@ -613,8 +615,21 @@ meltedAndMergedDayAspects <- function(planets, security, degsplit, tsdate, tedat
 
 # process the daily aspects energy
 dayAspectsEnergy <- function(args) {
-  # aspects, orbs and longitudes in long format
-  planets.pred.aspen <- with(args, meltedAndMergedDayAspects(planets, security, degsplit, rdates[1], rdates[2], rdates[3], rdates[4], topn))
+  # Use the appropriate daily aspects
+  if (args$asptype == 'siglon') {
+    # significant longitude points aspects
+    aspects.day <- with(args, buildSignificantLongitudesAspects(planets, security, degsplit, tsdate, tedate, topn, F))
+    # aspects, orbs and longitudes in long format
+    planets.pred.aspen <- with(args, meltedAndMergedDayAspects(aspects.day, planets, security, vsdate, vedate))
+  }
+  else if (args$asptype == 'natal') {
+    # natal points aspects
+    aspects.day <- with(args, buildNatalLongitudeAspects(symbol, planets, F))
+    planets.pred.aspen <- with(args, meltedAndMergedDayAspects(aspects.day, planets, security, tsdate, tedate))
+  }
+  else {
+    stop("Not valid asptype was provided.")
+  }
 
   # Use only the separating aspects & applying with at much 1 deg of orb
   #planets.pred.aspen <- planets.pred.aspen[orbdir == 1 | (orbdir == -1 & orb <= 1 ),]

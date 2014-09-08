@@ -5,11 +5,14 @@ cmpTopNSigAspectsModel <- function(execfunc, ...) {
   if (!hasArg('execfunc')) stop("Provide function to execute")
   ptm <- proc.time()
   branch.name <- branchName()
+
   setSigLons <- function(args) {
     # build significant points vector
-    siglons <- with(args, buildSignificantLongitudes(planets, security, degsplit, rdates[1], rdates[2]))
+    siglons <- with(args, buildSignificantLongitudes(planets, security, degsplit, vsdate, vedate))
     # leave only the top N significant points
     args$siglons <- head(siglons, args$topn)
+    # set the asptype to use to siglons
+    args$asptype <- 'siglon'
     return(args)
   }
 
@@ -104,8 +107,6 @@ cmpTopNSigAspectsModel <- function(execfunc, ...) {
     return(energy.days)
   }
 
-
-
   relativeTrendExec <- function(x, ...) {
     # Build the params sets
     args <- processParamsPAPAEPZSP(x, ...)
@@ -141,7 +142,6 @@ cmpTopNSigAspectsModel <- function(execfunc, ...) {
     #cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n\n")
     return(list(fitness=fitness, pred=planets.pred))
   }
-
 
   optimizeRelativeTrend <- function(benchno, sectype, secsymbols, planetsfile, tsdate, tedate, vsdate, vedate, fittype,
                                     mapricefs, mapricesl, topn, dateformat) {
