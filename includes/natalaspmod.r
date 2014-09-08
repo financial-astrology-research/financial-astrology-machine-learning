@@ -199,6 +199,8 @@ cmpNatalAspectsModel <- function(execfunc, ...) {
     sink(sinkpathfile, append=T)
     cat("# version: ", branch.name, "\n")
     cat("#", tsdate, '-', tedate, 'OPTwCV -', fittype, 'fit -', mapricefs, '-', mapricesl, 'MAS', '\n\n')
+    cat("setModernAspectsSet()\n")
+    cat("bt <- list()\n")
     sink()
 
     for (symbol in secsymbols) {
