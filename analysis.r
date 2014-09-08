@@ -672,7 +672,17 @@ dayAspectsEnergy <- function(args) {
   return(planets.pred.aspen)
 }
 
-# Split the data in optimization and CV by sample split
+# Plot CV data price & indicators
+plotCVChart <- function(years, sample.cv) {
+  # plot CV years
+  sp <- xts(sample.cv[, c('Open', 'High', 'Low', 'Close', 'predval'), with=F], order.by=sample.cv$Date)
+  for (year in years) {
+    barChart(sp, log.scale=T, subset=year, TA='addSMA(20, col="red");addSMA(40, col="green");addAspEnergy();
+             addRSI(14);addPVLines("p",31,"green",c(1,2,3));addPVLines("v",31,"red",c(1,2,3))')
+  }
+}
+
+# Sample split data in optimization and CV
 dataOptCVSampleSplit <- function(args, planets.pred) {
   # split data in optimization and cross validation
   planets.pred.opt <- planets.pred[1:round(nrow(planets.pred)/2),]
@@ -685,13 +695,7 @@ dataOptCVSampleSplit <- function(args, planets.pred) {
   if (args$doplot) {
     sample.opt <- planets.pred.opt[Year %in% names(years.opt[years.opt > 20]),]
     sample.cv <- planets.pred.cv[Year %in% names(years.cv[years.cv > 20]),]
-
-    # plot CV years
-    sp <- xts(sample.cv[, c('Open', 'High', 'Low', 'Close', 'predval'), with=F], order.by=sample.cv$Date)
-    for (year in names(years.cv[years.cv > 20])) {
-      barChart(sp, log.scale=T, subset=year, TA='addSMA(20, col="red");addSMA(40, col="green");addAspEnergy();
-               addRSI(14);addPVLines("p",31,"green",c(1,2,3));addPVLines("v",31,"red",c(1,2,3))')
-    }
+    plotCVChart(names(years.cv[years.cv > 20]), sample.cv)
   }
   else {
     # use sample of 50% optimization data
@@ -705,6 +709,28 @@ dataOptCVSampleSplit <- function(args, planets.pred) {
   return(list(opt=sample.opt, cv=sample.cv))
 }
 
+# Years split date in optimization and CV
+dataOptCVYearSplit <- function(args, planets.pred) {
+  # Years covered in the data
+  years <- with(args, format(seq(vsdate, vedate, by='year'), '%Y'))
+  # 50% of the years are used for optimization
+  years.test <- years[1:round(length(years) * .5)]
+  years.cv <- years[years %ni% years.test]
+  # Optimization test data
+  sample.opt <- planets.pred[Year %in% years,]
+
+  # When doplot is enabled use for confirmation all the available years
+  if (args$doplot) {
+    sample.cv <- planets.pred[Year %in% years.cv,]
+    plotCVChart(names(years.cv[years.cv > 20]), sample.cv)
+  }
+  else {
+    # take from cross-validation years a 40% random years for cross-validation
+    sample.cv <- planets.pred[years.cv[sample(1:length(years.cv), round(length(years.cv) * .4))],]
+  }
+
+  return(list(opt=sample.opt, cv=sample.cv))
+}
 
 securityPeaksValleys <- function(security, span=50, plotfile="peaks_valleys") {
   planets <- openPlanets("~/trading/dplanets/planets_4.tsv", orbs, aspects, 5, 10)
