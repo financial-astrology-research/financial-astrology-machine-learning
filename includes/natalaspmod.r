@@ -18,7 +18,7 @@ cmpNatalAspectsModel <- function(func, ...) {
     args$cusorbs <- matrix(args$cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE,
                            dimnames = list('orbs', aspects))
 
-    args$aspectspolarity <- matrix(aspectspolarity, nrow = 1, ncol = length(aspects), byrow = TRUE,
+    args$aspectspolarity <- matrix(args$aspectspolarity, nrow = 1, ncol = length(aspects), byrow = TRUE,
                                    dimnames = list('polarity', aspects))
 
     args$aspectsenergy <- matrix(args$aspectsenergy, nrow = 1, ncol = length(args$aspectsenergy), byrow = TRUE,
@@ -75,6 +75,16 @@ cmpNatalAspectsModel <- function(func, ...) {
     args <- setParamsPAPAEPZSP(args)
 
     return(args)
+  }
+
+  # Use processParamsPolarityAspZodSiglonsEnergy with data sample split
+  natalModelParamsOne <- function(x, args) {
+
+  }
+
+  # Use processParamsPolarityAspZodSiglonsEnergy with data year split
+  natalModelParamsTwo <- function(x, args) {
+
   }
 
   # Build the orbs, polarity, aspect energy, sigpoints energy and zodenergy matrix
