@@ -50,7 +50,7 @@ cmpNatalAspectsModel <- function(func, ...) {
   }
 
   # Build args list for aspects polarity, aspects energy, zodenergy, significant points energy
-  processParamsPAPAEPZSP <- function(x, args) {
+  processParamsPolarityAspZodSiglonsEnergy <- function(x, args) {
     # build the parameters based on GA indexes
     co.e = 2+length(deforbs)
     api.e = co.e+length(aspects)-1
@@ -88,7 +88,7 @@ cmpNatalAspectsModel <- function(func, ...) {
 
   relativeTrendExec <- function(x, args) {
     # Build the params sets
-    args <- processParamsPAPAEPZSP(x, args)
+    args <- processParamsPolarityAspZodSiglonsEnergy(x, args)
     # Execute
     res <- relativeTrend(args)
     # Return only the fitness
@@ -208,7 +208,7 @@ cmpNatalAspectsModel <- function(func, ...) {
     # output the solution string
     sink(args$sinkpathfile, append=T)
     x <- gar@solution[1,]
-    args <- with(args, processParamsPAPAEPZSP(x, args))
+    args <- with(args, processParamsPolarityAspZodSiglonsEnergy(x, args))
     cat("res <-", args$strsol)
     cat("# Fitness = ", gar@fitnessValue, "\n")
     with(args, cat("bt$symbol <- testStrategy(openSecurityOnEnv(", shQuote(securityfile), "),", shQuote(benchno), shQuote(symbol), "res$pred)\n\n"))
@@ -238,7 +238,7 @@ cmpNatalAspectsModel <- function(func, ...) {
       # process arguments
       args <- loopParamsGA(symbol, args)
 
-      gar <- ga("real-valued", fitness=relativeTrendExec, parallel=FALSE, monitor=gaMonitor, maxiter=10, run=50, min=minvals, max=maxvals,
+      gar <- ga("real-valued", fitness=relativeTrendExec, parallel=TRUE, monitor=gaMonitor, maxiter=10, run=50, min=minvals, max=maxvals,
                 popSize=100, elitism = 100, pcrossover = 0.9, pmutation = 0.1,
                 selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population, args=args)
 
