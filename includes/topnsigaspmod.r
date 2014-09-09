@@ -8,7 +8,7 @@ cmpTopNSigAspectsModel <- function(execfunc, ...) {
 
   setSigLons <- function(args) {
     # build significant points vector
-    siglons <- with(args, buildSignificantLongitudes(planets, security, degsplit, vsdate, vedate))
+    siglons <- with(args, buildSignificantLongitudes(planets, security, degsplit, tsdate, tedate))
     # leave only the top N significant points
     args$siglons <- head(siglons, args$topn)
     # set the asptype to use to siglons
