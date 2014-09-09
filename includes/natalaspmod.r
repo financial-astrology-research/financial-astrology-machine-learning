@@ -1,10 +1,9 @@
 #####################################################################################################
 # Natal chart aspects model
 ####################################################################################################
-cmpNatalAspectsModel <- function(execfunc, ...) {
-  if (!hasArg('execfunc')) stop("Provide function to execute")
+cmpNatalAspectsModel <- function(func, ...) {
+  if (!hasArg('func')) stop("Provide function to execute")
   ptm <- proc.time()
-  branch.name <- branchName()
 
   setNatalLons <- function(args) {
     # build natal longitudes
@@ -18,8 +17,7 @@ cmpNatalAspectsModel <- function(execfunc, ...) {
     # build matrix
     args$cusorbs <- matrix(args$cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE,
                            dimnames = list('orbs', aspects))
-    # aspects polarities
-    aspectspolarity <- c(2, args$aspectspolarity)
+
     args$aspectspolarity <- matrix(aspectspolarity, nrow = 1, ncol = length(aspects), byrow = TRUE,
                                    dimnames = list('polarity', aspects))
 
@@ -52,7 +50,7 @@ cmpNatalAspectsModel <- function(execfunc, ...) {
   }
 
   # Build args list for aspects polarity, aspects energy, zodenergy, significant points energy
-  processParamsPAPAEPZSP <- function(x, symbol, securityfile, planetsfile, predfile, tsdate, tedate, fittype, dateformat, mapricefs, mapricesl) {
+  processParamsPAPAEPZSP <- function(x, args) {
     # build the parameters based on GA indexes
     co.e = 2+length(deforbs)
     api.e = co.e+length(aspects)-1
@@ -61,32 +59,20 @@ cmpNatalAspectsModel <- function(execfunc, ...) {
     # 14 natal points
     spe.e = pze.e+14
 
-    args <-list(symbol=symbol,
-                securityfile=securityfile,
-                planetsfile=planetsfile,
-                predfile=predfile,
-                tsdate=tsdate,
-                tedate=tedate,
-                mapricefs=mapricefs,
-                mapricesl=mapricesl,
-                fittype=fittype,
-                dateformat=dateformat,
-                verbose=F,
-                doplot=F,
-                plotsol=F,
-                mapredsm=x[1],
-                cusorbs=x[2:(co.e-1)],
-                aspectspolarity=x[co.e:(api.e-1)],
-                aspectsenergy=adjustEnergy(x[api.e:(ae.e-1)]),
-                planetszodenergy=adjustEnergy(x[ae.e:(pze.e-1)]),
-                sigpenergy=adjustEnergy(x[pze.e:(spe.e-1)]))
+    args$mapredsm <- x[1]
+    args$cusorbs <- x[2:(co.e-1)]
+    args$aspectspolarity <- x[co.e:(api.e-1)]
+    args$aspectsenergy <- adjustEnergy(x[api.e:(ae.e-1)])
+    args$planetszodenergy <- adjustEnergy(x[ae.e:(pze.e-1)])
+    args$sigpenergy <- adjustEnergy(x[pze.e:(spe.e-1)])
+
+    # Conjunction energy as neutral
+    args$aspectspolarity <- c(2, args$aspectspolarity)
+    args$conpolarity <- FALSE
 
     args <- setModelData(args)
     args <- setNatalLons(args)
     args <- setParamsPAPAEPZSP(args)
-
-    # Conjunction energy as neutral
-    args$conpolarity <- FALSE
 
     return(args)
   }
@@ -100,9 +86,9 @@ cmpNatalAspectsModel <- function(execfunc, ...) {
     return(energy.days)
   }
 
-  relativeTrendExec <- function(x, ...) {
+  relativeTrendExec <- function(x, args) {
     # Build the params sets
-    args <- processParamsPAPAEPZSP(x, ...)
+    args <- processParamsPAPAEPZSP(x, args)
     # Execute
     res <- relativeTrend(args)
     # Return only the fitness
@@ -172,7 +158,64 @@ cmpNatalAspectsModel <- function(execfunc, ...) {
     return(res)
   }
 
-  optimizeRelativeTrend <- function(benchno, sectype, secsymbols, planetsfile, tsdate, tedate, fittype, mapricefs, mapricesl, dateformat) {
+  prepareForGA <- function(...) {
+    args <- list(...)
+    args <-with(args, list(benchno=benchno,
+                           sectype=sectype,
+                           secsymbols=secsymbols,
+                           planetsfile=planetsfile,
+                           tsdate=tsdate,
+                           tedate=tedate,
+                           mapricefs=mapricefs,
+                           mapricesl=mapricesl,
+                           fittype=fittype,
+                           dateformat=dateformat,
+                           verbose=F,
+                           doplot=F,
+                           plotsol=F))
+
+    # Clear the cache directory before start
+    clearCache()
+
+    return(args)
+  }
+
+  loopParamsGA <- function(symbol, args) {
+    # Restart timer for each symbol GA optimization
+    ptm <<- proc.time()
+    args$symbol <- symbol
+    args$branch <- branchName()
+    # buid securityfile and predfile paths
+    args$securityfile <- with(args, paste(sectype, symbol, sep="/"))
+    args$predfile <- with(args, paste('b', benchno, '/', symbol, '_', benchno, sep=""))
+    # redirect the output to symbol sink file
+    args$sinkpathfile <- with(args, npath(paste("~/trading/benchmarks/b", benchno, "_", sectype, ".txt", sep='')))
+    # Redirect output to file
+    #if (exists('sinkfile', envir=parent.frame())) {
+    sink(args$sinkpathfile, append=T)
+    cat("# version: ", args$branch, "\n")
+    with(args, cat("#", tsdate, '-', tedate, 'OPTwCV -', fittype, 'fit -', mapricefs, '-', mapricesl, 'MAS', '\n\n'))
+    cat("setModernAspectsSet()\n")
+    cat("bt <- list()\n")
+    sink()
+
+    cat("Starting GA optimization for ", args$symbol, " - ", args$sinkpathfile, "\n")
+
+    return(args)
+  }
+
+  loopSolutionGA <- function(gar, args) {
+    # output the solution string
+    sink(args$sinkpathfile, append=T)
+    x <- gar@solution[1,]
+    args <- with(args, processParamsPAPAEPZSP(x, args))
+    cat("res <-", args$strsol)
+    cat("# Fitness = ", gar@fitnessValue, "\n")
+    with(args, cat("bt$symbol <- testStrategy(openSecurityOnEnv(", shQuote(securityfile), "),", shQuote(benchno), shQuote(symbol), "res$pred)\n\n"))
+    sink()
+  }
+
+  optimizeRelativeTrend <- function(...) {
     cat("---------------------------- Initialize optimization ----------------------------------\n\n")
     orbsmin <- rep(0, length(deforbs))
     orbsmax <- deforbs
@@ -185,52 +228,25 @@ cmpNatalAspectsModel <- function(execfunc, ...) {
     # 14 natal points
     sigpenergymin <- rep(0, 14)
     sigpenergymax <- rep(30, 14)
-
+    # min/max ranges
     minvals <- c( 2, orbsmin, polaritymin, aspectenergymin, planetzodenergymin, sigpenergymin)
     maxvals <- c(10, orbsmax, polaritymax, aspectenergymax, planetzodenergymax, sigpenergymax)
 
-    # Clear the cache directory before start
-    clearCache()
+    args <- prepareForGA(...)
 
-    # redirect the output to symbol sink file
-    sinkpathfile <- npath(paste("~/trading/benchmarks/b", benchno, "_", sectype, ".txt", sep=''))
-    # Redirect output to file
-    #if (exists('sinkfile', envir=parent.frame())) {
-    sink(sinkpathfile, append=T)
-    cat("# version: ", branch.name, "\n")
-    cat("#", tsdate, '-', tedate, 'OPTwCV -', fittype, 'fit -', mapricefs, '-', mapricesl, 'MAS', '\n\n')
-    cat("setModernAspectsSet()\n")
-    cat("bt <- list()\n")
-    sink()
+    for (symbol in args$secsymbols) {
+      # process arguments
+      args <- loopParamsGA(symbol, args)
 
-    for (symbol in secsymbols) {
-      # Restart timer for each symbol GA optimization
-      ptm <<- proc.time()
-      cat("Starting GA optimization for ", symbol, " - ", sinkpathfile, "\n")
+      gar <- ga("real-valued", fitness=relativeTrendExec, parallel=FALSE, monitor=gaMonitor, maxiter=10, run=50, min=minvals, max=maxvals,
+                popSize=100, elitism = 100, pcrossover = 0.9, pmutation = 0.1,
+                selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population, args=args)
 
-      # buid securityfile and predfile paths
-      securityfile <- paste(sectype, symbol, sep="/")
-      predfile <- paste('b', benchno, '/', symbol, '_', benchno, sep="")
-
-      gar <- ga("real-valued", fitness=relativeTrendExec, parallel=TRUE, monitor=gaMonitor, maxiter=60, run=50, min=minvals, max=maxvals,
-                popSize=1000, elitism = 100, pcrossover = 0.9, pmutation = 0.1,
-                selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population,
-                symbol=symbol, securityfile=securityfile, planetsfile=planetsfile, predfile=predfile,
-                tsdate=tsdate, tedate=tedate, fittype=fittype, mapricefs=mapricefs, mapricesl=mapricesl, dateformat=dateformat)
-
-      # output the solution string
-      sink(sinkpathfile, append=T)
-      x <- gar@solution[1,]
-      args <- processParamsPAPAEPZSP(x, symbol, securityfile, planetsfile, predfile, tsdate, tedate, fittype, dateformat, mapricefs, mapricesl)
-      cat("res <-", args$strsol)
-      cat("# Fitness = ", gar@fitnessValue, "\n")
-      cat("bt$symbol <- testStrategy(openSecurityOnEnv(", shQuote(securityfile), "),", shQuote(benchno), shQuote(symbol), "res$pred)\n\n")
-      sink()
+      loopSolutionGA(gar, args)
     }
   }
 
-  execfunc <- get(get('execfunc'))
-  execfunc(...)
+  get(get('func'))(...)
 }
 
 # compile the function to byte code
