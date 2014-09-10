@@ -262,8 +262,8 @@ cmpNatalAspectsModel <- function(func, ...) {
       # process arguments
       args <- loopParamsGA(symbol, args)
 
-      gar <- ga("real-valued", fitness=relativeTrendExec, parallel=T, monitor=gaMonitor, maxiter=10, run=50, min=minvals, max=maxvals,
-                popSize=100, elitism=100, pcrossover=0.9, pmutation=0.1,
+      gar <- ga("real-valued", fitness=relativeTrendExec, parallel=T, monitor=gaMonitor, maxiter=60, run=50, min=minvals, max=maxvals,
+                popSize=1000, elitism=100, pcrossover=0.9, pmutation=0.1,
                 selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population, args=args)
 
       loopSolutionGA(gar, args)
