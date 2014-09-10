@@ -730,7 +730,7 @@ dataOptCVYearSplit <- function(args, planets.pred) {
   years.test <- years[1:round(length(years) * .5)]
   years.cv <- years[years %ni% years.test]
   # Optimization test data
-  sample.opt <- planets.pred[Year %in% years,]
+  sample.opt <- planets.pred[Year %in% years.test,]
 
   # When doplot is enabled use for confirmation all the available years
   if (args$doplot) {
@@ -739,7 +739,7 @@ dataOptCVYearSplit <- function(args, planets.pred) {
   }
   else {
     # take from cross-validation years a 40% random years for cross-validation
-    sample.cv <- planets.pred[years.cv[sample(1:length(years.cv), round(length(years.cv) * .4))],]
+    sample.cv <- planets.pred[Year %in% years.cv[sample(1:length(years.cv), round(length(years.cv) * .4))],]
   }
 
   return(list(opt=sample.opt, cv=sample.cv))
