@@ -145,6 +145,13 @@ gaint_spCrossover <- function (object, parents, ...) {
   return(out)
 }
 
+execfunc <- function(name, modenv, ...) {
+  if (is.null(name)) stop("NULL function name at execfunc")
+  func <- get(name, envir=modenv)
+  if (!is.function(func)) stop(cat("Invalid", name, "callback function at execfunc."))
+  return(func(...))
+}
+
 npath <- function(path) {
   normalizePath(path.expand(path))
 }
@@ -527,7 +534,7 @@ calculateSamplesFitness <- function(args, samples) {
     stop("No valid fittype provided")
   }
 
-  if (args$doplot) {
+  if (args$verbose) {
     # plot solution snippet if doplot is enabled
     if (args$plotsol) {
       snippet <- paste(strwrap(sout, width=170), collapse="\n")
@@ -712,7 +719,13 @@ dataOptCVSampleSplit <- function(args, planets.pred) {
 # Years split date in optimization and CV
 dataOptCVYearSplit <- function(args, planets.pred) {
   # Years covered in the data
-  years <- with(args, format(seq(vsdate, vedate, by='year'), '%Y'))
+  if (args$asptype == 'natal') {
+    years <- with(args, format(seq(tsdate, tedate, by='year'), '%Y'))
+  }
+  else {
+    years <- with(args, format(seq(vsdate, vedate, by='year'), '%Y'))
+  }
+
   # 50% of the years are used for optimization
   years.test <- years[1:round(length(years) * .5)]
   years.cv <- years[years %ni% years.test]

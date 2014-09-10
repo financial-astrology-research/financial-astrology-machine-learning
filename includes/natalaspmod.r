@@ -2,6 +2,7 @@
 # Natal chart aspects model
 ####################################################################################################
 cmpNatalAspectsModel <- function(func, ...) {
+  modenv <- environment()
   if (!hasArg('func')) stop("Provide function to execute")
   ptm <- proc.time()
 
@@ -15,20 +16,20 @@ cmpNatalAspectsModel <- function(func, ...) {
 
   setParamsPAPAEPZSP <- function(args) {
     # build matrix
-    args$cusorbs <- matrix(args$cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE,
-                           dimnames = list('orbs', aspects))
+    args$cusorbs <- matrix(args$cusorbs, nrow=1, ncol=length(aspects), byrow=T,
+                           dimnames=list('orbs', aspects))
 
-    args$aspectspolarity <- matrix(args$aspectspolarity, nrow = 1, ncol = length(aspects), byrow = TRUE,
-                                   dimnames = list('polarity', aspects))
+    args$aspectspolarity <- matrix(args$aspectspolarity, nrow=1, ncol=length(aspects), byrow=T,
+                                   dimnames=list('polarity', aspects))
 
-    args$aspectsenergy <- matrix(args$aspectsenergy, nrow = 1, ncol = length(args$aspectsenergy), byrow = TRUE,
-                                 dimnames = list(c('energy'), aspects))
+    args$aspectsenergy <- matrix(args$aspectsenergy, nrow=1, ncol=length(args$aspectsenergy), byrow=T,
+                                 dimnames=list(c('energy'), aspects))
 
-    args$sigpenergy <- matrix(args$sigpenergy, nrow = 1, ncol = length(args$sigpenergy), byrow = TRUE,
-                              dimnames = list(c('energy'), args$siglons$lon))
+    args$sigpenergy <- matrix(args$sigpenergy, nrow=1, ncol=length(args$sigpenergy), byrow=T,
+                              dimnames=list(c('energy'), args$siglons$lon))
 
-    args$planetszodenergy <- matrix(args$planetszodenergy, nrow = length(planetsBaseCols), ncol = 12, byrow = TRUE,
-                                    dimnames = list(planetsBaseCols, zodSignsCols))
+    args$planetszodenergy <- matrix(args$planetszodenergy, nrow=length(planetsBaseCols), ncol=12, byrow=T,
+                                    dimnames=list(planetsBaseCols, zodSignsCols))
 
     # Generate the string solution for for the given model parameters
     args$strsol <- with(args, paste("natalAspectsModel('testSolution'",
@@ -52,12 +53,12 @@ cmpNatalAspectsModel <- function(func, ...) {
   # Build args list for aspects polarity, aspects energy, zodenergy, significant points energy
   processParamsPolarityAspZodSiglonsEnergy <- function(x, args) {
     # build the parameters based on GA indexes
-    co.e = 2+length(deforbs)
-    api.e = co.e+length(aspects)-1
-    ae.e = api.e+length(aspects)
-    pze.e = ae.e+lenZodEnergyMi
+    co.e=2+length(deforbs)
+    api.e=co.e+length(aspects)-1
+    ae.e=api.e+length(aspects)
+    pze.e=ae.e+lenZodEnergyMi
     # 14 natal points
-    spe.e = pze.e+14
+    spe.e=pze.e+14
 
     args$mapredsm <- x[1]
     args$cusorbs <- x[2:(co.e-1)]
@@ -68,7 +69,7 @@ cmpNatalAspectsModel <- function(func, ...) {
 
     # Conjunction energy as neutral
     args$aspectspolarity <- c(2, args$aspectspolarity)
-    args$conpolarity <- FALSE
+    args$conpolarity <- F
 
     args <- setModelData(args)
     args <- setNatalLons(args)
@@ -78,13 +79,21 @@ cmpNatalAspectsModel <- function(func, ...) {
   }
 
   # Use processParamsPolarityAspZodSiglonsEnergy with data sample split
-  natalModelParamsOne <- function(x, args) {
-
+  natalModelParamsOne <- function(args) {
+    # Build the params sets
+    args <- processParamsPolarityAspZodSiglonsEnergy(args$x, args)
+    args$datasplitfunc <- 'dataOptCVSampleSplit'
+    args$verbose <- T
+    return(args)
   }
 
   # Use processParamsPolarityAspZodSiglonsEnergy with data year split
-  natalModelParamsTwo <- function(x, args) {
-
+  natalModelParamsTwo <- function(args) {
+    # Build the params sets
+    args <- processParamsPolarityAspZodSiglonsEnergy(args$x, args)
+    args$datasplitfunc <- 'dataOptCVYearSplit'
+    args$verbose <- T
+    return(args)
   }
 
   # Build the orbs, polarity, aspect energy, sigpoints energy and zodenergy matrix
@@ -97,8 +106,9 @@ cmpNatalAspectsModel <- function(func, ...) {
   }
 
   relativeTrendExec <- function(x, args) {
-    # Build the params sets
-    args <- processParamsPolarityAspZodSiglonsEnergy(x, args)
+    args$x <- x
+    # Execute the appropriate params function
+    args <- execfunc(args$paramsfunc, modenv, args)
     # Execute
     res <- relativeTrend(args)
     # Return only the fitness
@@ -118,11 +128,11 @@ cmpNatalAspectsModel <- function(func, ...) {
     planets.pred[, predval := SMA(predRaw, args$mapredsm)]
     planets.pred <- planets.pred[!is.na(predval),]
     # determine a factor prediction response
-    planets.pred[, predFactor := cut(predval, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
+    planets.pred[, predFactor := cut(predval, c(-10000, 0, 10000), labels=c('down', 'up'), right=F)]
     # Add the Year for projected predictions rows
     planets.pred[is.na(Year), Year := as.character(format(Date, "%Y"))]
-    # Split data
-    samples <- dataOptCVSampleSplit(args, planets.pred)
+    # Split data using the appropriate function
+    samples <- get(args$datasplitfunc)(args, planets.pred)
     # Calculate Fitness
     fitness <- calculateSamplesFitness(args, samples)
     #cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n\n")
@@ -144,14 +154,14 @@ cmpNatalAspectsModel <- function(func, ...) {
     args <- setNatalLons(args)
     args <- setParamsPAPAEPZSP(args)
     # By default use conjunction neutral energy
-    args$conpolarity <- FALSE
+    args$conpolarity <- F
 
     return(args)
   }
 
   testSolution <- function(...) {
     args <- prepareSolutionArgs(...)
-    if (args$doplot) pdf(args$predfile, width = 11, height = 8, family='Helvetica', pointsize=12)
+    if (args$doplot) pdf(args$predfile, width=11, height=8, family='Helvetica', pointsize=12)
     res <- relativeTrend(args)
     if (args$doplot) dev.off()
     # Return a response
@@ -160,8 +170,8 @@ cmpNatalAspectsModel <- function(func, ...) {
 
   testSolutionConPol <- function(...) {
     args <- prepareSolutionArgs(...)
-    args$conpolarity <- TRUE
-    if (args$doplot) pdf(args$predfile, width = 11, height = 8, family='Helvetica', pointsize=12)
+    args$conpolarity <- T
+    if (args$doplot) pdf(args$predfile, width=11, height=8, family='Helvetica', pointsize=12)
     res <- relativeTrend(args)
     if (args$doplot) dev.off()
     # Return a response
@@ -170,7 +180,9 @@ cmpNatalAspectsModel <- function(func, ...) {
 
   prepareForGA <- function(...) {
     args <- list(...)
-    args <-with(args, list(benchno=benchno,
+    args <-with(args, list(branch=branchName(),
+                           paramsfunc=paramsfunc,
+                           benchno=benchno,
                            sectype=sectype,
                            secsymbols=secsymbols,
                            planetsfile=planetsfile,
@@ -186,20 +198,9 @@ cmpNatalAspectsModel <- function(func, ...) {
 
     # Clear the cache directory before start
     clearCache()
-
-    return(args)
-  }
-
-  loopParamsGA <- function(symbol, args) {
-    # Restart timer for each symbol GA optimization
-    ptm <<- proc.time()
-    args$symbol <- symbol
-    args$branch <- branchName()
-    # buid securityfile and predfile paths
-    args$securityfile <- with(args, paste(sectype, symbol, sep="/"))
-    args$predfile <- with(args, paste('b', benchno, '/', symbol, '_', benchno, sep=""))
     # redirect the output to symbol sink file
     args$sinkpathfile <- with(args, npath(paste("~/trading/benchmarks/b", benchno, "_", sectype, ".txt", sep='')))
+
     # Redirect output to file
     #if (exists('sinkfile', envir=parent.frame())) {
     sink(args$sinkpathfile, append=T)
@@ -209,6 +210,16 @@ cmpNatalAspectsModel <- function(func, ...) {
     cat("bt <- list()\n")
     sink()
 
+    return(args)
+  }
+
+  loopParamsGA <- function(symbol, args) {
+    # Restart timer for each symbol GA optimization
+    ptm <<- proc.time()
+    args$symbol <- symbol
+    # buid securityfile and predfile paths
+    args$securityfile <- with(args, paste(sectype, symbol, sep="/"))
+    args$predfile <- with(args, paste('b', benchno, '/', symbol, '_', benchno, sep=""))
     cat("Starting GA optimization for ", args$symbol, " - ", args$sinkpathfile, "\n")
 
     return(args)
@@ -217,11 +228,14 @@ cmpNatalAspectsModel <- function(func, ...) {
   loopSolutionGA <- function(gar, args) {
     # output the solution string
     sink(args$sinkpathfile, append=T)
-    x <- gar@solution[1,]
-    args <- with(args, processParamsPolarityAspZodSiglonsEnergy(x, args))
+    args$x <- gar@solution[1,]
+    # Execute the appropriate params function
+    args <- execfunc(args$paramsfunc, modenv, args)
+    # Print solution / fitness / BT call
     cat("res <-", args$strsol)
-    cat("# Fitness = ", gar@fitnessValue, "\n")
-    with(args, cat("bt$symbol <- testStrategy(openSecurityOnEnv(", shQuote(securityfile), "),", shQuote(benchno), shQuote(symbol), "res$pred)\n\n"))
+    cat("# Fitness=", gar@fitnessValue, "\n")
+    with(args, cat("bt$", symbol, " <- testStrategy(openSecurityOnEnv(", shQuote(securityfile), "), ",
+                   shQuote(benchno), ', ', shQuote(symbol), ", res$pred)\n\n", sep=''))
     sink()
   }
 
@@ -248,15 +262,15 @@ cmpNatalAspectsModel <- function(func, ...) {
       # process arguments
       args <- loopParamsGA(symbol, args)
 
-      gar <- ga("real-valued", fitness=relativeTrendExec, parallel=TRUE, monitor=gaMonitor, maxiter=10, run=50, min=minvals, max=maxvals,
-                popSize=100, elitism = 100, pcrossover = 0.9, pmutation = 0.1,
+      gar <- ga("real-valued", fitness=relativeTrendExec, parallel=T, monitor=gaMonitor, maxiter=10, run=50, min=minvals, max=maxvals,
+                popSize=100, elitism=100, pcrossover=0.9, pmutation=0.1,
                 selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population, args=args)
 
       loopSolutionGA(gar, args)
     }
   }
 
-  get(get('func'))(...)
+  execfunc(get('func'), modenv, ...)
 }
 
 # compile the function to byte code
