@@ -32,10 +32,19 @@ bootstrapOptimization <- function(modenv, ...) {
   cat("# version: ", args$branch, "\n")
   cat(args$strmodparams, "\n")
   cat("setModernAspectsSet()\n")
-  cat("bt <- list()\n")
+  cat("bt <- list()\n\n")
   sink()
 
   return(args)
+}
+
+# Executed when GA optimization finished
+exitOptimization <- function(args) {
+  # Print the BT execution lines
+  sink(args$sinkpathfile, append=T)
+  cat("\n# Backtest summary\n")
+  cat("testStrategyAllMean(bt)\n");
+  sink()
 }
 
 bootstrapOptimizationIteration <- function(symbol, args) {

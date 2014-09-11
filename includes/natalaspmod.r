@@ -163,6 +163,8 @@ cmpNatalAspectsModel <- function(func, ...) {
 
       loopSolutionGA(gar, args)
     }
+
+    exitOptimization(args)
   }
 
   execfunc(get('func'), modenv, ...)
