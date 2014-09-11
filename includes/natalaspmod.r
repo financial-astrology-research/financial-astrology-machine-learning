@@ -9,8 +9,6 @@ cmpNatalAspectsModel <- function(func, ...) {
   bootstrapModel <- function(args) {
     if (!is.null(args$tsdate)) args$tsdate <- as.Date(args$tsdate)
     if (!is.null(args$tedate)) args$tedate <- as.Date(args$tedate)
-    if (!is.null(args$vsdate)) args$vsdate <- as.Date(args$vsdate)
-    if (!is.null(args$vedate)) args$vedate <- as.Date(args$vedate)
     # open planets file and leave only needed cols for better speed
     planets <- openPlanets(args$planetsfile, deforbs, calcasps=F)
     args$planets <- planets[, c('Date', 'Year', 'wday', planetsLonCols), with=F]
