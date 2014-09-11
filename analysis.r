@@ -11,6 +11,7 @@ library(splus2R)
 library(stringr)
 
 # models includes
+source("~/trading/includes/commonmod.r")
 source("~/trading/includes/natalaspmod.r")
 source("~/trading/includes/topnsigaspmod.r")
 
@@ -477,20 +478,6 @@ adjustEnergy <- function(x) {
   x / 10
 }
 
-setModelData <- function(args) {
-  if (!is.null(args$tsdate)) args$tsdate <- as.Date(args$tsdate)
-  if (!is.null(args$tedate)) args$tedate <- as.Date(args$tedate)
-  if (!is.null(args$vsdate)) args$vsdate <- as.Date(args$vsdate)
-  if (!is.null(args$vedate)) args$vedate <- as.Date(args$vedate)
-  # open planets file and leave only needed cols for better speed
-  planets <- openPlanets(args$planetsfile, deforbs, calcasps=F)
-  args$planets <- planets[, c('Date', 'Year', 'wday', planetsLonCols), with=F]
-  # load the security data and leave only needed cols
-  security <- with(args, openSecurity(securityfile, mapricefs, mapricesl, dateformat, tsdate))
-  args$security <- security[, c('Date', 'Year', 'Open', 'High', 'Low', 'Close', 'Mid', 'MidMAF', 'MidMAS', 'Eff'), with=F]
-  return(args)
-}
-
 # aggregate the daily energy and apply it with the daily significance energy
 # to calculate the final prediction
 calculateUpDownEnergy <- function(energy.days) {
@@ -623,19 +610,19 @@ meltedAndMergedDayAspects <- function(aspects.day, planets, security, psdate, pe
 # process the daily aspects energy
 dayAspectsEnergy <- function(args) {
   # Use the appropriate daily aspects
-  if (args$asptype == 'siglon') {
+  if (args$model == 'siglon') {
     # significant longitude points aspects
     aspects.day <- with(args, buildSignificantLongitudesAspects(planets, security, degsplit, tsdate, tedate, topn, F))
     # aspects, orbs and longitudes in long format
     planets.pred.aspen <- with(args, meltedAndMergedDayAspects(aspects.day, planets, security, vsdate, vedate))
   }
-  else if (args$asptype == 'natal') {
+  else if (args$model == 'natalAspectsModel') {
     # natal points aspects
     aspects.day <- with(args, buildNatalLongitudeAspects(symbol, planets, F))
     planets.pred.aspen <- with(args, meltedAndMergedDayAspects(aspects.day, planets, security, tsdate, tedate))
   }
   else {
-    stop("Not valid asptype was provided.")
+    stop("Not valid model was provided.")
   }
 
   # Use only the separating aspects & applying with at much 1 deg of orb
@@ -719,7 +706,7 @@ dataOptCVSampleSplit <- function(args, planets.pred) {
 # Years split date in optimization and CV
 dataOptCVYearSplit <- function(args, planets.pred) {
   # Years covered in the data
-  if (args$asptype == 'natal') {
+  if (args$model == 'natalAspectsModel') {
     years <- with(args, format(seq(tsdate, tedate, by='year'), '%Y'))
   }
   else {
