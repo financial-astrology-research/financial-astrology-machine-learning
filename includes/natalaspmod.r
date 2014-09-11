@@ -14,6 +14,7 @@ cmpNatalAspectsModel <- function(func, ...) {
     args$planets <- planets[, c('Date', 'Year', 'wday', planetsLonCols), with=F]
     # set the asptype to use to siglons
     args$model <- 'natalAspectsModel'
+    args$strmodparams <- with(args, paste("#", tsdate, '-', tedate, 'OPTwCV -', fittype, 'fit -', mapricefs, '-', mapricesl, 'MAS'))
     return(args)
   }
 
@@ -61,17 +62,17 @@ cmpNatalAspectsModel <- function(func, ...) {
     return(args)
   }
 
-  relativeTrendExec <- function(x, args) {
+  modelFitExec <- function(x, args) {
     args$x <- x
     # Execute the appropriate params function
     args <- execfunc(args$paramsfunc, modenv, args)
     # Execute
-    res <- relativeTrend(args)
+    res <- modelFit(args)
     # Return only the fitness
     return(res$fitness)
   }
 
-  relativeTrend <- function(args) {
+  modelFit <- function(args) {
     looptm <- proc.time()
     # calculate energy days
     energy.days <- dayAspectsEnergy(args)
@@ -117,7 +118,7 @@ cmpNatalAspectsModel <- function(func, ...) {
   testSolution <- function(...) {
     args <- prepareParamsSolution(...)
     if (args$doplot) pdf(args$predfile, width=11, height=8, family='Helvetica', pointsize=12)
-    res <- relativeTrend(args)
+    res <- modelFit(args)
     if (args$doplot) dev.off()
     # Return a response
     return(res)
@@ -127,13 +128,13 @@ cmpNatalAspectsModel <- function(func, ...) {
     args <- prepareParamsSolution(...)
     args$conpolarity <- T
     if (args$doplot) pdf(args$predfile, width=11, height=8, family='Helvetica', pointsize=12)
-    res <- relativeTrend(args)
+    res <- modelFit(args)
     if (args$doplot) dev.off()
     # Return a response
     return(res)
   }
 
-  optimizeRelativeTrend <- function(...) {
+  optimizeGA <- function(...) {
     cat("---------------------------- Initialize optimization ----------------------------------\n\n")
     orbsmin <- rep(0, length(deforbs))
     orbsmax <- deforbs
@@ -156,7 +157,7 @@ cmpNatalAspectsModel <- function(func, ...) {
       # process arguments
       args <- bootstrapOptimizationIteration(symbol, args)
 
-      gar <- ga("real-valued", fitness=relativeTrendExec, parallel=T, monitor=gaMonitor, maxiter=60, run=50, min=minvals, max=maxvals,
+      gar <- ga("real-valued", fitness=modelFitExec, parallel=T, monitor=gaMonitor, maxiter=60, run=50, min=minvals, max=maxvals,
                 popSize=1000, elitism=100, pcrossover=0.9, pmutation=0.1,
                 selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population, args=args)
 
