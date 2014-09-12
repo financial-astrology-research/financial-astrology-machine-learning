@@ -65,7 +65,7 @@ bootstrapOptimizationIteration <- function(symbol, args) {
   return(args)
 }
 
-loopSolutionGA <- function(gar, args) {
+loopSolutionGA <- function(gar, modenv, args) {
   # output the solution string
   sink(args$sinkpathfile, append=T)
   args$x <- gar@solution[1,]

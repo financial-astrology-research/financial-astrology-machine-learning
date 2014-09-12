@@ -161,7 +161,7 @@ cmpNatalAspectsModel <- function(func, ...) {
                 popSize=1000, elitism=100, pcrossover=0.9, pmutation=0.1,
                 selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population, args=args)
 
-      loopSolutionGA(gar, args)
+      loopSolutionGA(gar, modenv, args)
     }
 
     exitOptimization(args)
