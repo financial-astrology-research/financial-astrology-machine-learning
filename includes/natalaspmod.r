@@ -7,8 +7,10 @@ cmpNatalAspectsModel <- function(func, ...) {
   ptm <- proc.time()
 
   bootstrapModel <- function(args) {
-    if (!is.null(args$tsdate)) args$tsdate <- as.Date(args$tsdate)
-    if (!is.null(args$tedate)) args$tedate <- as.Date(args$tedate)
+    args$tsdate <- as.Date(args$tsdate)
+    args$tedate <- as.Date(args$tedate)
+    # Init the GA min/max
+    args <- paramsPolarityAspZodSiglonEnergy('gaMinMax', args)
     # open planets file and leave only needed cols for better speed
     planets <- openPlanets(args$planetsfile, deforbs, calcasps=F)
     args$planets <- planets[, c('Date', 'Year', 'wday', planetsLonCols), with=F]
@@ -18,47 +20,23 @@ cmpNatalAspectsModel <- function(func, ...) {
     return(args)
   }
 
-  # Build args list for aspects polarity, aspects energy, zodenergy, significant points energy
-  processParamsPolarityAspZodSiglonEnergy <- function(x, args) {
-    # build the parameters based on GA indexes
-    co.e=2+length(deforbs)
-    api.e=co.e+length(aspects)-1
-    ae.e=api.e+length(aspects)
-    pze.e=ae.e+lenZodEnergyMi
-    # 14 natal points
-    spe.e=pze.e+14
-
-    args$mapredsm <- x[1]
-    args$cusorbs <- x[2:(co.e-1)]
-    args$aspectspolarity <- x[co.e:(api.e-1)]
-    args$aspectsenergy <- adjustEnergy(x[api.e:(ae.e-1)])
-    args$planetszodenergy <- adjustEnergy(x[ae.e:(pze.e-1)])
-    args$sigpenergy <- adjustEnergy(x[pze.e:(spe.e-1)])
-
-    # Conjunction energy as neutral
-    args$aspectspolarity <- c(2, args$aspectspolarity)
-    args <- setMatrixOrbsPolarityAspSZodSiglonEnergy(args)
-
-    return(args)
-  }
-
-  # Use processParamsPolarityAspZodSiglonEnergy with data sample split
+  # Use paramsPolarityAspZodSiglonEnergy with data sample split
   natalModelParamsOne <- function(args) {
     # Build the params sets
-    if (!is.null(args$x)) args <- processParamsPolarityAspZodSiglonEnergy(args$x, args)
+    if (!is.null(args$x)) args <- paramsPolarityAspZodSiglonEnergy('splitX', args)
     args$datasplitfunc <- 'dataOptCVSampleSplit'
     args$conpolarity <- F
     args$verbose <- F
     return(args)
   }
 
-  # Use processParamsPolarityAspZodSiglonEnergy with data year split
+  # Use paramsPolarityAspZodSiglonEnergy with data year split
   natalModelParamsTwo <- function(args) {
     # Build the params sets
-    if (!is.null(args$x)) args <- processParamsPolarityAspZodSiglonEnergy(args$x, args)
+    if (!is.null(args$x)) args <- paramsPolarityAspZodSiglonEnergy('splitX', args)
     args$datasplitfunc <- 'dataOptCVYearSplit'
     args$conpolarity <- F
-    args$verbose <- F
+    args$verbose <- T
     return(args)
   }
 
@@ -102,7 +80,7 @@ cmpNatalAspectsModel <- function(func, ...) {
     # Build the params sets
     args <- bootstrapModel(args)
     args <- bootstrapSecurity(args$symbol, args)
-    args <- setMatrixOrbsPolarityAspSZodSiglonEnergy(args)
+    args <- paramsPolarityAspZodSiglonEnergy('setMatrix', args)
     args <- execfunc(args$paramsfunc, modenv, args)
     args$verbose <- T
     args$doplot <- T
@@ -124,32 +102,7 @@ cmpNatalAspectsModel <- function(func, ...) {
     return(res)
   }
 
-  testSolutionConPol <- function(...) {
-    args <- prepareParamsSolution(...)
-    if (args$doplot) pdf(args$predfile, width=11, height=8, family='Helvetica', pointsize=12)
-    res <- modelFit(args)
-    if (args$doplot) dev.off()
-    # Return a response
-    return(res)
-  }
-
   optimizeGA <- function(...) {
-    cat("---------------------------- Initialize optimization ----------------------------------\n\n")
-    orbsmin <- rep(0, length(deforbs))
-    orbsmax <- deforbs
-    polaritymin <- rep(0, length(aspects)-1)
-    polaritymax <- rep(1, length(aspects)-1)
-    aspectenergymin <- rep(0, length(aspects))
-    aspectenergymax <- rep(30, length(aspects))
-    planetzodenergymin <- rep(0, lenZodEnergyMi)
-    planetzodenergymax <- rep(30, lenZodEnergyMi)
-    # 14 natal points
-    sigpenergymin <- rep(0, 14)
-    sigpenergymax <- rep(30, 14)
-    # min/max ranges
-    minvals <- c( 2, orbsmin, polaritymin, aspectenergymin, planetzodenergymin, sigpenergymin)
-    maxvals <- c(10, orbsmax, polaritymax, aspectenergymax, planetzodenergymax, sigpenergymax)
-
     args <- bootstrapOptimization(modenv, ...)
 
     for (symbol in args$secsymbols) {
@@ -157,11 +110,11 @@ cmpNatalAspectsModel <- function(func, ...) {
       args <- bootstrapSecurity(symbol, args)
       cat("Starting GA optimization for ", args$symbol, " - ", args$sinkpathfile, "\n")
 
-      gar <- ga("real-valued", fitness=modelFitExec, parallel=T, monitor=gaMonitor, maxiter=60, run=50, min=minvals, max=maxvals,
-                popSize=1000, elitism=100, pcrossover=0.9, pmutation=0.1,
+      gar <- ga("real-valued", popSize=1000, elitism=100, pcrossover=0.9, pmutation=0.1, maxiter=60, run=50,
+                fitness=modelFitExec, parallel=T, min=args$gamin, max=args$gamax, monitor=gaMonitor,
                 selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population, args=args)
 
-      loopSolutionGA(gar, modenv, args)
+      loopSolutionGA(modenv, gar, args)
     }
 
     exitOptimization(args)
