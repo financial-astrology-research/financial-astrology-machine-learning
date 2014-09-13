@@ -47,20 +47,18 @@ exitOptimization <- function(args) {
   sink()
 }
 
-bootstrapOptimizationIteration <- function(symbol, args) {
+bootstrapSecurity <- function(symbol, args) {
   # Restart timer for each symbol GA optimization
   ptm <<- proc.time()
   args$symbol <- symbol
   # buid securityfile and predfile paths
   args$securityfile <- with(args, paste(sectype, symbol, sep="/"))
-  args$predfile <- with(args, paste('b', benchno, '/', symbol, '_', benchno, sep=""))
+  args$predfile <- with(args, paste('~/b', benchno, '/', symbol, '_', benchno, sep=""))
   # build natal longitudes
   args$siglons <- buildNatalLongitudes(args$symbol)
   # load the security data and leave only needed cols
   security <- with(args, openSecurity(securityfile, mapricefs, mapricesl, dateformat, tsdate))
   args$security <- security[, c('Date', 'Year', 'Open', 'High', 'Low', 'Close', 'Mid', 'MidMAF', 'MidMAS', 'Eff'), with=F]
-
-  cat("Starting GA optimization for ", args$symbol, " - ", args$sinkpathfile, "\n")
 
   return(args)
 }
@@ -98,10 +96,11 @@ setMatrixOrbsPolarityAspSZodSiglonEnergy <- function(args) {
 
   # Generate the string solution for for the given model parameters
   args$strsol <- with(args, paste("natalAspectsModel('testSolution'",
+                                  ", benchno=", shQuote(benchno),
                                   ", symbol=", shQuote(symbol),
+                                  ", sectype=", shQuote(sectype),
                                   ", securityfile=", shQuote(securityfile),
                                   ", planetsfile=", shQuote(planetsfile),
-                                  ", predfile=", shQuote(predfile),
                                   ", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate),
                                   ", mapredsm=", mapredsm, ", mapricefs=", mapricefs, ", mapricesl=", mapricesl,
                                   ", cusorbs=c(", paste(cusorbs, collapse=", "), ")",
@@ -109,7 +108,7 @@ setMatrixOrbsPolarityAspSZodSiglonEnergy <- function(args) {
                                   ", sigpenergy=c(", paste(sigpenergy, collapse=", "), ")",
                                   ", planetszodenergy=c(", paste(planetszodenergy, collapse=", "), ")",
                                   ", aspectspolarity=c(", paste(aspectspolarity, collapse=", "), ")",
-                                  ", dateformat=", shQuote(dateformat), ", verbose=T", ", doplot=T, plotsol=F",
+                                  ", dateformat=", shQuote(dateformat),
                                   ", paramsfunc=", shQuote(paramsfunc),
                                   ", fittype=", shQuote(fittype), ")\n", sep=""))
 

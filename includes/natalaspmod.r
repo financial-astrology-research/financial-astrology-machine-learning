@@ -37,8 +37,6 @@ cmpNatalAspectsModel <- function(func, ...) {
 
     # Conjunction energy as neutral
     args$aspectspolarity <- c(2, args$aspectspolarity)
-    args$conpolarity <- F
-
     args <- setMatrixOrbsPolarityAspSZodSiglonEnergy(args)
 
     return(args)
@@ -47,8 +45,9 @@ cmpNatalAspectsModel <- function(func, ...) {
   # Use processParamsPolarityAspZodSiglonEnergy with data sample split
   natalModelParamsOne <- function(args) {
     # Build the params sets
-    args <- processParamsPolarityAspZodSiglonEnergy(args$x, args)
+    if (!is.null(args$x)) args <- processParamsPolarityAspZodSiglonEnergy(args$x, args)
     args$datasplitfunc <- 'dataOptCVSampleSplit'
+    args$conpolarity <- F
     args$verbose <- F
     return(args)
   }
@@ -56,8 +55,9 @@ cmpNatalAspectsModel <- function(func, ...) {
   # Use processParamsPolarityAspZodSiglonEnergy with data year split
   natalModelParamsTwo <- function(args) {
     # Build the params sets
-    args <- processParamsPolarityAspZodSiglonEnergy(args$x, args)
+    if (!is.null(args$x)) args <- processParamsPolarityAspZodSiglonEnergy(args$x, args)
     args$datasplitfunc <- 'dataOptCVYearSplit'
+    args$conpolarity <- F
     args$verbose <- F
     return(args)
   }
@@ -99,18 +99,18 @@ cmpNatalAspectsModel <- function(func, ...) {
   prepareParamsSolution <- function(...) {
     args <- list(...)
     if (!hasArg('dateformat')) stop("A dateformat is needed.")
-    args$predfile <- paste("~/", args$predfile, ".pdf", sep="")
-
+    # Build the params sets
+    args <- bootstrapModel(args)
+    args <- bootstrapSecurity(args$symbol, args)
+    args <- setMatrixOrbsPolarityAspSZodSiglonEnergy(args)
+    args <- execfunc(args$paramsfunc, modenv, args)
+    args$verbose <- T
+    args$doplot <- T
+    args$plotsol <- F
     # Create directory if do not exists
     if (!file.exists(dirname(args$predfile))) {
       dir.create(dirname(args$predfile), recursive=T)
     }
-
-    # Build the params sets
-    args <- bootstrapModel(args)
-    args <- setMatrixOrbsPolarityAspSZodSiglonEnergy(args)
-    # By default use conjunction neutral energy
-    args$conpolarity <- F
 
     return(args)
   }
@@ -126,7 +126,6 @@ cmpNatalAspectsModel <- function(func, ...) {
 
   testSolutionConPol <- function(...) {
     args <- prepareParamsSolution(...)
-    args$conpolarity <- T
     if (args$doplot) pdf(args$predfile, width=11, height=8, family='Helvetica', pointsize=12)
     res <- modelFit(args)
     if (args$doplot) dev.off()
@@ -155,7 +154,8 @@ cmpNatalAspectsModel <- function(func, ...) {
 
     for (symbol in args$secsymbols) {
       # process arguments
-      args <- bootstrapOptimizationIteration(symbol, args)
+      args <- bootstrapSecurity(symbol, args)
+      cat("Starting GA optimization for ", args$symbol, " - ", args$sinkpathfile, "\n")
 
       gar <- ga("real-valued", fitness=modelFitExec, parallel=T, monitor=gaMonitor, maxiter=60, run=50, min=minvals, max=maxvals,
                 popSize=1000, elitism=100, pcrossover=0.9, pmutation=0.1,

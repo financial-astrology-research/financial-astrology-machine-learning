@@ -722,7 +722,7 @@ dataOptCVYearSplit <- function(args, planets.pred) {
   # When doplot is enabled use for confirmation all the available years
   if (args$doplot) {
     sample.cv <- planets.pred[Year %in% years.cv,]
-    plotCVChart(names(years.cv[years.cv > 20]), sample.cv)
+    plotCVChart(years.cv, sample.cv)
   }
   else {
     # take from cross-validation years a 40% random years for cross-validation
