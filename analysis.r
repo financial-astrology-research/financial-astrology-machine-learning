@@ -146,11 +146,11 @@ gaint_spCrossover <- function (object, parents, ...) {
   return(out)
 }
 
-execfunc <- function(name, modenv, ...) {
+execfunc <- function(name, args) {
   if (is.null(name)) stop("NULL function name at execfunc")
-  func <- get(name, envir=modenv)
+  func <- get(name, envir=args$modenv)
   if (!is.function(func)) stop(cat("Invalid", name, "callback function at execfunc."))
-  return(func(...))
+  return(func(args))
 }
 
 npath <- function(path) {

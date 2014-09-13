@@ -1,28 +1,35 @@
 #####################################################################################################
 # Common models functions
 ####################################################################################################
-bootstrapOptimization <- function(modenv, ...) {
-  args <- list(...)
-  args <- with(args, list(branch=branchName(),
-                          paramsfunc=paramsfunc,
-                          benchno=benchno,
-                          sectype=sectype,
-                          secsymbols=secsymbols,
-                          planetsfile=planetsfile,
-                          tsdate=tsdate,
-                          tedate=tedate,
-                          mapricefs=mapricefs,
-                          mapricesl=mapricesl,
-                          fittype=fittype,
-                          dateformat=dateformat,
-                          verbose=F,
-                          doplot=F,
-                          plotsol=F))
+
+optimizeGA <- function(args) {
+  args <- bootstrapOptimization(args)
+
+  for (symbol in args$secsymbols) {
+    # process arguments
+    args <- bootstrapSecurity(symbol, args)
+    cat("Starting GA optimization for ", args$symbol, " - ", args$sinkpathfile, "\n")
+
+    gar <- ga("real-valued", popSize=1000, elitism=100, pcrossover=0.9, pmutation=0.1, maxiter=60, run=50,
+              fitness=modelFitExec, parallel=T, min=args$gamin, max=args$gamax, monitor=gaMonitor,
+              selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population, args=args)
+
+    loopSolutionGA(gar, args)
+  }
+
+  exitOptimization(args)
+}
+
+bootstrapOptimization <- function(args) {
+  args$branch=branchName()
+  args$verbose=F
+  args$doplot=F
+  args$plotsol=F
 
   # Clear the cache directory before start
   clearCache()
   # Bootstrap model
-  args <- get('bootstrapModel', envir=modenv)(args)
+  args <- get('bootstrapModel', envir=args$modenv)(args)
   # redirect the output to symbol sink file
   args$sinkpathfile <- with(args, npath(paste("~/trading/benchmarks/b", benchno, "_", sectype, ".txt", sep='')))
 
@@ -63,18 +70,52 @@ bootstrapSecurity <- function(symbol, args) {
   return(args)
 }
 
-loopSolutionGA <- function(modenv, gar, args) {
+loopSolutionGA <- function(gar, args) {
   # output the solution string
   sink(args$sinkpathfile, append=T)
   args$x <- gar@solution[1,]
   # Execute the appropriate params function
-  args <- execfunc(args$paramsfunc, modenv, args)
+  args <- execfunc(args$initfunc, args$modenv, args)
   # Print solution / fitness / BT call
   cat("res <-", args$strsol)
   cat("# Fitness=", gar@fitnessValue, "\n")
   with(args, cat("bt$", symbol, " <- testStrategy(openSecurityOnEnv(", shQuote(securityfile), "), ",
                  shQuote(benchno), ', ', shQuote(symbol), ", res$pred)\n\n", sep=''))
   sink()
+}
+
+modelFitExec <- function(x, args) {
+  args$x <- x
+  # Execute the appropriate params function
+  args <- execfunc(args$initfunc, args)
+  # Execute
+  res <- get(args$fitfunc)(args)
+  # Return only the fitness
+  return(res$fitness)
+}
+
+modelAspectsEnergy <- function(args) {
+  looptm <- proc.time()
+  # calculate energy days
+  energy.days <- dayAspectsEnergy(args)
+  # Calculate prediction
+  prediction <- calculateUpDownEnergy(energy.days)
+  # join the security table with prediction and remove NAS caused by join
+  planets.pred <- args$security[prediction]
+  planets.pred <- planets.pred[!is.na(Mid),]
+  # smoth the prediction serie and remove resulting NAS
+  planets.pred[, predval := SMA(predRaw, args$mapredsm)]
+  planets.pred <- planets.pred[!is.na(predval),]
+  # determine a factor prediction response
+  planets.pred[, predFactor := cut(predval, c(-10000, 0, 10000), labels=c('down', 'up'), right=F)]
+  # Add the Year for projected predictions rows
+  planets.pred[is.na(Year), Year := as.character(format(Date, "%Y"))]
+  # Split data using the appropriate function
+  samples <- get(args$datasplitfunc)(args, planets.pred)
+  # Calculate Fitness
+  fitness <- calculateSamplesFitness(args, samples)
+  #cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n\n")
+  return(list(fitness=fitness, pred=planets.pred))
 }
 
 # Build args list for aspects polarity, aspects energy, zodenergy, significant points energy
@@ -134,7 +175,7 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
                                     ", planetszodenergy=c(", paste(planetszodenergy, collapse=", "), ")",
                                     ", aspectspolarity=c(", paste(aspectspolarity, collapse=", "), ")",
                                     ", dateformat=", shQuote(dateformat),
-                                    ", paramsfunc=", shQuote(paramsfunc),
+                                    ", initfunc=", shQuote(initfunc),
                                     ", fittype=", shQuote(fittype), ")\n", sep=""))
 
     return(args)
