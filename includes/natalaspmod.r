@@ -8,6 +8,8 @@ cmpNatalAspectsModel <- function(func, ...) {
   bootstrapModel <- function(args) {
     args$tsdate <- as.Date(args$tsdate)
     args$tedate <- as.Date(args$tedate)
+    args$vsdate <- as.Date(args$tsdate)
+    args$vedate <- as.Date(args$tedate)
     # Init the GA min/max
     args <- paramsPolarityAspZodSiglonEnergy('gaMinMax', args)
     # open planets file and leave only needed cols for better speed
@@ -36,7 +38,7 @@ cmpNatalAspectsModel <- function(func, ...) {
     if (!is.null(args$x)) args <- paramsPolarityAspZodSiglonEnergy('splitX', args)
     args$datasplitfunc <- 'dataOptCVYearSplit'
     args$conpolarity <- F
-    args$verbose <- T
+    args$verbose <- F
     return(args)
   }
 
