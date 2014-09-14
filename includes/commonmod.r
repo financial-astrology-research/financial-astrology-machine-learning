@@ -30,14 +30,21 @@ bootstrapOptimization <- function(args) {
   clearCache()
   # Bootstrap model
   args <- get('bootstrapModel', envir=args$modenv)(args)
+  # Build single line model params
+  strmodparams <- '# '
+  for (argname in names(args)) {
+    if (typeof(args[[argname]]) %ni% c('list', 'environment') && length(args[[argname]])==1) {
+      strmodparams <- paste(strmodparams, paste(argname, ' = ', args[[argname]], sep=''), sep=', ')
+    }
+  }
+
   # redirect the output to symbol sink file
   args$sinkpathfile <- with(args, npath(paste("~/trading/benchmarks/b", benchno, "_", sectype, ".txt", sep='')))
 
   # Redirect output to file
   #if (exists('sinkfile', envir=parent.frame())) {
   sink(args$sinkpathfile, append=T)
-  cat("# version: ", args$branch, "\n")
-  cat(args$strmodparams, "\n")
+  cat(strmodparams, "\n")
   cat("setModernAspectsSet()\n")
   cat("bt <- list()\n\n")
   sink()

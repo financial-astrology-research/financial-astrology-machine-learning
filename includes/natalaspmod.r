@@ -23,7 +23,6 @@ cmpNatalAspectsModelOne <- function(func, ...) {
   ptm <- proc.time()
 
   bootstrapModel <- function(args) {
-    args <- natalAspectsModelCommon(args)
     # model settings
     args$model <- 'natalAspectsModel'
     args$paramsfunc <- 'paramsPolarityAspZodSiglonEnergy'
@@ -31,8 +30,7 @@ cmpNatalAspectsModelOne <- function(func, ...) {
     args$datasplitfunc <- 'dataOptCVSampleSplit'
     args$conpolarity <- F
     #args$verbose <- T
-    # set the asptype to use to siglons
-    args$strmodparams <- with(args, paste("#", tsdate, '-', tedate, 'OPTwCV -', fittype, 'fit -', mapricefs, '-', mapricesl, 'MAS'))
+    args <- natalAspectsModelCommon(args)
 
     return(args)
   }
@@ -53,7 +51,6 @@ cmpNatalAspectsModelTwo <- function(func, ...) {
   ptm <- proc.time()
 
   bootstrapModel <- function(args) {
-    args <- natalAspectsModelCommon(args)
     # model settings
     args$model <- 'natalAspectsModel'
     args$paramsfunc <- 'paramsPolarityAspZodSiglonEnergy'
@@ -61,8 +58,7 @@ cmpNatalAspectsModelTwo <- function(func, ...) {
     args$datasplitfunc <- 'dataOptCVYearSplit'
     args$conpolarity <- F
     #args$verbose <- T
-    # set the asptype to use to siglons
-    args$strmodparams <- with(args, paste("#", tsdate, '-', tedate, 'OPTwCV -', fittype, 'fit -', mapricefs, '-', mapricesl, 'MAS'))
+    args <- natalAspectsModelCommon(args)
 
     return(args)
   }

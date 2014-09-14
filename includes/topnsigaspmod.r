@@ -24,7 +24,6 @@ cmpTopNSigAspectsModelOne <- function(execfunc, ...) {
   ptm <- proc.time()
 
   bootstrapModel <- function(args) {
-    args <- topNSigAspectsModelCommon(args)
     # model settings
     args$model <- 'topNSigAspectsModel'
     args$paramsfunc <- 'paramsPolarityAspZodSiglonEnergy'
@@ -32,7 +31,7 @@ cmpTopNSigAspectsModelOne <- function(execfunc, ...) {
     args$datasplitfunc <- 'dataOptCVSampleSplit'
     args$conpolarity <- F
     #args$verbose <- T
-    args$strmodparams <- with(args, paste("#", tsdate, '-', tedate, 'FIT /', vsdate, '-', vedate, 'OPTwCV -', fittype, 'fit -', mapricefs, '-', mapricesl, 'MAS -', topn, 'TOPN'))
+    args <- topNSigAspectsModelCommon(args)
 
     return(args)
   }
@@ -53,7 +52,6 @@ cmpTopNSigAspectsModelTwo <- function(execfunc, ...) {
   ptm <- proc.time()
 
   bootstrapModel <- function(args) {
-    args <- topNSigAspectsModelCommon(args)
     # model settings
     args$model <- 'topNSigAspectsModel'
     args$paramsfunc <- 'paramsPolarityAspZodSiglonEnergy'
@@ -61,7 +59,7 @@ cmpTopNSigAspectsModelTwo <- function(execfunc, ...) {
     args$datasplitfunc <- 'dataOptCVYearSplit'
     args$conpolarity <- F
     #args$verbose <- T
-    args$strmodparams <- with(args, paste("#", tsdate, '-', tedate, 'FIT /', vsdate, '-', vedate, 'OPTwCV -', fittype, 'fit -', mapricefs, '-', mapricesl, 'MAS -', topn, 'TOPN'))
+    args <- topNSigAspectsModelCommon(args)
 
     return(args)
   }
