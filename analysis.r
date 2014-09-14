@@ -610,7 +610,7 @@ meltedAndMergedDayAspects <- function(aspects.day, planets, security, psdate, pe
 # process the daily aspects energy
 dayAspectsEnergy <- function(args) {
   # Use the appropriate daily aspects
-  if (args$model == 'sigLonsModel') {
+  if (args$model == 'topNSigAspectsModel') {
     # significant longitude points aspects
     aspects.day <- with(args, buildSignificantLongitudesAspects(planets, security, degsplit, tsdate, tedate, topn, F))
   }

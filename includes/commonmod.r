@@ -75,7 +75,7 @@ loopSolutionGA <- function(gar, args) {
   sink(args$sinkpathfile, append=T)
   args$x <- gar@solution[1,]
   # Execute the appropriate params function
-  args <- execfunc(args$initfunc, args$modenv, args)
+  args <- get(args$paramsfunc)('splitX', args)
   # Print solution / fitness / BT call
   cat("res <-", args$strsol)
   cat("# Fitness=", gar@fitnessValue, "\n")
@@ -87,7 +87,7 @@ loopSolutionGA <- function(gar, args) {
 modelFitExec <- function(x, args) {
   args$x <- x
   # Execute the appropriate params function
-  args <- execfunc(args$initfunc, args)
+  args <- get(args$paramsfunc)('splitX', args)
   # Execute
   res <- get(args$fitfunc)(args)
   # Return only the fitness
@@ -168,6 +168,7 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
                                     ", securityfile=", shQuote(securityfile),
                                     ", planetsfile=", shQuote(planetsfile),
                                     ", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate),
+                                    ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate),
                                     ", mapredsm=", mapredsm, ", mapricefs=", mapricefs, ", mapricesl=", mapricesl,
                                     ", cusorbs=c(", paste(cusorbs, collapse=", "), ")",
                                     ", aspectsenergy=c(", paste(aspectsenergy, collapse=", "), ")",
@@ -175,7 +176,6 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
                                     ", planetszodenergy=c(", paste(planetszodenergy, collapse=", "), ")",
                                     ", aspectspolarity=c(", paste(aspectspolarity, collapse=", "), ")",
                                     ", dateformat=", shQuote(dateformat),
-                                    ", initfunc=", shQuote(initfunc),
                                     ", fittype=", shQuote(fittype), ")\n", sep=""))
 
     return(args)
@@ -201,4 +201,26 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
   }
 
   get(get('func'))(args)
+}
+
+testSolution <- function(args) {
+  if (is.null(args$dateformat)) stop("A dateformat is needed.")
+  # Build the params sets
+  args <- execfunc('bootstrapModel', args)
+  args <- bootstrapSecurity(args$symbol, args)
+  args <- get('paramsPolarityAspZodSiglonEnergy')('setMatrix', args)
+  args$verbose <- T
+  args$doplot <- T
+  args$plotsol <- F
+
+  # Create directory if do not exists
+  if (!file.exists(dirname(args$predfile))) {
+    dir.create(dirname(args$predfile), recursive=T)
+  }
+
+  if (args$doplot) pdf(args$predfile, width=11, height=8, family='Helvetica', pointsize=12)
+  res <- get(args$fitfunc)(args)
+  if (args$doplot) dev.off()
+  # Return a response
+  return(res)
 }
