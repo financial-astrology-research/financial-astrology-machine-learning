@@ -45,7 +45,6 @@ bootstrapOptimization <- function(args) {
   #if (exists('sinkfile', envir=parent.frame())) {
   sink(args$sinkpathfile, append=T)
   cat(strmodparams, "\n")
-  cat("setModernAspectsSet()\n")
   cat("bt <- list()\n\n")
   sink()
 
