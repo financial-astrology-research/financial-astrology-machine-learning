@@ -24,6 +24,7 @@ cmpNatalAspectsModelOne <- function(func, ...) {
 
   bootstrapModel <- function(args) {
     # model settings
+    setModernAspectsSet()
     args$model <- 'natalAspectsModel'
     args$paramsfunc <- 'paramsPolarityAspZodSiglonEnergy'
     args$fitfunc <- 'modelAspectsEnergy'
@@ -52,6 +53,7 @@ cmpNatalAspectsModelTwo <- function(func, ...) {
 
   bootstrapModel <- function(args) {
     # model settings
+    setModernAspectsSet()
     args$model <- 'natalAspectsModel'
     args$paramsfunc <- 'paramsPolarityAspZodSiglonEnergy'
     args$fitfunc <- 'modelAspectsEnergy'

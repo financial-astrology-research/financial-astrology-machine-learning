@@ -68,11 +68,23 @@ bootstrapSecurity <- function(symbol, args) {
   # buid securityfile and predfile paths
   args$securityfile <- with(args, paste(sectype, symbol, sep="/"))
   args$predfile <- with(args, paste('~/b', benchno, '/', symbol, '_', benchno, sep=""))
-  # build natal longitudes
-  args$siglons <- buildNatalLongitudes(args$symbol)
   # load the security data and leave only needed cols
   security <- with(args, openSecurity(securityfile, mapricefs, mapricesl, dateformat, tsdate))
   args$security <- security[, c('Date', 'Year', 'Open', 'High', 'Low', 'Close', 'Mid', 'MidMAF', 'MidMAS', 'Eff'), with=F]
+
+  if (args$model == 'natalAspectsModel') {
+    # build natal longitudes
+    args$siglons <- buildNatalLongitudes(args$symbol)
+  }
+  else if (args$model == 'topNSigAspectsModel') {
+    # build topn significant longitudes
+    siglons <- with(args, buildSignificantLongitudes(planets, security, degsplit, tsdate, tedate))
+    # leave only the top N significant points
+    args$siglons <- head(siglons, args$topn)
+  }
+  else {
+    stop("Not valid model was provided.")
+  }
 
   return(args)
 }
@@ -129,15 +141,25 @@ modelAspectsEnergy <- function(args) {
 paramsPolarityAspZodSiglonEnergy <- function(func, args) {
   # build the parameters based on GA indexes
   splitX <- function(args) {
-    co.e=2+length(deforbs)
+    co.e=args$gamixedidx+length(deforbs)
     api.e=co.e+length(aspects)-1
     ae.e=api.e+length(aspects)
     pze.e=ae.e+lenZodEnergyMi
     # 14 natal points
     spe.e=pze.e+14
 
-    args$mapredsm <- args$x[1]
-    args$cusorbs <- args$x[2:(co.e-1)]
+    if (args$model == 'natalAspectsModel') {
+      args$mapredsm <- args$x[1]
+    }
+    else if (args$model == 'topNSigAspectsModel') {
+      args$mapredsm <- args$x[1]
+      args$degsplit <- args$x[2]
+    }
+    else {
+      stop("Not valid model was provided.")
+    }
+
+    args$cusorbs <- args$x[args$gamixedidx:(co.e-1)]
     args$aspectspolarity <- args$x[co.e:(api.e-1)]
     args$aspectsenergy <- adjustEnergy(args$x[api.e:(ae.e-1)])
     args$planetszodenergy <- adjustEnergy(args$x[ae.e:(pze.e-1)])
@@ -197,12 +219,29 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
     aspectenergymax <- rep(30, length(aspects))
     planetzodenergymin <- rep(0, lenZodEnergyMi)
     planetzodenergymax <- rep(30, lenZodEnergyMi)
-    # 14 natal points
-    sigpenergymin <- rep(0, 14)
-    sigpenergymax <- rep(30, 14)
+
+    if (args$model == 'natalAspectsModel') {
+      # 14 natal points
+      sigpenergymin <- rep(0, 14)
+      sigpenergymax <- rep(30, 14)
+      args$gamixedidx <- 1
+      mixedmin <- c(2)
+      mixedmax <- c(10)
+    }
+    else if (args$model == 'topNSigAspectsModel') {
+      sigpenergymin <- rep(0, args$topn)
+      sigpenergymax <- rep(30, args$topn)
+      args$gamixedidx <- 2
+      mixedmin <- c(2,  4)
+      mixedmax <- c(10, 6)
+    }
+    else {
+      stop("Not valid model was provided.")
+    }
+
     # min/max ranges
-    args$gamin <- c( 2, orbsmin, polaritymin, aspectenergymin, planetzodenergymin, sigpenergymin)
-    args$gamax <- c(10, orbsmax, polaritymax, aspectenergymax, planetzodenergymax, sigpenergymax)
+    args$gamin <- c(mixedmin, orbsmin, polaritymin, aspectenergymin, planetzodenergymin, sigpenergymin)
+    args$gamax <- c(mixedmax, orbsmax, polaritymax, aspectenergymax, planetzodenergymax, sigpenergymax)
 
     return(args)
   }

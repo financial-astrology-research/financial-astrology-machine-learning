@@ -19,17 +19,18 @@ topNSigAspectsModelCommon <- function(args) {
 ####################################################################
 # Variation One with CV sample split
 ####################################################################
-cmpTopNSigAspectsModelOne <- function(execfunc, ...) {
+cmpTopNSigAspectsModelOne <- function(func, ...) {
   if (!hasArg('func')) stop("Provide function to execute")
   ptm <- proc.time()
 
   bootstrapModel <- function(args) {
     # model settings
+    setModernAspectsSet()
     args$model <- 'topNSigAspectsModel'
     args$paramsfunc <- 'paramsPolarityAspZodSiglonEnergy'
     args$fitfunc <- 'modelAspectsEnergy'
     args$datasplitfunc <- 'dataOptCVSampleSplit'
-    args$conpolarity <- F
+    args$conpolarity <- T
     #args$verbose <- T
     args <- topNSigAspectsModelCommon(args)
 
@@ -47,12 +48,13 @@ topNSigAspectsModelOne <- cmpfun(cmpTopNSigAspectsModelOne)
 ####################################################################
 # Variation Two with CV year split
 ####################################################################
-cmpTopNSigAspectsModelTwo <- function(execfunc, ...) {
+cmpTopNSigAspectsModelTwo <- function(func, ...) {
   if (!hasArg('func')) stop("Provide function to execute")
   ptm <- proc.time()
 
   bootstrapModel <- function(args) {
     # model settings
+    setModernAspectsSet()
     args$model <- 'topNSigAspectsModel'
     args$paramsfunc <- 'paramsPolarityAspZodSiglonEnergy'
     args$fitfunc <- 'modelAspectsEnergy'
