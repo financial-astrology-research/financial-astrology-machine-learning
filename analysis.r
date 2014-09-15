@@ -650,7 +650,6 @@ dayAspectsEnergy <- function(args) {
     # considered as a negative, others as positive.
     planets.pred.aspen[polarity == 2 & origin %in% c('MA', 'SA', 'PL'), polarity := 0]
     planets.pred.aspen[polarity == 2 & origin %ni% c('MA', 'SA', 'PL'), polarity := 1]
-
   }
 
   # compute the given energy based on the aspect orb distance
