@@ -66,7 +66,7 @@ bootstrapSecurity <- function(symbol, args) {
   args$symbol <- symbol
   # buid securityfile and predfile paths
   args$securityfile <- with(args, paste(sectype, symbol, sep="/"))
-  args$predfile <- with(args, paste('~/b', benchno, '/', symbol, '_', benchno, sep=""))
+  args$predfile <- with(args, paste('~/b', benchno, '/', symbol, '_', benchno, '.pdf', sep=""))
   # load the security data and leave only needed cols
   security <- with(args, openSecurity(securityfile, mapricefs, mapricesl, dateformat, tsdate))
   args$security <- security[, c('Date', 'Year', 'Open', 'High', 'Low', 'Close', 'Mid', 'MidMAF', 'MidMAS', 'Eff'), with=F]
