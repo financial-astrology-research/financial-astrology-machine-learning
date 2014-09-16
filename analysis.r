@@ -1591,6 +1591,24 @@ testStrategy <- function(data, benchno, symbol, ps) {
   #cat("Astroenergy Valley & Peak cross\n\n")
   #print(bt.detail.summary(models$astro.valley.peak, trade.summary=models$astro.valley.peak$trade.summary))
 
+  # Astroenergy strategy with valley/RSI buy SMA cross sell
+  ps$predvalley <- peaks(-ps$predval, pvperiod)
+  # Give a range of +/- 5 days to the valley to manifest
+  #ps$predvalley[unlist(lapply(seq(-5,5), function(x) which(ps$predvalley)+x))] <- TRUE
+  ps$predmom <- ps[, (Next(predval,5)+Next(predval,10)+Next(predval,15)+Next(predval,20))/5]
+  ps$crossdn <- cross.dn(ps$MidMAF, ps$MidMAS)
+  # Compund signal
+  ps[, signal := iif(predvalley==TRUE & predmom > predval, 1, iif(crossdn==TRUE, 0, NA))]
+  # Get the signal only to the test period
+  signal <- ps[Date %in% data$dates, signal, by=Date]
+  # Prepare signal to run
+  data$weight[] <- NA
+  data$weight[] <- signal$signal
+  models$astro.valley.rsi.sma <- bt.run.share(data, clean.signal=T, trade.summary=T, silent=T)
+  # Summary
+  #cat("Astroenergy Valley & SMA cross\n\n")
+  #print(bt.detail.summary(models$astro.valley.sma, trade.summary=models$astro.valley.sma$trade.summary))
+
   # Build report
   repfile <- paste('~/b', benchno, '/', symbol, '_', benchno, '_bt.pdf', sep="")
 
@@ -1618,7 +1636,8 @@ testStrategyAllMean <- function(bt) {
     printProperty <- function(x, model) bt.detail.summary(x[[model]], x[[model]]$trade.summary)[[section]][[property]]
     cat("Buy & Hold", property, mean(unlist(lapply(bt, function(x) printProperty(x, 'buy.hold')))), "\n")
     cat("Astro Valley & SMA", property, mean(unlist(lapply(bt, function(x) printProperty(x, 'astro.valley.sma')))), "\n")
-    cat("Astro Valley & Peak", property, mean(unlist(lapply(bt, function(x) printProperty(x, 'astro.valley.peak')))), "\n\n")
+    cat("Astro Valley & Peak", property, mean(unlist(lapply(bt, function(x) printProperty(x, 'astro.valley.peak')))), "\n")
+    cat("Astro Valley/RSI & Peak", property, mean(unlist(lapply(bt, function(x) printProperty(x, 'astro.valley.rsi.sma')))), "\n\n")
   }
 
   displayMean('System', 'Cagr')
