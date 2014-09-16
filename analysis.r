@@ -1544,8 +1544,8 @@ openSecurityOnEnv <- function(securityfile, dates = '2011::') {
 testStrategy <- function(data, benchno, symbol, ps) {
   # Code Strategies
   pvperiod <- 20
-  prices = data$prices
-  models = list()
+  prices <- data$prices
+  models <- list()
 
   # Check thare is prediction data for the expected dates
   if (nrow(ps[Date %in% data$dates,]) == 0) {
@@ -1553,12 +1553,12 @@ testStrategy <- function(data, benchno, symbol, ps) {
   }
 
   # Buy and Hold model
-  data$weight[] = NA
-  data$weight[] = 1
-  models$buy.hold = bt.run.share(data, clean.signal=T)
+  data$weight[] <- NA
+  data$weight[] <- 1
+  models$buy.hold <- bt.run.share(data, clean.signal=T, trade.summary=T, silent=T)
   # Summary
-  cat("Buy & Hold\n\n")
-  print(bt.detail.summary(models$buy.hold, trade.summary=models$buy.hold$trade.summary))
+  #cat("Buy & Hold\n\n")
+  #print(bt.detail.summary(models$buy.hold, trade.summary=models$buy.hold$trade.summary))
 
   # Astroenergy strategy with valley buy SMA cross sell
   ps$predmom <- ps[, (Next(predval,5)+Next(predval,10)+Next(predval,15)+Next(predval,20))/5]
@@ -1569,12 +1569,12 @@ testStrategy <- function(data, benchno, symbol, ps) {
   # Get the signal only to the test period
   signal <- ps[Date %in% data$dates, signal, by=Date]
   # Prepare signal to run
-  data$weight[] = NA
-  data$weight[] = signal$signal
-  models$astro.valley.sma = bt.run.share(data, clean.signal=T)
+  data$weight[] <- NA
+  data$weight[] <- signal$signal
+  models$astro.valley.sma <- bt.run.share(data, clean.signal=T, trade.summary=T, silent=T)
   # Summary
-  cat("Astroenergy Valley & SMA cross\n\n")
-  print(bt.detail.summary(models$astro.valley.sma, trade.summary=models$astro.valley.sma$trade.summary))
+  #cat("Astroenergy Valley & SMA cross\n\n")
+  #print(bt.detail.summary(models$astro.valley.sma, trade.summary=models$astro.valley.sma$trade.summary))
 
   # Astroenergy strategy with valley buy & peak sell
   ps$predvalley <- peaks(-ps$predval, pvperiod)
@@ -1584,12 +1584,12 @@ testStrategy <- function(data, benchno, symbol, ps) {
   # Get the signal only to the test period
   signal <- ps[Date %in% data$dates, signal, by=Date]
   # Prepare signal to run
-  data$weight[] = NA
-  data$weight[] = signal$signal
-  models$astro.valley.peak = bt.run.share(data, clean.signal=T)
+  data$weight[] <- NA
+  data$weight[] <- signal$signal
+  models$astro.valley.peak <- bt.run.share(data, clean.signal=T, trade.summary=T, silent=T)
   # Summary
-  cat("Astroenergy Valley & Peak cross\n\n")
-  print(bt.detail.summary(models$astro.valley.peak, trade.summary=models$astro.valley.peak$trade.summary))
+  #cat("Astroenergy Valley & Peak cross\n\n")
+  #print(bt.detail.summary(models$astro.valley.peak, trade.summary=models$astro.valley.peak$trade.summary))
 
   # Build report
   repfile <- paste('~/b', benchno, '/', symbol, '_', benchno, '_bt.pdf', sep="")
@@ -1599,12 +1599,12 @@ testStrategy <- function(data, benchno, symbol, ps) {
     dir.create(dirname(repfile), recursive=T)
   }
 
-  pdf(npath(repfile), width = 11, height = 8, family='Helvetica', pointsize=15)
+  pdf(npath(repfile), width=11, height=8, family='Helvetica', pointsize=15)
 
   strategy.performance.snapshoot(models, T)
-  bt.stop.strategy.plot(data, models$buy.hold, layout=T, main = 'Buy & Hold', plotX = F)
-  bt.stop.strategy.plot(data, models$astro.valley.sma, layout=T, main = 'Astroen Valley & SMA cross', plotX = F)
-  bt.stop.strategy.plot(data, models$astro.valley.peak, layout=T, main = 'Astroen Valley & Peak', plotX = F)
+  bt.stop.strategy.plot(data, models$buy.hold, layout=T, main='Buy & Hold', plotX=F)
+  bt.stop.strategy.plot(data, models$astro.valley.sma, layout=T, main='Astroen Valley & SMA cross', plotX=F)
+  bt.stop.strategy.plot(data, models$astro.valley.peak, layout=T, main='Astroen Valley & Peak', plotX=F)
   plotbt.custom.report.part1(models)
 
   dev.off()
@@ -1614,13 +1614,19 @@ testStrategy <- function(data, benchno, symbol, ps) {
 
 # Display multiples securities backtest mean summary
 testStrategyAllMean <- function(bt) {
-  displayMean <- function(property) {
-    cat("Buy & Hold", property, mean(unlist(lapply(bt, function(x) bt.detail.summary(x$buy.hold)$System[property]))), "\n")
-    cat("Astro Valley & SMA", property, mean(unlist(lapply(bt, function(x) bt.detail.summary(x$astro.valley.sma)$System[property]))), "\n")
-    cat("Astro Valley & Peak", property, mean(unlist(lapply(bt, function(x) bt.detail.summary(x$astro.valley.peak)$System[property]))), "\n\n")
+  displayMean <- function(section, property) {
+    printProperty <- function(x, model) bt.detail.summary(x[[model]], x[[model]]$trade.summary)[[section]][[property]]
+    cat("Buy & Hold", property, mean(unlist(lapply(bt, function(x) printProperty(x, 'buy.hold')))), "\n")
+    cat("Astro Valley & SMA", property, mean(unlist(lapply(bt, function(x) printProperty(x, 'astro.valley.sma')))), "\n")
+    cat("Astro Valley & Peak", property, mean(unlist(lapply(bt, function(x) printProperty(x, 'astro.valley.peak')))), "\n\n")
   }
 
-  displayMean('Cagr')
-  displayMean('MaxDD')
-  displayMean('AvgDD')
+  displayMean('System', 'Cagr')
+  displayMean('System', 'MaxDD')
+  displayMean('System', 'AvgDD')
+  displayMean('Period', 'Best.Year')
+  displayMean('Period', 'Worst.Year')
+  displayMean('Trade', 'Win.Percent')
+  displayMean('Trade', 'WinLoss.Ratio')
+  displayMean('Trade', 'Num.Trades')
 }
