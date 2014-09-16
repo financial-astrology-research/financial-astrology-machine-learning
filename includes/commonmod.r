@@ -81,6 +81,10 @@ bootstrapSecurity <- function(symbol, args) {
     # leave only the top N significant points
     args$siglons <- head(siglons, args$topn)
   }
+  else if (args$model == 'daySignificantAspectsModel') {
+    # No signlons for this model
+    args$siglons <- c()
+  }
   else {
     stop("Not valid model was provided.")
   }
@@ -112,12 +116,63 @@ modelFitExec <- function(x, args) {
   return(res$fitness)
 }
 
-modelAspectsEnergy <- function(args) {
-  looptm <- proc.time()
-  # calculate energy days
-  energy.days <- dayAspectsEnergy(args)
-  # Calculate prediction
-  prediction <- calculateUpDownEnergy(energy.days)
+# process the daily aspects energy
+dayAspectsEnergy <- function(args) {
+  # Use the appropriate daily aspects
+  if (args$model == 'topNSigAspectsModel') {
+    # significant longitude points aspects
+    aspects.day <- with(args, buildSignificantLongitudesAspects(planets, security, degsplit, tsdate, tedate, topn, F))
+  }
+  else if (args$model == 'natalAspectsModel') {
+    # natal points aspects
+    aspects.day <- with(args, buildNatalLongitudeAspects(symbol, planets, F))
+  }
+  else {
+    stop("Not valid model was provided.")
+  }
+
+  planets.pred.aspen <- with(args, meltedAndMergedDayAspects(aspects.day, planets, security, vsdate, vedate))
+  # Use only the separating aspects & applying with at much 1 deg of orb
+  #planets.pred.aspen <- planets.pred.aspen[orbdir == 1 | (orbdir == -1 & orb <= 1 ),]
+
+  # Add the aspects polarity
+  planets.pred.aspen[, polarity := args$aspectspolarity['polarity', aspect]]
+  # Calculate the transit planet zoodiacal energy
+  processAspEnergy <- function(asp.row, by.row) {
+    args$planetszodenergy[by.row[[1]], asp.row[[1]]]
+  }
+
+  # Set columns with transit zodiacal energy / aspect energy / sigpoints energy
+  planets.pred.aspen[, tenergy := processAspEnergy(.SD, .BY), by=c('origin'), .SDcols=c('tzsign')]
+  planets.pred.aspen[, aenergy := args$aspectsenergy['energy', aspect], by=c('aspect')]
+  planets.pred.aspen[, spenergy := args$sigpenergy['energy', as.character(lon)], by=c('lon')]
+
+  # Calculate the energy considering significant point / transit / aspect energy
+  planets.pred.aspen[, energy :=  aenergy * tenergy * spenergy]
+
+  # use only aspects that are in the allowed orb for specific aspect
+  # TODO: verify that the filtered aspects correspond to the maximum orb
+  planets.pred.aspen <- planets.pred.aspen[orb <= args$cusorbs['orbs', aspect]]
+
+  if (args$conpolarity) {
+    # Adjust conjuntion polarity based on involved planets: MA, SA, PL are
+    # considered as a negative, others as positive.
+    planets.pred.aspen[polarity == 2 & origin %in% c('MA', 'SA', 'PL'), polarity := 0]
+    planets.pred.aspen[polarity == 2 & origin %ni% c('MA', 'SA', 'PL'), polarity := 1]
+  }
+
+  # compute the given energy based on the aspect orb distance
+  #planets.pred.aspen[, disenergy := energyGrowth(energy, orb)]
+
+  # set energy up / down based on polarities
+  planets.pred.aspen[polarity == 0, c('up', 'down') := list(0, energy)]
+  planets.pred.aspen[polarity == 1, c('up', 'down') := list(energy, 0)]
+  planets.pred.aspen[polarity == 2, c('up', 'down') := list(energy, energy)]
+
+  return(planets.pred.aspen)
+}
+
+modelCalculateFitness <- function(args, prediction) {
   # join the security table with prediction and remove NAS caused by join
   planets.pred <- args$security[prediction]
   planets.pred <- planets.pred[!is.na(Mid),]
@@ -134,6 +189,16 @@ modelAspectsEnergy <- function(args) {
   fitness <- calculateSamplesFitness(args, samples)
   #cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n\n")
   return(list(fitness=fitness, pred=planets.pred))
+}
+
+modelAspectsEnergy <- function(args) {
+  looptm <- proc.time()
+  # calculate energy days
+  energy.days <- dayAspectsEnergy(args)
+  # Calculate prediction
+  prediction <- calculateUpDownEnergy(energy.days)
+  # calculate fitness
+  return(modelCalculateFitness(args, prediction))
 }
 
 # Build args list for aspects polarity, aspects energy, zodenergy, significant points energy
@@ -153,6 +218,12 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
     else if (args$model == 'topNSigAspectsModel') {
       args$mapredsm <- args$x[1]
       args$degsplit <- args$x[2]
+    }
+    else if (args$model == 'daySignificantAspectsModel') {
+      args$mapredsm <- x[1]
+      args$degsplit <- args$x[2]
+      args$threshold <- x[3]/100
+      args$energymode <- x[4]
     }
     else {
       stop("Not valid model was provided.")
@@ -182,8 +253,13 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
     args$aspectsenergy <- matrix(args$aspectsenergy, nrow=1, ncol=length(args$aspectsenergy), byrow=T,
                                  dimnames=list(c('energy'), aspects))
 
-    args$sigpenergy <- matrix(args$sigpenergy, nrow=1, ncol=length(args$sigpenergy), byrow=T,
-                              dimnames=list(c('energy'), args$siglons$lon))
+    if (!is.null(args$sigpenergy)) {
+      args$sigpenergy <- matrix(args$sigpenergy, nrow=1, ncol=length(args$sigpenergy), byrow=T,
+                                dimnames=list(c('energy'), args$siglons$lon))
+    }
+    else {
+      args$sigpenergy <- ''
+    }
 
     args$planetszodenergy <- matrix(args$planetszodenergy, nrow=length(planetsBaseCols), ncol=12, byrow=T,
                                     dimnames=list(planetsBaseCols, zodSignsCols))
@@ -230,6 +306,13 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
     else if (args$model == 'topNSigAspectsModel') {
       sigpenergymin <- rep(0, args$topn)
       sigpenergymax <- rep(30, args$topn)
+      args$gamixedidx <- 2
+      mixedmin <- c(2,  4)
+      mixedmax <- c(10, 6)
+    }
+    else if (args$model == 'daySignificantAspectsModel') {
+      sigpenergymin <- c()
+      sigpenergymax <- c()
       args$gamixedidx <- 2
       mixedmin <- c(2,  4)
       mixedmax <- c(10, 6)

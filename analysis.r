@@ -12,6 +12,7 @@ library(stringr)
 
 # models includes
 source("~/trading/includes/commonmod.r")
+source("~/trading/includes/daysigaspmod.r")
 source("~/trading/includes/natalaspmod.r")
 source("~/trading/includes/topnsigaspmod.r")
 
@@ -25,6 +26,12 @@ maxretry <- 1
 
 `%ni%` <- Negate(`%in%`)
 planetsBaseCols <- c('SU', 'MO', 'ME', 'VE', 'MA', 'JU', 'NN', 'SA')
+
+setAll2AspectsSet <- function() {
+  # Aspects and orbs
+  aspects <<-  c(0,30,36,40,45,51,60,72,80,90,103,108,120,135,144,150,154,160,180)
+  deforbs <<- c(12, 2, 2, 2, 2, 2, 7, 2, 2, 7,  2,  2,  7,  2,  2,  2,  2,  2, 12)
+}
 
 setAllAspectsSet <- function() {
   # Aspects and orbs
@@ -605,62 +612,6 @@ meltedAndMergedDayAspects <- function(aspects.day, planets, security, psdate, pe
   }
 
   return(aspects.day.long)
-}
-
-# process the daily aspects energy
-dayAspectsEnergy <- function(args) {
-  # Use the appropriate daily aspects
-  if (args$model == 'topNSigAspectsModel') {
-    # significant longitude points aspects
-    aspects.day <- with(args, buildSignificantLongitudesAspects(planets, security, degsplit, tsdate, tedate, topn, F))
-  }
-  else if (args$model == 'natalAspectsModel') {
-    # natal points aspects
-    aspects.day <- with(args, buildNatalLongitudeAspects(symbol, planets, F))
-  }
-  else {
-    stop("Not valid model was provided.")
-  }
-
-  planets.pred.aspen <- with(args, meltedAndMergedDayAspects(aspects.day, planets, security, vsdate, vedate))
-  # Use only the separating aspects & applying with at much 1 deg of orb
-  #planets.pred.aspen <- planets.pred.aspen[orbdir == 1 | (orbdir == -1 & orb <= 1 ),]
-
-  # Add the aspects polarity
-  planets.pred.aspen[, polarity := args$aspectspolarity['polarity', aspect]]
-  # Calculate the transit planet zoodiacal energy
-  processAspEnergy <- function(asp.row, by.row) {
-    args$planetszodenergy[by.row[[1]], asp.row[[1]]]
-  }
-
-  # Set columns with transit zodiacal energy / aspect energy / sigpoints energy
-  planets.pred.aspen[, tenergy := processAspEnergy(.SD, .BY), by=c('origin'), .SDcols=c('tzsign')]
-  planets.pred.aspen[, aenergy := args$aspectsenergy['energy', aspect], by=c('aspect')]
-  planets.pred.aspen[, spenergy := args$sigpenergy['energy', as.character(lon)], by=c('lon')]
-
-  # Calculate the energy considering significant point / transit / aspect energy
-  planets.pred.aspen[, energy :=  aenergy * tenergy * spenergy]
-
-  # use only aspects that are in the allowed orb for specific aspect
-  # TODO: verify that the filtered aspects correspond to the maximum orb
-  planets.pred.aspen <- planets.pred.aspen[orb <= args$cusorbs['orbs', aspect]]
-
-  if (args$conpolarity) {
-    # Adjust conjuntion polarity based on involved planets: MA, SA, PL are
-    # considered as a negative, others as positive.
-    planets.pred.aspen[polarity == 2 & origin %in% c('MA', 'SA', 'PL'), polarity := 0]
-    planets.pred.aspen[polarity == 2 & origin %ni% c('MA', 'SA', 'PL'), polarity := 1]
-  }
-
-  # compute the given energy based on the aspect orb distance
-  #planets.pred.aspen[, disenergy := energyGrowth(energy, orb)]
-
-  # set energy up / down based on polarities
-  planets.pred.aspen[polarity == 0, c('up', 'down') := list(0, energy)]
-  planets.pred.aspen[polarity == 1, c('up', 'down') := list(energy, 0)]
-  planets.pred.aspen[polarity == 2, c('up', 'down') := list(energy, energy)]
-
-  return(planets.pred.aspen)
 }
 
 # Plot CV data price & indicators
