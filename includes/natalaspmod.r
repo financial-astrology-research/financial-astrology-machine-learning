@@ -10,6 +10,9 @@ natalAspectsModelCommon <- function(args) {
   args$fitfunc <- 'modelAspectsEnergy'
   args$datasplitfunc <- 'dataOptCVSampleSplit'
   args$conpolarity <- F
+  args$enoperation <- '*'
+  args$asptype <- 'all'
+  args$engrowth <- F
   #args$verbose <- T
   # Init the GA min/max
   args <- paramsPolarityAspZodSiglonEnergy('gaMinMax', args)

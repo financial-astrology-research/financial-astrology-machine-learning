@@ -132,8 +132,15 @@ dayAspectsEnergy <- function(args) {
   }
 
   planets.pred.aspen <- with(args, meltedAndMergedDayAspects(aspects.day, planets, security, vsdate, vedate))
-  # Use only the separating aspects & applying with at much 1 deg of orb
-  #planets.pred.aspen <- planets.pred.aspen[orbdir == 1 | (orbdir == -1 & orb <= 1 ),]
+
+  if (args$asptype == 'sep') {
+    # Use only the separating aspects & applying with at much 1 deg of orb
+    planets.pred.aspen <- planets.pred.aspen[orbdir == 1 | (orbdir == -1 & orb <= 1 ),]
+  }
+  else if (args$asptype == 'app') {
+    # Use only the applying aspects & separating with at much 1 deg of orb
+    planets.pred.aspen <- planets.pred.aspen[orbdir == -1 | (orbdir == 1 & orb <= 1 ),]
+  }
 
   # Add the aspects polarity
   planets.pred.aspen[, polarity := args$aspectspolarity['polarity', aspect]]
@@ -148,7 +155,15 @@ dayAspectsEnergy <- function(args) {
   planets.pred.aspen[, spenergy := args$sigpenergy['energy', as.character(lon)], by=c('lon')]
 
   # Calculate the energy considering significant point / transit / aspect energy
-  planets.pred.aspen[, energy :=  aenergy * tenergy * spenergy]
+  if (args$enoperation == '*') {
+    planets.pred.aspen[, energy :=  aenergy * tenergy * spenergy]
+  }
+  else if (args$enoperation == '+') {
+    planets.pred.aspen[, energy :=  aenergy + tenergy + spenergy]
+  }
+  else {
+    stop('Not valid enoperation configured.')
+  }
 
   # use only aspects that are in the allowed orb for specific aspect
   # TODO: verify that the filtered aspects correspond to the maximum orb
@@ -161,8 +176,10 @@ dayAspectsEnergy <- function(args) {
     planets.pred.aspen[polarity == 2 & origin %ni% c('MA', 'SA', 'PL'), polarity := 1]
   }
 
-  # compute the given energy based on the aspect orb distance
-  #planets.pred.aspen[, disenergy := energyGrowth(energy, orb)]
+  if (args$engrowth) {
+    # compute the given energy based on the aspect orb distance
+    planets.pred.aspen[, energy := energyGrowth(energy, orb, 0.2)]
+  }
 
   # set energy up / down based on polarities
   planets.pred.aspen[polarity == 0, c('up', 'down') := list(0, energy)]
