@@ -495,69 +495,6 @@ calculateUpDownEnergy <- function(energy.days) {
   return(prediction)
 }
 
-# Process the yearly predictions and calculate the sample fitness
-calculateSamplesFitness <- function(args, samples) {
-  # compute test predictions by year
-  res.test <- samples$opt[, processPredictions(.SD), by=Year]
-  resMean <- function(x) round(mean(x), digits=2)
-  res.test.mean <- res.test[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.t=resMean(matches.t))]
-  # compute confirmation predictions by year
-  res.conf <- samples$cv[, processPredictions(.SD), by=Year]
-  res.conf.mean <- res.conf[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.t=resMean(matches.t))]
-
-  # use appropriate fitness type
-  if (args$fittype == 'matches') {
-    fitness <- round((res.test.mean$matches.t + res.conf.mean$matches.t) / 2, digits=0)
-  }
-  else if (args$fittype == 'sdmatches') {
-    matches.mean <- mean(c(res.test$matches.t, res.conf$matches.t))
-    matches.sd <- sd(c(res.test$matches.t, res.conf$matches.t))
-    if (matches.sd == 0) {
-      fitness <- -abs(1 / (matches.mean^2)) * 100
-    }
-    else {
-      fitness <- -abs(matches.sd / (matches.mean^2)) * 100
-    }
-  }
-  else if (args$fittype == 'matcor') {
-    correlation <- round((res.test.mean$correlation + res.conf.mean$correlation) / 2, digits=3)
-    matches <- round((res.test.mean$matches.t + res.conf.mean$matches.t) / 2, digits=3)
-    fitness <- (matches + correlation) / 2
-  }
-  else {
-    stop("No valid fittype provided")
-  }
-
-  if (args$verbose) {
-    # plot solution snippet if doplot is enabled
-    if (args$plotsol) {
-      snippet <- paste(strwrap(sout, width=170), collapse="\n")
-      plotSolutionSnippet(snippet)
-    }
-
-    mout <- with(args, capture.output(print(cusorbs),
-                                      print(aspectspolarity),
-                                      print(aspectsenergy),
-                                      print(sigpenergy),
-                                      print(planetszodenergy)))
-
-    # print buffered output
-    cat(args$strsol, mout, "\n", sep="\n")
-
-    # print yearly summary
-    apply(res.test, 1, printPredYearSummary, type="Optimization")
-    with(res.test.mean, cat("\tvol =", volatility, " - cor =", correlation, " - matches.t =", matches.t, "\n"))
-    apply(res.conf, 1, printPredYearSummary, type="Confirmation")
-    with(res.conf.mean, cat("\tvol =", volatility, " - cor =", correlation, " - matches.t =", matches.t, "\n"))
-
-    # totals and execution time
-    cat("\n\t Totals: fitness = ", fitness, "\n")
-    cat("\t Optimized and confirmed with: ", nrow(samples$opt) + nrow(samples$cv), " days", "\n")
-  }
-
-  return(fitness)
-}
-
 # Build a long data table with daily aspects, orbs and longitudes
 meltedAndMergedDayAspects <- function(aspects.day, planets, security, psdate, pedate) {
   aspectskey <- dataTableUniqueVector(aspects.day)
