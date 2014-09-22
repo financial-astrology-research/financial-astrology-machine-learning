@@ -9,6 +9,7 @@ natalAspectsModelCommon <- function(args) {
   # common settings
   args$fitfunc <- 'modelAspectsEnergy'
   args$datasplitfunc <- 'dataOptCVSampleSplit'
+  args$paramsfunc <- 'paramsPolarityAspZodSiglonEnergy'
   args$conpolarity <- F
   args$enoperation <- '*'
   args$asptype <- 'all'
@@ -34,7 +35,7 @@ cmpNatalAspectsModelOne <- function(func, ...) {
     # model settings
     setModernAspectsSet()
     args$model <- 'natalAspectsModel'
-    args$paramsfunc <- 'paramsPolarityAspZodSiglonEnergy'
+    args$datasplitfunc <- 'dataOptCVSampleSplit'
     args <- natalAspectsModelCommon(args)
 
     return(args)
@@ -59,7 +60,7 @@ cmpNatalAspectsModelTwo <- function(func, ...) {
     # model settings
     setModernAspectsSet()
     args$model <- 'natalAspectsModel'
-    args$paramsfunc <- 'paramsPolarityAspZodSiglonEnergy'
+    args$datasplitfunc <- 'dataOptCVYearSplit'
     args <- natalAspectsModelCommon(args)
 
     return(args)
@@ -72,3 +73,29 @@ cmpNatalAspectsModelTwo <- function(func, ...) {
 
 # compile the function to byte code
 natalAspectsModelTwo <- cmpfun(cmpNatalAspectsModelTwo)
+
+####################################################################
+# Variation Three with CV sample split & energy growth
+####################################################################
+cmpNatalAspectsModelThree <- function(func, ...) {
+  if (!hasArg('func')) stop("Provide function to execute")
+  ptm <- proc.time()
+
+  bootstrapModel <- function(args) {
+    # model settings
+    setModernAspectsSet()
+    args$model <- 'natalAspectsModel'
+    args$datasplitfunc <- 'dataOptCVSampleSplit'
+    args$engrowth <- T
+    args <- natalAspectsModelCommon(args)
+
+    return(args)
+  }
+
+  args <- list(...)
+  args$modenv <- environment()
+  execfunc(get('func'), args)
+}
+
+# compile the function to byte code
+natalAspectsModelThree <- cmpfun(cmpNatalAspectsModelThree)
