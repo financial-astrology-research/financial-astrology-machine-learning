@@ -7,6 +7,7 @@ natalAspectsModelCommon <- function(args) {
   args$vsdate <- as.Date(args$tsdate)
   args$vedate <- as.Date(args$tedate)
   # common settings
+  args$model <- 'natalAspectsModel'
   args$fitfunc <- 'modelAspectsEnergy'
   args$datasplitfunc <- 'dataOptCVSampleSplit'
   args$paramsfunc <- 'paramsPolarityAspZodSiglonEnergy'
@@ -59,9 +60,8 @@ cmpNatalAspectsModelTwo <- function(func, ...) {
   bootstrapModel <- function(args) {
     # model settings
     setModernAspectsSet()
-    args$model <- 'natalAspectsModel'
-    args$datasplitfunc <- 'dataOptCVYearSplit'
     args <- natalAspectsModelCommon(args)
+    args$datasplitfunc <- 'dataOptCVYearSplit'
 
     return(args)
   }
@@ -84,10 +84,9 @@ cmpNatalAspectsModelThree <- function(func, ...) {
   bootstrapModel <- function(args) {
     # model settings
     setModernAspectsSet()
-    args$model <- 'natalAspectsModel'
+    args <- natalAspectsModelCommon(args)
     args$datasplitfunc <- 'dataOptCVSampleSplit'
     args$engrowth <- T
-    args <- natalAspectsModelCommon(args)
 
     return(args)
   }
