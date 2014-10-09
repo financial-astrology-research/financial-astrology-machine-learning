@@ -495,69 +495,6 @@ calculateUpDownEnergy <- function(energy.days) {
   return(prediction)
 }
 
-# Process the yearly predictions and calculate the sample fitness
-calculateSamplesFitness <- function(args, samples) {
-  # compute test predictions by year
-  res.test <- samples$opt[, processPredictions(.SD), by=Year]
-  resMean <- function(x) round(mean(x), digits=2)
-  res.test.mean <- res.test[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.t=resMean(matches.t))]
-  # compute confirmation predictions by year
-  res.conf <- samples$cv[, processPredictions(.SD), by=Year]
-  res.conf.mean <- res.conf[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.t=resMean(matches.t))]
-
-  # use appropriate fitness type
-  if (args$fittype == 'matches') {
-    fitness <- round((res.test.mean$matches.t + res.conf.mean$matches.t) / 2, digits=0)
-  }
-  else if (args$fittype == 'sdmatches') {
-    matches.mean <- mean(c(res.test$matches.t, res.conf$matches.t))
-    matches.sd <- sd(c(res.test$matches.t, res.conf$matches.t))
-    if (matches.sd == 0) {
-      fitness <- -abs(1 / (matches.mean^2)) * 100
-    }
-    else {
-      fitness <- -abs(matches.sd / (matches.mean^2)) * 100
-    }
-  }
-  else if (args$fittype == 'matcor') {
-    correlation <- round((res.test.mean$correlation + res.conf.mean$correlation) / 2, digits=3)
-    matches <- round((res.test.mean$matches.t + res.conf.mean$matches.t) / 2, digits=3)
-    fitness <- (matches + correlation) / 2
-  }
-  else {
-    stop("No valid fittype provided")
-  }
-
-  if (args$verbose) {
-    # plot solution snippet if doplot is enabled
-    if (args$plotsol) {
-      snippet <- paste(strwrap(sout, width=170), collapse="\n")
-      plotSolutionSnippet(snippet)
-    }
-
-    mout <- with(args, capture.output(print(cusorbs),
-                                      print(aspectspolarity),
-                                      print(aspectsenergy),
-                                      print(sigpenergy),
-                                      print(planetszodenergy)))
-
-    # print buffered output
-    cat(args$strsol, mout, "\n", sep="\n")
-
-    # print yearly summary
-    apply(res.test, 1, printPredYearSummary, type="Optimization")
-    with(res.test.mean, cat("\tvol =", volatility, " - cor =", correlation, " - matches.t =", matches.t, "\n"))
-    apply(res.conf, 1, printPredYearSummary, type="Confirmation")
-    with(res.conf.mean, cat("\tvol =", volatility, " - cor =", correlation, " - matches.t =", matches.t, "\n"))
-
-    # totals and execution time
-    cat("\n\t Totals: fitness = ", fitness, "\n")
-    cat("\t Optimized and confirmed with: ", nrow(samples$opt) + nrow(samples$cv), " days", "\n")
-  }
-
-  return(fitness)
-}
-
 # Build a long data table with daily aspects, orbs and longitudes
 meltedAndMergedDayAspects <- function(aspects.day, planets, security, psdate, pedate) {
   aspectskey <- dataTableUniqueVector(aspects.day)
@@ -1511,6 +1448,20 @@ testStrategy <- function(data, benchno, symbol, ps) {
   #cat("Buy & Hold\n\n")
   #print(bt.detail.summary(models$buy.hold, trade.summary=models$buy.hold$trade.summary))
 
+  # MAS crossover
+  ps$emafs <- EMA(ps$Mid, 20)
+  ps$emasl <- EMA(ps$Mid, 50)
+  ps$crossdn <- cross.dn(ps$emafs, ps$emasl)
+  ps$crossup <- cross.up(ps$emafs, ps$emasl)
+  # Compund signal
+  ps[, signal := iif(crossup==TRUE, 1, iif(crossdn==TRUE, 0, NA))]
+  # Get the signal only to the test period
+  signal <- ps[Date %in% data$dates, signal, by=Date]
+  # Prepare signal to run
+  data$weight[] <- NA
+  data$weight[] <- signal$signal
+  models$ema.cross.20.50 <- bt.run.share(data, clean.signal=T, trade.summary=T, silent=T)
+
   # Astroenergy strategy with valley buy SMA cross sell
   ps$predmom <- ps[, (Next(predval,5)+Next(predval,10)+Next(predval,15)+Next(predval,20))/5]
   ps$predvalley <- peaks(-ps$predval, pvperiod)
@@ -1542,19 +1493,21 @@ testStrategy <- function(data, benchno, symbol, ps) {
   #cat("Astroenergy Valley & Peak cross\n\n")
   #print(bt.detail.summary(models$astro.valley.peak, trade.summary=models$astro.valley.peak$trade.summary))
 
-  # Astroenergy strategy with valley/RSI buy SMA cross sell
+  # Astroenergy strategy with valley up trend buy SMA cross sell
   ps$predvalley <- peaks(-ps$predval, pvperiod)
   # Give a range of +/- 5 days to the valley to manifest
-  #ps$predvalley[unlist(lapply(seq(-5,5), function(x) which(ps$predvalley)+x))] <- TRUE
-  ps$crossdn <- cross.dn(EMA(ps$Mid, 10), EMA(ps$Mid, 20))
+  #ps$predvalley[unlist(lapply(seq(-7, 7), function(x) which(ps$predvalley)+x))] <- TRUE
+  #ps$crossdn <- cross.dn(ps$MidMAF, ps$MidMAS)
+  ps$crossdn <- cross.dn(SMA(ps$Mid, 10), SMA(ps$Mid, 30))
+  ps[predvalley==TRUE, nextvalleyval := Next(predval)]
   # Compund signal
-  ps[, signal := iif(predvalley==TRUE, 1, iif(crossdn==TRUE, 0, NA))]
+  ps[, signal := iif(predvalley==TRUE & predval < nextvalleyval, 1, iif(crossdn==TRUE, 0, NA))]
   # Get the signal only to the test period
   signal <- ps[Date %in% data$dates, signal, by=Date]
   # Prepare signal to run
   data$weight[] <- NA
   data$weight[] <- signal$signal
-  models$astro.valley.ema.10.20 <- bt.run.share(data, clean.signal=T, trade.summary=T, silent=T)
+  models$astro.valley.ema.10.30 <- bt.run.share(data, clean.signal=T, trade.summary=T, silent=T)
   # Summary
   #cat("Astroenergy Valley & SMA cross\n\n")
   #print(bt.detail.summary(models$astro.valley.sma, trade.summary=models$astro.valley.sma$trade.summary))
@@ -1571,8 +1524,10 @@ testStrategy <- function(data, benchno, symbol, ps) {
 
   strategy.performance.snapshoot(models, T)
   bt.stop.strategy.plot(data, models$buy.hold, layout=T, main='Buy & Hold', plotX=F)
+  bt.stop.strategy.plot(data, models$ema.cross.20.50, layout=T, main='EMA cross 20-40', plotX=F)
   bt.stop.strategy.plot(data, models$astro.valley.sma, layout=T, main='Astroen Valley & SMA cross', plotX=F)
   bt.stop.strategy.plot(data, models$astro.valley.peak, layout=T, main='Astroen Valley & Peak', plotX=F)
+  bt.stop.strategy.plot(data, models$astro.valley.ema.10.30, layout=T, main='Astroen Valley & EMA 10-20', plotX=F)
   plotbt.custom.report.part1(models)
 
   dev.off()
@@ -1585,9 +1540,10 @@ testStrategyAllMean <- function(bt) {
   displayMean <- function(section, property) {
     printProperty <- function(x, model) bt.detail.summary(x[[model]], x[[model]]$trade.summary)[[section]][[property]]
     cat("Buy & Hold", property, mean(unlist(lapply(bt, function(x) printProperty(x, 'buy.hold')))), "\n")
+    cat("EMA cross 20-50", property, mean(unlist(lapply(bt, function(x) printProperty(x, 'ema.cross.20.50')))), "\n")
     cat("Astro Valley & SMA", property, mean(unlist(lapply(bt, function(x) printProperty(x, 'astro.valley.sma')))), "\n")
     cat("Astro Valley & Peak", property, mean(unlist(lapply(bt, function(x) printProperty(x, 'astro.valley.peak')))), "\n")
-    cat("Astro Valley & EMA-10-20", property, mean(unlist(lapply(bt, function(x) printProperty(x, 'astro.valley.ema.10.20')))), "\n\n")
+    cat("Astro Valley Uptrend & ema.10.30", property, mean(unlist(lapply(bt, function(x) printProperty(x, 'astro.valley.ema.10.30')))), "\n\n")
   }
 
   displayMean('System', 'Cagr')

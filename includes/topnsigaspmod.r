@@ -11,6 +11,9 @@ topNSigAspectsModelCommon <- function(args) {
   args$model <- 'topNSigAspectsModel'
   args$fitfunc <- 'modelAspectsEnergy'
   args$conpolarity <- F
+  args$enoperation <- '*'
+  args$asptype <- 'all'
+  args$engrowth <- F
   #args$verbose <- T
   # Init the GA min/max
   args <- paramsPolarityAspZodSiglonEnergy('gaMinMax', args)

@@ -7,9 +7,14 @@ natalAspectsModelCommon <- function(args) {
   args$vsdate <- as.Date(args$tsdate)
   args$vedate <- as.Date(args$tedate)
   # common settings
+  args$model <- 'natalAspectsModel'
   args$fitfunc <- 'modelAspectsEnergy'
   args$datasplitfunc <- 'dataOptCVSampleSplit'
+  args$paramsfunc <- 'paramsPolarityAspZodSiglonEnergy'
   args$conpolarity <- F
+  args$enoperation <- '*'
+  args$asptype <- 'all'
+  args$engrowth <- F
   #args$verbose <- T
   # Init the GA min/max
   args <- paramsPolarityAspZodSiglonEnergy('gaMinMax', args)
@@ -31,7 +36,7 @@ cmpNatalAspectsModelOne <- function(func, ...) {
     # model settings
     setModernAspectsSet()
     args$model <- 'natalAspectsModel'
-    args$paramsfunc <- 'paramsPolarityAspZodSiglonEnergy'
+    args$datasplitfunc <- 'dataOptCVSampleSplit'
     args <- natalAspectsModelCommon(args)
 
     return(args)
@@ -55,9 +60,8 @@ cmpNatalAspectsModelTwo <- function(func, ...) {
   bootstrapModel <- function(args) {
     # model settings
     setModernAspectsSet()
-    args$model <- 'natalAspectsModel'
-    args$paramsfunc <- 'paramsPolarityAspZodSiglonEnergy'
     args <- natalAspectsModelCommon(args)
+    args$datasplitfunc <- 'dataOptCVYearSplit'
 
     return(args)
   }
@@ -69,3 +73,28 @@ cmpNatalAspectsModelTwo <- function(func, ...) {
 
 # compile the function to byte code
 natalAspectsModelTwo <- cmpfun(cmpNatalAspectsModelTwo)
+
+####################################################################
+# Variation Three with CV sample split & energy growth
+####################################################################
+cmpNatalAspectsModelThree <- function(func, ...) {
+  if (!hasArg('func')) stop("Provide function to execute")
+  ptm <- proc.time()
+
+  bootstrapModel <- function(args) {
+    # model settings
+    setModernAspectsSet()
+    args <- natalAspectsModelCommon(args)
+    args$datasplitfunc <- 'dataOptCVSampleSplit'
+    args$engrowth <- T
+
+    return(args)
+  }
+
+  args <- list(...)
+  args$modenv <- environment()
+  execfunc(get('func'), args)
+}
+
+# compile the function to byte code
+natalAspectsModelThree <- cmpfun(cmpNatalAspectsModelThree)

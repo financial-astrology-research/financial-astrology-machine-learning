@@ -132,8 +132,15 @@ dayAspectsEnergy <- function(args) {
   }
 
   planets.pred.aspen <- with(args, meltedAndMergedDayAspects(aspects.day, planets, security, vsdate, vedate))
-  # Use only the separating aspects & applying with at much 1 deg of orb
-  #planets.pred.aspen <- planets.pred.aspen[orbdir == 1 | (orbdir == -1 & orb <= 1 ),]
+
+  if (args$asptype == 'sep') {
+    # Use only the separating aspects & applying with at much 1 deg of orb
+    planets.pred.aspen <- planets.pred.aspen[orbdir == 1 | (orbdir == -1 & orb <= 1 ),]
+  }
+  else if (args$asptype == 'app') {
+    # Use only the applying aspects & separating with at much 1 deg of orb
+    planets.pred.aspen <- planets.pred.aspen[orbdir == -1 | (orbdir == 1 & orb <= 1 ),]
+  }
 
   # Add the aspects polarity
   planets.pred.aspen[, polarity := args$aspectspolarity['polarity', aspect]]
@@ -148,7 +155,15 @@ dayAspectsEnergy <- function(args) {
   planets.pred.aspen[, spenergy := args$sigpenergy['energy', as.character(lon)], by=c('lon')]
 
   # Calculate the energy considering significant point / transit / aspect energy
-  planets.pred.aspen[, energy :=  aenergy * tenergy * spenergy]
+  if (args$enoperation == '*') {
+    planets.pred.aspen[, energy :=  aenergy * tenergy * spenergy]
+  }
+  else if (args$enoperation == '+') {
+    planets.pred.aspen[, energy :=  aenergy + tenergy + spenergy]
+  }
+  else {
+    stop('Not valid enoperation configured.')
+  }
 
   # use only aspects that are in the allowed orb for specific aspect
   # TODO: verify that the filtered aspects correspond to the maximum orb
@@ -161,8 +176,10 @@ dayAspectsEnergy <- function(args) {
     planets.pred.aspen[polarity == 2 & origin %ni% c('MA', 'SA', 'PL'), polarity := 1]
   }
 
-  # compute the given energy based on the aspect orb distance
-  #planets.pred.aspen[, disenergy := energyGrowth(energy, orb)]
+  if (args$engrowth) {
+    # compute the given energy based on the aspect orb distance
+    planets.pred.aspen[, energy := energyGrowth(energy, orb, 0.2)]
+  }
 
   # set energy up / down based on polarities
   planets.pred.aspen[polarity == 0, c('up', 'down') := list(0, energy)]
@@ -170,6 +187,69 @@ dayAspectsEnergy <- function(args) {
   planets.pred.aspen[polarity == 2, c('up', 'down') := list(energy, energy)]
 
   return(planets.pred.aspen)
+}
+
+# Process the yearly predictions and calculate the sample fitness
+calculateSamplesFitness <- function(args, samples) {
+  # compute test predictions by year
+  res.test <- samples$opt[, processPredictions(.SD), by=Year]
+  resMean <- function(x) round(mean(x), digits=2)
+  res.test.mean <- res.test[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.t=resMean(matches.t))]
+  # compute confirmation predictions by year
+  res.conf <- samples$cv[, processPredictions(.SD), by=Year]
+  res.conf.mean <- res.conf[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.t=resMean(matches.t))]
+
+  # use appropriate fitness type
+  if (args$fittype == 'matches') {
+    fitness <- round((res.test.mean$matches.t + res.conf.mean$matches.t) / 2, digits=0)
+  }
+  else if (args$fittype == 'sdmatches') {
+    matches.mean <- mean(c(res.test$matches.t, res.conf$matches.t))
+    matches.sd <- sd(c(res.test$matches.t, res.conf$matches.t))
+    if (matches.sd == 0) {
+      fitness <- -abs(1 / (matches.mean^2)) * 100
+    }
+    else {
+      fitness <- -abs(matches.sd / (matches.mean^2)) * 100
+    }
+  }
+  else if (args$fittype == 'matcor') {
+    correlation <- round((res.test.mean$correlation + res.conf.mean$correlation) / 2, digits=3)
+    matches <- round((res.test.mean$matches.t + res.conf.mean$matches.t) / 2, digits=3)
+    fitness <- (matches + correlation) / 2
+  }
+  else {
+    stop("No valid fittype provided")
+  }
+
+  if (args$verbose) {
+    # plot solution snippet if doplot is enabled
+    if (args$plotsol) {
+      snippet <- paste(strwrap(sout, width=170), collapse="\n")
+      plotSolutionSnippet(snippet)
+    }
+
+    mout <- with(args, capture.output(print(cusorbs),
+                                      print(aspectspolarity),
+                                      print(aspectsenergy),
+                                      print(sigpenergy),
+                                      print(planetszodenergy)))
+
+    # print buffered output
+    cat(args$strsol, mout, "\n", sep="\n")
+
+    # print yearly summary
+    apply(res.test, 1, printPredYearSummary, type="Optimization")
+    with(res.test.mean, cat("\tvol =", volatility, " - cor =", correlation, " - matches.t =", matches.t, "\n"))
+    apply(res.conf, 1, printPredYearSummary, type="Confirmation")
+    with(res.conf.mean, cat("\tvol =", volatility, " - cor =", correlation, " - matches.t =", matches.t, "\n"))
+
+    # totals and execution time
+    cat("\n\t Totals: fitness = ", fitness, "\n")
+    cat("\t Optimized and confirmed with: ", nrow(samples$opt) + nrow(samples$cv), " days", "\n")
+  }
+
+  return(fitness)
 }
 
 modelCalculateFitness <- function(args, prediction) {
