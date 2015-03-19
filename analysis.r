@@ -707,6 +707,29 @@ processGetSymbol <- function(symbol) {
   }
 }
 
+processGetSymbolFred <- function(symbol) {
+  for(t in 1:maxretry) {
+    tryCatch({
+      cat("Downloading ", symbol, "\t\t Attempt: ", t , "/", maxretry, "\n")
+      symbol.df <- getSymbols(symbol, src="FRED", from=startDate, env=NULL, return.class='data.frame')
+      filename <- paste('./stocks/', symbol, ".csv", sep='')
+      symbol.df <- cbind(rownames(symbol.df), symbol.df)
+      symbol.df$High <- symbol.df[[2]]
+      symbol.df$Low <- symbol.df[[2]]
+      symbol.df$Close <- symbol.df[[2]]
+      symbol.df$Volume <- 0
+      symbol.df$AdjClose <- 1
+      names(symbol.df) <- c('Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'Adj Close')
+      write.csv(symbol.df, file=filename, row.names=F)
+      cat("Sucessfully saved the stock data to ", filename, "\n")
+      return(1)
+    }, error = function(e) {
+      print(e)
+      return(0)
+    })
+  }
+}
+
 getMySymbolsData  <- function(listfile) {
   #Load the list of ticker symbols from a csv, each row contains a ticker
   symbolsls <- read.csv(paste("./symbols/", listfile, '.csv', sep=''),  header=F, stringsAsFactors=F)
@@ -747,7 +770,7 @@ planetsIndicatorsAdd <- function(sp, indicators) {
   for (i in seq(1, length(indicators))) {
     name <- indicators[i]
     indicators.exprs[i] <- paste("addTA(sp[, c('", name, "')], legend='", name, "', col='yellow', type='p', pch=20, lwd=0.1)", sep="")
-    lines.exprs[i] <- paste("addLines(0, c(45, 90, 135), NULL, col='red', on=", i+1, ")", sep="")
+    lines.exprs[i] <- paste("addLines(0, c(30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330), NULL, col='red', on=", i+1, ")", sep="")
   }
 
   # eval indicators expression
@@ -795,6 +818,24 @@ pricePeaksLinesAdd <- function(sp, span, type=c('p', 'v', 'm'), col='green') {
   else if (type == 'm') {
     lapply(windows, function(w) addLines(0, NULL, pvi$middle, col=col, on=w))
   }
+}
+
+getZodiacalSignsCut <- function(x) {
+  return(list(c(30, 'red', 'Aries'), c(60, 'brown', 'Tauro'), c(90, 'cyan', 'Gemini'), c(120, 'blue', 'Cancer'), c(150, 'yellow', 'Leo'),
+              c(180, 'purple', 'Virgo'), c(210, 'white', 'Libra'), c(240, 'magenta', 'Scorpio'), c(270, 'orange', 'Sagitarius'),
+              c(300, 'green', 'Capricorn'), c(330, 'gray', 'Aquarius'), c(360, 'pink', 'Pisces')))
+
+}
+
+addSignsEntryLines <- function(x) {
+  signs <- getZodiacalSignsCut()
+  lapply(signs, function(s) addLines(0, NULL, which(round(x) == as.integer(s[[1]])), col=s[[2]], on=1))
+}
+
+addSignsEntryLabels <- function(x) {
+  signs <- getZodiacalSignsCut()
+  lchob <- quantmod:::get.current.chob()
+  lapply(signs, function(s) text(which(round(x) == as.integer(s[[1]])) * lchob@spacing, 50, s[[3]], pos=3, col=s[[2]], srt=90))
 }
 
 addPVLines <- function (type=c('p', 'v'), span=21, col = "blue", on = 1, overlay = TRUE) {
