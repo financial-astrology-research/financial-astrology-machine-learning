@@ -253,9 +253,9 @@ calculateSamplesFitness <- function(args, samples) {
 }
 
 modelCalculateFitness <- function(args, prediction) {
+
   # join the security table with prediction and remove NAS caused by join
   planets.pred <- args$security[prediction]
-  planets.pred <- planets.pred[!is.na(Mid),]
   # smoth the prediction serie and remove resulting NAS
   planets.pred[, predval := SMA(predRaw, args$mapredsm)]
   planets.pred <- planets.pred[!is.na(predval),]
@@ -265,6 +265,9 @@ modelCalculateFitness <- function(args, prediction) {
   planets.pred[is.na(Year), Year := as.character(format(Date, "%Y"))]
   # Split data using the appropriate function
   samples <- get(args$datasplitfunc)(args, planets.pred)
+  # Remove the projected prediction data
+  samples$cv <- samples$cv[!is.na(Mid),]
+  planets.pred <- planets.pred[!is.na(Mid),]
   # Calculate Fitness
   fitness <- calculateSamplesFitness(args, samples)
   #cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n\n")

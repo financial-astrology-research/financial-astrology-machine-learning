@@ -574,6 +574,11 @@ dataOptCVSampleSplit <- function(args, planets.pred) {
   if (args$doplot) {
     sample.opt <- planets.pred.opt[Year %in% names(years.opt[years.opt > 20]),]
     sample.cv <- planets.pred.cv[Year %in% names(years.cv[years.cv > 20]),]
+    # Use the last OHLC observation to projected prediction NAs rows
+    sample.cv$Open <- na.locf(sample.cv$Open)
+    sample.cv$High <- na.locf(sample.cv$High)
+    sample.cv$Low <- na.locf(sample.cv$Low)
+    sample.cv$Close <- na.locf(sample.cv$Close)
     plotCVChart(names(years.cv[years.cv > 20]), sample.cv)
   }
   else {
