@@ -714,6 +714,9 @@ processGetSymbolFred <- function(symbol) {
       symbol.df <- getSymbols(symbol, src="FRED", from=startDate, env=NULL, return.class='data.frame')
       filename <- paste('./stocks/', symbol, ".csv", sep='')
       symbol.df <- cbind(rownames(symbol.df), symbol.df)
+
+      # Clean empty rows
+      symbol.df <- symbol.df[!is.na(symbol.df[[2]]),]
       symbol.df$High <- symbol.df[[2]]
       symbol.df$Low <- symbol.df[[2]]
       symbol.df$Close <- symbol.df[[2]]
@@ -830,6 +833,27 @@ getZodiacalSignsCut <- function(x) {
 addSignsEntryLines <- function(x) {
   signs <- getZodiacalSignsCut()
   lapply(signs, function(s) addLines(0, NULL, which(round(x) == as.integer(s[[1]])), col=s[[2]], on=1))
+}
+
+addSignsEntryLabels <- function(x) {
+  signs <- getZodiacalSignsCut()
+  lchob <- quantmod:::get.current.chob()
+  lapply(signs, function(s) text(which(round(x) == as.integer(s[[1]])) * lchob@spacing, 50, s[[3]], pos=3, col=s[[2]], srt=90))
+}
+
+addSpeedEntryLinesDn <- function(x, border) {
+  crossdn <- cross.dn(SMA(x, 10), rep(border, nrow(x)))
+  addLines(0, NULL, which(crossdn), col='red', on=1)
+}
+
+addSpeedEntryLinesUp <- function(x, border) {
+  crossup <- cross.up(SMA(x, 10), rep(border, nrow(x)))
+  addLines(0, NULL, which(crossup), col='green', on=1)
+}
+
+addAspectsLines <- function(x) {
+  aspects <- list(c(0, 'yellow'), c(30, 'pink'), c(60, 'cyan'), c(90, 'red'), c(120, 'green'), c(150, 'blue'), c(180, 'orange'))
+  lapply(aspects, function(s) addLines(0, NULL, which(round(x) == as.integer(s[[1]])), col=s[[2]], on=1))
 }
 
 addSignsEntryLabels <- function(x) {
