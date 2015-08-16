@@ -253,7 +253,6 @@ calculateSamplesFitness <- function(args, samples) {
 }
 
 modelCalculateFitness <- function(args, prediction) {
-
   # join the security table with prediction and remove NAS caused by join
   planets.pred <- args$security[prediction]
   # smoth the prediction serie and remove resulting NAS
