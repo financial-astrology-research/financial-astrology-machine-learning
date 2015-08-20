@@ -11,7 +11,7 @@ optimizeGA <- function(args) {
     cat("Starting GA optimization for ", args$symbol, " - ", args$sinkpathfile, "\n")
 
     gar <- ga("real-valued", popSize=1000, elitism=100, pcrossover=0.9, pmutation=0.1, maxiter=60, run=50,
-              fitness=modelFitExec, parallel=T, min=args$gamin, max=args$gamax, monitor=gaMonitor,
+              fitness=modelFitExec, parallel=F, min=args$gamin, max=args$gamax, monitor=gaMonitor,
               selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population, args=args)
 
     loopSolutionGA(gar, args)
@@ -70,6 +70,8 @@ bootstrapSecurity <- function(symbol, args) {
   # load the security data and leave only needed cols
   security <- with(args, openSecurity(securityfile, mapricefs, mapricesl, dateformat, tsdate))
   args$security <- security[, c('Date', 'Year', 'Open', 'High', 'Low', 'Close', 'Mid', 'MidMAF', 'MidMAS', 'Eff'), with=F]
+  # load the security data in back testing format
+  args$secdata <- openSecurityOnEnv(args$securityfile)
 
   if (args$model == 'natalAspectsModel') {
     # build natal longitudes
@@ -281,6 +283,59 @@ modelAspectsEnergy <- function(args) {
   prediction <- calculateUpDownEnergy(energy.days)
   # calculate fitness
   return(modelCalculateFitness(args, prediction))
+}
+
+predictionsBackTest <- function(planets.pred, args) {
+  bt <- testYearStrategy(args$secdata, args$benchno, args$symbol, planets.pred, paste(min(planets.pred$Date), max(planets.pred$Date), sep='::'))
+  return(list(fitness=bt$astro.valley.peak$cagr))
+}
+
+modelAspectsEnergyBackTest <- function(args) {
+  looptm <- proc.time()
+  # calculate energy days
+  energy.days <- dayAspectsEnergy(args)
+  # Calculate prediction
+  prediction <- calculateUpDownEnergy(energy.days)
+
+  # join the security table with prediction and remove NAS caused by join
+  planets.pred <- args$security[prediction]
+  # smoth the prediction serie and remove resulting NAS
+  planets.pred[, predval := SMA(predRaw, args$mapredsm)]
+  planets.pred <- planets.pred[!is.na(predval),]
+  # Add the Year for projected predictions rows
+  planets.pred[is.na(Year), Year := as.character(format(Date, "%Y"))]
+  # Split data using the appropriate function
+  samples <- get(args$datasplitfunc)(args, planets.pred)
+  # Remove the projected prediction data
+  samples$opt <- samples$opt[!is.na(Mid),]
+  samples$cv <- samples$cv[!is.na(Mid),]
+
+  # Calculate Fitness
+  resMean <- function(x) round(mean(x), digits=2)
+  # compute test predictions by year
+  res.test <- samples$opt[, predictionsBackTest(.SD, args), by=Year]
+  # compute confirmation predictions by year
+  res.conf <- samples$cv[, predictionsBackTest(.SD, args), by=Year]
+
+  # round fitness
+  fitness <- round((mean(res.test$fitness) + mean(res.conf$fitness)) / 2, digits=3)
+
+  if (args$verbose) {
+    mout <- with(args, capture.output(print(cusorbs),
+                                      print(aspectspolarity),
+                                      print(aspectsenergy),
+                                      print(sigpenergy),
+                                      print(planetszodenergy)))
+
+    # print buffered output
+    cat(args$strsol, mout, "\n", sep="\n")
+
+    # totals and execution time
+    cat("\n\t Totals: fitness = ", fitness, "\n")
+    cat("\t Optimized and confirmed with: ", nrow(samples$opt) + nrow(samples$cv), " days", "\n")
+  }
+
+  return(list(fitness=fitness, pred=planets.pred))
 }
 
 # Build args list for aspects polarity, aspects energy, zodenergy, significant points energy

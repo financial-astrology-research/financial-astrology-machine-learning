@@ -1488,18 +1488,52 @@ significantPlanetsLongChart <- function(planets) {
   #dev.off()
 }
 
-openSecurityOnEnv <- function(securityfile, dates = '2011::') {
+openSecurityOnEnv <- function(securityfile) {
   # Load security data table
   security <- mainOpenSecurity(securityfile, 20, 50, "%Y-%m-%d", "1970-01-01")
   sp <- xts(security[, c('Open', 'High', 'Low', 'Close'), with=F], order.by=security$Date)
-  # Put in a new environment as required by SIT
-  data <- new.env()
-  assign(securityfile, sp, env=data)
-  bt.prep(data, align='keep.all', dates=dates)
-  return(data)
+  return(sp)
 }
 
-testStrategy <- function(data, benchno, symbol, ps) {
+testYearStrategy <- function(sp, benchno, symbol, ps, dates = '1970::') {
+  # Put in a new environment as required by SIT
+  data <- new.env()
+  assign(symbol, sp, env=data)
+  bt.prep(data, align='keep.all', dates=dates)
+
+  # Code Strategies
+  pvperiod <- 21
+  prices <- data$prices
+  models <- list()
+
+  # Check thare is prediction data for the expected dates
+  if (nrow(ps[Date %in% data$dates,]) == 0) {
+    stop("No data on ps data.table for expected dates")
+  }
+
+  # Astroenergy strategy with valley buy & peak sell
+  ps$predvalley <- peaks(-ps$predval, pvperiod)
+  ps$predpeak <- peaks(ps$predval, pvperiod)
+  # Compund signal
+  ps[, signal := iif(predvalley==TRUE, 1, iif(predpeak==TRUE, 0, NA))]
+  # Get the signal only to the test period
+  signal <- ps[Date %in% data$dates, signal, by=Date]
+  # Prepare signal to run
+  data$weight[] <- NA
+  data$weight[] <- signal$signal
+  models$astro.valley.peak <- bt.run.share(data, clean.signal=T, trade.summary=T, silent=T)
+
+  return(models)
+}
+
+
+
+testStrategy <- function(sp, benchno, symbol, ps, dates = '1970::') {
+  # Put in a new environment as required by SIT
+  data <- new.env()
+  assign(symbol, sp, env=data)
+  bt.prep(data, align='keep.all', dates=dates)
+
   # Code Strategies
   pvperiod <- 20
   prices <- data$prices
