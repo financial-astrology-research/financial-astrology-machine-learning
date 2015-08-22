@@ -11,7 +11,7 @@ optimizeGA <- function(args) {
     cat("Starting GA optimization for ", args$symbol, " - ", args$sinkpathfile, "\n")
 
     gar <- ga("real-valued", popSize=1000, elitism=100, pcrossover=0.9, pmutation=0.1, maxiter=60, run=50,
-              fitness=modelFitExec, parallel=F, min=args$gamin, max=args$gamax, monitor=gaMonitor,
+              fitness=modelFitExec, parallel=T, min=args$gamin, max=args$gamax, monitor=gaMonitor,
               selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population, args=args)
 
     loopSolutionGA(gar, args)
@@ -287,7 +287,7 @@ modelAspectsEnergy <- function(args) {
 
 predictionsBackTest <- function(planets.pred, args) {
   bt <- testYearStrategy(args$secdata, args$benchno, args$symbol, planets.pred, paste(min(planets.pred$Date), max(planets.pred$Date), sep='::'))
-  return(list(fitness=bt$astro.valley.peak$cagr))
+  return(list(fitness = (bt$astro.valley.sma$cagr - bt$buy.hold$cagr)))
 }
 
 modelAspectsEnergyBackTest <- function(args) {

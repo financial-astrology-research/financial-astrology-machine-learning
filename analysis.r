@@ -612,6 +612,10 @@ dataOptCVYearSplit <- function(args, planets.pred) {
   # When doplot is enabled use for confirmation all the available years
   if (args$doplot) {
     sample.cv <- planets.pred[Year %in% years.cv,]
+    sample.cv$Open <- na.locf(sample.cv$Open)
+    sample.cv$High <- na.locf(sample.cv$High)
+    sample.cv$Low <- na.locf(sample.cv$Low)
+    sample.cv$Close <- na.locf(sample.cv$Close)
     plotCVChart(years.cv, sample.cv)
   }
   else {
@@ -1511,28 +1515,33 @@ testYearStrategy <- function(sp, benchno, symbol, ps, dates = '1970::') {
     stop("No data on ps data.table for expected dates")
   }
 
-  # Astroenergy strategy with valley buy & peak sell
+  # Buy and Hold model
+  data$weight[] <- NA
+  data$weight[] <- 1
+  models$buy.hold <- bt.run.share(data, clean.signal=T, trade.summary=T, silent=T)
+
+  # Astroenergy strategy with valley buy SMA cross sell
+  ps$predmom <- ps[, (Next(predval,10)+Next(predval,15)+Next(predval,20)+Next(predval,30)+Next(predval,40)+Next(predval,50)+Next(predval,60)+Next(predval,70)) / 8]
   ps$predvalley <- peaks(-ps$predval, pvperiod)
-  ps$predpeak <- peaks(ps$predval, pvperiod)
+  ps$crossdn <- cross.dn(ps$MidMAF, ps$MidMAS)
   # Compund signal
-  ps[, signal := iif(predvalley==TRUE, 1, iif(predpeak==TRUE, 0, NA))]
+  ps[, signal := iif(predvalley==TRUE & predmom > predval, 1, iif(crossdn==TRUE, 0, NA))]
   # Get the signal only to the test period
   signal <- ps[Date %in% data$dates, signal, by=Date]
   # Prepare signal to run
   data$weight[] <- NA
   data$weight[] <- signal$signal
-  models$astro.valley.peak <- bt.run.share(data, clean.signal=T, trade.summary=T, silent=T)
+  models$astro.valley.sma <- bt.run.share(data, clean.signal=T, trade.summary=T, silent=T)
 
   return(models)
 }
-
-
 
 testStrategy <- function(sp, benchno, symbol, ps, dates = '1970::') {
   # Put in a new environment as required by SIT
   data <- new.env()
   assign(symbol, sp, env=data)
   bt.prep(data, align='keep.all', dates=dates)
+  ps <- ps[!is.na(Mid)]
 
   # Code Strategies
   pvperiod <- 20
@@ -1567,7 +1576,9 @@ testStrategy <- function(sp, benchno, symbol, ps, dates = '1970::') {
   models$ema.cross.20.50 <- bt.run.share(data, clean.signal=T, trade.summary=T, silent=T)
 
   # Astroenergy strategy with valley buy SMA cross sell
-  ps$predmom <- ps[, (Next(predval,5)+Next(predval,10)+Next(predval,15)+Next(predval,20))/5]
+  ps$predmom <- ps[, (Next(predval,10)+Next(predval,15)+Next(predval,20)+Next(predval,30)+Next(predval,40)+Next(predval,50)+Next(predval,60)+Next(predval,70)) / 8]
+  #ps$predpro1 <- apply(ps[, lapply(10:20, function(i) Next(predval, i))], 1, mean)
+  #ps$predpro2 <- apply(ps[, lapply(10:30, function(i) Next(predval, i))], 1, mean)
   ps$predvalley <- peaks(-ps$predval, pvperiod)
   ps$crossdn <- cross.dn(ps$MidMAF, ps$MidMAS)
   # Compund signal
