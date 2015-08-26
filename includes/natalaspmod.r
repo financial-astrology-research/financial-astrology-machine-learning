@@ -112,6 +112,7 @@ cmpNatalAspectsModelFour <- function(func, ...) {
     args <- natalAspectsModelCommon(args)
     args$fitfunc <- 'modelAspectsEnergyBackTest'
     args$datasplitfunc <- 'dataOptCVYearSplit'
+    args$enoperation <- '+'
 
     return(args)
   }

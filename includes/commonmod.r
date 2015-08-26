@@ -287,7 +287,7 @@ modelAspectsEnergy <- function(args) {
 
 predictionsBackTest <- function(planets.pred, args) {
   bt <- testYearStrategy(args$secdata, args$benchno, args$symbol, planets.pred, paste(min(planets.pred$Date), max(planets.pred$Date), sep='::'))
-  return(list(fitness = (bt$astro.valley.sma$cagr - bt$buy.hold$cagr)))
+  return(list(fitness = bt$astro.valley.sma$cagr))
 }
 
 modelAspectsEnergyBackTest <- function(args) {
