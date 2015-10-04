@@ -10,7 +10,7 @@ optimizeGA <- function(args) {
     args <- bootstrapSecurity(symbol, args)
     cat("Starting GA optimization for ", args$symbol, " - ", args$sinkpathfile, "\n")
 
-    gar <- ga("real-valued", popSize=1000, elitism=100, pcrossover=0.9, pmutation=0.1, maxiter=250, run=100,
+    gar <- ga("real-valued", popSize=1000, elitism=100, pcrossover=0.9, pmutation=0.1, maxiter=100, run=60,
               fitness=modelFitExec, parallel=T, min=args$gamin, max=args$gamax, monitor=gaMonitor,
               selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population, args=args)
 
