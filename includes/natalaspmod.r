@@ -15,7 +15,7 @@ natalAspectsModelCommon <- function(args) {
   args$enoperation <- '*'
   args$asptype <- 'all'
   args$engrowth <- F
-  #args$verbose <- T
+  args$verbose <- F
   # Init the GA min/max
   args <- paramsPolarityAspZodSiglonEnergy('gaMinMax', args)
   # open planets file and leave only needed cols for better speed

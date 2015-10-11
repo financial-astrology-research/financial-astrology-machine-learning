@@ -342,7 +342,7 @@ modelAspectsEnergyBackTest <- function(args) {
 paramsPolarityAspZodSiglonEnergy <- function(func, args) {
   # build the parameters based on GA indexes
   splitX <- function(args) {
-    co.e=args$gamixedidx+length(deforbs)
+    co.e=args$gamixedidx+length(deforbs)+1
     api.e=co.e+length(aspects)-1
     ae.e=api.e+length(aspects)
     pze.e=ae.e+lenZodEnergyMi
@@ -428,14 +428,14 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
     polaritymin <- rep(0, length(aspects)-1)
     polaritymax <- rep(1, length(aspects)-1)
     aspectenergymin <- rep(0, length(aspects))
-    aspectenergymax <- rep(30, length(aspects))
+    aspectenergymax <- rep(60, length(aspects))
     planetzodenergymin <- rep(0, lenZodEnergyMi)
-    planetzodenergymax <- rep(30, lenZodEnergyMi)
+    planetzodenergymax <- rep(60, lenZodEnergyMi)
 
     if (args$model == 'natalAspectsModel') {
       # 14 natal points
       sigpenergymin <- rep(0, 14)
-      sigpenergymax <- rep(30, 14)
+      sigpenergymax <- rep(60, 14)
       args$gamixedidx <- 1
       mixedmin <- c(2)
       mixedmax <- c(10)
