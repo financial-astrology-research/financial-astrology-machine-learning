@@ -10,7 +10,7 @@ optimizeGA <- function(args) {
     args <- bootstrapSecurity(symbol, args)
     cat("Starting GA optimization for ", args$symbol, " - ", args$sinkpathfile, "\n")
 
-    gar <- ga("real-valued", popSize=1000, elitism=100, pcrossover=0.9, pmutation=0.1, maxiter=70, run=50,
+    gar <- ga("real-valued", popSize=1000, elitism=100, pcrossover=0.9, pmutation=0.1, maxiter=60, run=50,
               fitness=modelFitExec, parallel=T, min=args$gamin, max=args$gamax, monitor=gaMonitor,
               selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population, args=args)
 
@@ -428,21 +428,21 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
     polaritymin <- rep(0, length(aspects)-1)
     polaritymax <- rep(1, length(aspects)-1)
     aspectenergymin <- rep(0, length(aspects))
-    aspectenergymax <- rep(20, length(aspects))
+    aspectenergymax <- rep(30, length(aspects))
     planetzodenergymin <- rep(0, lenZodEnergyMi)
-    planetzodenergymax <- rep(20, lenZodEnergyMi)
+    planetzodenergymax <- rep(30, lenZodEnergyMi)
 
     if (args$model == 'natalAspectsModel') {
       # 14 natal points
       sigpenergymin <- rep(0, 14)
-      sigpenergymax <- rep(20, 14)
+      sigpenergymax <- rep(30, 14)
       args$gamixedidx <- 1
       mixedmin <- c(2)
       mixedmax <- c(10)
     }
     else if (args$model == 'topNSigAspectsModel') {
       sigpenergymin <- rep(0, args$topn)
-      sigpenergymax <- rep(20, args$topn)
+      sigpenergymax <- rep(30, args$topn)
       args$gamixedidx <- 2
       mixedmin <- c(2,  4)
       mixedmax <- c(10, 6)
