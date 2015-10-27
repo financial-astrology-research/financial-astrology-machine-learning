@@ -342,7 +342,8 @@ modelAspectsEnergyBackTest <- function(args) {
 paramsPolarityAspZodSiglonEnergy <- function(func, args) {
   # build the parameters based on GA indexes
   splitX <- function(args) {
-    co.e=args$gamixedidx+length(deforbs)+1
+    # gamixedidx+1 is due indexes start at 1 not 0 so we need to select after that index
+    co.e=args$gamixedidx+1+length(deforbs)
     api.e=co.e+length(aspects)-1
     ae.e=api.e+length(aspects)
     pze.e=ae.e+lenZodEnergyMi
@@ -366,7 +367,7 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
       stop("Not valid model was provided.")
     }
 
-    args$cusorbs <- args$x[args$gamixedidx:(co.e-1)]
+    args$cusorbs <- args$x[args$gamixedidx+1:(co.e-1)]
     args$aspectspolarity <- args$x[co.e:(api.e-1)]
     args$aspectsenergy <- adjustEnergy(args$x[api.e:(ae.e-1)])
     args$planetszodenergy <- adjustEnergy(args$x[ae.e:(pze.e-1)])
@@ -402,7 +403,7 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
                                     dimnames=list(planetsBaseCols, zodSignsCols))
 
     # Generate the string solution for for the given model parameters
-    args$strsol <- with(args, paste("natalAspectsModel('testSolution'",
+    args$strsol <- with(args, paste(paste(modelfunc), "('testSolution'",
                                     ", benchno=", shQuote(benchno),
                                     ", symbol=", shQuote(symbol),
                                     ", sectype=", shQuote(sectype),

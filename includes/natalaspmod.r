@@ -35,7 +35,7 @@ cmpNatalAspectsModelOne <- function(func, ...) {
   bootstrapModel <- function(args) {
     # model settings
     setModernAspectsSet()
-    args$model <- 'natalAspectsModel'
+    args$modelfunc <- 'natalAspectsModelOne'
     args$datasplitfunc <- 'dataOptCVSampleSplit'
     args <- natalAspectsModelCommon(args)
 
@@ -60,6 +60,7 @@ cmpNatalAspectsModelTwo <- function(func, ...) {
   bootstrapModel <- function(args) {
     # model settings
     setModernAspectsSet()
+    args$modelfunc <- 'natalAspectsModelTwo'
     args <- natalAspectsModelCommon(args)
     args$datasplitfunc <- 'dataOptCVYearSplit'
 
@@ -84,6 +85,7 @@ cmpNatalAspectsModelThree <- function(func, ...) {
   bootstrapModel <- function(args) {
     # model settings
     setModernAspectsSet()
+    args$modelfunc <- 'natalAspectsModelThree'
     args <- natalAspectsModelCommon(args)
     args$datasplitfunc <- 'dataOptCVSampleSplit'
     args$engrowth <- T
@@ -109,6 +111,7 @@ cmpNatalAspectsModelFour <- function(func, ...) {
   bootstrapModel <- function(args) {
     # model settings
     setModernAspectsSet()
+    args$modelfunc <- 'natalAspectsModelFour'
     args <- natalAspectsModelCommon(args)
     args$fitfunc <- 'modelAspectsEnergyBackTest'
     args$datasplitfunc <- 'dataOptCVYearSplit'
