@@ -367,7 +367,7 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
       stop("Not valid model was provided.")
     }
 
-    args$cusorbs <- args$x[args$gamixedidx+1:(co.e-1)]
+    args$cusorbs <- args$x[(args$gamixedidx+1):(co.e-1)]
     args$aspectspolarity <- args$x[co.e:(api.e-1)]
     args$aspectsenergy <- adjustEnergy(args$x[api.e:(ae.e-1)])
     args$planetszodenergy <- adjustEnergy(args$x[ae.e:(pze.e-1)])
