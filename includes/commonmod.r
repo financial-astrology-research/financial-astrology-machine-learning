@@ -171,11 +171,19 @@ dayAspectsEnergy <- function(args) {
   # TODO: verify that the filtered aspects correspond to the maximum orb
   planets.pred.aspen <- planets.pred.aspen[orb <= args$cusorbs['orbs', aspect]]
 
-  if (args$conpolarity) {
+  if (args$aspectspolarity['polarity', '0'] == 3) {
     # Adjust conjuntion polarity based on involved planets: MA, SA, PL are
     # considered as a negative, others as positive.
-    planets.pred.aspen[polarity == 2 & origin %in% c('MA', 'SA', 'PL'), polarity := 0]
-    planets.pred.aspen[polarity == 2 & origin %ni% c('MA', 'SA', 'PL'), polarity := 1]
+    planets.pred.aspen[polarity == 3 & origin %in% c('MA', 'SA', 'PL'), polarity := 0]
+    planets.pred.aspen[polarity == 3 & origin %ni% c('MA', 'SA', 'PL'), polarity := 1]
+  }
+  else if (args$aspectspolarity['polarity', '0'] == 4) {
+    planets.pred.aspen[polarity == 4 & origin %in% c('MA', 'SA', 'UR', 'PL'), polarity := 0]
+    planets.pred.aspen[polarity == 4 & origin %ni% c('MA', 'SA', 'UR', 'PL'), polarity := 1]
+  }
+  else if (args$aspectspolarity['polarity', '0'] == 5) {
+    planets.pred.aspen[polarity == 5 & origin %in% c('MA', 'SA', 'UR', 'NE', 'PL'), polarity := 0]
+    planets.pred.aspen[polarity == 5 & origin %ni% c('MA', 'SA', 'UR', 'NE', 'PL'), polarity := 1]
   }
 
   if (args$engrowth) {
@@ -344,7 +352,7 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
   splitX <- function(args) {
     # gamixedidx+1 is due indexes start at 1 not 0 so we need to select after that index
     co.e=args$gamixedidx+1+length(deforbs)
-    api.e=co.e+length(aspects)-1
+    api.e=co.e+length(aspects)
     ae.e=api.e+length(aspects)
     pze.e=ae.e+lenZodEnergyMi
     # 14 natal points
@@ -373,8 +381,6 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
     args$planetszodenergy <- adjustEnergy(args$x[ae.e:(pze.e-1)])
     args$sigpenergy <- adjustEnergy(args$x[pze.e:(spe.e-1)])
 
-    # Conjunction energy as neutral
-    args$aspectspolarity <- c(2, args$aspectspolarity)
     args <- setMatrix(args)
 
     return(args)
@@ -426,8 +432,8 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
   gaMinMax <- function(args) {
     orbsmin <- rep(0, length(deforbs))
     orbsmax <- deforbs
-    polaritymin <- rep(0, length(aspects)-1)
-    polaritymax <- rep(1, length(aspects)-1)
+    polaritymin <- c(0, rep(0, length(aspects)-1))
+    polaritymax <- c(5, rep(1, length(aspects)-1))
     aspectenergymin <- rep(0, length(aspects))
     aspectenergymax <- rep(30, length(aspects))
     planetzodenergymin <- rep(0, lenZodEnergyMi)
