@@ -26,6 +26,7 @@ maxretry <- 1
 
 `%ni%` <- Negate(`%in%`)
 planetsBaseCols <- c('SU', 'MO', 'ME', 'VE', 'MA', 'JU', 'NN', 'SA')
+planetsMajors <- c('UR', 'NE', 'PL')
 
 setAll2AspectsSet <- function() {
   # Aspects and orbs
@@ -64,7 +65,7 @@ buildPlanetsColsNames <- function(planetsBaseCols) {
   planetsCombAsp <<- as.character(lapply(planetsComb, function(x) paste(x[1], x[2], 'ASP', sep='')))
   planetsCombOrb <<- as.character(lapply(planetsComb, function(x) paste(x[1], x[2], 'ORB', sep='')))
   zodSignsCols <<- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CP', 'AC', 'PI')
-  lenZodEnergyMi <<- length(planetsBaseCols) * length(zodSignsCols)
+  lenZodEnergyMi <<- length(planetsBaseCols %ni% c('UR', 'NE', 'PL')) * length(zodSignsCols)
   #lenZodEnergyMa <- (length(planetsLonCols) * length(zodSignsCols)) - lenZodEnergyMi
   # Remove eclipse cols due it do not have speed
   planetsSpCols <<- planetsSpCols[grep('^E', planetsSpCols, ignore.case=T, invert=T)]

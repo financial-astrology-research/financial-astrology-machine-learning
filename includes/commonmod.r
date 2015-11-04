@@ -381,6 +381,13 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
     args$planetszodenergy <- adjustEnergy(args$x[ae.e:(pze.e-1)])
     args$sigpenergy <- adjustEnergy(args$x[pze.e:(spe.e-1)])
 
+    # Set majors planets zodenergy all to 1 due we don't have historical data for a complete cycle
+    # so in this case we only allow the planets aspects energy and polarity to act on.
+    majorsen <- length(planetsBaseCols %in% planetsMajors) * length(zodSignsCols)
+    if (majorsen > 0) {
+      args$planetszodenergy <- c(args$planetszodenergy, rep(1, majorsen))
+    }
+
     args <- setMatrix(args)
 
     return(args)
