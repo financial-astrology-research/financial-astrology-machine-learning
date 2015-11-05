@@ -440,7 +440,7 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
     orbsmin <- rep(0, length(deforbs))
     orbsmax <- deforbs
     polaritymin <- c(0, rep(0, length(aspects)-1))
-    polaritymax <- c(5, rep(1, length(aspects)-1))
+    polaritymax <- c(2, rep(1, length(aspects)-1))
     aspectenergymin <- rep(0, length(aspects))
     aspectenergymax <- rep(30, length(aspects))
     planetzodenergymin <- rep(0, lenZodEnergyMi)
