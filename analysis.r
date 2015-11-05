@@ -25,7 +25,7 @@ startDate = as.Date("1970-01-01")
 maxretry <- 1
 
 `%ni%` <- Negate(`%in%`)
-planetsBaseCols <- c('SU', 'MO', 'ME', 'VE', 'MA', 'JU', 'NN', 'SA')
+planetsBaseCols <- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'NN', 'SA')
 planetsMajors <- c('UR', 'NE', 'PL')
 
 setAll2AspectsSet <- function() {
