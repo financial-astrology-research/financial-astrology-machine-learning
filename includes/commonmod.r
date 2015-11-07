@@ -439,7 +439,7 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
   gaMinMax <- function(args) {
     orbsmin <- rep(0, length(deforbs))
     orbsmax <- deforbs
-    polaritymin <- c(0, rep(0, length(aspects)-1))
+    polaritymin <- c(2, rep(0, length(aspects)-1))
     polaritymax <- c(2, rep(1, length(aspects)-1))
     aspectenergymin <- rep(0, length(aspects))
     aspectenergymax <- rep(30, length(aspects))
