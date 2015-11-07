@@ -45,6 +45,11 @@ setModernAspectsSet <- function() {
   deforbs <<- c(10, 3, 3, 3, 6, 3,10,  3,  6,  3,  3,  6, 10)
 }
 
+setClassicAspectsSet <- function() {
+  aspects <<- c( 0,30,45,60,90,120,135,150,180)
+  deforbs <<- c(10, 3, 3, 6,10,  6,  3,  6, 10)
+}
+
 setModernAspectsSet()
 
 # columns names
