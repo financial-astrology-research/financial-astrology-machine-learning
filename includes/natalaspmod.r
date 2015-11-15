@@ -127,3 +127,27 @@ cmpNatalAspectsModelFour <- function(func, ...) {
 
 # compile the function to byte code
 natalAspectsModelFour <- cmpfun(cmpNatalAspectsModelFour)
+
+####################################################################
+# Variation Five with CV sample split
+####################################################################
+cmpNatalAspectsModelFive <- function(func, ...) {
+  if (!hasArg('func')) stop("Provide function to execute")
+  ptm <- proc.time()
+
+  bootstrapModel <- function(args) {
+    # model settings
+    setClassicAspectsSet()
+    args$modelfunc <- 'natalAspectsModelOne'
+    args$datasplitfunc <- 'dataOptCVSampleSplit'
+    args <- natalAspectsModelCommon(args)
+
+    return(args)
+  }
+
+  args <- list(...)
+  args$modenv <- environment()
+  execfunc(get('func'), args)
+}
+
+natalAspectsModelFive <- cmpfun(cmpNatalAspectsModelFive)
