@@ -138,7 +138,7 @@ cmpNatalAspectsModelFive <- function(func, ...) {
   bootstrapModel <- function(args) {
     # model settings
     setClassicAspectsSet()
-    args$modelfunc <- 'natalAspectsModelOne'
+    args$modelfunc <- 'natalAspectsModelFive'
     args$datasplitfunc <- 'dataOptCVSampleSplit'
     args <- natalAspectsModelCommon(args)
 
