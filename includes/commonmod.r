@@ -396,6 +396,26 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
 
   # Build the matrix parameters
   setMatrix <- function(args) {
+    # Generate the string solution for the given model parameters
+    args$strsol <- with(args, paste(paste(modelfunc), "('testSolution'",
+                                    ", benchno=", shQuote(benchno),
+                                    ", symbol=", shQuote(symbol),
+                                    ", sectype=", shQuote(sectype),
+                                    ", securityfile=", shQuote(securityfile),
+                                    ", planetsfile=", shQuote(planetsfile),
+                                    ", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate),
+                                    ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate),
+                                    ", mapredsm=", mapredsm, ", mapricefs=", mapricefs, ", mapricesl=", mapricesl,
+                                    ", cusorbs=c(", paste(cusorbs, collapse=", "), ")",
+                                    ", aspectsenergy=c(", paste(aspectsenergy, collapse=", "), ")",
+                                    ", sigpenergy=c(", paste(sigpenergy, collapse=", "), ")",
+                                    ", planetszodenergy=c(", paste(planetszodenergy, collapse=", "), ")",
+                                    ", aspectspolarity=c(", paste(aspectspolarity, collapse=", "), ")",
+                                    ", dateformat=", shQuote(dateformat),
+                                    ", fittype=", shQuote(fittype), ")\n", sep=""))
+
+    # Build the matrices after build solution, otherwise the paste maxtrix implode values by cols
+    # instead by rows, resulting in totally different solution.
     args$cusorbs <- matrix(args$cusorbs, nrow=1, ncol=length(aspects), byrow=T,
                            dimnames=list('orbs', aspects))
 
@@ -415,25 +435,6 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
 
     args$planetszodenergy <- matrix(args$planetszodenergy, nrow=length(planetsBaseCols), ncol=12, byrow=T,
                                     dimnames=list(planetsBaseCols, zodSignsCols))
-
-    # Generate the string solution for for the given model parameters
-    args$strsol <- with(args, paste(paste(modelfunc), "('testSolution'",
-                                    ", benchno=", shQuote(benchno),
-                                    ", symbol=", shQuote(symbol),
-                                    ", sectype=", shQuote(sectype),
-                                    ", securityfile=", shQuote(securityfile),
-                                    ", planetsfile=", shQuote(planetsfile),
-                                    ", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate),
-                                    ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate),
-                                    ", mapredsm=", mapredsm, ", mapricefs=", mapricefs, ", mapricesl=", mapricesl,
-                                    ", cusorbs=c(", paste(cusorbs, collapse=", "), ")",
-                                    ", aspectsenergy=c(", paste(aspectsenergy, collapse=", "), ")",
-                                    ", sigpenergy=c(", paste(sigpenergy, collapse=", "), ")",
-                                    ", planetszodenergy=c(", paste(planetszodenergy, collapse=", "), ")",
-                                    ", aspectspolarity=c(", paste(aspectspolarity, collapse=", "), ")",
-                                    ", dateformat=", shQuote(dateformat),
-                                    ", fittype=", shQuote(fittype), ")\n", sep=""))
-
     return(args)
   }
 
