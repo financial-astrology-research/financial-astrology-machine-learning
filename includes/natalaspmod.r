@@ -6,17 +6,17 @@ natalAspectsModelCommon <- function(args) {
   args$tedate <- as.Date(args$tedate)
   args$vsdate <- as.Date(args$tsdate)
   args$vedate <- as.Date(args$tedate)
-  # common settings
   args$model <- 'natalAspectsModel'
-  args$fitfunc <- 'modelAspectsEnergy'
-  args$datasplitfunc <- 'dataOptCVSampleSplit'
-  args$paramsfunc <- 'paramsPolarityAspZodSiglonEnergy'
-  args$conpolarity <- F
-  args$aspolarity <- T
-  args$enoperation <- '*'
-  args$asptype <- 'all'
-  args$engrowth <- F
-  args$verbose <- F
+  # common settings
+  if (is.null(args$fitfunc)) args$fitfunc <- 'modelAspectsEnergy'
+  if (is.null(args$datasplitfunc)) args$datasplitfunc <- 'dataOptCVSampleSplit'
+  if (is.null(args$paramsfunc)) args$paramsfunc <- 'paramsPolarityAspZodSiglonEnergy'
+  if (is.null(args$aspolarity)) args$aspolarity <- T
+  if (is.null(args$enoperation)) args$enoperation <- '*'
+  if (is.null(args$asptype)) args$asptype <- 'all'
+  if (is.null(args$engrowth)) args$engrowth <- F
+  if (is.null(args$verbose)) args$verbose <- F
+
   # Init the GA min/max
   args <- paramsPolarityAspZodSiglonEnergy('gaMinMax', args)
   # open planets file and leave only needed cols for better speed
@@ -62,8 +62,8 @@ cmpNatalAspectsModelTwo <- function(func, ...) {
     # model settings
     setModernAspectsSet()
     args$modelfunc <- 'natalAspectsModelTwo'
-    args <- natalAspectsModelCommon(args)
     args$datasplitfunc <- 'dataOptCVYearSplit'
+    args <- natalAspectsModelCommon(args)
 
     return(args)
   }
@@ -88,8 +88,8 @@ cmpNatalAspectsModelThree <- function(func, ...) {
     setModernAspectsSet()
     args$modelfunc <- 'natalAspectsModelThree'
     args <- natalAspectsModelCommon(args)
-    args$datasplitfunc <- 'dataOptCVSampleSplit'
     args$engrowth <- T
+    args$datasplitfunc <- 'dataOptCVSampleSplit'
 
     return(args)
   }
@@ -113,10 +113,10 @@ cmpNatalAspectsModelFour <- function(func, ...) {
     # model settings
     setModernAspectsSet()
     args$modelfunc <- 'natalAspectsModelFour'
-    args <- natalAspectsModelCommon(args)
     args$fitfunc <- 'modelAspectsEnergyBackTest'
-    args$datasplitfunc <- 'dataOptCVYearSplit'
     args$enoperation <- '+'
+    args$datasplitfunc <- 'dataOptCVYearSplit'
+    args <- natalAspectsModelCommon(args)
 
     return(args)
   }
@@ -165,8 +165,8 @@ cmpNatalAspectsModelSix <- function(func, ...) {
     setClassicAspectsSet()
     args$modelfunc <- 'natalAspectsModelSix'
     args$datasplitfunc <- 'dataOptCVSampleSplit'
+    args$aspolarity <- T
     args <- natalAspectsModelCommon(args)
-    args$aspolarity <- F
 
     return(args)
   }

@@ -51,7 +51,7 @@ setModernAspectsSet <- function() {
 setClassicAspectsSet <- function() {
   aspects <<-       c( 0 , 30 , 45 , 60 , 90 , 120 , 135 , 150 , 180)
   deforbs <<-       c(10 , 3  , 3  , 6  , 10 , 6   , 3   , 6   , 10)
-  defpolarities <<- c( 2 , 1  , 0  , 1  , 0  , 1   , 0   , 2   , 0)
+  defpolarities <<- c( 2 , 1  , 0  , 1  , 0  , 1   , 0   , 1   , 0)
 }
 
 setModernAspectsSet()
