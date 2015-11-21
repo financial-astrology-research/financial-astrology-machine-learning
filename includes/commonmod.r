@@ -352,7 +352,17 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
   splitX <- function(args) {
     # gamixedidx+1 is due indexes start at 1 not 0 so we need to select after that index
     co.e=args$gamixedidx+1+length(deforbs)
-    api.e=co.e+length(aspects)
+
+    # Calculate Aspects Polarity Index only if aspects polarities are enabled
+    if (args$aspolarity) {
+      api.e=co.e+length(aspects)
+      args$aspectspolarity <- args$x[co.e:(api.e-1)]
+    }
+    else {
+      api.e=co.e
+      args$aspectspolarity <- defpolarities
+    }
+
     ae.e=api.e+length(aspects)
     pze.e=ae.e+lenZodEnergyMi
     # 14 natal points
@@ -376,7 +386,6 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
     }
 
     args$cusorbs <- args$x[(args$gamixedidx+1):(co.e-1)]
-    args$aspectspolarity <- args$x[co.e:(api.e-1)]
     args$aspectsenergy <- adjustEnergy(args$x[api.e:(ae.e-1)])
     args$planetszodenergy <- adjustEnergy(args$x[ae.e:(pze.e-1)])
     args$sigpenergy <- adjustEnergy(args$x[pze.e:(spe.e-1)])
@@ -441,12 +450,17 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
   gaMinMax <- function(args) {
     orbsmin <- rep(0, length(deforbs))
     orbsmax <- deforbs
-    polaritymin <- c(2, rep(0, length(aspects)-1))
-    polaritymax <- c(2, rep(1, length(aspects)-1))
     aspectenergymin <- rep(0, length(aspects))
     aspectenergymax <- rep(30, length(aspects))
     planetzodenergymin <- rep(0, lenZodEnergyMi)
     planetzodenergymax <- rep(30, lenZodEnergyMi)
+    polaritymin <- c()
+    polaritymax <- c()
+
+    if (args$aspolarity) {
+      polaritymin <- c(2, rep(0, length(aspects)-1))
+      polaritymax <- c(2, rep(1, length(aspects)-1))
+    }
 
     if (args$model == 'natalAspectsModel') {
       # 14 natal points

@@ -12,6 +12,7 @@ natalAspectsModelCommon <- function(args) {
   args$datasplitfunc <- 'dataOptCVSampleSplit'
   args$paramsfunc <- 'paramsPolarityAspZodSiglonEnergy'
   args$conpolarity <- F
+  args$aspolarity <- T
   args$enoperation <- '*'
   args$asptype <- 'all'
   args$engrowth <- F
@@ -151,3 +152,28 @@ cmpNatalAspectsModelFive <- function(func, ...) {
 }
 
 natalAspectsModelFive <- cmpfun(cmpNatalAspectsModelFive)
+
+####################################################################
+# Variation Six with CV sample split
+####################################################################
+cmpNatalAspectsModelSix <- function(func, ...) {
+  if (!hasArg('func')) stop("Provide function to execute")
+  ptm <- proc.time()
+
+  bootstrapModel <- function(args) {
+    # model settings
+    setClassicAspectsSet()
+    args$modelfunc <- 'natalAspectsModelSix'
+    args$datasplitfunc <- 'dataOptCVSampleSplit'
+    args <- natalAspectsModelCommon(args)
+    args$aspolarity <- F
+
+    return(args)
+  }
+
+  args <- list(...)
+  args$modenv <- environment()
+  execfunc(get('func'), args)
+}
+
+natalAspectsModelSix <- cmpfun(cmpNatalAspectsModelSix)
