@@ -179,7 +179,8 @@ cmpNatalAspectsModelSix <- function(func, ...) {
 natalAspectsModelSix <- cmpfun(cmpNatalAspectsModelSix)
 
 ####################################################################
-# Variation Seven with CV sample split
+# Variation Seven with CV sample split, classical planets + SN and
+# default aspects polarity.
 ####################################################################
 cmpNatalAspectsModelSeven <- function(func, ...) {
   if (!hasArg('func')) stop("Provide function to execute")
@@ -191,7 +192,7 @@ cmpNatalAspectsModelSeven <- function(func, ...) {
     setPlanetsSUMOMEVEMAJUNNSNSA()
     args$modelfunc <- 'natalAspectsModelSeven'
     args$datasplitfunc <- 'dataOptCVSampleSplit'
-    args$aspolarity <- T
+    args$aspolarity <- F
     args <- natalAspectsModelCommon(args)
 
     return(args)
