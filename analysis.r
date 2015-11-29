@@ -10,14 +10,7 @@ library(reshape2)
 library(splus2R)
 library(stringr)
 
-# models includes
-source("~/trading/includes/commonmod.r")
-source("~/trading/includes/daysigaspmod.r")
-source("~/trading/includes/natalaspmod.r")
-source("~/trading/includes/topnsigaspmod.r")
-source("~/trading/includes/aspectsets.r")
-source("~/trading/includes/planetsets.r")
-
+`%ni%` <- Negate(`%in%`)
 # no scientific notation
 options(scipen=100)
 options(width=130)
@@ -26,34 +19,13 @@ enableJIT(0)
 startDate = as.Date("1970-01-01")
 maxretry <- 1
 
-`%ni%` <- Negate(`%in%`)
-
-# columns names
-buildPlanetsColsNames <- function(planetsBaseCols) {
-  aspOrbsCols <<- as.character(apply(expand.grid(aspects, planetsBaseCols[1:(length(planetsBaseCols)-1)]), 1, function(x) paste(x[2], x[1], sep='')))
-  planetsLonCols <<- paste(planetsBaseCols, 'LON', sep='')
-  planetsLonDisCols <<- paste(planetsBaseCols, 'DIS', sep='')
-  planetsLonOrbCols <<- paste(planetsBaseCols, 'ORB', sep='')
-  planetsLonAspCols <<- paste(planetsBaseCols, 'ASP', sep='')
-  planetsAspCols <<- paste(planetsBaseCols, 'ASP', sep='')
-  planetsOrbCols <<- paste(planetsBaseCols, 'ORB', sep='')
-  planetsDecCols <<- paste(planetsBaseCols, 'DEC', sep='')
-  planetsLonGCols <<- paste(planetsLonCols, 'G', sep='')
-  planetsSpCols <<- paste(planetsBaseCols, 'SP', sep='')
-  planetsSpGCols <<- paste(planetsSpCols, "G", sep="")
-  planetsComb <<- combn(planetsBaseCols, 2, simplify=F)
-  planetsCombLon <<- as.character(lapply(planetsComb, function(x) paste(x[1], x[2], 'LON', sep='')))
-  planetsCombAsp <<- as.character(lapply(planetsComb, function(x) paste(x[1], x[2], 'ASP', sep='')))
-  planetsCombOrb <<- as.character(lapply(planetsComb, function(x) paste(x[1], x[2], 'ORB', sep='')))
-  zodSignsCols <<- c('AR', 'TA', 'GE', 'CA', 'LE', 'VI', 'LI', 'SC', 'SA', 'CP', 'AC', 'PI')
-  lenZodEnergyMi <<- sum(planetsBaseCols %ni% planetsMajors) * length(zodSignsCols)
-  #lenZodEnergyMa <- (length(planetsLonCols) * length(zodSignsCols)) - lenZodEnergyMi
-  # Remove eclipse cols due it do not have speed
-  planetsSpCols <<- planetsSpCols[grep('^E', planetsSpCols, ignore.case=T, invert=T)]
-  planetsDecCols <<- planetsDecCols[grep('^E', planetsDecCols, ignore.case=T, invert=T)]
-}
-
-buildPlanetsColsNames(planetsBaseCols)
+# models includes
+source("~/trading/includes/commonmod.r")
+source("~/trading/includes/daysigaspmod.r")
+source("~/trading/includes/natalaspmod.r")
+source("~/trading/includes/topnsigaspmod.r")
+source("~/trading/includes/aspectsets.r")
+source("~/trading/includes/planetsets.r")
 
 # Build a data table unique vector by taking first and last rows plus nrows and ncols
 # faster for performance to build the unique cache key
