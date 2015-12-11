@@ -258,3 +258,30 @@ cmpNatalAspectsModelNine <- function(func, ...) {
 }
 
 natalAspectsModelNine <- cmpfun(cmpNatalAspectsModelNine)
+
+####################################################################
+# Variation Ten with CV year split, classical planets,
+# clasic aspects and default aspects polarity.
+####################################################################
+cmpNatalAspectsModelTen <- function(func, ...) {
+  if (!hasArg('func')) stop("Provide function to execute")
+  ptm <- proc.time()
+
+  bootstrapModel <- function(args) {
+    # model settings
+    setClassicAspectsSet()
+    setPlanetsSUMOMEVEMAJUNNSA()
+    args$modelfunc <- 'natalAspectsModelTen'
+    args$datasplitfunc <- 'dataOptCVSampleSplit'
+    args$aspolarity <- F
+    args <- natalAspectsModelCommon(args)
+
+    return(args)
+  }
+
+  args <- list(...)
+  args$modenv <- environment()
+  execfunc(get('func'), args)
+}
+
+natalAspectsModelTen <- cmpfun(cmpNatalAspectsModelTen)
