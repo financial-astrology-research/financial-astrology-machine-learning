@@ -18,6 +18,7 @@ options(error=recover)
 enableJIT(0)
 startDate = as.Date("1970-01-01")
 maxretry <- 1
+`%ni%` <- Negate(`%in%`)
 
 # models includes
 source("~/trading/includes/commonmod.r")
