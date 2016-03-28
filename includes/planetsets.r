@@ -47,6 +47,12 @@ setPlanetsSUMOMEVEMAJUNNSNSAESEM <- function() {
   buildPlanetsColsNames(planetsBaseCols)
 }
 
+setPlanetsSUMOMEVEMAJUNNSAESEM <- function() {
+  planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'JU', 'NN', 'SA', 'ES', 'EM')
+  planetsMajors <<- c('UR', 'NE', 'PL')
+  buildPlanetsColsNames(planetsBaseCols)
+}
+
 setPlanetsSUMOMEVEMAJUNNSNSA2 <- function() {
   planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'JU', 'NN', 'SN', 'SA')
   planetsMajors <<- c('SA', 'UR', 'NE', 'PL')
