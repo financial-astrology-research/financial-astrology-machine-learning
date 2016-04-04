@@ -405,7 +405,7 @@ cmpNatalAspectsModelFifteen <- function(func, ...) {
   bootstrapModel <- function(args) {
     # model settings
     setClassicAspectsSet()
-    setPlanetsSUMOMEVEMAJUNNSNSAESEM()
+    setPlanetsSUMOMEVEMAJUNNSAESEM()
     args$modelfunc <- 'natalAspectsModelFifteen'
     args$datasplitfunc <- 'dataOptCVSampleSplit'
     args$aspolarity <- F
