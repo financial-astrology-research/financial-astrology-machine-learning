@@ -1569,7 +1569,7 @@ testStrategy <- function(sp, benchno, symbol, ps, dates = '2013::') {
   data$weight[] <- NA
   #data$weight[] <- signal$signal
   #data$weight[] = custom.stop.fn(signal$signal, coredata(prices), fixed.stop, pstop = 0.05)
-  data$weight[] = custom.stop.fn(signal$signal, coredata(prices), trailing.stop, pstop = 0.85)
+  data$weight[] = custom.stop.fn(signal$signal, coredata(prices), trailing.stop, pstop = 0.085)
   models$astro.valley.ts <- bt.run.share(data, clean.signal=T, trade.summary=T, silent=T)
   # Summary
   #cat("Astroenergy Valley & SMA cross\n\n")
