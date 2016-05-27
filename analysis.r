@@ -1492,7 +1492,7 @@ testYearStrategy <- function(sp, benchno, symbol, ps, dates = '1970::') {
   return(models)
 }
 
-testStrategy <- function(sp, benchno, symbol, ps, dates = '1970::') {
+testStrategy <- function(sp, benchno, symbol, ps, dates = '2013::') {
   # Put in a new environment as required by SIT
   data <- new.env()
   assign(symbol, sp, env=data)
@@ -1503,6 +1503,30 @@ testStrategy <- function(sp, benchno, symbol, ps, dates = '1970::') {
   pvperiod <- 20
   prices <- data$prices
   models <- list()
+
+  #*****************************************************************
+  # Stops
+  #****************************************************************** 
+  fixed.stop <- function(weight, price, tstart, tend, pstop) {
+    index = tstart : tend
+    if(weight > 0) {
+      price[ index ] < (1 - pstop) * price[ tstart ]
+    }
+    else {
+      price[ index ] > (1 + pstop) * price[ tstart ]
+    }
+  }
+
+  trailing.stop <- function(weight, price, tstart, tend, pstop) {
+    index = tstart : tend
+    if(weight > 0) {
+      temp = price[ index ] < (1 - pstop) * cummax(price[ index ])
+    }
+    else {
+      temp = price[ index ] > (1 + pstop) * cummin(price[ index ])
+    }
+    return(temp)
+  }
 
   # Check thare is prediction data for the expected dates
   if (nrow(ps[Date %in% data$dates,]) == 0) {
@@ -1538,13 +1562,15 @@ testStrategy <- function(sp, benchno, symbol, ps, dates = '1970::') {
   ps$predvalley <- peaks(-ps$predval, pvperiod)
   ps$crossdn <- cross.dn(ps$MidMAF, ps$MidMAS)
   # Compund signal
-  ps[, signal := iif(predvalley==TRUE & predmom > predval, 1, iif(crossdn==TRUE, 0, NA))]
+  ps[, signal := iif(predvalley==TRUE & predmom > predval, 1, NA)]
   # Get the signal only to the test period
   signal <- ps[Date %in% data$dates, signal, by=Date]
   # Prepare signal to run
   data$weight[] <- NA
-  data$weight[] <- signal$signal
-  models$astro.valley.sma <- bt.run.share(data, clean.signal=T, trade.summary=T, silent=T)
+  #data$weight[] <- signal$signal
+  #data$weight[] = custom.stop.fn(signal$signal, coredata(prices), fixed.stop, pstop = 0.05)
+  data$weight[] = custom.stop.fn(signal$signal, coredata(prices), trailing.stop, pstop = 0.85)
+  models$astro.valley.ts <- bt.run.share(data, clean.signal=T, trade.summary=T, silent=T)
   # Summary
   #cat("Astroenergy Valley & SMA cross\n\n")
   #print(bt.detail.summary(models$astro.valley.sma, trade.summary=models$astro.valley.sma$trade.summary))
@@ -1578,6 +1604,7 @@ testStrategy <- function(sp, benchno, symbol, ps, dates = '1970::') {
   # Prepare signal to run
   data$weight[] <- NA
   data$weight[] <- signal$signal
+
   models$astro.valley.ema.10.30 <- bt.run.share(data, clean.signal=T, trade.summary=T, silent=T)
   # Summary
   #cat("Astroenergy Valley & SMA cross\n\n")
@@ -1596,7 +1623,7 @@ testStrategy <- function(sp, benchno, symbol, ps, dates = '1970::') {
   strategy.performance.snapshoot(models, T)
   bt.stop.strategy.plot(data, models$buy.hold, layout=T, main='Buy & Hold', plotX=F)
   bt.stop.strategy.plot(data, models$ema.cross.20.50, layout=T, main='EMA cross 20-40', plotX=F)
-  bt.stop.strategy.plot(data, models$astro.valley.sma, layout=T, main='Astroen Valley & SMA cross', plotX=F)
+  bt.stop.strategy.plot(data, models$astro.valley.ts, layout=T, main='Astroen Valley Trailing Stop', plotX=F)
   bt.stop.strategy.plot(data, models$astro.valley.peak, layout=T, main='Astroen Valley & Peak', plotX=F)
   bt.stop.strategy.plot(data, models$astro.valley.ema.10.30, layout=T, main='Astroen Valley & EMA 10-20', plotX=F)
   plotbt.custom.report.part1(models)
@@ -1612,7 +1639,7 @@ testStrategyAllMean <- function(bt) {
     printProperty <- function(x, model) bt.detail.summary(x[[model]], x[[model]]$trade.summary)[[section]][[property]]
     cat("Buy & Hold", property, mean(unlist(lapply(bt, function(x) printProperty(x, 'buy.hold')))), "\n")
     cat("EMA cross 20-50", property, mean(unlist(lapply(bt, function(x) printProperty(x, 'ema.cross.20.50')))), "\n")
-    cat("Astro Valley & SMA", property, mean(unlist(lapply(bt, function(x) printProperty(x, 'astro.valley.sma')))), "\n")
+    cat("Astro Valley Trailing Stop", property, mean(unlist(lapply(bt, function(x) printProperty(x, 'astro.valley.ts')))), "\n")
     cat("Astro Valley & Peak", property, mean(unlist(lapply(bt, function(x) printProperty(x, 'astro.valley.peak')))), "\n")
     cat("Astro Valley Uptrend & ema.10.30", property, mean(unlist(lapply(bt, function(x) printProperty(x, 'astro.valley.ema.10.30')))), "\n\n")
   }
