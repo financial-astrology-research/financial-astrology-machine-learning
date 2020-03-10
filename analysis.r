@@ -21,12 +21,12 @@ maxretry <- 1
 `%ni%` <- Negate(`%in%`)
 
 # models includes
-source("~/trading/includes/commonmod.r")
-source("~/trading/includes/daysigaspmod.r")
-source("~/trading/includes/natalaspmod.r")
-source("~/trading/includes/topnsigaspmod.r")
-source("~/trading/includes/aspectsets.r")
-source("~/trading/includes/planetsets.r")
+source("./includes/commonmod.r")
+source("./includes/daysigaspmod.r")
+source("./includes/natalaspmod.r")
+source("./includes/topnsigaspmod.r")
+source("./includes/aspectsets.r")
+source("./includes/planetsets.r")
 
 # Build a data table unique vector by taking first and last rows plus nrows and ncols
 # faster for performance to build the unique cache key
@@ -129,6 +129,7 @@ normalizeDistance <- function(x) {
 energyGrowth <- function(energy, distance, speed = 0.5) {
   return(energy * (1 - speed) ^ abs(distance))
 }
+
 
 calculateAspects <- function(x, cusorbs) {
   allidx <- rep(FALSE, length(x))
@@ -1506,7 +1507,7 @@ testStrategy <- function(sp, benchno, symbol, ps, dates = '2013::') {
 
   #*****************************************************************
   # Stops
-  #****************************************************************** 
+  #******************************************************************
   fixed.stop <- function(weight, price, tstart, tend, pstop) {
     index = tstart : tend
     if(weight > 0) {
