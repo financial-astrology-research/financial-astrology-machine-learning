@@ -6,7 +6,16 @@ chartPeriod <- c(as.Date("2019-01-10"), as.Date("2020-12-31"))
 todayDate <- as.Date(Sys.Date())
 currentDates <- c(todayDate, todayDate+2)
 dateBreaks <- "3 days"
-security <- mainOpenSecurity("BA", 14, 28, "%Y-%m-%d", "2010-01-01")
+#getMySymbolsData("working")
+security <- mainOpenSecurity("BTC-USD", 14, 28, "%Y-%m-%d", "2010-01-01")
+
+drawSecurityPriceSerie <- function() {
+  p <- ggplot(data=security) +
+    geom_line(aes(x=Date, y=Mid), colour="blue", alpha=0.5) +
+    theme(axis.text.x = element_text(angle = 90, size = 8)) +
+    scale_x_date(date_breaks = dateBreaks, date_labels = "%Y-%m-%d", limits = chartPeriod)
+  print(p)
+}
 
 drawFastIndicators <- function () {
   relevantDates <- c("2020-08-02", "2020-02-15", "2020-03-12", "2020-05-12", "2020-06-27")
@@ -50,5 +59,5 @@ drawSlowIndicators <- function () {
   print(p)
 }
 
-drawFastIndicators()
+#drawFastIndicators()
 #drawSlowIndicators()
