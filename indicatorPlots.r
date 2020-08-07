@@ -6,6 +6,7 @@ chartPeriod <- c(as.Date("2019-01-10"), as.Date("2020-12-31"))
 todayDate <- as.Date(Sys.Date())
 currentDates <- c(todayDate, todayDate+2)
 dateBreaks <- "3 days"
+security <- mainOpenSecurity("BA", 14, 28, "%Y-%m-%d", "2010-01-01")
 
 drawFastIndicators <- function () {
   relevantDates <- c("2020-08-02", "2020-02-15", "2020-03-12", "2020-05-12", "2020-06-27")
@@ -18,6 +19,7 @@ drawFastIndicators <- function () {
     geom_point(aes(x=Date, y=JUURLON), colour="palegreen3", alpha=0.6) +
     geom_point(aes(x=Date, y=SAURLON), colour="purple", alpha=0.6) +
     geom_point(aes(x=Date, y=SUMOLON), colour="steelblue", alpha=0.6) +
+    geom_point(aes(x=Date, y=VEMALON), colour="plum", alpha=0.6) +
     geom_hline(yintercept = 180, linetype="dashed", color="magenta2", size=1, alpha=0.7) +
     geom_hline(yintercept = 150, linetype="dashed", color="salmon2", size=1, alpha=0.7) +
     geom_hline(yintercept = 135, linetype="dashed", color="magenta2", size=1, alpha=0.7) +
