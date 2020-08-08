@@ -33,6 +33,7 @@ drawFastIndicators <- function () {
     geom_point(aes(x=Date, y=MAURLON), colour="red", alpha=0.6) +
     geom_point(aes(x=Date, y=JUURLON), colour="palegreen3", alpha=0.6) +
     geom_point(aes(x=Date, y=SAURLON), colour="purple", alpha=0.6) +
+    geom_point(aes(x=Date, y=NNURLON), colour="mediumaquamarine", alpha=0.6) +
     geom_point(aes(x=Date, y=SUMOLON), colour="steelblue", alpha=0.6) +
     geom_hline(yintercept = 180, linetype="dashed", color="magenta2", size=1, alpha=0.7) +
     geom_hline(yintercept = 150, linetype="dashed", color="salmon2", size=1, alpha=0.7) +
@@ -79,9 +80,8 @@ venusIndicators <- function () {
 
 p1 <- drawFastIndicators()
 p2 <- drawSecurityPriceSerie()
-p3 <- venusIndicators()
 
 grid.newpage()
-grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p3), ggplotGrob(p2), size = "last"))
+grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
 # drawSlowIndicators()
 # securityPeaksValleys(security)
