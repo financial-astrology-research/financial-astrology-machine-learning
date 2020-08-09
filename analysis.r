@@ -182,7 +182,7 @@ mainProcessPlanetsDegSplit <- function(planetsorig, degsplit) {
 
 mainOpenPlanets <- function(planetsfile, cusorbs, calcasps=T) {
   Date=DateMT4=Year=NULL
-  planetsfile <- npath(paste("~/trading/dplanets/", planetsfile, ".tsv", sep=""))
+  planetsfile <- npath(paste("~/Sites/own/astro-trading/trading/dplanets/", planetsfile, ".tsv", sep=""))
   planets <- fread(planetsfile, sep="\t", na.strings="", verbose = F)
   planets[, Date := as.Date(planets$Date, format="%Y-%m-%d")]
   planets <- planets[, c('Date', planetsLonCols, planetsDecCols, planetsSpCols), with=F]
@@ -225,8 +225,9 @@ openPlanets <- function(planetsfile, cusorbs=deforbs, calcasps=T, clear=F) {
 }
 
 mainOpenSecurity <- function(securityfile, mapricefs=20, mapricesl=50, dateformat="%Y-%m-%d", sdate='1970-01-01') {
-  filename <- npath(paste("~/trading/", securityfile, ".csv", sep=''))
+  filename <- npath(paste("~/Sites/own/astro-trading/trading/stocks/", securityfile, ".csv", sep=''))
   security <- fread(filename)
+  security <- security[!is.na(Open)]
   security[, Date := as.Date(as.character(Date), format=dateformat)]
   security[, Year := as.character(format(Date, "%Y"))]
   # sort by Date and key it
@@ -325,7 +326,7 @@ clearCache <- function(path=getCachePath()) {
 }
 
 secureLoadCache <- function(key) {
-  cached.data <- loadCache(key=key, onError='print')
+  cached.data <- loadCache(key=key)
   if (is.null(cached.data)) {
     # Check if there is a corrupted cache
     pathname <- findCache(key=key)
@@ -583,8 +584,9 @@ dataOptCVYearSplit <- function(args, planets.pred) {
   return(list(opt=sample.opt, cv=sample.cv))
 }
 
+# This functions is broken, the names of columns don't match lastest data table structure.
 securityPeaksValleys <- function(security, span=50, plotfile="peaks_valleys") {
-  planets <- openPlanets("~/trading/dplanets/planets_4.tsv", orbs, aspects, 5, 10)
+  planets <- openPlanets("planets_10")
   planetsBaseCols <- c("SU", "ME", "VE", "MA", "JU", "SA", "NN")
   planetsLonCols <- paste(planetsBaseCols, 'LON', sep='')
   planetsLonGCols <- paste(planetsBaseCols, 'LONG', sep='')
@@ -701,7 +703,8 @@ processGetSymbolFred <- function(symbol) {
 
 getMySymbolsData  <- function(listfile) {
   #Load the list of ticker symbols from a csv, each row contains a ticker
-  symbolsls <- read.csv(paste("./symbols/", listfile, '.csv', sep=''),  header=F, stringsAsFactors=F)
+  listFilePath <- npath(paste("~/Sites/own/astro-trading/hisdata/symbols/", listfile, ".csv", sep=""))
+  symbolsls <- read.csv(listFilePath,  header=F, stringsAsFactors=F)
   res <- lapply(symbolsls$V1, processGetSymbol)
 }
 
@@ -1653,4 +1656,45 @@ testStrategyAllMean <- function(bt) {
   displayMean('Trade', 'Win.Percent')
   displayMean('Trade', 'WinLoss.Ratio')
   displayMean('Trade', 'Num.Trades')
+}
+
+theme_black = function(base_size = 12, base_family = "") {
+  theme_grey(base_size = base_size, base_family = base_family) %+replace%
+    theme(
+      # Specify axis options
+      axis.line = element_blank(),
+      axis.text.x = element_text(size = base_size*0.8, color = "white", lineheight = 0.9),
+      axis.text.y = element_text(size = base_size*0.8, color = "white", lineheight = 0.9),
+      axis.ticks = element_line(color = "white", size  =  0.2),
+      axis.title.x = element_text(size = base_size, color = "white", margin = margin(0, 10, 0, 0)),
+      axis.title.y = element_text(size = base_size, color = "white", angle = 90, margin = margin(0, 10, 0, 0)),
+      axis.ticks.length = unit(0.3, "lines"),
+      # Specify legend options
+      legend.background = element_rect(color = NA, fill = "black"),
+      legend.key = element_rect(color = "white",  fill = "black"),
+      legend.key.size = unit(1.2, "lines"),
+      legend.key.height = NULL,
+      legend.key.width = NULL,
+      legend.text = element_text(size = base_size*0.8, color = "white"),
+      legend.title = element_text(size = base_size*0.8, face = "bold", hjust = 0, color = "white"),
+      legend.position = "right",
+      legend.text.align = NULL,
+      legend.title.align = NULL,
+      legend.direction = "vertical",
+      legend.box = NULL,
+      # Specify panel options
+      panel.background = element_rect(fill = "black", color  =  NA),
+      panel.border = element_rect(fill = NA, color = "white"),
+      panel.grid.major = element_line(color = "grey35"),
+      panel.grid.minor = element_line(color = "grey20"),
+      panel.margin = unit(0.5, "lines"),
+      # Specify facetting options
+      strip.background = element_rect(fill = "grey30", color = "grey10"),
+      strip.text.x = element_text(size = base_size*0.8, color = "white"),
+      strip.text.y = element_text(size = base_size*0.8, color = "white",angle = -90),
+      # Specify plot options
+      plot.background = element_rect(color = "black", fill = "black"),
+      plot.title = element_text(size = base_size*1.2, color = "white"),
+      plot.margin = unit(rep(1, 4), "lines")
+    )
 }
