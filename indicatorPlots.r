@@ -20,6 +20,7 @@ drawSecurityPriceSerie <- function() {
     geom_vline(xintercept = as.Date(datesHighs), linetype = "dashed", color = "green", size = 0.6, alpha = 0.7) +
     geom_vline(xintercept = as.Date(datesLows), linetype = "dashed", color = "red", size = 0.6, alpha = 0.7) +
     scale_x_date(date_breaks = dateBreaks, date_labels = "%Y-%m-%d", limits = chartPeriod) +
+    scale_y_log10() +
     theme_black() +
     theme(panel.margin = unit(c(0, 0, 0, 0), "null")) +
     theme(plot.margin = unit(c(0, 0, 0, 0), "null")) +
