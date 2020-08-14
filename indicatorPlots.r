@@ -2,6 +2,7 @@ library(grid)
 source("./analysis.r")
 setClassicAspectsSet()
 #getMySymbolsData("working")
+todayDate <- as.Date(Sys.Date())
 span <- 22
 
 analyzeSecurity <- function(symbol) {
@@ -95,7 +96,6 @@ analyzeSecurity <- function(symbol) {
   dailyPlanets = buildPlanetsIndicators()
   dailyPlanetsResearch <- dailyPlanets[Date > as.Date('2017-01-01') & Date < as.Date('2021-01-01'),]
   chartPeriod <- c(as.Date("2018-01-10"), as.Date("2020-12-31"))
-  todayDate <- as.Date(Sys.Date())
   currentDates <- c(todayDate, todayDate + 1)
   dateBreaks <- "7 days"
   security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
@@ -114,19 +114,23 @@ analyzeSecurity <- function(symbol) {
   dailyAspectsOrbs[, key2 := substr(origin, 3, 4)]
   #aspects.day.long[, orbdir := sign(orb - Lag(orb)), by=c('lon', 'origin', 'aspect')]
 
-  # Join aspects & orbs.
-  dailyAspects <- merge(dailyAspects, dailyAspectsOrbs, by = c('Date', 'origin'))
-  dailyAspectsPriceResearch <- merge(dailyAspects, security[, c('Date', 'priceDiffPercent')], by = c('Date'))
   # For aspects: c( 0 , 30 , 45 , 60 , 90 , 120 , 135 , 150 , 180)
   aspectsEnergy <- c(12, 3, 4, 4, 8, 5, 4, 4, 12)
   aspectsEnergyIndex <- matrix(aspectsEnergy, nrow = 1, ncol = length(aspectsEnergy), byrow = T,
                                dimnames = list(c('energy'), aspects))
   print(aspectsEnergyIndex)
+  # Join aspects & orbs.
+  dailyAspects <- merge(dailyAspects, dailyAspectsOrbs, by = c('Date', 'origin'))
+  dailyAspects[, maxEnergy := aspectsEnergyIndex['energy', as.character(aspect)]]
+  dailyAspects[, energy := energyGrowth(maxEnergy, orb, 0.3)]
+  dailyAspectsPriceResearch <- merge(dailyAspects, security[, c('Date', 'priceDiffPercent')], by = c('Date'))
 
   # Set aspect energy column.
-  dailyAspectsPriceResearch[, maxEnergy := aspectsEnergyIndex['energy', as.character(aspect)]]
-  dailyAspectsPriceResearch[, energy := energyGrowth(maxEnergy, orb, 0.5)]
-  print(dailyAspectsPriceResearch[Date == todayDate,])
+  cat("Last day aspects\n")
+  print(dailyAspectsPriceResearch[Date == max(Date),][order(-energy)])
+
+  cat("Today aspects\n")
+  print(dailyAspects[Date == todayDate,][order(-energy)])
 
   # Summary of price moves.
   cat("Analysis for symbol: ", symbol, " last date: ", format(max(security$Date), "%Y-%m-%d"), "\n")
@@ -154,3 +158,11 @@ analyzeSecurity <- function(symbol) {
 
   return(dailyAspectsPriceResearch)
 }
+
+#ggplot(data=dailyAspects[origin == 'MAUR',]) +
+#  aes(y=orb, x=priceDiffPercent) +
+#  geom_point() +
+#  facet_grid(aspect ~ ., scales="free_y") +
+#  scale_x_continuous(breaks=seq(-0.4, 0.4, by=0.1), limits=c(-0.4, 0.4)) +
+#  stat_ellipse(type="norm") +
+#  geom_smooth(orientation="y")
