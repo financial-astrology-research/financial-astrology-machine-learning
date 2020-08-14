@@ -238,6 +238,7 @@ mainOpenSecurity <- function(securityfile, mapricefs=20, mapricesl=50, dateforma
   security[, MidMAF := SMA(Mid, n=mapricefs)]
   security[, MidMAS := SMA(Mid, n=mapricesl)]
   security[, val := MidMAF-MidMAS]
+  security[, priceDiffPercent := Delt(Mid, k=1)]
 
   if (all(security$val == 0)) {
     stop("Undetermined security price direction")
