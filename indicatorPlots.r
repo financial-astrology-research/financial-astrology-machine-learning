@@ -5,6 +5,7 @@ setClassicAspectsSet()
 span <- 22
 
 analyzeSecurity <- function(symbol) {
+
   drawSecurityPriceSerie <- function() {
     securityPeriod <- security[Date >= chartPeriod[1] & Date <= chartPeriod[2],]
     p <- ggplot(data = securityPeriod) +
@@ -100,10 +101,46 @@ analyzeSecurity <- function(symbol) {
   security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
   dailyPlanetPriceResearch <- merge(dailyPlanets, security, by = c('Date'))
 
+  # Melt aspects.
+  dailyAspects <- melt(dailyPlanetPriceResearch, id.var = c('Date'), variable.name = 'origin',
+                       value.name = 'aspect', value.factor = T, measure.var = planetsCombAsp, na.rm = T)
+  dailyAspects[, origin := substr(origin, 1, 4)]
+
+  # Melt orbs.
+  dailyAspectsOrbs <- melt(dailyPlanetPriceResearch, id.var = c('Date'), variable.name = 'origin', value.name = 'orb',
+                           measure.var = planetsCombOrb)
+  dailyAspectsOrbs[, origin := substr(origin, 1, 4)]
+  dailyAspectsOrbs[, key1 := substr(origin, 1, 2)]
+  dailyAspectsOrbs[, key2 := substr(origin, 3, 4)]
+  #aspects.day.long[, orbdir := sign(orb - Lag(orb)), by=c('lon', 'origin', 'aspect')]
+
+  # Join aspects & orbs.
+  dailyAspects <- merge(dailyAspects, dailyAspectsOrbs, by = c('Date', 'origin'))
+  dailyAspectsPriceResearch <- merge(dailyAspects, security[, c('Date', 'priceDiffPercent')], by = c('Date'))
+  # For aspects: c( 0 , 30 , 45 , 60 , 90 , 120 , 135 , 150 , 180)
+  aspectsEnergy <- c(12, 3, 4, 4, 8, 5, 4, 4, 12)
+  aspectsEnergyIndex <- matrix(aspectsEnergy, nrow = 1, ncol = length(aspectsEnergy), byrow = T,
+                               dimnames = list(c('energy'), aspects))
+  print(aspectsEnergyIndex)
+
+  # Set aspect energy column.
+  dailyAspectsPriceResearch[, maxEnergy := aspectsEnergyIndex['energy', as.character(aspect)]]
+  dailyAspectsPriceResearch[, energy := energyGrowth(maxEnergy, orb, 0.5)]
+  print(dailyAspectsPriceResearch[Date == todayDate,])
+
   # Summary of price moves.
-  cat("Analysis for symbol: ", symbol)
-  print(summary(Delt(security$Mid, k = 1)))
-  print(summary(Delt(security$Mid, k = 3)))
+  cat("Analysis for symbol: ", symbol, " last date: ", format(max(security$Date), "%Y-%m-%d"), "\n")
+  securityLastDay <- security[Date == todayDate,]
+  cat("Last day priceDiffPercent:\n")
+  print(securityLastDay)
+
+  cat("1 day daily price diff percentages\n")
+  print(summary(abs(Delt(security$Mid, k = 1))))
+
+  cat("3 day daily price diff percentages:\n")
+  print(summary(abs(Delt(security$Mid, k = 3))))
+
+  #cat("Relevant peak dates:\n")
   datesHighs <- security$Date[peaks(security$Mid, span)]
   datesLows <- security$Date[peaks(-security$Mid, span)]
 
@@ -114,4 +151,6 @@ analyzeSecurity <- function(symbol) {
   grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
   # drawSlowIndicators()
   # securityPeaksValleys(security)
+
+  return(dailyAspectsPriceResearch)
 }
