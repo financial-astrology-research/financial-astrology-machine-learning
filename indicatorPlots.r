@@ -102,12 +102,12 @@ analyzeSecurity <- function(symbol) {
   dailyPlanetPriceResearch <- merge(dailyPlanets, security, by = c('Date'))
 
   # Melt aspects.
-  dailyAspects <- melt(dailyPlanetPriceResearch, id.var = c('Date'), variable.name = 'origin',
+  dailyAspects <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin',
                        value.name = 'aspect', value.factor = T, measure.var = planetsCombAsp, na.rm = T)
   dailyAspects[, origin := substr(origin, 1, 4)]
 
   # Melt orbs.
-  dailyAspectsOrbs <- melt(dailyPlanetPriceResearch, id.var = c('Date'), variable.name = 'origin', value.name = 'orb',
+  dailyAspectsOrbs <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin', value.name = 'orb',
                            measure.var = planetsCombOrb)
   dailyAspectsOrbs[, origin := substr(origin, 1, 4)]
   dailyAspectsOrbs[, key1 := substr(origin, 1, 2)]
@@ -121,6 +121,12 @@ analyzeSecurity <- function(symbol) {
   print(aspectsEnergyIndex)
   # Join aspects & orbs.
   dailyAspects <- merge(dailyAspects, dailyAspectsOrbs, by = c('Date', 'origin'))
+
+  # Calculate orb direction (applicative, separative).
+  dailyAspects[, orbdir := round(orb - Lag(orb), 2), by=c('origin', 'aspect')]
+  dailyAspects[, type := cut(orbdir, c(-100, 0, 100), labels=(c('applicative', 'separative')))]
+
+# Calculate max and proportional energy.
   dailyAspects[, maxEnergy := aspectsEnergyIndex['energy', as.character(aspect)]]
   dailyAspects[, energy := energyGrowth(maxEnergy, orb, 0.3)]
   dailyAspectsPriceResearch <- merge(dailyAspects, security[, c('Date', 'priceDiffPercent')], by = c('Date'))
@@ -128,9 +134,11 @@ analyzeSecurity <- function(symbol) {
   # Set aspect energy column.
   cat("Last day aspects\n")
   print(dailyAspectsPriceResearch[Date == max(Date),][order(-energy)])
+  cat("\n")
 
-  cat("Today aspects\n")
+  cat("Today aspects:", format(todayDate, "%Y-%m-%d"), "\n")
   print(dailyAspects[Date == todayDate,][order(-energy)])
+  cat("\n")
 
   # Summary of price moves.
   cat("Analysis for symbol: ", symbol, " last date: ", format(max(security$Date), "%Y-%m-%d"), "\n")
