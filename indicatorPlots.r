@@ -134,7 +134,11 @@ analyzeSecurity <- function(symbol) {
   dailyAspectsPriceResearch <- merge(dailyAspects, security[, c('Date', 'diffPercent')], by = c('Date'))
 
   # Calculate the historical mean aspect effect.
-  aspectsEffect <- dailyAspectsPriceResearch[orb <= 2, list(mean(diffPercent), median(diffPercent)), by = c('origin', 'aspect', 'type')]
+  aspectsEffect <- dailyAspectsPriceResearch[
+    orb <= 2,
+    list(round(mean(diffPercent), 4), round(median(diffPercent), 4)),
+    by = c('origin', 'aspect', 'type')
+  ]
   setnames(aspectsEffect, c('origin', 'aspect', 'type', 'diffMean', 'diffMedian'))
   #dailyAspects[, diffMean := setAspectEffect(.SD), by=c('Date', 'origin', 'aspect', 'type')]
   dailyAspectsPriceResearch <- merge(dailyAspectsPriceResearch, aspectsEffect, by = c('origin', 'aspect', 'type'))
