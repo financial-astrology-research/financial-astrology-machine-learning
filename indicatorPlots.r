@@ -126,18 +126,28 @@ analyzeSecurity <- function(symbol) {
   dailyAspects[, orbdir := round(orb - Lag(orb), 2), by=c('origin', 'aspect')]
   dailyAspects[, type := cut(orbdir, c(-100, 0, 100), labels=(c('applicative', 'separative')))]
 
-# Calculate max and proportional energy.
+  # Calculate max and proportional energy.
   dailyAspects[, maxEnergy := aspectsEnergyIndex['energy', as.character(aspect)]]
   dailyAspects[, energy := energyGrowth(maxEnergy, orb, 0.3)]
   dailyAspectsPriceResearch <- merge(dailyAspects, security[, c('Date', 'priceDiffPercent')], by = c('Date'))
 
+  # Calculate the historical mean aspect effect.
+  aspectsEffect <- dailyAspectsPriceResearch[, mean(priceDiffPercent), by = c('origin', 'aspect', 'type')]
+  setnames(aspectsEffect, c('origin', 'aspect', 'type', 'priceDiffMean'))
+  #dailyAspects[, priceDiffMean := setAspectEffect(.SD), by=c('Date', 'origin', 'aspect', 'type')]
+  dailyAspects <- merge(dailyAspects, aspectsEffect, by = c('origin', 'aspect', 'type'))
+
   # Set aspect energy column.
   cat("Last day aspects\n")
-  print(dailyAspectsPriceResearch[Date == max(Date),][order(-energy)])
+  print(dailyAspectsPriceResearch[Date == max(Date),][order(-energy)][0:10])
   cat("\n")
 
   cat("Today aspects:", format(todayDate, "%Y-%m-%d"), "\n")
-  print(dailyAspects[Date == todayDate,][order(-energy)])
+  print(dailyAspects[Date == todayDate,][order(-energy)][0:10])
+  cat("\n")
+
+  cat("Tomorrow aspects:", format(todayDate+1, "%Y-%m-%d"), "\n")
+  print(dailyAspects[Date == todayDate+1,][order(-energy)][0:10])
   cat("\n")
 
   # Summary of price moves.
@@ -167,10 +177,3 @@ analyzeSecurity <- function(symbol) {
   return(dailyAspectsPriceResearch)
 }
 
-#ggplot(data=dailyAspects[origin == 'MAUR',]) +
-#  aes(y=orb, x=priceDiffPercent) +
-#  geom_point() +
-#  facet_grid(aspect ~ ., scales="free_y") +
-#  scale_x_continuous(breaks=seq(-0.4, 0.4, by=0.1), limits=c(-0.4, 0.4)) +
-#  stat_ellipse(type="norm") +
-#  geom_smooth(orientation="y")
