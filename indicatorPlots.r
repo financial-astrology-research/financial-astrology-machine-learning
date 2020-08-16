@@ -105,13 +105,21 @@ analyzeSecurity <- function(symbol) {
   dailyAspects <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin',
                        value.name = 'aspect', value.factor = T, measure.var = planetsCombAsp, na.rm = T)
   dailyAspects[, origin := substr(origin, 1, 4)]
+  dailyAspects[, p.x := substr(origin, 1, 2)]
+  dailyAspects[, p.y := substr(origin, 3, 4)]
+
+  # Melt longitudes.
+  dailyLongitudes <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin',
+                          value.name = 'lon', measure.var = planetsLonCols)
+  dailyLongitudes[, p.x := substr(origin, 1, 2)]
+  dailyLongitudes[, p.y := substr(origin, 1, 2)]
+  dailyAspects <- merge(dailyAspects, dailyLongitudes[, c('Date', 'p.x', 'lon')], by = c('Date', 'p.x'))
+  dailyAspects <- merge(dailyAspects, dailyLongitudes[, c('Date', 'p.y', 'lon')], by = c('Date', 'p.y'))
 
   # Melt orbs.
   dailyAspectsOrbs <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin', value.name = 'orb',
                            measure.var = planetsCombOrb)
   dailyAspectsOrbs[, origin := substr(origin, 1, 4)]
-  dailyAspectsOrbs[, key1 := substr(origin, 1, 2)]
-  dailyAspectsOrbs[, key2 := substr(origin, 3, 4)]
   #aspects.day.long[, orbdir := sign(orb - Lag(orb)), by=c('lon', 'origin', 'aspect')]
 
   # For aspects: c( 0 , 30 , 45 , 60 , 90 , 120 , 135 , 150 , 180)
@@ -123,12 +131,14 @@ analyzeSecurity <- function(symbol) {
   dailyAspects <- merge(dailyAspects, dailyAspectsOrbs, by = c('Date', 'origin'))
 
   # Calculate orb direction (applicative, separative).
-  dailyAspects[, orbdir := round(orb - Lag(orb), 2), by=c('origin', 'aspect')]
-  dailyAspects[, type := cut(orbdir, c(-100, 0, 100), labels=(c('applicative', 'separative')))]
+  dailyAspects[, orbdir := round(orb - Lag(orb), 2), by = c('origin', 'aspect')]
+  dailyAspects[, type := cut(orbdir, c(-100, 0, 100), labels = (c('applicative', 'separative')))]
 
   # Calculate max and proportional energy.
   dailyAspects[, enmax := aspectsEnergyIndex['energy', as.character(aspect)]]
   dailyAspects[, ennow := energyGrowth(enmax, orb, 0.3)]
+
+  # Merge daily security prices with aspects.
   dailyAspectsPriceResearch <- merge(dailyAspects, security[, c('Date', 'diffPercent')], by = c('Date'))
 
   # Calculate the historical mean aspect effect.
@@ -147,12 +157,12 @@ analyzeSecurity <- function(symbol) {
   print(dailyAspects[Date == todayDate,][order(-ennow)][0:20])
   cat("\n")
 
-  cat("Tomorrow aspects:", format(todayDate+1, "%Y-%m-%d"), "\n")
-  print(dailyAspects[Date == todayDate+1,][order(-ennow)][0:20])
+  cat("Tomorrow aspects:", format(todayDate + 1, "%Y-%m-%d"), "\n")
+  print(dailyAspects[Date == todayDate + 1,][order(-ennow)][0:20])
   cat("\n")
 
-  cat("Past tomorrow aspects:", format(todayDate+2, "%Y-%m-%d"), "\n")
-  print(dailyAspects[Date == todayDate+2,][order(-ennow)][0:20])
+  cat("Past tomorrow aspects:", format(todayDate + 2, "%Y-%m-%d"), "\n")
+  print(dailyAspects[Date == todayDate + 2,][order(-ennow)][0:20])
   cat("\n")
 
   # Summary of price moves.
