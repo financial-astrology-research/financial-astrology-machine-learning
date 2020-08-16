@@ -108,14 +108,6 @@ analyzeSecurity <- function(symbol) {
   dailyAspects[, p.x := substr(origin, 1, 2)]
   dailyAspects[, p.y := substr(origin, 3, 4)]
 
-  # Melt longitudes.
-  dailyLongitudes <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin',
-                          value.name = 'lon', measure.var = planetsLonCols)
-  dailyLongitudes[, p.x := substr(origin, 1, 2)]
-  dailyLongitudes[, p.y := substr(origin, 1, 2)]
-  dailyAspects <- merge(dailyAspects, dailyLongitudes[, c('Date', 'p.x', 'lon')], by = c('Date', 'p.x'))
-  dailyAspects <- merge(dailyAspects, dailyLongitudes[, c('Date', 'p.y', 'lon')], by = c('Date', 'p.y'))
-
   # Melt orbs.
   dailyAspectsOrbs <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin', value.name = 'orb',
                            measure.var = planetsCombOrb)
@@ -147,6 +139,14 @@ analyzeSecurity <- function(symbol) {
   #dailyAspects[, diffMean := setAspectEffect(.SD), by=c('Date', 'origin', 'aspect', 'type')]
   dailyAspectsPriceResearch <- merge(dailyAspectsPriceResearch, aspectsEffect, by = c('origin', 'aspect', 'type'))
   dailyAspects <- merge(dailyAspects, aspectsEffect, by = c('origin', 'aspect', 'type'))
+
+  # Melt longitudes.
+  dailyLongitudes <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin',
+                          value.name = 'lon', measure.var = planetsLonCols)
+  dailyLongitudes[, p.x := substr(origin, 1, 2)]
+  dailyLongitudes[, p.y := substr(origin, 1, 2)]
+  dailyAspects <- merge(dailyAspects, dailyLongitudes[, c('Date', 'p.x', 'lon')], by = c('Date', 'p.x'))
+  dailyAspects <- merge(dailyAspects, dailyLongitudes[, c('Date', 'p.y', 'lon')], by = c('Date', 'p.y'))
 
   # Set aspect energy column.
   cat("Last day aspects\n")
