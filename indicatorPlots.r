@@ -140,15 +140,19 @@ analyzeSecurity <- function(symbol) {
 
   # Set aspect energy column.
   cat("Last day aspects\n")
-  print(dailyAspectsPriceResearch[Date == max(Date),][order(-ennow)][0:10])
+  print(dailyAspectsPriceResearch[Date == max(Date),][order(-ennow)][0:20])
   cat("\n")
 
   cat("Today aspects:", format(todayDate, "%Y-%m-%d"), "\n")
-  print(dailyAspects[Date == todayDate,][order(-ennow)][0:10])
+  print(dailyAspects[Date == todayDate,][order(-ennow)][0:20])
   cat("\n")
 
   cat("Tomorrow aspects:", format(todayDate+1, "%Y-%m-%d"), "\n")
-  print(dailyAspects[Date == todayDate+1,][order(-ennow)][0:10])
+  print(dailyAspects[Date == todayDate+1,][order(-ennow)][0:20])
+  cat("\n")
+
+  cat("Past tomorrow aspects:", format(todayDate+2, "%Y-%m-%d"), "\n")
+  print(dailyAspects[Date == todayDate+2,][order(-ennow)][0:20])
   cat("\n")
 
   # Summary of price moves.
