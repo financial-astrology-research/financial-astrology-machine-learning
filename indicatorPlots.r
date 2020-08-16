@@ -127,27 +127,28 @@ analyzeSecurity <- function(symbol) {
   dailyAspects[, type := cut(orbdir, c(-100, 0, 100), labels=(c('applicative', 'separative')))]
 
   # Calculate max and proportional energy.
-  dailyAspects[, maxEnergy := aspectsEnergyIndex['energy', as.character(aspect)]]
-  dailyAspects[, energy := energyGrowth(maxEnergy, orb, 0.3)]
-  dailyAspectsPriceResearch <- merge(dailyAspects, security[, c('Date', 'priceDiffPercent')], by = c('Date'))
+  dailyAspects[, enmax := aspectsEnergyIndex['energy', as.character(aspect)]]
+  dailyAspects[, ennow := energyGrowth(enmax, orb, 0.3)]
+  dailyAspectsPriceResearch <- merge(dailyAspects, security[, c('Date', 'diffPercent')], by = c('Date'))
 
   # Calculate the historical mean aspect effect.
-  aspectsEffect <- dailyAspectsPriceResearch[, mean(priceDiffPercent), by = c('origin', 'aspect', 'type')]
-  setnames(aspectsEffect, c('origin', 'aspect', 'type', 'priceDiffMean'))
-  #dailyAspects[, priceDiffMean := setAspectEffect(.SD), by=c('Date', 'origin', 'aspect', 'type')]
+  aspectsEffect <- dailyAspectsPriceResearch[, mean(diffPercent), by = c('origin', 'aspect', 'type')]
+  setnames(aspectsEffect, c('origin', 'aspect', 'type', 'diffMean'))
+  #dailyAspects[, diffMean := setAspectEffect(.SD), by=c('Date', 'origin', 'aspect', 'type')]
+  dailyAspectsPriceResearch <- merge(dailyAspectsPriceResearch, aspectsEffect, by = c('origin', 'aspect', 'type'))
   dailyAspects <- merge(dailyAspects, aspectsEffect, by = c('origin', 'aspect', 'type'))
 
   # Set aspect energy column.
   cat("Last day aspects\n")
-  print(dailyAspectsPriceResearch[Date == max(Date),][order(-energy)][0:10])
+  print(dailyAspectsPriceResearch[Date == max(Date),][order(-ennow)][0:10])
   cat("\n")
 
   cat("Today aspects:", format(todayDate, "%Y-%m-%d"), "\n")
-  print(dailyAspects[Date == todayDate,][order(-energy)][0:10])
+  print(dailyAspects[Date == todayDate,][order(-ennow)][0:10])
   cat("\n")
 
   cat("Tomorrow aspects:", format(todayDate+1, "%Y-%m-%d"), "\n")
-  print(dailyAspects[Date == todayDate+1,][order(-energy)][0:10])
+  print(dailyAspects[Date == todayDate+1,][order(-ennow)][0:10])
   cat("\n")
 
   # Summary of price moves.
