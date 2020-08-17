@@ -115,7 +115,7 @@ analyzeSecurity <- function(symbol) {
   #aspects.day.long[, orbdir := sign(orb - Lag(orb)), by=c('lon', 'origin', 'aspect')]
 
   # For aspects: c( 0 , 30 , 45 , 60 , 90 , 120 , 135 , 150 , 180)
-  aspectsEnergy <- c(12, 3, 4, 4, 8, 5, 4, 4, 12)
+  aspectsEnergy <- c(6, 4, 4, 4, 6, 4, 4, 4, 6)
   aspectsEnergyIndex <- matrix(aspectsEnergy, nrow = 1, ncol = length(aspectsEnergy), byrow = T,
                                dimnames = list(c('energy'), aspects))
   print(aspectsEnergyIndex)
@@ -147,10 +147,10 @@ analyzeSecurity <- function(symbol) {
   # Melt longitudes.
   dailyLongitudes <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin',
                           value.name = 'lon', measure.var = planetsLonCols)
-  dailyLongitudes[, p.x := substr(origin, 1, 2)]
   dailyLongitudes[, p.y := substr(origin, 1, 2)]
-  dailyAspects <- merge(dailyAspects, dailyLongitudes[, c('Date', 'p.x', 'lon')], by = c('Date', 'p.x'))
   dailyAspects <- merge(dailyAspects, dailyLongitudes[, c('Date', 'p.y', 'lon')], by = c('Date', 'p.y'))
+  dailyLongitudes[, p.x := substr(origin, 1, 2)]
+  dailyAspects <- merge(dailyAspects, dailyLongitudes[, c('Date', 'p.x', 'lon')], by = c('Date', 'p.x'))
 
   # Set aspect energy column.
   cat("Last day aspects\n")
