@@ -160,6 +160,8 @@ analyzeSecurity <- function(symbol) {
   dailyAspects[, p.y := substr(origin, 3, 4)]
   dailyAspects <- merge(dailyAspects, dailyLongitudesY[, c('Date', 'p.y', 'lon.y')], by = c('Date', 'p.y'))
   dailyAspects <- merge(dailyAspects, dailyLongitudesX[, c('Date', 'p.x', 'lon.x')], by = c('Date', 'p.x'))
+  colsOrder <- c('Date', 'origin', 'p.x', 'lon.x', 'p.y', 'lon.y', 'aspect', 'type', 'orb', 'orbdir', 'enmax', 'ennow', 'diffMean', 'diffMedian')
+  setcolorder(dailyAspects, colsOrder)
 
   # Set aspect energy column.
   cat("Last day aspects\n")
