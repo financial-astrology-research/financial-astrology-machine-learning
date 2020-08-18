@@ -163,21 +163,34 @@ analyzeSecurity <- function(symbol) {
   colsOrder <- c('Date', 'origin', 'p.x', 'lon.x', 'p.y', 'lon.y', 'aspect', 'type', 'orb', 'orbdir', 'enmax', 'ennow', 'diffMean', 'diffMedian')
   setcolorder(dailyAspects, colsOrder)
 
+  # Melt involved planets current energy for body strength calculation.
+  dailyAspectsPlanetsEnergy <- melt(
+    dailyAspects, id.var = c('Date', 'ennow'),
+    variable.name = 'origin', value.name = 'planet', measure.var = c('p.x', 'p.y')
+  )
+  dailyAspectsCumulativeEnergy <- dailyAspectsPlanetsEnergy[, sum(ennow), by = c('Date', 'planet')]
+
+  # Merge cumulative planets energy.
+  setnames(dailyAspectsCumulativeEnergy, c('Date', 'p.x', 'encum.x'))
+  dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c('Date', 'p.x'))
+  setnames(dailyAspectsCumulativeEnergy, c('Date', 'p.y', 'encum.y'))
+  dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c('Date', 'p.y'))
+
   # Set aspect energy column.
   cat("Last day aspects\n")
-  print(dailyAspectsPriceResearch[Date == max(Date),][order(-ennow)][0:20])
+  print(dailyAspectsPriceResearch[Date == max(Date),][order(-ennow)])
   cat("\n")
 
   cat("Today aspects:", format(todayDate, "%Y-%m-%d"), "\n")
-  print(dailyAspects[Date == todayDate,][order(-ennow)][0:20])
+  print(dailyAspects[Date == todayDate,][order(-ennow)])
   cat("\n")
 
   cat("Tomorrow aspects:", format(todayDate + 1, "%Y-%m-%d"), "\n")
-  print(dailyAspects[Date == todayDate + 1,][order(-ennow)][0:20])
+  print(dailyAspects[Date == todayDate + 1,][order(-ennow)])
   cat("\n")
 
   cat("Past tomorrow aspects:", format(todayDate + 2, "%Y-%m-%d"), "\n")
-  print(dailyAspects[Date == todayDate + 2,][order(-ennow)][0:20])
+  print(dailyAspects[Date == todayDate + 2,][order(-ennow)])
   cat("\n")
 
   # Summary of price moves.
