@@ -114,7 +114,7 @@ analyzeSecurity <- function(symbol) {
   #aspects.day.long[, orbdir := sign(orb - Lag(orb)), by=c('lon', 'origin', 'aspect')]
 
   # For aspects: c( 0 , 30 , 45 , 60 , 90 , 120 , 135 , 150 , 180)
-  aspectsEnergy <- c(3, 3, 3, 3, 3, 3, 3, 3, 3)
+  aspectsEnergy <- c(2, 2, 2, 2, 2, 2, 2, 2, 2)
   aspectsEnergyIndex <- matrix(aspectsEnergy, nrow = 1, ncol = length(aspectsEnergy), byrow = T,
                                dimnames = list(c('energy'), aspects))
   print(aspectsEnergyIndex)
