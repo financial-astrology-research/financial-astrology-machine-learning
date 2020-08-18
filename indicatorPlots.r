@@ -175,22 +175,18 @@ analyzeSecurity <- function(symbol) {
   dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c('Date', 'p.x'))
   setnames(dailyAspectsCumulativeEnergy, c('Date', 'p.y', 'encum.y'))
   dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c('Date', 'p.y'))
-
-  # Set aspect energy column.
-  cat("Last day aspects\n")
-  print(dailyAspectsPriceResearch[Date == max(Date),][order(-ennow)])
-  cat("\n")
+  dailyAspects[, entot := round((encum.x+encum.y)*ennow, 0)]
 
   cat("Today aspects:", format(todayDate, "%Y-%m-%d"), "\n")
-  print(dailyAspects[Date == todayDate,][order(-ennow)])
+  print(dailyAspects[Date == todayDate,][order(-entot)])
   cat("\n")
 
   cat("Tomorrow aspects:", format(todayDate + 1, "%Y-%m-%d"), "\n")
-  print(dailyAspects[Date == todayDate + 1,][order(-ennow)])
+  print(dailyAspects[Date == todayDate + 1,][order(-entot)])
   cat("\n")
 
   cat("Past tomorrow aspects:", format(todayDate + 2, "%Y-%m-%d"), "\n")
-  print(dailyAspects[Date == todayDate + 2,][order(-ennow)])
+  print(dailyAspects[Date == todayDate + 2,][order(-entot)])
   cat("\n")
 
   # Summary of price moves.
