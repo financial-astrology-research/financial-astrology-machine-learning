@@ -127,7 +127,7 @@ normalizeDistance <- function(x) {
 
 # calculate the proportional energy of aspect based on the distance
 energyGrowth <- function(energy, distance, speed = 0.5) {
-  return(energy * (1 - speed) ^ abs(distance))
+  return(round(energy * (1 - speed) ^ abs(distance), 2))
 }
 
 
@@ -710,7 +710,6 @@ getMySymbolsData  <- function(listfile) {
 }
 
 buildPlanetsIndicators <- function(clear=F) {
-  planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL', 'ES', 'EM')
   buildPlanetsColsNames(planetsBaseCols)
   planets <- openPlanets('planets_10', clear=clear)
   # build composite indicators
