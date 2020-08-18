@@ -1,6 +1,7 @@
 library(grid)
 source("./analysis.r")
 setClassicAspectsSet()
+setPlanetsMOMEVESUMACEJUNNSAURNEPL()
 #getMySymbolsData("working")
 todayDate <- as.Date(Sys.Date())
 span <- 22
@@ -105,8 +106,6 @@ analyzeSecurity <- function(symbol) {
   dailyAspects <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin',
                        value.name = 'aspect', value.factor = T, measure.var = planetsCombAsp, na.rm = T)
   dailyAspects[, origin := substr(origin, 1, 4)]
-  dailyAspects[, p.x := substr(origin, 1, 2)]
-  dailyAspects[, p.y := substr(origin, 3, 4)]
 
   # Melt orbs.
   dailyAspectsOrbs <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin', value.name = 'orb',
@@ -147,10 +146,20 @@ analyzeSecurity <- function(symbol) {
   # Melt longitudes.
   dailyLongitudes <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin',
                           value.name = 'lon', measure.var = planetsLonCols)
-  dailyLongitudes[, p.y := substr(origin, 1, 2)]
-  dailyAspects <- merge(dailyAspects, dailyLongitudes[, c('Date', 'p.y', 'lon')], by = c('Date', 'p.y'))
-  dailyLongitudes[, p.x := substr(origin, 1, 2)]
-  dailyAspects <- merge(dailyAspects, dailyLongitudes[, c('Date', 'p.x', 'lon')], by = c('Date', 'p.x'))
+
+  # For first planet.
+  dailyLongitudesX <- copy(dailyLongitudes)
+  dailyLongitudesX[, p.x := substr(origin, 1, 2)]
+  dailyLongitudesX[, lon.x := lon]
+  # For second planet.
+  dailyLongitudesY <- copy(dailyLongitudes)
+  dailyLongitudesY[, p.y := substr(origin, 1, 2)]
+  dailyLongitudesY[, lon.y := lon]
+  # Merge
+  dailyAspects[, p.x := substr(origin, 1, 2)]
+  dailyAspects[, p.y := substr(origin, 3, 4)]
+  dailyAspects <- merge(dailyAspects, dailyLongitudesY[, c('Date', 'p.y', 'lon.y')], by = c('Date', 'p.y'))
+  dailyAspects <- merge(dailyAspects, dailyLongitudesX[, c('Date', 'p.x', 'lon.x')], by = c('Date', 'p.x'))
 
   # Set aspect energy column.
   cat("Last day aspects\n")
