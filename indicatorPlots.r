@@ -95,6 +95,9 @@ analyzeSecurity <- function(symbol) {
   }
 
   dailyPlanets = buildPlanetsIndicators()
+  # Max/Min speed normalization.
+  dailyPlanets[, c(planetsSpCols) := lapply(.SD, normalize), .SDcols=planetsSpCols]
+
   dailyPlanetsResearch <- dailyPlanets[Date > as.Date('2017-01-01') & Date < as.Date('2021-01-01'),]
   chartPeriod <- c(as.Date("2018-01-10"), as.Date("2020-12-31"))
   currentDates <- c(todayDate, todayDate + 1)
@@ -163,6 +166,19 @@ analyzeSecurity <- function(symbol) {
   colsOrder <- c('Date', 'origin', 'p.x', 'lon.x', 'p.y', 'lon.y', 'aspect', 'type', 'orb', 'orbdir', 'enmax', 'ennow', 'diffMean', 'diffMedian')
   setcolorder(dailyAspects, colsOrder)
 
+  # Melt speeds.
+  dailySpeed <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin', value.name = 'sp', measure.var = planetsSpCols)
+  dailySpeedX <- copy(dailySpeed)
+  dailySpeedX[, p.x := substr(origin, 1, 2)]
+  dailySpeedX[, sp.x := sp]
+  # Merge daily speed.
+  dailySpeedY <- copy(dailySpeed)
+  dailySpeedY[, p.y := substr(origin, 1, 2)]
+  dailySpeedY[, sp.y := sp]
+  dailyAspects <- merge(dailyAspects, dailySpeedY[, c('Date', 'p.y', 'sp.y')], by = c('Date', 'p.y'))
+  dailyAspects <- merge(dailyAspects, dailySpeedX[, c('Date', 'p.x', 'sp.x')], by = c('Date', 'p.x'))
+  browser()
+
   # Melt involved planets current energy for body strength calculation.
   dailyAspectsPlanetsEnergy <- melt(
     dailyAspects, id.var = c('Date', 'ennow'),
@@ -175,7 +191,8 @@ analyzeSecurity <- function(symbol) {
   dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c('Date', 'p.x'))
   setnames(dailyAspectsCumulativeEnergy, c('Date', 'p.y', 'encum.y'))
   dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c('Date', 'p.y'))
-  dailyAspects[, entot := round((encum.x+encum.y)*ennow, 0)]
+  dailyAspects[, entot := round((encum.x + encum.y) * ennow, 0)]
+  dailyAspects[, effect := diffMean * entot]
 
   cat("Today aspects:", format(todayDate, "%Y-%m-%d"), "\n")
   print(dailyAspects[Date == todayDate,][order(-entot)])
