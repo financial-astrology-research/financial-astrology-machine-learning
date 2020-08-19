@@ -164,8 +164,6 @@ analyzeSecurity <- function(symbol) {
   dailyAspects[, p.y := substr(origin, 3, 4)]
   dailyAspects <- merge(dailyAspects, dailyLongitudesY[, c('Date', 'p.y', 'lon.y')], by = c('Date', 'p.y'))
   dailyAspects <- merge(dailyAspects, dailyLongitudesX[, c('Date', 'p.x', 'lon.x')], by = c('Date', 'p.x'))
-  colsOrder <- c('Date', 'origin', 'p.x', 'lon.x', 'p.y', 'lon.y', 'aspect', 'type', 'orb', 'orbdir', 'enmax', 'ennow', 'diffMean', 'diffMedian')
-  setcolorder(dailyAspects, colsOrder)
 
   # Melt speeds.
   dailySpeed <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin', value.name = 'sp', measure.var = planetsSpCols)
@@ -193,6 +191,10 @@ analyzeSecurity <- function(symbol) {
   dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c('Date', 'p.y'))
   dailyAspects[, entot := round((encum.x + encum.y) * ennow, 0)]
   dailyAspects[, effect := diffMean * entot]
+
+  # Set more convenient order for analysis.
+  colsOrder <- c('Date', 'origin', 'p.x', 'lon.x', 'sp.x', 'p.y', 'lon.y', 'sp.y', 'aspect', 'type', 'orb', 'orbdir', 'enmax', 'ennow', 'encum.x', 'encum.y', 'entot', 'effect', 'diffMean', 'diffMedian')
+  setcolorder(dailyAspects, colsOrder)
 
   cat("Today aspects:", format(todayDate, "%Y-%m-%d"), "\n")
   print(dailyAspects[Date == todayDate,][order(-entot)])
