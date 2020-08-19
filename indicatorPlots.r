@@ -190,7 +190,7 @@ analyzeSecurity <- function(symbol) {
   setnames(dailyAspectsCumulativeEnergy, c('Date', 'p.y', 'encum.y'))
   dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c('Date', 'p.y'))
   dailyAspects[, entot := round((encum.x + encum.y) * ennow, 0)]
-  dailyAspects[, effect := diffMean * entot]
+  dailyAspects[, effect := round((diffMean * entot) * 100)]
 
   # Set more convenient order for analysis.
   colsOrder <- c('Date', 'origin', 'p.x', 'lon.x', 'sp.x', 'p.y', 'lon.y', 'sp.y', 'aspect', 'type', 'orb', 'orbdir', 'enmax', 'ennow', 'encum.x', 'encum.y', 'entot', 'effect', 'diffMean', 'diffMedian')
