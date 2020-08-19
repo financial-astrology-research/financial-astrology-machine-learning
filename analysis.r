@@ -13,7 +13,7 @@ library(stringr)
 `%ni%` <- Negate(`%in%`)
 # no scientific notation
 options(scipen=100)
-options(width=130)
+options(width=180)
 options(error=recover)
 enableJIT(0)
 startDate = as.Date("1970-01-01")
@@ -1697,4 +1697,9 @@ theme_black = function(base_size = 12, base_family = "") {
       plot.title = element_text(size = base_size*1.2, color = "white"),
       plot.margin = unit(rep(1, 4), "lines")
     )
+}
+
+# Min/Max normalization.
+normalize <- function(x) {
+  return ((x - min(x)) / (max(x) - min(x)))
 }
