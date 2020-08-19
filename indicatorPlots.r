@@ -96,7 +96,7 @@ analyzeSecurity <- function(symbol) {
 
   dailyPlanets = buildPlanetsIndicators()
   # Max/Min speed normalization.
-  dailyPlanets[, c(planetsSpCols) := lapply(.SD, normalize), .SDcols=planetsSpCols]
+  # dailyPlanets[, c(planetsSpCols) := lapply(.SD, normalize), .SDcols=planetsSpCols]
   dailyPlanets <<- dailyPlanets
 
   dailyPlanetsResearch <- dailyPlanets[Date > as.Date('2017-01-01') & Date < as.Date('2021-01-01'),]
@@ -167,15 +167,19 @@ analyzeSecurity <- function(symbol) {
 
   # Melt speeds.
   dailySpeed <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin', value.name = 'sp', measure.var = planetsSpCols)
+  dailySpeed[, spn := normalize(sp), by = c('origin')]
+  # dailyPlanets[, c(planetsSpCols) := lapply(.SD, normalize), .SDcols=planetsSpCols]
   dailySpeedX <- copy(dailySpeed)
   dailySpeedX[, p.x := substr(origin, 1, 2)]
   dailySpeedX[, sp.x := sp]
+  dailySpeedX[, spn.x := spn]
   # Merge daily speed.
   dailySpeedY <- copy(dailySpeed)
   dailySpeedY[, p.y := substr(origin, 1, 2)]
   dailySpeedY[, sp.y := sp]
-  dailyAspects <- merge(dailyAspects, dailySpeedY[, c('Date', 'p.y', 'sp.y')], by = c('Date', 'p.y'))
-  dailyAspects <- merge(dailyAspects, dailySpeedX[, c('Date', 'p.x', 'sp.x')], by = c('Date', 'p.x'))
+  dailySpeedY[, spn.y := spn]
+  dailyAspects <- merge(dailyAspects, dailySpeedY[, c('Date', 'p.y', 'sp.y', 'spn.y')], by = c('Date', 'p.y'))
+  dailyAspects <- merge(dailyAspects, dailySpeedX[, c('Date', 'p.x', 'sp.x', 'spn.x')], by = c('Date', 'p.x'))
 
   # Melt involved planets current energy for body strength calculation.
   dailyAspectsPlanetsEnergy <- melt(
@@ -198,7 +202,7 @@ analyzeSecurity <- function(symbol) {
   setnames(dailyAspectsIndex, c('Date', 'effect', 'diff'))
 
   # Set more convenient order for analysis.
-  colsOrder <- c('Date', 'origin', 'p.x', 'lon.x', 'sp.x', 'p.y', 'lon.y', 'sp.y', 'aspect', 'type', 'orb', 'orbdir', 'enmax', 'ennow', 'encum.x', 'encum.y', 'entot', 'effect', 'diffMean', 'diffMedian')
+  colsOrder <- c('Date', 'origin', 'p.x', 'lon.x', 'sp.x', 'spn.x', 'p.y', 'lon.y', 'sp.y', 'spn.y', 'aspect', 'type', 'orb', 'orbdir', 'enmax', 'ennow', 'encum.x', 'encum.y', 'entot', 'effect', 'diffMean', 'diffMedian')
   setcolorder(dailyAspects, colsOrder)
 
   cat("Today aspects:", format(todayDate, "%Y-%m-%d"), "\n")
