@@ -171,12 +171,12 @@ analyzeSecurity <- function(symbol) {
   # dailyPlanets[, c(planetsSpCols) := lapply(.SD, normalize), .SDcols=planetsSpCols]
   dailySpeedX <- copy(dailySpeed)
   dailySpeedX[, p.x := substr(origin, 1, 2)]
-  dailySpeedX[, sp.x := sp]
+  dailySpeedX[, sp.x := round(sp/24, 3)]
   dailySpeedX[, spn.x := spn]
   # Merge daily speed.
   dailySpeedY <- copy(dailySpeed)
   dailySpeedY[, p.y := substr(origin, 1, 2)]
-  dailySpeedY[, sp.y := sp]
+  dailySpeedY[, sp.y := round(sp/24, 3)]
   dailySpeedY[, spn.y := spn]
   dailyAspects <- merge(dailyAspects, dailySpeedY[, c('Date', 'p.y', 'sp.y', 'spn.y')], by = c('Date', 'p.y'))
   dailyAspects <- merge(dailyAspects, dailySpeedX[, c('Date', 'p.x', 'sp.x', 'spn.x')], by = c('Date', 'p.x'))
