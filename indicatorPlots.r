@@ -97,6 +97,7 @@ analyzeSecurity <- function(symbol) {
   dailyPlanets = buildPlanetsIndicators()
   # Max/Min speed normalization.
   dailyPlanets[, c(planetsSpCols) := lapply(.SD, normalize), .SDcols=planetsSpCols]
+  dailyPlanets <<- dailyPlanets
 
   dailyPlanetsResearch <- dailyPlanets[Date > as.Date('2017-01-01') & Date < as.Date('2021-01-01'),]
   chartPeriod <- c(as.Date("2018-01-10"), as.Date("2020-12-31"))
@@ -177,7 +178,6 @@ analyzeSecurity <- function(symbol) {
   dailySpeedY[, sp.y := sp]
   dailyAspects <- merge(dailyAspects, dailySpeedY[, c('Date', 'p.y', 'sp.y')], by = c('Date', 'p.y'))
   dailyAspects <- merge(dailyAspects, dailySpeedX[, c('Date', 'p.x', 'sp.x')], by = c('Date', 'p.x'))
-  browser()
 
   # Melt involved planets current energy for body strength calculation.
   dailyAspectsPlanetsEnergy <- melt(
