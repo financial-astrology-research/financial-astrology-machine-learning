@@ -1,7 +1,7 @@
 library(grid)
 source("./analysis.r")
 setClassicAspectsSet()
-setPlanetsMOMEVESUMACEJUNNSAURNEPL()
+setPlanetsMOMEVESUMACEJUSAURNEPL()
 #getMySymbolsData("working")
 todayDate <- as.Date(Sys.Date())
 span <- 22
