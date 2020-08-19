@@ -218,7 +218,7 @@ analyzeSecurity <- function(symbol) {
   cat("\n")
 
   cat("Daily aspects effect index:\n")
-  print(dailyAspectsIndex[Date > todayDate-3 ,][0:20])
+  print(dailyAspectsIndex[Date > todayDate-8 ,][0:20])
   cat("\n")
 
   # Summary of price moves.
