@@ -234,7 +234,7 @@ mainOpenSecurity <- function(securityfile, mapricefs=20, mapricesl=50, dateforma
   setkey(security, 'Date')
   # take data starging from sdate
   security <- security[Date >= sdate,]
-  security[, Mid := (High + Low + Close + Open) / 4]
+  security[, Mid := (High + Low) / 2]
   security[, MidMAF := SMA(Mid, n=mapricefs)]
   security[, MidMAS := SMA(Mid, n=mapricesl)]
   security[, val := MidMAF-MidMAS]
