@@ -192,6 +192,11 @@ analyzeSecurity <- function(symbol) {
   dailyAspects[, entot := round((encum.x + encum.y) * ennow, 0)]
   dailyAspects[, effect := round((diffMean * entot) * 100)]
 
+  # Daily aspects effect index.
+  dailyAspectsIndex <- dailyAspects[, sum(effect), by = c('Date')]
+  dailyAspectsIndex[, diff := round(Delt(V1, k = 1), 2)]
+  setnames(dailyAspectsIndex, c('Date', 'effect', 'diff'))
+
   # Set more convenient order for analysis.
   colsOrder <- c('Date', 'origin', 'p.x', 'lon.x', 'sp.x', 'p.y', 'lon.y', 'sp.y', 'aspect', 'type', 'orb', 'orbdir', 'enmax', 'ennow', 'encum.x', 'encum.y', 'entot', 'effect', 'diffMean', 'diffMedian')
   setcolorder(dailyAspects, colsOrder)
@@ -206,6 +211,10 @@ analyzeSecurity <- function(symbol) {
 
   cat("Past tomorrow aspects:", format(todayDate + 2, "%Y-%m-%d"), "\n")
   print(dailyAspects[Date == todayDate + 2,][order(-entot)])
+  cat("\n")
+
+  cat("Daily aspects effect index:\n")
+  print(dailyAspectsIndex[Date > todayDate-3 ,][0:20])
   cat("\n")
 
   # Summary of price moves.
