@@ -1,13 +1,11 @@
 library(grid)
 source("./analysis.r")
-setClassicAspectsSet()
-#setModernAspectsSet()
-setPlanetsMOMEVESUMACEJUSAURNEPL()
-#getMySymbolsData("working")
 todayDate <- as.Date(Sys.Date())
-span <- 22
 
 analyzeSecurity <- function(symbol) {
+  setClassicAspectsSet()
+  setPlanetsMOMEVESUMACEJUSAURNEPL()
+  span <- 22
 
   drawSecurityPriceSerie <- function() {
     securityPeriod <- security[Date >= chartPeriod[1] & Date <= chartPeriod[2],]
@@ -96,16 +94,31 @@ analyzeSecurity <- function(symbol) {
   }
 
   dailyPlanets = buildPlanetsIndicators()
-  # Max/Min speed normalization.
-  # dailyPlanets[, c(planetsSpCols) := lapply(.SD, normalize), .SDcols=planetsSpCols]
   dailyPlanets <<- dailyPlanets
-
   dailyPlanetsResearch <- dailyPlanets[Date > as.Date('2017-01-01') & Date < as.Date('2021-01-01'),]
   chartPeriod <- c(as.Date("2018-01-10"), as.Date("2020-12-31"))
   currentDates <- c(todayDate, todayDate + 1)
   dateBreaks <- "7 days"
   security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
   dailyPlanetPriceResearch <- merge(dailyPlanets, security, by = c('Date'))
+
+  cat("Relevant peak dates:\n")
+  datesHighs <- security$Date[peaks(security$Mid, span)]
+  datesLows <- security$Date[peaks(-security$Mid, span)]
+
+  # Indicator / Price charts.
+  p1 <- uranusIndicators()
+  p2 <- drawSecurityPriceSerie()
+  grid.newpage()
+  grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
+
+  return(dailyPlanetPriceResearch)
+}
+
+predictSecurityModelA <- function(symbol) {
+  dailyPlanets = buildPlanetsIndicators()
+  security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
+  dailyPlanets <<- dailyPlanets
 
   # Melt aspects.
   dailyAspects <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin',
@@ -121,7 +134,7 @@ analyzeSecurity <- function(symbol) {
   # For aspects: c( 0 , 30 , 45 , 60 , 90 , 120 , 135 , 150 , 180)
   #aspectsEnergy <- c(1, 1, 1, 1, 1, 1, 1, 1, 1)
   #aspectsEnergyIndex <- matrix(aspectsEnergy, nrow = 1, ncol = length(aspectsEnergy), byrow = T,
-                               #dimnames = list(c('energy'), aspects))
+  #dimnames = list(c('energy'), aspects))
   # Join aspects & orbs.
   dailyAspects <- merge(dailyAspects, dailyAspectsOrbs, by = c('Date', 'origin'))
 
@@ -234,18 +247,5 @@ analyzeSecurity <- function(symbol) {
   cat("3 day daily price diff percentages:\n")
   print(summary(abs(Delt(security$Mid, k = 3))))
 
-  #cat("Relevant peak dates:\n")
-  datesHighs <- security$Date[peaks(security$Mid, span)]
-  datesLows <- security$Date[peaks(-security$Mid, span)]
-
-  # Indicator / Price charts.
-  # p1 <- uranusIndicators()
-  # p2 <- drawSecurityPriceSerie()
-  # grid.newpage()
-  # grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
-  # drawSlowIndicators()
-  # securityPeaksValleys(security)
-
-  return(dailyAspectsPriceResearch)
+  return(dailyAspects)
 }
-
