@@ -129,11 +129,11 @@ predictSecurityModelA <- function(symbol) {
   #setAllAspectsSet()
   #setModernAspectsSet()
   #setMajorsAspectsSet()
-  # Best correlation when using all planets except the MO.
-  setPlanetsMEVESUMACEJUNNSAURNEPL()
+  #setPlanetsMEVESUMACEJUNNSAURNEPL()
   #setPlanetsMOMEVESUMACEJUSAURNEPL()
   #setPlanetsMEVESUMACEJUSAURNEPL()
-  #setPlanetsMEVESUMAJUSAURNEPL()
+  # Best effect / price range correlation when using only classical planets.
+  setPlanetsMEVESUMAJUSAURNEPL()
   security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
   securityTrain <- security[Date <= as.Date("2020-06-30"),]
   securityTest <- security[Date > as.Date("2020-06-30"),]
