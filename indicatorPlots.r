@@ -123,7 +123,12 @@ analyzeSecurity <- function(symbol) {
 }
 
 predictSecurityModelA <- function(symbol) {
+  # Best effect correlation when using classic aspects only.
   setClassicAspectsSet()
+  #setAll2AspectsSet()
+  #setAllAspectsSet()
+  #setModernAspectsSet()
+  #setMajorsAspectsSet()
   # Best correlation when using all planets except the MO.
   setPlanetsMEVESUMACEJUNNSAURNEPL()
   #setPlanetsMOMEVESUMACEJUSAURNEPL()
