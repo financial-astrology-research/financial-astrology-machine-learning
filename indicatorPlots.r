@@ -17,12 +17,12 @@ analyzeSecurity <- function(symbol) {
       scale_x_date(date_breaks = dateBreaks, date_labels = "%Y-%m-%d", limits = chartPeriod) +
       scale_y_log10() +
       theme_black() +
-      theme(panel.margin = unit(c(0, 0, 0, 0), "null")) +
+      theme(panel.spacing = unit(c(0, 0, 0, 0), "null")) +
       theme(plot.margin = unit(c(0, 0, 0, 0), "null")) +
       theme(panel.grid = element_blank()) +
       theme(panel.border = element_blank()) +
       theme(plot.margin = unit(c(0, 0, 0, 0), "null")) +
-      theme(panel.margin = unit(c(0, 0, 0, 0), "null")) +
+      theme(panel.spacing = unit(c(0, 0, 0, 0), "null")) +
       theme(axis.ticks = element_blank()) +
       theme(axis.text = element_blank()) +
       theme(axis.title = element_blank()) +
@@ -38,12 +38,12 @@ analyzeSecurity <- function(symbol) {
     # theme(axis.text.x = element_text(angle = 90, size = 8)) +
     list(
       theme_black(),
-      theme(panel.margin = unit(c(0, 0, 0, 0), "null")),
+      theme(panel.spacing = unit(c(0, 0, 0, 0), "null")),
       theme(plot.margin = unit(c(0, 0, 0, 0), "null")),
       theme(panel.grid = element_blank()),
       theme(panel.border = element_blank()),
       theme(plot.margin = unit(c(0, 0, 0, 0), "null")),
-      theme(panel.margin = unit(c(0, 0, 0, 0), "null")),
+      theme(panel.spacing = unit(c(0, 0, 0, 0), "null")),
       theme(axis.ticks = element_blank()),
       theme(axis.text = element_blank()),
       theme(axis.title = element_blank()),
