@@ -152,9 +152,9 @@ predictSecurityModelA <- function(symbol) {
   #aspects.day.long[, orbdir := sign(orb - Lag(orb)), by=c('lon', 'origin', 'aspect')]
 
   # For aspects: c( 0 , 30 , 45 , 60 , 90 , 120 , 135 , 150 , 180)
-  #aspectsEnergy <- c(1, 1, 1, 1, 1, 1, 1, 1, 1)
-  #aspectsEnergyIndex <- matrix(aspectsEnergy, nrow = 1, ncol = length(aspectsEnergy), byrow = T,
-  #dimnames = list(c('energy'), aspects))
+  aspectsEnergy <- c(1, 1, 1, 1, 2, 1, 1, 1, 1)
+  aspectsEnergyIndex <- matrix(aspectsEnergy, nrow = 1, ncol = length(aspectsEnergy), byrow = T,
+  dimnames = list(c('energy'), aspects))
   # Join aspects & orbs.
   dailyAspects <- merge(dailyAspects, dailyAspectsOrbs, by = c('Date', 'origin'))
 
@@ -163,7 +163,8 @@ predictSecurityModelA <- function(symbol) {
   dailyAspects[, type := cut(orbdir, c(-100, 0, 100), labels = (c('applicative', 'separative')))]
 
   # Calculate max and proportional energy.
-  dailyAspects[, enmax := 1]
+  dailyAspects[, enmax := aspectsEnergyIndex['energy', as.character(aspect)]]
+  #dailyAspects[, enmax := 1]
   dailyAspects[, ennow := energyGrowth(enmax, orb, 0.6)]
 
   # Merge daily security prices with aspects.
@@ -227,8 +228,8 @@ predictSecurityModelA <- function(symbol) {
   setnames(dailyAspectsCumulativeEnergy, c('Date', 'p.y', 'encum.y'))
   dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c('Date', 'p.y'))
   dailyAspects[, entot := round((encum.x + encum.y) * ennow, 0)]
-  dailyAspects[, effect := round(((diffMean) * entot) * 100)]
-  #dailyAspects[, effect := round((diffMedian * entot) * 100)]
+  #dailyAspects[, effect := round((diffMean * entot) * 100)]
+  dailyAspects[, effect := entot]
 
   # Daily aspects effect index.
   dailyAspectsIndex <- dailyAspects[, sum(effect), by = c('Date')]
@@ -263,12 +264,12 @@ predictSecurityModelA <- function(symbol) {
     theme_black()
 
   p2 <- ggplot(data = modelTest) +
-    geom_point(aes(x = effect, y = diffPercent), colour = "white", alpha = 0.8) +
+    geom_point(aes(x = effect, y = abs(diffPercent)), colour = "white", alpha = 0.8) +
     theme_black()
 
   pgrid <- plot_grid(p1, p2, labels=c("Diff", "Effect"), ncol = 2)
   print(pgrid)
-  cat("\nCORRELATION: ", cor(modelTest$effect, modelTest$diffPercent, method = "pearson"), "\n")
+  cat("\nCORRELATION: ", cor(modelTest$effect, abs(modelTest$diffPercent), method = "pearson"), "\n")
 
   return(dailyAspects)
 }
