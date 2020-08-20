@@ -113,6 +113,12 @@ analyzeSecurity <- function(symbol) {
   grid.newpage()
   grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
 
+  cat("1 day daily price diff percentages\n")
+  print(summary(abs(Delt(security$Mid, k = 1))))
+
+  cat("3 day daily price diff percentages:\n")
+  print(summary(abs(Delt(security$Mid, k = 3))))
+
   return(dailyPlanetPriceResearch)
 }
 
@@ -156,7 +162,7 @@ predictSecurityModelA <- function(symbol) {
 
   # Calculate the historical mean aspect effect.
   aspectsEffect <- dailyAspectsPriceResearch[
-    orb <= 2,
+    orb <= 1,
     list(round(mean(diffPercent), 4), round(median(diffPercent), 4)),
     by = c('origin', 'aspect', 'type')
   ]
@@ -254,18 +260,6 @@ predictSecurityModelA <- function(symbol) {
   pgrid <- plot_grid(p1, p2, labels=c("Diff", "Effect"), ncol = 2)
   print(pgrid)
   cat("\nCORRELATION: ", cor(modelTest$effect, modelTest$diffPercent, method = "pearson"), "\n")
-
-  # Summary of price moves.
-  cat("Analysis for symbol: ", symbol, " last date: ", format(max(security$Date), "%Y-%m-%d"), "\n")
-  securityLastDay <- security[Date == todayDate,]
-  cat("Last day priceDiffPercent:\n")
-  print(securityLastDay)
-
-  cat("1 day daily price diff percentages\n")
-  print(summary(abs(Delt(security$Mid, k = 1))))
-
-  cat("3 day daily price diff percentages:\n")
-  print(summary(abs(Delt(security$Mid, k = 3))))
 
   return(dailyAspects)
 }
