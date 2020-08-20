@@ -253,6 +253,7 @@ predictSecurityModelA <- function(symbol) {
 
   pgrid <- plot_grid(p1, p2, labels=c("Diff", "Effect"), ncol = 2)
   print(pgrid)
+  cat("\nCORRELATION: ", cor(modelTest$effect, modelTest$diffPercent, method = "pearson"), "\n")
 
   # Summary of price moves.
   cat("Analysis for symbol: ", symbol, " last date: ", format(max(security$Date), "%Y-%m-%d"), "\n")
