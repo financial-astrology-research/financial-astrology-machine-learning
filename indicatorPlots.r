@@ -1,6 +1,7 @@
 library(grid)
 source("./analysis.r")
 setClassicAspectsSet()
+#setModernAspectsSet()
 setPlanetsMOMEVESUMACEJUSAURNEPL()
 #getMySymbolsData("working")
 todayDate <- as.Date(Sys.Date())
@@ -118,10 +119,9 @@ analyzeSecurity <- function(symbol) {
   #aspects.day.long[, orbdir := sign(orb - Lag(orb)), by=c('lon', 'origin', 'aspect')]
 
   # For aspects: c( 0 , 30 , 45 , 60 , 90 , 120 , 135 , 150 , 180)
-  aspectsEnergy <- c(1, 1, 1, 1, 1, 1, 1, 1, 1)
-  aspectsEnergyIndex <- matrix(aspectsEnergy, nrow = 1, ncol = length(aspectsEnergy), byrow = T,
-                               dimnames = list(c('energy'), aspects))
-  print(aspectsEnergyIndex)
+  #aspectsEnergy <- c(1, 1, 1, 1, 1, 1, 1, 1, 1)
+  #aspectsEnergyIndex <- matrix(aspectsEnergy, nrow = 1, ncol = length(aspectsEnergy), byrow = T,
+                               #dimnames = list(c('energy'), aspects))
   # Join aspects & orbs.
   dailyAspects <- merge(dailyAspects, dailyAspectsOrbs, by = c('Date', 'origin'))
 
@@ -130,7 +130,7 @@ analyzeSecurity <- function(symbol) {
   dailyAspects[, type := cut(orbdir, c(-100, 0, 100), labels = (c('applicative', 'separative')))]
 
   # Calculate max and proportional energy.
-  dailyAspects[, enmax := aspectsEnergyIndex['energy', as.character(aspect)]]
+  dailyAspects[, enmax := 1]
   dailyAspects[, ennow := energyGrowth(enmax, orb, 0.3)]
 
   # Merge daily security prices with aspects.
@@ -194,7 +194,8 @@ analyzeSecurity <- function(symbol) {
   setnames(dailyAspectsCumulativeEnergy, c('Date', 'p.y', 'encum.y'))
   dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c('Date', 'p.y'))
   dailyAspects[, entot := round((encum.x + encum.y) * ennow, 0)]
-  dailyAspects[, effect := round((diffMean * entot) * 100)]
+  dailyAspects[, effect := round(((diffMean) * entot) * 100)]
+  #dailyAspects[, effect := round((diffMedian * entot) * 100)]
 
   # Daily aspects effect index.
   dailyAspectsIndex <- dailyAspects[, sum(effect), by = c('Date')]
@@ -218,7 +219,7 @@ analyzeSecurity <- function(symbol) {
   cat("\n")
 
   cat("Daily aspects effect index:\n")
-  print(dailyAspectsIndex[Date > todayDate-8 ,][0:20])
+  print(dailyAspectsIndex[Date > todayDate-8 ,][0:30])
   cat("\n")
 
   # Summary of price moves.
@@ -238,10 +239,10 @@ analyzeSecurity <- function(symbol) {
   datesLows <- security$Date[peaks(-security$Mid, span)]
 
   # Indicator / Price charts.
-  p1 <- uranusIndicators()
-  p2 <- drawSecurityPriceSerie()
-  grid.newpage()
-  grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
+  # p1 <- uranusIndicators()
+  # p2 <- drawSecurityPriceSerie()
+  # grid.newpage()
+  # grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
   # drawSlowIndicators()
   # securityPeaksValleys(security)
 
