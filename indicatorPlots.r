@@ -163,7 +163,7 @@ predictSecurityModelA <- function(symbol) {
 
   # Calculate the historical mean aspect effect.
   aspectsEffect <- dailyAspectsPriceResearch[
-    orb <= 1,
+    orb <= 2,
     list(round(mean(diffPercent), 4), round(median(diffPercent), 4)),
     by = c('origin', 'aspect', 'type')
   ]
