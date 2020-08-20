@@ -156,7 +156,7 @@ predictSecurityModelA <- function(symbol) {
 
   # Calculate max and proportional energy.
   dailyAspects[, enmax := 1]
-  dailyAspects[, ennow := energyGrowth(enmax, orb, 0.3)]
+  dailyAspects[, ennow := energyGrowth(enmax, orb, 0.6)]
 
   # Merge daily security prices with aspects.
   dailyAspectsPriceResearch <- merge(dailyAspects, securityTrain[, c('Date', 'diffPercent')], by = c('Date'))
