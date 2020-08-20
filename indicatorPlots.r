@@ -1,4 +1,5 @@
 library(grid)
+library(cowplot)
 source("./analysis.r")
 todayDate <- as.Date(Sys.Date())
 
@@ -116,8 +117,12 @@ analyzeSecurity <- function(symbol) {
 }
 
 predictSecurityModelA <- function(symbol) {
-  dailyPlanets = buildPlanetsIndicators()
+  setClassicAspectsSet()
+  setPlanetsMOMEVESUMACEJUSAURNEPL()
   security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
+  securityTrain <- security[Date <= as.Date("2020-06-30"),]
+  securityTest <- security[Date > as.Date("2020-06-30"),]
+  dailyPlanets = buildPlanetsIndicators()
   dailyPlanets <<- dailyPlanets
 
   # Melt aspects.
@@ -147,11 +152,11 @@ predictSecurityModelA <- function(symbol) {
   dailyAspects[, ennow := energyGrowth(enmax, orb, 0.3)]
 
   # Merge daily security prices with aspects.
-  dailyAspectsPriceResearch <- merge(dailyAspects, security[, c('Date', 'diffPercent')], by = c('Date'))
+  dailyAspectsPriceResearch <- merge(dailyAspects, securityTrain[, c('Date', 'diffPercent')], by = c('Date'))
 
   # Calculate the historical mean aspect effect.
   aspectsEffect <- dailyAspectsPriceResearch[
-    orb <= 1,
+    orb <= 2,
     list(round(mean(diffPercent), 4), round(median(diffPercent), 4)),
     by = c('origin', 'aspect', 'type')
   ]
@@ -234,6 +239,20 @@ predictSecurityModelA <- function(symbol) {
   cat("Daily aspects effect index:\n")
   print(dailyAspectsIndex[Date > todayDate-8 ,][0:30])
   cat("\n")
+
+  cat("Daily test period:\n")
+  modelTest <- merge(dailyAspectsIndex, securityTest[, c('Date', 'diffPercent')], by = c('Date'))
+  print(modelTest)
+  p1 <- ggplot(data = modelTest) +
+    geom_point(aes(x = diff, y = diffPercent), colour = "white", alpha = 0.8) +
+    theme_black()
+
+  p2 <- ggplot(data = modelTest) +
+    geom_point(aes(x = effect, y = diffPercent), colour = "white", alpha = 0.8) +
+    theme_black()
+
+  pgrid <- plot_grid(p1, p2, labels=c("Diff", "Effect"), ncol = 2)
+  print(pgrid)
 
   # Summary of price moves.
   cat("Analysis for symbol: ", symbol, " last date: ", format(max(security$Date), "%Y-%m-%d"), "\n")
