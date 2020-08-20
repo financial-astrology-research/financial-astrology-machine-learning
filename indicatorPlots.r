@@ -124,7 +124,8 @@ analyzeSecurity <- function(symbol) {
 
 predictSecurityModelA <- function(symbol) {
   setClassicAspectsSet()
-  setPlanetsMOMEVESUMACEJUSAURNEPL()
+  #setPlanetsMOMEVESUMACEJUSAURNEPL()
+  setPlanetsMEVESUMACEJUSAURNEPL()
   security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
   securityTrain <- security[Date <= as.Date("2020-06-30"),]
   securityTest <- security[Date > as.Date("2020-06-30"),]
