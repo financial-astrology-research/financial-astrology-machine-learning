@@ -1,27 +1,48 @@
 source("./indicatorPlots.r")
 dailyAspects <- predictSecurityModelA("EOS-USD")
 dailyAspects[, diffPercent := round(diffPercent * 100, 1)]
-dailyAspectsFiltered <- dailyAspects[
+dailyAspectsFast <- dailyAspects[
   p.x %ni% c('CE', 'JU', 'SA', 'UR', 'NE', 'PL')
 ][
   orb <= 2,
 ][
-  aspect != '30'
-][
   origin %ni% c('MESU')
 ]
 
-ggplot(data=dailyAspectsFiltered) +
-  aes(y=sp.y, x=diffPercent) +
+ggplot(data = dailyAspectsFast) +
+  aes(y = sp.x, x = diffPercent) +
   #aes(y=spn.x, x=diffPercent, color=type) +
-  geom_point(color="white") +
-  facet_grid(aspect ~ origin, scales="free_y") +
-  stat_ellipse(type="norm", color="yellow") +
-  scale_x_continuous(limits=c(-10, 10)) +
+  geom_point(color = "white") +
+  facet_grid(aspect ~ origin, scales = "free_y") +
+  stat_ellipse(type = "norm", color = "yellow") +
+  scale_x_continuous(limits = c(-10, 10)) +
   #scale_y_continuous(limits=c(0, 1)) +
   #geom_smooth(orientation="y") +
   theme_black()
 
+ggplot(data = dailyAspectsFast) +
+  aes(y = sp.y, x = diffPercent) +
+  geom_point(color = "white") +
+  facet_grid(aspect ~ origin, scales = "free_y") +
+  stat_ellipse(type = "norm", color = "yellow") +
+  scale_x_continuous(limits = c(-10, 10)) +
+  theme_black()
+
+dailyAspectsSlow <- dailyAspects[
+  p.x %in% c('CE', 'JU', 'SA', 'UR', 'NE', 'PL')
+][
+  orb <= 2,
+][
+  origin %ni% c('MESU')
+]
+
+ggplot(data = dailyAspectsSlow) +
+  aes(y = sp.y, x = diffPercent) +
+  geom_point(color = "white") +
+  facet_grid(aspect ~ origin, scales = "free_y") +
+  stat_ellipse(type = "norm", color = "yellow") +
+  scale_x_continuous(limits = c(-10, 10)) +
+  theme_black()
 
 # CONCLUSIONS (DAILY CURRENT ASPECTS):
 # 1) The retrograde motions of ME highly correlates with positive/negative aspect effect.
