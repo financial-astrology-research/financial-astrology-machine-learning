@@ -186,7 +186,7 @@ dailyAspectsAddEnergy <- function(dailyAspects, dailyPlanets, speedDecay = 0.6) 
   # Calculate max and proportional energy.
   dailyAspects[, enmax := aspectsEnergyIndex['energy', as.character(aspect)]]
   #dailyAspects[, enmax := 1]
-  dailyAspects[, ennow := energyDecay(enmax, orb, 0.6)]
+  dailyAspects[, ennow := energyDecay(enmax, orb, speedDecay)]
 
   return(dailyAspects)
 }
@@ -312,7 +312,7 @@ predictSecurityModelA <- function(symbol) {
                        value.name = 'aspect', value.factor = T, measure.var = planetsCombAsp, na.rm = T)
   dailyAspects[, origin := substr(origin, 1, 4)]
   dailyAspects <- dailyAspectsAddOrbs(dailyAspects, dailyPlanets)
-  dailyAspects <- dailyAspectsAddEnergy(dailyAspects, dailyPlanets, 0.6)
+  dailyAspects <- dailyAspectsAddEnergy(dailyAspects, dailyPlanets, 0.4)
   dailyAspects <- dailyAspectsAddLongitude(dailyAspects, dailyPlanets)
   dailyAspects <- dailyAspectsAddSpeed(dailyAspects, dailyPlanets)
   dailyAspects <- dailyAspectsAddCumulativeEnergy(dailyAspects, securityTrain)
