@@ -271,5 +271,8 @@ predictSecurityModelA <- function(symbol) {
   print(pgrid)
   cat("\nCORRELATION: ", cor(modelTest$effect, abs(modelTest$diffPercent), method = "pearson"), "\n")
 
-  return(dailyAspects)
+  # Merge the price.
+  dailyAspectsPriceEffect <- merge(dailyAspects, security[, c('Date', 'diffPercent')], by = c('Date'))
+
+  return(dailyAspectsPriceEffect)
 }
