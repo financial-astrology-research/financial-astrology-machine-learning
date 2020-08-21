@@ -257,17 +257,25 @@ predictSecurityModelA <- function(symbol) {
   cat("\n")
 
   cat("Daily test period:\n")
-  modelTest <- merge(dailyAspectsIndex, securityTest[, c('Date', 'diffPercent')], by = c('Date'))
+  modelTest <- merge(dailyAspectsIndex, securityTest[, c('Date', 'Mid', 'diffPercent')], by = c('Date'))
   print(modelTest)
   p1 <- ggplot(data = modelTest) +
-    geom_point(aes(x = diff, y = diffPercent), colour = "white", alpha = 0.8) +
+    geom_line(aes(x = Date, y = Mid), colour = "white", alpha = 0.8) +
     theme_black()
 
   p2 <- ggplot(data = modelTest) +
+    geom_line(aes(x = Date, y = effect), colour = "white", alpha = 0.8) +
+    theme_black()
+
+  p3 <- ggplot(data = modelTest) +
     geom_point(aes(x = effect, y = abs(diffPercent)), colour = "white", alpha = 0.8) +
     theme_black()
 
-  pgrid <- plot_grid(p1, p2, labels=c("Diff", "Effect"), ncol = 2)
+  p4 <- ggplot(data = modelTest) +
+    geom_point(aes(x = diff, y = diffPercent), colour = "white", alpha = 0.8) +
+    theme_black()
+
+  pgrid <- plot_grid(p1, p3, p2, p4, labels=c("Diff", "Effect"), align = 'hv')
   print(pgrid)
   cat("\nCORRELATION: ", cor(modelTest$effect, abs(modelTest$diffPercent), method = "pearson"), "\n")
 
