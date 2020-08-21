@@ -237,7 +237,7 @@ dailyAspectsAddEffectM2 <- function(dailyAspects) {
 
 dailyAspectsEffectIndex <- function(dailyAspects) {
   # Daily aspects effect index.
-  dailyAspectsIndex <- dailyAspects[, sum(effect), by = c('Date')]
+  dailyAspectsIndex <- dailyAspects[, round(sum(effect), 2), by = c('Date')]
   dailyAspectsIndex[, diff := round(Delt(V1, k = 1), 2)]
   setnames(dailyAspectsIndex, c('Date', 'effect', 'diff'))
   dailyAspectsIndex[, effectMA := SMA(effect, 5)]
@@ -312,7 +312,7 @@ predictSecurityModelA <- function(symbol) {
                        value.name = 'aspect', value.factor = T, measure.var = planetsCombAsp, na.rm = T)
   dailyAspects[, origin := substr(origin, 1, 4)]
   dailyAspects <- dailyAspectsAddOrbs(dailyAspects, dailyPlanets)
-  dailyAspects <- dailyAspectsAddEnergy(dailyAspects, dailyPlanets)
+  dailyAspects <- dailyAspectsAddEnergy(dailyAspects, dailyPlanets, 0.6)
   dailyAspects <- dailyAspectsAddLongitude(dailyAspects, dailyPlanets)
   dailyAspects <- dailyAspectsAddSpeed(dailyAspects, dailyPlanets)
   dailyAspects <- dailyAspectsAddCumulativeEnergy(dailyAspects, securityTrain)
