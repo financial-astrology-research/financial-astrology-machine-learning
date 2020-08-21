@@ -224,47 +224,7 @@ dailyAspectsAddCumulativeEnergy <- function(dailyAspects, securityTrain) {
   return(dailyAspects)
 }
 
-predictSecurityModelA <- function(symbol) {
-  # Best effect correlation when using classic aspects only.
-  setClassicAspectsSet()
-  #setAll2AspectsSet()
-  #setAllAspectsSet()
-  #setModernAspectsSet()
-  #setMajorsAspectsSet()
-  #setPlanetsMEVESUMACEJUNNSAURNEPL()
-  #setPlanetsMOMEVESUMACEJUSAURNEPL()
-  #setPlanetsMEVESUMACEJUSAURNEPL()
-  # Best effect / price range correlation when using only classical planets.
-  setPlanetsMEVESUMAJUSAURNEPL()
-  security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
-  securityTrain <- security[Date <= as.Date("2020-06-30"),]
-  securityTest <- security[Date > as.Date("2020-06-30"),]
-  dailyPlanets = buildPlanetsIndicators()
-  dailyPlanets <<- dailyPlanets
-
-  # Melt aspects.
-  dailyAspects <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin',
-                       value.name = 'aspect', value.factor = T, measure.var = planetsCombAsp, na.rm = T)
-  dailyAspects[, origin := substr(origin, 1, 4)]
-  dailyAspects <- dailyAspectsAddOrbs(dailyAspects, dailyPlanets)
-  dailyAspects <- dailyAspectsAddEnergy(dailyAspects, dailyPlanets)
-  dailyAspects <- dailyAspectsAddLongitude(dailyAspects, dailyPlanets)
-  dailyAspects <- dailyAspectsAddSpeed(dailyAspects, dailyPlanets)
-  dailyAspects <- dailyAspectsAddCumulativeEnergy(dailyAspects, securityTrain)
-
-  #dailyAspects[, effect := round((diffMean * entot) * 100)]
-  dailyAspects[, effect := entot]
-
-  # Daily aspects effect index.
-  dailyAspectsIndex <- dailyAspects[, sum(effect), by = c('Date')]
-  dailyAspectsIndex[, diff := round(Delt(V1, k = 1), 2)]
-  setnames(dailyAspectsIndex, c('Date', 'effect', 'diff'))
-  dailyAspectsIndex[, effectMA := SMA(effect, 5)]
-
-  # Set more convenient order for analysis.
-  colsOrder <- c('Date', 'origin', 'p.x', 'lon.x', 'sp.x', 'spn.x', 'p.y', 'lon.y', 'sp.y', 'spn.y', 'aspect', 'type', 'orb', 'orbdir', 'enmax', 'ennow', 'encum.x', 'encum.y', 'entot', 'effect', 'diffMean', 'diffMedian')
-  setcolorder(dailyAspects, colsOrder)
-
+predictSecurityModelReport <- function(dailyAspects, dailyAspectsIndex, securityTest) {
   cat("Today aspects:", format(todayDate, "%Y-%m-%d"), "\n")
   print(dailyAspects[Date == todayDate,][order(-entot)])
   cat("\n")
@@ -307,9 +267,52 @@ predictSecurityModelA <- function(symbol) {
   cat("\nCORRELATION EFFECT / MOVE RANGE: ", cor(modelTest$effect, abs(modelTest$diffPercent), method = "pearson"), "\n")
   cat("\nCORRELATION EFFECT / PRICE: ", cor(modelTest$effect, abs(modelTest$Mid), method = "pearson"), "\n")
   cat("\nCORRELATION EFFECT MA / PRICE: ", cor(modelTest$effectMA, abs(modelTest$Mid), method = "pearson"), "\n")
+}
 
-# Merge the price.
-  dailyAspectsPriceEffect <- merge(dailyAspects, security[, c('Date', 'diffPercent')], by = c('Date'))
+predictSecurityModelA <- function(symbol) {
+  # Best effect correlation when using classic aspects only.
+  setClassicAspectsSet()
+  #setAll2AspectsSet()
+  #setAllAspectsSet()
+  #setModernAspectsSet()
+  #setMajorsAspectsSet()
+  #setPlanetsMEVESUMACEJUNNSAURNEPL()
+  #setPlanetsMOMEVESUMACEJUSAURNEPL()
+  #setPlanetsMEVESUMACEJUSAURNEPL()
+  # Best effect / price range correlation when using only classical planets.
+  setPlanetsMEVESUMAJUSAURNEPL()
+  security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
+  securityTrain <- security[Date <= as.Date("2020-06-30"),]
+  securityTest <- security[Date > as.Date("2020-06-30"),]
+  dailyPlanets = buildPlanetsIndicators()
+  dailyPlanets <<- dailyPlanets
+
+  # Melt aspects.
+  dailyAspects <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin',
+                       value.name = 'aspect', value.factor = T, measure.var = planetsCombAsp, na.rm = T)
+  dailyAspects[, origin := substr(origin, 1, 4)]
+  dailyAspects <- dailyAspectsAddOrbs(dailyAspects, dailyPlanets)
+  dailyAspects <- dailyAspectsAddEnergy(dailyAspects, dailyPlanets)
+  dailyAspects <- dailyAspectsAddLongitude(dailyAspects, dailyPlanets)
+  dailyAspects <- dailyAspectsAddSpeed(dailyAspects, dailyPlanets)
+  dailyAspects <- dailyAspectsAddCumulativeEnergy(dailyAspects, securityTrain)
+
+  #dailyAspects[, effect := round((diffMean * entot) * 100)]
+  dailyAspects[, effect := entot]
+
+  # Daily aspects effect index.
+  dailyAspectsIndex <- dailyAspects[, sum(effect), by = c('Date')]
+  dailyAspectsIndex[, diff := round(Delt(V1, k = 1), 2)]
+  setnames(dailyAspectsIndex, c('Date', 'effect', 'diff'))
+  dailyAspectsIndex[, effectMA := SMA(effect, 5)]
+
+  # Set more convenient order for analysis.
+  colsOrder <- c('Date', 'origin', 'p.x', 'lon.x', 'sp.x', 'spn.x', 'p.y', 'lon.y', 'sp.y', 'spn.y', 'aspect', 'type', 'orb', 'orbdir', 'enmax', 'ennow', 'encum.x', 'encum.y', 'entot', 'effect', 'diffMean', 'diffMedian')
+  setcolorder(dailyAspects, colsOrder)
+  predictSecurityModelReport(dailyAspects, dailyAspectsIndex, securityTest)
+
+  # Merge the price.
+  dailyAspectsPriceEffect <- merge(dailyAspects, security[, c('Date', 'Mid', 'diffPercent')], by = c('Date'))
 
   return(dailyAspectsPriceEffect)
 }
