@@ -230,9 +230,19 @@ dailyAspectsAddEffectM1 <- function(dailyAspects) {
 }
 
 dailyAspectsAddEffectM2 <- function(dailyAspects) {
-  dailyAspects[, effect := round((diffMean * 100) * entot, 2)]
+  dailyAspects[, effect := round(sign(diffMean) * entot, 2)]
 
   return(dailyAspects)
+}
+
+dailyAspectsEffectIndex <- function(dailyAspects) {
+  # Daily aspects effect index.
+  dailyAspectsIndex <- dailyAspects[, sum(effect), by = c('Date')]
+  dailyAspectsIndex[, diff := round(Delt(V1, k = 1), 2)]
+  setnames(dailyAspectsIndex, c('Date', 'effect', 'diff'))
+  dailyAspectsIndex[, effectMA := SMA(effect, 5)]
+
+  return(dailyAspectsIndex)
 }
 
 predictSecurityModelReport <- function(dailyAspects, dailyAspectsIndex, securityTest) {
@@ -289,9 +299,8 @@ predictSecurityModelA <- function(symbol) {
   #setMajorsAspectsSet()
   #setPlanetsMEVESUMACEJUNNSAURNEPL()
   #setPlanetsMOMEVESUMACEJUSAURNEPL()
-  #setPlanetsMEVESUMACEJUSAURNEPL()
-  # Best effect / price range correlation when using only classical planets.
-  setPlanetsMEVESUMAJUSAURNEPL()
+  setPlanetsMEVESUMACEJUSAURNEPL()
+  #setPlanetsMEVESUMAJUSAURNEPL()
   security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
   securityTrain <- security[Date <= as.Date("2020-06-30"),]
   securityTest <- security[Date > as.Date("2020-06-30"),]
@@ -309,12 +318,7 @@ predictSecurityModelA <- function(symbol) {
   dailyAspects <- dailyAspectsAddCumulativeEnergy(dailyAspects, securityTrain)
   #dailyAspects <- dailyAspectsAddEffectM1(dailyAspects)
   dailyAspects <- dailyAspectsAddEffectM2(dailyAspects)
-
-  # Daily aspects effect index.
-  dailyAspectsIndex <- dailyAspects[, sum(effect), by = c('Date')]
-  dailyAspectsIndex[, diff := round(Delt(V1, k = 1), 2)]
-  setnames(dailyAspectsIndex, c('Date', 'effect', 'diff'))
-  dailyAspectsIndex[, effectMA := SMA(effect, 5)]
+  dailyAspectsIndex <- dailyAspectsEffectIndex(dailyAspects)
 
   # Set more convenient order for analysis.
   colsOrder <- c('Date', 'origin', 'p.x', 'lon.x', 'sp.x', 'spn.x', 'p.y', 'lon.y', 'sp.y', 'spn.y', 'aspect', 'type', 'orb', 'orbdir', 'enmax', 'ennow', 'encum.x', 'encum.y', 'entot', 'effect', 'diffMean', 'diffMedian')
