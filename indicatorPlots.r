@@ -235,6 +235,7 @@ predictSecurityModelA <- function(symbol) {
   dailyAspectsIndex <- dailyAspects[, sum(effect), by = c('Date')]
   dailyAspectsIndex[, diff := round(Delt(V1, k = 1), 2)]
   setnames(dailyAspectsIndex, c('Date', 'effect', 'diff'))
+  dailyAspectsIndex[, effectMA := SMA(effect, 5)]
 
   # Set more convenient order for analysis.
   colsOrder <- c('Date', 'origin', 'p.x', 'lon.x', 'sp.x', 'spn.x', 'p.y', 'lon.y', 'sp.y', 'spn.y', 'aspect', 'type', 'orb', 'orbdir', 'enmax', 'ennow', 'encum.x', 'encum.y', 'entot', 'effect', 'diffMean', 'diffMedian')
@@ -265,6 +266,7 @@ predictSecurityModelA <- function(symbol) {
 
   p2 <- ggplot(data = modelTest) +
     geom_line(aes(x = Date, y = effect), colour = "white", alpha = 0.8) +
+    geom_line(aes(x = Date, y = effectMA), colour = "yellow", alpha = 0.8) +
     theme_black()
 
   p3 <- ggplot(data = modelTest) +
@@ -277,9 +279,11 @@ predictSecurityModelA <- function(symbol) {
 
   pgrid <- plot_grid(p1, p3, p2, p4, labels=c("Diff", "Effect"), align = 'hv')
   print(pgrid)
-  cat("\nCORRELATION: ", cor(modelTest$effect, abs(modelTest$diffPercent), method = "pearson"), "\n")
+  cat("\nCORRELATION EFFECT / MOVE RANGE: ", cor(modelTest$effect, abs(modelTest$diffPercent), method = "pearson"), "\n")
+  cat("\nCORRELATION EFFECT / PRICE: ", cor(modelTest$effect, abs(modelTest$Mid), method = "pearson"), "\n")
+  cat("\nCORRELATION EFFECT MA / PRICE: ", cor(modelTest$effectMA, abs(modelTest$Mid), method = "pearson"), "\n")
 
-  # Merge the price.
+# Merge the price.
   dailyAspectsPriceEffect <- merge(dailyAspects, security[, c('Date', 'diffPercent')], by = c('Date'))
 
   return(dailyAspectsPriceEffect)
