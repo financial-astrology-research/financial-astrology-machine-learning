@@ -258,8 +258,9 @@ predictSecurityModelReport <- function(dailyAspects, dailyAspectsIndex, security
   print(dailyAspects[Date == todayDate + 2,][order(-entot)])
   cat("\n")
 
+  dailyAspectsIndexProjected <- dailyAspectsIndex[Date > todayDate-8 ,][0:60]
   cat("Daily aspects effect index:\n")
-  print(dailyAspectsIndex[Date > todayDate-8 ,][0:60])
+  print(dailyAspectsIndexProjected)
   cat("\n")
 
   cat("Daily test period:\n")
@@ -283,7 +284,13 @@ predictSecurityModelReport <- function(dailyAspects, dailyAspectsIndex, security
     geom_point(aes(x = diff, y = diffPercent), colour = "white", alpha = 0.8) +
     theme_black()
 
-  pgrid <- plot_grid(p1, p3, p2, p4, labels=c("Diff", "Effect"), align = 'hv')
+  p5 <- ggplot(data = dailyAspectsIndexProjected) +
+    geom_line(aes(x = Date, y = effectMA), colour = "yellow", alpha = 0.8) +
+    scale_x_date(date_breaks = '3 days', date_labels = "%Y-%m-%d") +
+    theme_black()
+
+  pgridTop <- plot_grid(p1, p3, p2, p4)
+  pgrid <- plot_grid(pgridTop, p5, ncol = 1, rel_heights = c(1.7, 1))
   print(pgrid)
   cat("\nCORRELATION EFFECT / MOVE RANGE: ", cor(modelTest$effect, abs(modelTest$diffPercent), method = "pearson"), "\n")
   cat("\nCORRELATION EFFECT / PRICE: ", cor(modelTest$effect, abs(modelTest$Mid), method = "pearson"), "\n")
