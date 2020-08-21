@@ -192,6 +192,38 @@ dailyAspectsAddEnergy <- function(dailyAspects, dailyPlanets, speedDecay = 0.6) 
   return(dailyAspects)
 }
 
+dailyAspectsAddCumulativeEnergy <- function(dailyAspects, securityTrain) {
+  # Merge daily security prices with aspects.
+  dailyAspectsPriceResearch <- merge(dailyAspects, securityTrain[, c('Date', 'diffPercent')], by = c('Date'))
+
+  # Calculate the historical mean aspect effect.
+  aspectsEffect <- dailyAspectsPriceResearch[
+    orb <= 2,
+    list(round(mean(diffPercent), 4), round(median(diffPercent), 4)),
+    by = c('origin', 'aspect', 'type')
+  ]
+  setnames(aspectsEffect, c('origin', 'aspect', 'type', 'diffMean', 'diffMedian'))
+  #dailyAspects[, diffMean := setAspectEffect(.SD), by=c('Date', 'origin', 'aspect', 'type')]
+  dailyAspectsPriceResearch <- merge(dailyAspectsPriceResearch, aspectsEffect, by = c('origin', 'aspect', 'type'))
+  dailyAspects <- merge(dailyAspects, aspectsEffect, by = c('origin', 'aspect', 'type'))
+
+  # Melt involved planets current energy for body strength calculation.
+  dailyAspectsPlanetsEnergy <- melt(
+    dailyAspects, id.var = c('Date', 'ennow'),
+    variable.name = 'origin', value.name = 'planet', measure.var = c('p.x', 'p.y')
+  )
+  dailyAspectsCumulativeEnergy <- dailyAspectsPlanetsEnergy[, sum(ennow), by = c('Date', 'planet')]
+
+  # Merge cumulative planets energy.
+  setnames(dailyAspectsCumulativeEnergy, c('Date', 'p.x', 'encum.x'))
+  dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c('Date', 'p.x'))
+  setnames(dailyAspectsCumulativeEnergy, c('Date', 'p.y', 'encum.y'))
+  dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c('Date', 'p.y'))
+  dailyAspects[, entot := round((encum.x + encum.y) * ennow, 2)]
+
+  return(dailyAspects)
+}
+
 predictSecurityModelA <- function(symbol) {
   # Best effect correlation when using classic aspects only.
   setClassicAspectsSet()
@@ -216,37 +248,10 @@ predictSecurityModelA <- function(symbol) {
   dailyAspects[, origin := substr(origin, 1, 4)]
   dailyAspects <- dailyAspectsAddOrbs(dailyAspects, dailyPlanets)
   dailyAspects <- dailyAspectsAddEnergy(dailyAspects, dailyPlanets)
-
-  # Merge daily security prices with aspects.
-  dailyAspectsPriceResearch <- merge(dailyAspects, securityTrain[, c('Date', 'diffPercent')], by = c('Date'))
-
-  # Calculate the historical mean aspect effect.
-  aspectsEffect <- dailyAspectsPriceResearch[
-    orb <= 2,
-    list(round(mean(diffPercent), 4), round(median(diffPercent), 4)),
-    by = c('origin', 'aspect', 'type')
-  ]
-  setnames(aspectsEffect, c('origin', 'aspect', 'type', 'diffMean', 'diffMedian'))
-  #dailyAspects[, diffMean := setAspectEffect(.SD), by=c('Date', 'origin', 'aspect', 'type')]
-  dailyAspectsPriceResearch <- merge(dailyAspectsPriceResearch, aspectsEffect, by = c('origin', 'aspect', 'type'))
-  dailyAspects <- merge(dailyAspects, aspectsEffect, by = c('origin', 'aspect', 'type'))
-
   dailyAspects <- dailyAspectsAddLongitude(dailyAspects, dailyPlanets)
   dailyAspects <- dailyAspectsAddSpeed(dailyAspects, dailyPlanets)
+  dailyAspects <- dailyAspectsAddCumulativeEnergy(dailyAspects, securityTrain)
 
-  # Melt involved planets current energy for body strength calculation.
-  dailyAspectsPlanetsEnergy <- melt(
-    dailyAspects, id.var = c('Date', 'ennow'),
-    variable.name = 'origin', value.name = 'planet', measure.var = c('p.x', 'p.y')
-  )
-  dailyAspectsCumulativeEnergy <- dailyAspectsPlanetsEnergy[, sum(ennow), by = c('Date', 'planet')]
-
-  # Merge cumulative planets energy.
-  setnames(dailyAspectsCumulativeEnergy, c('Date', 'p.x', 'encum.x'))
-  dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c('Date', 'p.x'))
-  setnames(dailyAspectsCumulativeEnergy, c('Date', 'p.y', 'encum.y'))
-  dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c('Date', 'p.y'))
-  dailyAspects[, entot := round((encum.x + encum.y) * ennow, 2)]
   #dailyAspects[, effect := round((diffMean * entot) * 100)]
   dailyAspects[, effect := entot]
 
