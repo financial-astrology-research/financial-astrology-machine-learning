@@ -122,6 +122,46 @@ analyzeSecurity <- function(symbol) {
   return(dailyPlanetPriceResearch)
 }
 
+dailyAspectsAddSpeed <- function(dailyAspects, dailyPlanets) {
+  # Melt speeds.
+  dailySpeed <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin', value.name = 'sp', measure.var = planetsSpCols)
+  dailySpeed[, spn := normalize(sp), by = c('origin')]
+  # dailyPlanets[, c(planetsSpCols) := lapply(.SD, normalize), .SDcols=planetsSpCols]
+  dailySpeedX <- copy(dailySpeed)
+  dailySpeedX[, p.x := substr(origin, 1, 2)]
+  dailySpeedX[, sp.x := round(sp/24, 3)]
+  dailySpeedX[, spn.x := spn]
+  # Merge daily speed.
+  dailySpeedY <- copy(dailySpeed)
+  dailySpeedY[, p.y := substr(origin, 1, 2)]
+  dailySpeedY[, sp.y := round(sp/24, 3)]
+  dailySpeedY[, spn.y := spn]
+  dailyAspects <- merge(dailyAspects, dailySpeedY[, c('Date', 'p.y', 'sp.y', 'spn.y')], by = c('Date', 'p.y'))
+  dailyAspects <- merge(dailyAspects, dailySpeedX[, c('Date', 'p.x', 'sp.x', 'spn.x')], by = c('Date', 'p.x'))
+
+  return(dailyAspects)
+}
+
+dailyAspectsAddLongitude <- function(dailyAspects, dailyPlanets) {
+  # Melt longitudes.
+  dailyLongitudes <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin',
+                          value.name = 'lon', measure.var = planetsLonCols)
+
+  # For first planet.
+  dailyLongitudesX <- copy(dailyLongitudes)
+  dailyLongitudesX[, p.x := substr(origin, 1, 2)]
+  dailyLongitudesX[, lon.x := lon]
+  # For second planet.
+  dailyLongitudesY <- copy(dailyLongitudes)
+  dailyLongitudesY[, p.y := substr(origin, 1, 2)]
+  dailyLongitudesY[, lon.y := lon]
+  # Merge
+  dailyAspects[, p.x := substr(origin, 1, 2)]
+  dailyAspects[, p.y := substr(origin, 3, 4)]
+  dailyAspects <- merge(dailyAspects, dailyLongitudesY[, c('Date', 'p.y', 'lon.y')], by = c('Date', 'p.y'))
+  dailyAspects <- merge(dailyAspects, dailyLongitudesX[, c('Date', 'p.x', 'lon.x')], by = c('Date', 'p.x'))
+}
+
 predictSecurityModelA <- function(symbol) {
   # Best effect correlation when using classic aspects only.
   setClassicAspectsSet()
@@ -181,39 +221,8 @@ predictSecurityModelA <- function(symbol) {
   dailyAspectsPriceResearch <- merge(dailyAspectsPriceResearch, aspectsEffect, by = c('origin', 'aspect', 'type'))
   dailyAspects <- merge(dailyAspects, aspectsEffect, by = c('origin', 'aspect', 'type'))
 
-  # Melt longitudes.
-  dailyLongitudes <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin',
-                          value.name = 'lon', measure.var = planetsLonCols)
-
-  # For first planet.
-  dailyLongitudesX <- copy(dailyLongitudes)
-  dailyLongitudesX[, p.x := substr(origin, 1, 2)]
-  dailyLongitudesX[, lon.x := lon]
-  # For second planet.
-  dailyLongitudesY <- copy(dailyLongitudes)
-  dailyLongitudesY[, p.y := substr(origin, 1, 2)]
-  dailyLongitudesY[, lon.y := lon]
-  # Merge
-  dailyAspects[, p.x := substr(origin, 1, 2)]
-  dailyAspects[, p.y := substr(origin, 3, 4)]
-  dailyAspects <- merge(dailyAspects, dailyLongitudesY[, c('Date', 'p.y', 'lon.y')], by = c('Date', 'p.y'))
-  dailyAspects <- merge(dailyAspects, dailyLongitudesX[, c('Date', 'p.x', 'lon.x')], by = c('Date', 'p.x'))
-
-  # Melt speeds.
-  dailySpeed <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin', value.name = 'sp', measure.var = planetsSpCols)
-  dailySpeed[, spn := normalize(sp), by = c('origin')]
-  # dailyPlanets[, c(planetsSpCols) := lapply(.SD, normalize), .SDcols=planetsSpCols]
-  dailySpeedX <- copy(dailySpeed)
-  dailySpeedX[, p.x := substr(origin, 1, 2)]
-  dailySpeedX[, sp.x := round(sp/24, 3)]
-  dailySpeedX[, spn.x := spn]
-  # Merge daily speed.
-  dailySpeedY <- copy(dailySpeed)
-  dailySpeedY[, p.y := substr(origin, 1, 2)]
-  dailySpeedY[, sp.y := round(sp/24, 3)]
-  dailySpeedY[, spn.y := spn]
-  dailyAspects <- merge(dailyAspects, dailySpeedY[, c('Date', 'p.y', 'sp.y', 'spn.y')], by = c('Date', 'p.y'))
-  dailyAspects <- merge(dailyAspects, dailySpeedX[, c('Date', 'p.x', 'sp.x', 'spn.x')], by = c('Date', 'p.x'))
+  dailyAspects <- dailyAspectsAddLongitude(dailyAspects, dailyPlanets)
+  dailyAspects <- dailyAspectsAddSpeed(dailyAspects, dailyPlanets)
 
   # Melt involved planets current energy for body strength calculation.
   dailyAspectsPlanetsEnergy <- melt(
