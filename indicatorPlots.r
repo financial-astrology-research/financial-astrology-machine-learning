@@ -180,7 +180,6 @@ dailyAspectsAddLongitude <- function(dailyAspects, dailyPlanets) {
 
 dailyAspectsAddEnergy <- function(dailyAspects, dailyPlanets, speedDecay = 0.6) {
   # For aspects: c( 0 , 30 , 45 , 60 , 90 , 120 , 135 , 150 , 180)
-  aspectsEnergy <- c(1, 1, 1, 1, 2, 1, 1, 1, 1)
   aspectsEnergyIndex <- matrix(aspectsEnergy, nrow = 1, ncol = length(aspectsEnergy), byrow = T,
                                dimnames = list(c('energy'), aspects))
 
