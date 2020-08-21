@@ -178,6 +178,20 @@ dailyAspectsAddLongitude <- function(dailyAspects, dailyPlanets) {
   dailyAspects <- merge(dailyAspects, dailyLongitudesX[, c('Date', 'p.x', 'lon.x')], by = c('Date', 'p.x'))
 }
 
+dailyAspectsAddEnergyM1 <- function(dailyAspects, dailyPlanets) {
+  # For aspects: c( 0 , 30 , 45 , 60 , 90 , 120 , 135 , 150 , 180)
+  aspectsEnergy <- c(1, 1, 1, 1, 2, 1, 1, 1, 1)
+  aspectsEnergyIndex <- matrix(aspectsEnergy, nrow = 1, ncol = length(aspectsEnergy), byrow = T,
+                               dimnames = list(c('energy'), aspects))
+
+  # Calculate max and proportional energy.
+  dailyAspects[, enmax := aspectsEnergyIndex['energy', as.character(aspect)]]
+  #dailyAspects[, enmax := 1]
+  dailyAspects[, ennow := energyGrowth(enmax, orb, 0.6)]
+
+  return(dailyAspects)
+}
+
 predictSecurityModelA <- function(symbol) {
   # Best effect correlation when using classic aspects only.
   setClassicAspectsSet()
@@ -201,16 +215,7 @@ predictSecurityModelA <- function(symbol) {
                        value.name = 'aspect', value.factor = T, measure.var = planetsCombAsp, na.rm = T)
   dailyAspects[, origin := substr(origin, 1, 4)]
   dailyAspects <- dailyAspectsAddOrbs(dailyAspects, dailyPlanets)
-
-  # For aspects: c( 0 , 30 , 45 , 60 , 90 , 120 , 135 , 150 , 180)
-  aspectsEnergy <- c(1, 1, 1, 1, 2, 1, 1, 1, 1)
-  aspectsEnergyIndex <- matrix(aspectsEnergy, nrow = 1, ncol = length(aspectsEnergy), byrow = T,
-  dimnames = list(c('energy'), aspects))
-
-  # Calculate max and proportional energy.
-  dailyAspects[, enmax := aspectsEnergyIndex['energy', as.character(aspect)]]
-  #dailyAspects[, enmax := 1]
-  dailyAspects[, ennow := energyGrowth(enmax, orb, 0.6)]
+  dailyAspects <- dailyAspectsAddEnergyM1(dailyAspects, dailyPlanets)
 
   # Merge daily security prices with aspects.
   dailyAspectsPriceResearch <- merge(dailyAspects, securityTrain[, c('Date', 'diffPercent')], by = c('Date'))
