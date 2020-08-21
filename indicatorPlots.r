@@ -259,7 +259,7 @@ predictSecurityModelReport <- function(dailyAspects, dailyAspectsIndex, security
   cat("\n")
 
   cat("Daily aspects effect index:\n")
-  print(dailyAspectsIndex[Date > todayDate-8 ,][0:30])
+  print(dailyAspectsIndex[Date > todayDate-8 ,][0:60])
   cat("\n")
 
   cat("Daily test period:\n")
