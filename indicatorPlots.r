@@ -151,6 +151,10 @@ dailyAspectsAddOrbs <- function(dailyAspects, dailyPlanets) {
   # Join aspects & orbs.
   dailyAspects <- merge(dailyAspects, dailyAspectsOrbs, by = c('Date', 'origin'))
 
+  # Calculate orb direction (applicative, separative).
+  dailyAspects[, orbdir := round(orb - Lag(orb), 2), by = c('origin', 'aspect')]
+  dailyAspects[, type := cut(orbdir, c(-100, 0, 100), labels = (c('applicative', 'separative')))]
+
   return(dailyAspects)
 }
 
@@ -202,10 +206,6 @@ predictSecurityModelA <- function(symbol) {
   aspectsEnergy <- c(1, 1, 1, 1, 2, 1, 1, 1, 1)
   aspectsEnergyIndex <- matrix(aspectsEnergy, nrow = 1, ncol = length(aspectsEnergy), byrow = T,
   dimnames = list(c('energy'), aspects))
-
-  # Calculate orb direction (applicative, separative).
-  dailyAspects[, orbdir := round(orb - Lag(orb), 2), by = c('origin', 'aspect')]
-  dailyAspects[, type := cut(orbdir, c(-100, 0, 100), labels = (c('applicative', 'separative')))]
 
   # Calculate max and proportional energy.
   dailyAspects[, enmax := aspectsEnergyIndex['energy', as.character(aspect)]]
