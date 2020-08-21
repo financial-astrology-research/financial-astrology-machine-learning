@@ -223,6 +223,18 @@ dailyAspectsAddCumulativeEnergy <- function(dailyAspects, securityTrain) {
   return(dailyAspects)
 }
 
+dailyAspectsAddEffectM1 <- function(dailyAspects) {
+  dailyAspects[, effect := entot]
+
+  return(dailyAspects)
+}
+
+dailyAspectsAddEffectM2 <- function(dailyAspects) {
+  dailyAspects[, effect := round((diffMean * 100) * entot, 2)]
+
+  return(dailyAspects)
+}
+
 predictSecurityModelReport <- function(dailyAspects, dailyAspectsIndex, securityTest) {
   cat("Today aspects:", format(todayDate, "%Y-%m-%d"), "\n")
   print(dailyAspects[Date == todayDate,][order(-entot)])
@@ -295,9 +307,8 @@ predictSecurityModelA <- function(symbol) {
   dailyAspects <- dailyAspectsAddLongitude(dailyAspects, dailyPlanets)
   dailyAspects <- dailyAspectsAddSpeed(dailyAspects, dailyPlanets)
   dailyAspects <- dailyAspectsAddCumulativeEnergy(dailyAspects, securityTrain)
-
-  #dailyAspects[, effect := round((diffMean * entot) * 100)]
-  dailyAspects[, effect := entot]
+  #dailyAspects <- dailyAspectsAddEffectM1(dailyAspects)
+  dailyAspects <- dailyAspectsAddEffectM2(dailyAspects)
 
   # Daily aspects effect index.
   dailyAspectsIndex <- dailyAspects[, sum(effect), by = c('Date')]
