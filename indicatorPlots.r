@@ -312,12 +312,12 @@ predictSecurityModelA <- function(symbol) {
                        value.name = 'aspect', value.factor = T, measure.var = planetsCombAsp, na.rm = T)
   dailyAspects[, origin := substr(origin, 1, 4)]
   dailyAspects <- dailyAspectsAddOrbs(dailyAspects, dailyPlanets)
-  dailyAspects <- dailyAspectsAddEnergy(dailyAspects, dailyPlanets, 0.4)
+  dailyAspects <- dailyAspectsAddEnergy(dailyAspects, dailyPlanets, 0.6)
   dailyAspects <- dailyAspectsAddLongitude(dailyAspects, dailyPlanets)
   dailyAspects <- dailyAspectsAddSpeed(dailyAspects, dailyPlanets)
   dailyAspects <- dailyAspectsAddCumulativeEnergy(dailyAspects, securityTrain)
-  #dailyAspects <- dailyAspectsAddEffectM1(dailyAspects)
-  dailyAspects <- dailyAspectsAddEffectM2(dailyAspects)
+  dailyAspects <- dailyAspectsAddEffectM1(dailyAspects)
+  #dailyAspects <- dailyAspectsAddEffectM2(dailyAspects)
   dailyAspectsIndex <- dailyAspectsEffectIndex(dailyAspects)
 
   # Set more convenient order for analysis.
