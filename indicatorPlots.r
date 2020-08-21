@@ -227,7 +227,7 @@ predictSecurityModelA <- function(symbol) {
   dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c('Date', 'p.x'))
   setnames(dailyAspectsCumulativeEnergy, c('Date', 'p.y', 'encum.y'))
   dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c('Date', 'p.y'))
-  dailyAspects[, entot := round((encum.x + encum.y) * ennow, 0)]
+  dailyAspects[, entot := round((encum.x + encum.y) * ennow, 2)]
   #dailyAspects[, effect := round((diffMean * entot) * 100)]
   dailyAspects[, effect := entot]
 
