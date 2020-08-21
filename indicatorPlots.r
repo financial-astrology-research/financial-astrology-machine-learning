@@ -142,6 +142,18 @@ dailyAspectsAddSpeed <- function(dailyAspects, dailyPlanets) {
   return(dailyAspects)
 }
 
+dailyAspectsAddOrbs <- function(dailyAspects, dailyPlanets) {
+  # Melt orbs.
+  dailyAspectsOrbs <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin', value.name = 'orb',
+                           measure.var = planetsCombOrb)
+  dailyAspectsOrbs[, origin := substr(origin, 1, 4)]
+  #aspects.day.long[, orbdir := sign(orb - Lag(orb)), by=c('lon', 'origin', 'aspect')]
+  # Join aspects & orbs.
+  dailyAspects <- merge(dailyAspects, dailyAspectsOrbs, by = c('Date', 'origin'))
+
+  return(dailyAspects)
+}
+
 dailyAspectsAddLongitude <- function(dailyAspects, dailyPlanets) {
   # Melt longitudes.
   dailyLongitudes <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin',
@@ -184,19 +196,12 @@ predictSecurityModelA <- function(symbol) {
   dailyAspects <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin',
                        value.name = 'aspect', value.factor = T, measure.var = planetsCombAsp, na.rm = T)
   dailyAspects[, origin := substr(origin, 1, 4)]
-
-  # Melt orbs.
-  dailyAspectsOrbs <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin', value.name = 'orb',
-                           measure.var = planetsCombOrb)
-  dailyAspectsOrbs[, origin := substr(origin, 1, 4)]
-  #aspects.day.long[, orbdir := sign(orb - Lag(orb)), by=c('lon', 'origin', 'aspect')]
+  dailyAspects <- dailyAspectsAddOrbs(dailyAspects, dailyPlanets)
 
   # For aspects: c( 0 , 30 , 45 , 60 , 90 , 120 , 135 , 150 , 180)
   aspectsEnergy <- c(1, 1, 1, 1, 2, 1, 1, 1, 1)
   aspectsEnergyIndex <- matrix(aspectsEnergy, nrow = 1, ncol = length(aspectsEnergy), byrow = T,
   dimnames = list(c('energy'), aspects))
-  # Join aspects & orbs.
-  dailyAspects <- merge(dailyAspects, dailyAspectsOrbs, by = c('Date', 'origin'))
 
   # Calculate orb direction (applicative, separative).
   dailyAspects[, orbdir := round(orb - Lag(orb), 2), by = c('origin', 'aspect')]
@@ -269,6 +274,7 @@ predictSecurityModelA <- function(symbol) {
   cat("Daily test period:\n")
   modelTest <- merge(dailyAspectsIndex, securityTest[, c('Date', 'Mid', 'diffPercent')], by = c('Date'))
   print(modelTest)
+
   p1 <- ggplot(data = modelTest) +
     geom_line(aes(x = Date, y = Mid), colour = "white", alpha = 0.8) +
     theme_black()
