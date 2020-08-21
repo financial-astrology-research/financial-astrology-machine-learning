@@ -188,7 +188,7 @@ dayAspectsEnergy <- function(args) {
 
   if (args$engrowth) {
     # compute the given energy based on the aspect orb distance
-    planets.pred.aspen[, energy := energyGrowth(energy, orb, 0.2)]
+    planets.pred.aspen[, energy := energyDecay(energy, orb, 0.2)]
   }
 
   # set energy up / down based on polarities

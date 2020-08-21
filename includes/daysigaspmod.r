@@ -32,7 +32,7 @@ modelDaySignificantAspectsModel <- function(args) {
     # TODO: verify that the filtered aspects correspond to the maximum orb
     planets.pred.aspen <- planets.pred.aspen[orb <= args$cusorbs['orbs', aspect]]
     # compute the given energy based on the aspect orb distance
-    planets.pred.aspen[, disenergy := energyGrowth(energy, orb)]
+    planets.pred.aspen[, disenergy := energyDecay(energy, orb)]
     # set energy up / down based on polarities
     planets.pred.aspen[polarity == 0, c('up', 'down') := list(0, disenergy)]
     planets.pred.aspen[polarity == 1, c('up', 'down') := list(disenergy, 0)]

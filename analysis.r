@@ -126,10 +126,9 @@ normalizeDistance <- function(x) {
 }
 
 # calculate the proportional energy of aspect based on the distance
-energyGrowth <- function(energy, distance, speed = 0.5) {
+energyDecay <- function(energy, distance, speed = 0.5) {
   return(round(energy * (1 - speed) ^ abs(distance), 2))
 }
-
 
 calculateAspects <- function(x, cusorbs) {
   allidx <- rep(FALSE, length(x))
@@ -714,7 +713,7 @@ buildPlanetsIndicators <- function(clear=F) {
   buildPlanetsColsNames(planetsBaseCols)
   planets <- openPlanets('planets_10', clear=clear)
   # build composite indicators
-  planets <- buildCompositeCols(planets)
+  # planets <- buildCompositeCols(planets)
   return(planets)
 }
 
