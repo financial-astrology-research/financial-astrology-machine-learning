@@ -5,7 +5,7 @@ todayDate <- as.Date(Sys.Date())
 
 analyzeSecurity <- function(symbol) {
   setClassicAspectsSet()
-  setPlanetsMOMEVESUMACEJUSAURNEPL()
+  setPlanetsMOMEVESUMACEJUNNSAURNEPL()
   span <- 22
 
   drawSecurityPriceSerie <- function() {
@@ -151,6 +151,7 @@ dailyAspectsAddOrbs <- function(dailyAspects, dailyPlanets, idCols = c('Date')) 
     value.name = 'orb', measure.var = planetsCombOrb
   )
 
+  dailyAspectsOrbs[, orb := round(orb, 2)]
   dailyAspectsOrbs[, origin := substr(origin, 1, 4)]
   #aspects.day.long[, orbdir := sign(orb - Lag(orb)), by=c('lon', 'origin', 'aspect')]
   # Join aspects & orbs.
@@ -395,6 +396,35 @@ predictSecurityModelB <- function(symbol) {
   hourlyAspectsIndex[, diff := round(Delt(V1, k = 1), 2)]
   setnames(hourlyAspectsIndex, c('Date', 'Hour', 'effect', 'diff'))
   hourlyAspectsIndex[, effectMA := SMA(effect, 5)]
+  print(hourlyAspectsIndex[Date > todayDate-1, ][0:100], topn = 100)
+
+  # Calculate aspects effect indexes.
+  dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
+  predictSecurityModelReport(hourlyAspects, dailyAspectsIndex, securityTest)
+}
+
+predictSecurityModelC <- function(symbol) {
+  # Best effect correlation when using classic aspects only.
+  setClassicAspectsSet()
+  #setPlanetsMOMEVESUMAJUSAURNEPL()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
+  securityTrain <- security[Date <= as.Date("2020-06-30"),]
+  securityTest <- security[Date > as.Date("2020-06-30"),]
+  dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  idCols <- c('Date', 'Hour')
+
+  hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
+  hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, dailyPlanets, 0.5)
+  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, securityTrain)
+  hourlyAspects <- dailyAspectsAddEffectM1(hourlyAspects)
+
+  cat("\nHourly aspects index: \n")
+  # Daily aspects effect index.
+  hourlyAspectsIndex <- hourlyAspects[, round(sum(effect), 2), by = c('Date', 'Hour')]
+  hourlyAspectsIndex[, diff := round(Delt(V1, k = 1), 2)]
+  setnames(hourlyAspectsIndex, c('Date', 'Hour', 'effect', 'diff'))
+  hourlyAspectsIndex[, effectMA := SMA(effect, 3)]
   print(hourlyAspectsIndex[Date > todayDate-1, ][0:100], topn = 100)
 
   # Calculate aspects effect indexes.
