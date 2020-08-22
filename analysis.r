@@ -179,12 +179,12 @@ mainProcessPlanetsDegSplit <- function(planetsorig, degsplit) {
   planets[, c(planetsLonGCols) := lapply(.SD, calculateLonGroups, degsplit=degsplit), .SDcols=planetsLonCols]
 }
 
-mainOpenPlanets <- function(planetsfile, cusorbs, calcasps=T) {
+mainOpenPlanets <- function(planetsfile, selectColNames, cusorbs, calcasps=T) {
   Date=DateMT4=Year=NULL
   planetsfile <- npath(paste("~/Sites/own/astro-trading/trading/dplanets/", planetsfile, ".tsv", sep=""))
   planets <- fread(planetsfile, sep="\t", na.strings="", verbose = F)
   planets[, Date := as.Date(planets$Date, format="%Y-%m-%d")]
-  planets <- planets[, c('Date', planetsLonCols, planetsDecCols, planetsSpCols), with=F]
+  planets <- planets[, selectColNames, with=F]
   #planets[, DateMT4 := as.character(format(Date, "%Y.%m.%d"))]
   planets[, Year := as.character(format(Date, "%Y"))]
   planets[, wday := format(Date, "%w")]
@@ -210,12 +210,29 @@ mainOpenPlanets <- function(planetsfile, cusorbs, calcasps=T) {
   return(planets)
 }
 
-# Open planets file and handle caching
+# Open daily planets file and handle caching
 openPlanets <- function(planetsfile, cusorbs=deforbs, calcasps=T, clear=F) {
   ckey <- list(as.character(c('openPlanets', planetsfile, cusorbs)))
   planets <- secureLoadCache(key=ckey)
+  selectColNames <- c('Date', planetsLonCols, planetsDecCols, planetsSpCols)
+
   if (is.null(planets) || clear) {
-    planets <- mainOpenPlanets(planetsfile, cusorbs, calcasps)
+    planets <- mainOpenPlanets(planetsfile, selectColNames, cusorbs, calcasps)
+    saveCache(planets, key=ckey)
+    cat("Set openPlanets cache\n")
+  }
+
+  return(planets)
+}
+
+# Open daily/hourly planets file and handle caching
+openHourlyPlanets <- function(planetsfile, cusorbs=deforbs, calcasps=T, clear=F) {
+  ckey <- list(as.character(c('openHourlyPlanets', planetsfile, cusorbs)))
+  planets <- secureLoadCache(key=ckey)
+  selectColNames <- c('Date', 'Hour', planetsLonCols, planetsDecCols, planetsSpCols)
+
+  if (is.null(planets) || clear) {
+    planets <- mainOpenPlanets(planetsfile, selectColNames, cusorbs, calcasps)
     saveCache(planets, key=ckey)
     cat("Set openPlanets cache\n")
   }
