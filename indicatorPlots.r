@@ -254,20 +254,20 @@ dailyAspectsEffectIndex <- function(dailyAspects, idCols = c('Date')) {
 
 predictSecurityModelReport <- function(dailyAspects, dailyAspectsIndex, securityTest) {
   cat("Today aspects:", format(todayDate, "%Y-%m-%d"), "\n")
-  print(dailyAspects[Date == todayDate,][order(-entot)])
+  print(dailyAspects[Date == todayDate,][order(-entot)], topn = 200)
   cat("\n")
 
   cat("Tomorrow aspects:", format(todayDate + 1, "%Y-%m-%d"), "\n")
-  print(dailyAspects[Date == todayDate + 1,][order(-entot)])
+  print(dailyAspects[Date == todayDate + 1,][order(-entot)], topn = 200)
   cat("\n")
 
   cat("Past tomorrow aspects:", format(todayDate + 2, "%Y-%m-%d"), "\n")
-  print(dailyAspects[Date == todayDate + 2,][order(-entot)])
+  print(dailyAspects[Date == todayDate + 2,][order(-entot)], topn = 200)
   cat("\n")
 
   dailyAspectsIndexProjected <- dailyAspectsIndex[Date > todayDate - 8,][0:60]
   cat("Daily aspects effect index:\n")
-  print(dailyAspectsIndexProjected)
+  print(dailyAspectsIndexProjected, topn = 100)
   cat("\n")
 
   cat("Daily test period:\n")
@@ -395,7 +395,7 @@ predictSecurityModelB <- function(symbol) {
   hourlyAspectsIndex[, diff := round(Delt(V1, k = 1), 2)]
   setnames(hourlyAspectsIndex, c('Date', 'Hour', 'effect', 'diff'))
   hourlyAspectsIndex[, effectMA := SMA(effect, 5)]
-  print(hourlyAspectsIndex[Date > todayDate-1, ][0:100])
+  print(hourlyAspectsIndex[Date > todayDate-1, ][0:100], topn = 100)
 
   # Calculate aspects effect indexes.
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
