@@ -122,34 +122,39 @@ analyzeSecurity <- function(symbol) {
   return(dailyPlanetPriceResearch)
 }
 
-dailyAspectsAddSpeed <- function(dailyAspects, dailyPlanets) {
+dailyAspectsAddSpeed <- function(dailyAspects, dailyPlanets, idCols = c('Date')) {
   # Melt speeds.
-  dailySpeed <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin', value.name = 'sp', measure.var = planetsSpCols)
+  dailySpeed <- melt(dailyPlanets, id.var = idCols, variable.name = 'origin', value.name = 'sp', measure.var = planetsSpCols)
   dailySpeed[, spn := normalize(sp), by = c('origin')]
   # dailyPlanets[, c(planetsSpCols) := lapply(.SD, normalize), .SDcols=planetsSpCols]
   dailySpeedX <- copy(dailySpeed)
   dailySpeedX[, p.x := substr(origin, 1, 2)]
-  dailySpeedX[, sp.x := round(sp/24, 3)]
+  dailySpeedX[, sp.x := round(sp / 24, 3)]
   dailySpeedX[, spn.x := spn]
   # Merge daily speed.
   dailySpeedY <- copy(dailySpeed)
   dailySpeedY[, p.y := substr(origin, 1, 2)]
-  dailySpeedY[, sp.y := round(sp/24, 3)]
+  dailySpeedY[, sp.y := round(sp / 24, 3)]
   dailySpeedY[, spn.y := spn]
-  dailyAspects <- merge(dailyAspects, dailySpeedY[, c('Date', 'p.y', 'sp.y', 'spn.y')], by = c('Date', 'p.y'))
-  dailyAspects <- merge(dailyAspects, dailySpeedX[, c('Date', 'p.x', 'sp.x', 'spn.x')], by = c('Date', 'p.x'))
+  selectColsY <- c(idCols, 'p.y', 'sp.y', 'spn.y')
+  dailyAspects <- merge(dailyAspects, dailySpeedY[, ..selectColsY], by = c(idCols, 'p.y'))
+  selectColsX <- c(idCols, 'p.x', 'sp.x', 'spn.x')
+  dailyAspects <- merge(dailyAspects, dailySpeedX[, ..selectColsX], by = c(idCols, 'p.x'))
 
   return(dailyAspects)
 }
 
-dailyAspectsAddOrbs <- function(dailyAspects, dailyPlanets) {
+dailyAspectsAddOrbs <- function(dailyAspects, dailyPlanets, idCols = c('Date')) {
   # Melt orbs.
-  dailyAspectsOrbs <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin', value.name = 'orb',
-                           measure.var = planetsCombOrb)
+  dailyAspectsOrbs <- melt(
+    dailyPlanets, id.var = idCols, variable.name = 'origin',
+    value.name = 'orb', measure.var = planetsCombOrb
+  )
+
   dailyAspectsOrbs[, origin := substr(origin, 1, 4)]
   #aspects.day.long[, orbdir := sign(orb - Lag(orb)), by=c('lon', 'origin', 'aspect')]
   # Join aspects & orbs.
-  dailyAspects <- merge(dailyAspects, dailyAspectsOrbs, by = c('Date', 'origin'))
+  dailyAspects <- merge(dailyAspects, dailyAspectsOrbs, by = c(idCols, 'origin'))
 
   # Calculate orb direction (applicative, separative).
   dailyAspects[, orbdir := round(orb - Lag(orb), 2), by = c('origin', 'aspect')]
@@ -158,9 +163,9 @@ dailyAspectsAddOrbs <- function(dailyAspects, dailyPlanets) {
   return(dailyAspects)
 }
 
-dailyAspectsAddLongitude <- function(dailyAspects, dailyPlanets) {
+dailyAspectsAddLongitude <- function(dailyAspects, dailyPlanets, idCols = c('Date')) {
   # Melt longitudes.
-  dailyLongitudes <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin',
+  dailyLongitudes <- melt(dailyPlanets, id.var = idCols, variable.name = 'origin',
                           value.name = 'lon', measure.var = planetsLonCols)
 
   # For first planet.
@@ -174,8 +179,10 @@ dailyAspectsAddLongitude <- function(dailyAspects, dailyPlanets) {
   # Merge
   dailyAspects[, p.x := substr(origin, 1, 2)]
   dailyAspects[, p.y := substr(origin, 3, 4)]
-  dailyAspects <- merge(dailyAspects, dailyLongitudesY[, c('Date', 'p.y', 'lon.y')], by = c('Date', 'p.y'))
-  dailyAspects <- merge(dailyAspects, dailyLongitudesX[, c('Date', 'p.x', 'lon.x')], by = c('Date', 'p.x'))
+  selectColsY <- c(idCols, 'p.y', 'lon.y')
+  dailyAspects <- merge(dailyAspects, dailyLongitudesY[, ..selectColsY], by = c(idCols, 'p.y'))
+  selectColsX <- c(idCols, 'p.x', 'lon.x')
+  dailyAspects <- merge(dailyAspects, dailyLongitudesX[, ..selectColsX], by = c(idCols, 'p.x'))
 }
 
 dailyAspectsAddEnergy <- function(dailyAspects, dailyPlanets, speedDecay = 0.6) {
@@ -191,7 +198,7 @@ dailyAspectsAddEnergy <- function(dailyAspects, dailyPlanets, speedDecay = 0.6) 
   return(dailyAspects)
 }
 
-dailyAspectsAddCumulativeEnergy <- function(dailyAspects, securityTrain) {
+dailyAspectsAddCumulativeEnergy <- function(dailyAspects, securityTrain, idCols = c('Date')) {
   # Merge daily security prices with aspects.
   dailyAspectsPriceResearch <- merge(dailyAspects, securityTrain[, c('Date', 'diffPercent')], by = c('Date'))
 
@@ -208,16 +215,16 @@ dailyAspectsAddCumulativeEnergy <- function(dailyAspects, securityTrain) {
 
   # Melt involved planets current energy for body strength calculation.
   dailyAspectsPlanetsEnergy <- melt(
-    dailyAspects, id.var = c('Date', 'ennow'),
+    dailyAspects, id.var = c(idCols, 'ennow'),
     variable.name = 'origin', value.name = 'planet', measure.var = c('p.x', 'p.y')
   )
-  dailyAspectsCumulativeEnergy <- dailyAspectsPlanetsEnergy[, sum(ennow), by = c('Date', 'planet')]
+  dailyAspectsCumulativeEnergy <- dailyAspectsPlanetsEnergy[, sum(ennow), by = c(idCols, 'planet')]
 
   # Merge cumulative planets energy.
   setnames(dailyAspectsCumulativeEnergy, c('Date', 'p.x', 'encum.x'))
-  dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c('Date', 'p.x'))
+  dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c(idCols, 'p.x'))
   setnames(dailyAspectsCumulativeEnergy, c('Date', 'p.y', 'encum.y'))
-  dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c('Date', 'p.y'))
+  dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c(idCols, 'p.y'))
   dailyAspects[, entot := round((encum.x + encum.y) * ennow, 2)]
 
   return(dailyAspects)
@@ -235,9 +242,9 @@ dailyAspectsAddEffectM2 <- function(dailyAspects) {
   return(dailyAspects)
 }
 
-dailyAspectsEffectIndex <- function(dailyAspects) {
+dailyAspectsEffectIndex <- function(dailyAspects, idCols = c('Date')) {
   # Daily aspects effect index.
-  dailyAspectsIndex <- dailyAspects[, round(sum(effect), 2), by = c('Date')]
+  dailyAspectsIndex <- dailyAspects[, round(sum(effect), 2), by = idCols]
   dailyAspectsIndex[, diff := round(Delt(V1, k = 1), 2)]
   setnames(dailyAspectsIndex, c('Date', 'effect', 'diff'))
   dailyAspectsIndex[, effectMA := SMA(effect, 5)]
@@ -258,7 +265,7 @@ predictSecurityModelReport <- function(dailyAspects, dailyAspectsIndex, security
   print(dailyAspects[Date == todayDate + 2,][order(-entot)])
   cat("\n")
 
-  dailyAspectsIndexProjected <- dailyAspectsIndex[Date > todayDate-8 ,][0:60]
+  dailyAspectsIndexProjected <- dailyAspectsIndex[Date > todayDate - 8,][0:60]
   cat("Daily aspects effect index:\n")
   print(dailyAspectsIndexProjected)
   cat("\n")
@@ -305,6 +312,22 @@ dailyAspectsNameCols <- function(dailyAspects) {
   return(dailyAspects)
 }
 
+dailyHourlyAspectsTablePrepare <- function(dailyHourlyPlanets, idCols) {
+  # Melt aspects.
+  dailyAspects <- melt(
+    dailyHourlyPlanets, id.var = idCols,
+    variable.name = 'origin', value.name = 'aspect',
+    value.factor = T, measure.var = planetsCombAsp, na.rm = T
+  )
+
+  dailyAspects[, origin := substr(origin, 1, 4)]
+  dailyAspects <- dailyAspectsAddOrbs(dailyAspects, dailyHourlyPlanets, idCols)
+  dailyAspects <- dailyAspectsAddLongitude(dailyAspects, dailyHourlyPlanets, idCols)
+  dailyAspects <- dailyAspectsAddSpeed(dailyAspects, dailyHourlyPlanets, idCols)
+
+  return(dailyAspects)
+}
+
 dailyAspectsTablePrepare <- function(dailyPlanets) {
   # Melt aspects.
   dailyAspects <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin',
@@ -332,7 +355,7 @@ predictSecurityModelA <- function(symbol) {
   security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
   securityTrain <- security[Date <= as.Date("2020-06-30"),]
   securityTest <- security[Date > as.Date("2020-06-30"),]
-  dailyPlanets <<- openPlanets('planets_10', clear=F)
+  dailyPlanets <<- openPlanets('planets_10', clear = F)
 
   dailyAspects <- dailyAspectsTablePrepare(dailyPlanets)
   dailyAspects <- dailyAspectsAddEnergy(dailyAspects, dailyPlanets, 0.5)
@@ -355,6 +378,9 @@ predictSecurityModelB <- function(symbol) {
   security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
   securityTrain <- security[Date <= as.Date("2020-06-30"),]
   securityTest <- security[Date > as.Date("2020-06-30"),]
-  dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear=F)
+  dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  idCols <- c('Date', 'Hour')
 
+  dailyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
+  browser()
 }
