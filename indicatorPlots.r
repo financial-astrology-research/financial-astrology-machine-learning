@@ -313,9 +313,10 @@ dailyAspectsNameCols <- function(dailyAspects) {
 }
 
 dailyHourlyAspectsTablePrepare <- function(dailyHourlyPlanets, idCols) {
+  dailyHourlyPlanetsRange <- dailyHourlyPlanets[Date >= as.Date("2015-01-01") & Date <= as.Date("2023-01-01")]
   # Melt aspects.
   dailyAspects <- melt(
-    dailyHourlyPlanets, id.var = idCols,
+    dailyHourlyPlanetsRange, id.var = idCols,
     variable.name = 'origin', value.name = 'aspect',
     value.factor = T, measure.var = planetsCombAsp, na.rm = T
   )
@@ -329,8 +330,9 @@ dailyHourlyAspectsTablePrepare <- function(dailyHourlyPlanets, idCols) {
 }
 
 dailyAspectsTablePrepare <- function(dailyPlanets) {
+  dailyPlanetsRange <- dailyPlanets[Date >= as.Date("2015-01-01") & Date <= as.Date("2023-01-01")]
   # Melt aspects.
-  dailyAspects <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin',
+  dailyAspects <- melt(dailyPlanetsRange, id.var = c('Date'), variable.name = 'origin',
                        value.name = 'aspect', value.factor = T, measure.var = planetsCombAsp, na.rm = T)
   dailyAspects[, origin := substr(origin, 1, 4)]
 
