@@ -311,8 +311,7 @@ predictSecurityModelA <- function(symbol) {
   security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
   securityTrain <- security[Date <= as.Date("2020-06-30"),]
   securityTest <- security[Date > as.Date("2020-06-30"),]
-  dailyPlanets = buildPlanetsIndicators()
-  dailyPlanets <<- dailyPlanets
+  dailyPlanets <<- openPlanets('planets_10', clear=F)
 
   # Melt aspects.
   dailyAspects <- melt(dailyPlanets, id.var = c('Date'), variable.name = 'origin',
