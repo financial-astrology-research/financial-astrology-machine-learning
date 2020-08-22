@@ -388,13 +388,6 @@ predictSecurityModelB <- function(symbol) {
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, dailyPlanets, 0.5)
   hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, securityTrain)
   hourlyAspects <- dailyAspectsAddEffectM1(hourlyAspects)
-  cat("\nHourly aspects: \n")
-  print(hourlyAspects[Date == todayDate, ][order(-entot)][0:100])
-
-  cat("\nDaily aspects index: \n")
-  # Calculate aspects effect indexes.
-  dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
-  print(dailyAspectsIndex[Date > todayDate-6, ][0:30])
 
   cat("\nHourly aspects index: \n")
   # Daily aspects effect index.
@@ -403,4 +396,8 @@ predictSecurityModelB <- function(symbol) {
   setnames(hourlyAspectsIndex, c('Date', 'Hour', 'effect', 'diff'))
   hourlyAspectsIndex[, effectMA := SMA(effect, 5)]
   print(hourlyAspectsIndex[Date > todayDate-1, ][0:100])
+
+  # Calculate aspects effect indexes.
+  dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
+  predictSecurityModelReport(hourlyAspects, dailyAspectsIndex, securityTest)
 }
