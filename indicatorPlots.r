@@ -292,6 +292,7 @@ predictSecurityModelReport <- function(dailyAspects, dailyAspectsIndex, security
     theme_black()
 
   p5 <- ggplot(data = dailyAspectsIndexProjected) +
+    geom_line(aes(x = Date, y = effect), colour = "white", alpha = 0.8) +
     geom_line(aes(x = Date, y = effectMA), colour = "yellow", alpha = 0.8) +
     scale_x_date(date_breaks = '3 days', date_labels = "%Y-%m-%d") +
     theme_black()
@@ -383,8 +384,23 @@ predictSecurityModelB <- function(symbol) {
   dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   idCols <- c('Date', 'Hour')
 
-  dailyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
-  dailyAspects <- dailyAspectsAddEnergy(dailyAspects, dailyPlanets, 0.5)
-  dailyAspects <- dailyAspectsAddCumulativeEnergy(dailyAspects, securityTrain)
-  print(dailyAspects[Date == todayDate, ][order(-entot)][0:100])
+  hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
+  hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, dailyPlanets, 0.5)
+  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, securityTrain)
+  hourlyAspects <- dailyAspectsAddEffectM1(hourlyAspects)
+  cat("\nHourly aspects: \n")
+  print(hourlyAspects[Date == todayDate, ][order(-entot)][0:100])
+
+  cat("\nDaily aspects index: \n")
+  # Calculate aspects effect indexes.
+  dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
+  print(dailyAspectsIndex[Date > todayDate-6, ][0:30])
+
+  cat("\nHourly aspects index: \n")
+  # Daily aspects effect index.
+  hourlyAspectsIndex <- hourlyAspects[, round(sum(effect), 2), by = c('Date', 'Hour')]
+  hourlyAspectsIndex[, diff := round(Delt(V1, k = 1), 2)]
+  setnames(hourlyAspectsIndex, c('Date', 'Hour', 'effect', 'diff'))
+  hourlyAspectsIndex[, effectMA := SMA(effect, 5)]
+  print(hourlyAspectsIndex[Date > todayDate-1, ][0:100])
 }
