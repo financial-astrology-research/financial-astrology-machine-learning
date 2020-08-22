@@ -384,5 +384,7 @@ predictSecurityModelB <- function(symbol) {
   idCols <- c('Date', 'Hour')
 
   dailyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
-  browser()
+  dailyAspects <- dailyAspectsAddEnergy(dailyAspects, dailyPlanets, 0.5)
+  dailyAspects <- dailyAspectsAddCumulativeEnergy(dailyAspects, securityTrain)
+  print(dailyAspects[Date == todayDate, ][order(-entot)][0:100])
 }
