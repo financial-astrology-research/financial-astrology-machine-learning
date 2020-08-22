@@ -90,7 +90,7 @@ setPlanetsMEVESUMACEJUSAURNEPL <- function() {
 }
 
 setPlanetsMEVESUMAJUSAURNEPL <- function() {
-  planetsBaseCols <<- c('ME', 'VE', 'SU', 'MA', 'CE', 'JU', 'SA', 'UR', 'NE', 'PL')
+  planetsBaseCols <<- c('ME', 'VE', 'SU', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL')
   planetsMajors <<- c('UR', 'NE', 'PL')
   buildPlanetsColsNames(planetsBaseCols)
 }
@@ -98,6 +98,7 @@ setPlanetsMEVESUMAJUSAURNEPL <- function() {
 setPlanetsSUMOMEVEMACEJUNNSNSAURNEPL <- function() {
   planetsBaseCols <<- c('SU', 'MO', 'ME', 'VE', 'MA', 'CE', 'JU', 'NN', 'SN', 'SA', 'UR', 'NE', 'PL')
   planetsMajors <<- c('UR', 'NE', 'PL')
+  buildPlanetsColsNames(planetsBaseCols)
 }
 
 # By default use the classical astrology planets
