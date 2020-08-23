@@ -232,6 +232,8 @@ dailyAspectsAddCumulativeEnergy <- function(dailyAspects, securityTrain, idCols 
   return(dailyAspects)
 }
 
+# Decay cumulative energy that can result in reversed polarity when cumulative and own energy both are negative
+# due the fact that -1 x -1 = 1.
 dailyAspectsAddEffectM1 <- function(dailyAspects) {
   dailyAspects[, entot := round((encum.x + encum.y) * ennow, 2)]
   dailyAspects[, effect := entot]
@@ -239,6 +241,7 @@ dailyAspectsAddEffectM1 <- function(dailyAspects) {
   return(dailyAspects)
 }
 
+# Cumulative and own energy polarity converted to the mean past effect.
 dailyAspectsAddEffectM2 <- function(dailyAspects) {
   dailyAspects[, entot := round((encum.x + encum.y) * ennow, 2)]
   dailyAspects[, effect := round(sign(diffMean) * entot, 2)]
@@ -246,6 +249,7 @@ dailyAspectsAddEffectM2 <- function(dailyAspects) {
   return(dailyAspects)
 }
 
+# Decay cumulative energy disregard the executor aspect polarity.
 dailyAspectsAddEffectM3 <- function(dailyAspects) {
   dailyAspects[, entot := round((encum.x + encum.y) * abs(ennow), 2)]
   dailyAspects[, effect := entot]
