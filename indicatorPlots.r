@@ -250,7 +250,7 @@ dailyAspectsEffectIndex <- function(dailyAspects, idCols = c('Date')) {
   dailyAspectsIndex <- dailyAspects[, round(sum(effect), 2), by = idCols]
   dailyAspectsIndex[, diff := round(Delt(V1, k = 1), 2)]
   setnames(dailyAspectsIndex, c('Date', 'effect', 'diff'))
-  dailyAspectsIndex[, effectMA := SMA(effect, 5)]
+  dailyAspectsIndex[, effectMA := SMA(effect, 3)]
 
   return(dailyAspectsIndex)
 }
@@ -304,8 +304,8 @@ predictSecurityModelReport <- function(dailyAspects, dailyAspectsIndex, security
   pgrid <- plot_grid(pgridTop, p5, ncol = 1, rel_heights = c(1.7, 1))
   print(pgrid)
   cat("\nCORRELATION EFFECT / MOVE RANGE: ", cor(modelTest$effect, abs(modelTest$diffPercent), method = "pearson"), "\n")
-  cat("\nCORRELATION EFFECT / PRICE: ", cor(modelTest$effect, abs(modelTest$Mid), method = "pearson"), "\n")
-  cat("\nCORRELATION EFFECT MA / PRICE: ", cor(modelTest$effectMA, abs(modelTest$Mid), method = "pearson"), "\n")
+  cat("\nCORRELATION EFFECT / PRICE: ", cor(modelTest$effect, modelTest$Mid, method = "pearson"), "\n")
+  cat("\nCORRELATION EFFECT MA / PRICE: ", cor(modelTest$effectMA, modelTest$Mid, method = "pearson"), "\n")
 }
 
 dailyAspectsNameCols <- function(dailyAspects) {
@@ -427,6 +427,36 @@ predictSecurityModelC <- function(symbol) {
   # Best effect correlation when using classic aspects only.
   setClassicAspectsSet()
   #setPlanetsMOMEVESUMAJUSAURNEPL()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
+  securityTrain <- security[Date <= as.Date("2020-06-30"),]
+  securityTest <- security[Date > as.Date("2020-06-30"),]
+  dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  idCols <- c('Date', 'Hour')
+
+  hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
+  hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.5)
+  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, securityTrain, idCols)
+  hourlyAspects <- dailyAspectsAddEffectM1(hourlyAspects)
+
+  cat("\nHourly aspects index: \n")
+  hourlyAspectsIndex <- hourlyAspectsEffectIndex(hourlyAspects)
+  print(hourlyAspectsIndex[Date > todayDate-1, ][0:100], topn = 100)
+
+  # Calculate aspects effect indexes.
+  dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
+  predictSecurityModelReport(hourlyAspects, dailyAspectsIndex, securityTest)
+}
+
+# This model uses:
+# - Hourly aspects & prices.
+# - Classical aspects set but limiting energy to a set: 45, 90, 120 and 150.
+# - Don't include CE, and include all the planets and MO.
+# - Use common daily aspects true energy disregard the historical security effect.
+# - Increase strength of 90 aspects energy by 2x.
+predictSecurityModelD <- function(symbol) {
+  # Best effect correlation when using classic aspects only.
+  setClassicAspectsSet2()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
   securityTrain <- security[Date <= as.Date("2020-06-30"),]
