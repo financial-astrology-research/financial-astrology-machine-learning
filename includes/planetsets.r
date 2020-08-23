@@ -71,8 +71,20 @@ setPlanetsSUMOMEVEMAJUNNSAURNE <- function() {
   buildPlanetsColsNames(planetsBaseCols)
 }
 
+setPlanetsMOMEVESUMAJUNNSAURNEPL <- function() {
+  planetsBaseCols <<- c('MO', 'ME', 'VE', 'SU', 'MA', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL')
+  planetsMajors <<- c('UR', 'NE', 'PL')
+  buildPlanetsColsNames(planetsBaseCols)
+}
+
+setPlanetsMOMEVESUMAJUSAURNEPL <- function() {
+  planetsBaseCols <<- c('MO', 'ME', 'VE', 'SU', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL')
+  planetsMajors <<- c('UR', 'NE', 'PL')
+  buildPlanetsColsNames(planetsBaseCols)
+}
+
 setPlanetsMOMEVESUMACEJUSAURNEPL <- function() {
-  planetsBaseCols <<- c('MO', 'ME', 'VE', 'SU', 'MA', 'CE', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL')
+  planetsBaseCols <<- c('MO', 'ME', 'VE', 'SU', 'MA', 'CE', 'JU', 'SA', 'UR', 'NE', 'PL')
   planetsMajors <<- c('UR', 'NE', 'PL')
   buildPlanetsColsNames(planetsBaseCols)
 }
