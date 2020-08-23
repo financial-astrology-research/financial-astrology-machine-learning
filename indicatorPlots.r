@@ -207,7 +207,7 @@ dailyAspectsAddCumulativeEnergy <- function(dailyAspects, securityTrain, idCols 
 
   # Calculate the historical mean aspect effect.
   aspectsEffect <- dailyAspectsPriceResearch[
-    orb <= 2,
+    orb <= 1,
     list(round(mean(diffPercent), 4), round(median(diffPercent), 4)),
     by = c('origin', 'aspect', 'type')
   ]
@@ -221,7 +221,7 @@ dailyAspectsAddCumulativeEnergy <- function(dailyAspects, securityTrain, idCols 
     dailyAspects, id.var = c(idCols, 'ennow'),
     variable.name = 'origin', value.name = 'planet', measure.var = c('p.x', 'p.y')
   )
-  dailyAspectsCumulativeEnergy <- dailyAspectsPlanetsEnergy[, sum(ennow), by = c(idCols, 'planet')]
+  dailyAspectsCumulativeEnergy <- dailyAspectsPlanetsEnergy[, round(sum(ennow), 2), by = c(idCols, 'planet')]
 
   # Merge cumulative planets energy.
   setnames(dailyAspectsCumulativeEnergy, c(idCols, 'p.x', 'encum.x'))
