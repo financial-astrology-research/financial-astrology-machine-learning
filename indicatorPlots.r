@@ -224,9 +224,9 @@ dailyAspectsAddCumulativeEnergy <- function(dailyAspects, securityTrain, idCols 
   dailyAspectsCumulativeEnergy <- dailyAspectsPlanetsEnergy[, sum(ennow), by = c(idCols, 'planet')]
 
   # Merge cumulative planets energy.
-  setnames(dailyAspectsCumulativeEnergy, c('Date', 'p.x', 'encum.x'))
+  setnames(dailyAspectsCumulativeEnergy, c(idCols, 'p.x', 'encum.x'))
   dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c(idCols, 'p.x'))
-  setnames(dailyAspectsCumulativeEnergy, c('Date', 'p.y', 'encum.y'))
+  setnames(dailyAspectsCumulativeEnergy, c(idCols, 'p.y', 'encum.y'))
   dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c(idCols, 'p.y'))
   dailyAspects[, entot := round((encum.x + encum.y) * ennow, 2)]
 
@@ -389,7 +389,7 @@ predictSecurityModelB <- function(symbol) {
 
   hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.5)
-  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, securityTrain)
+  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, securityTrain, idCols)
   hourlyAspects <- dailyAspectsAddEffectM1(hourlyAspects)
 
   cat("\nHourly aspects index: \n")
@@ -418,7 +418,7 @@ predictSecurityModelC <- function(symbol) {
 
   hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.5)
-  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, securityTrain)
+  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, securityTrain, idCols)
   hourlyAspects <- dailyAspectsAddEffectM1(hourlyAspects)
 
   cat("\nHourly aspects index: \n")
