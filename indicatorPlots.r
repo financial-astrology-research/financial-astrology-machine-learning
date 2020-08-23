@@ -347,6 +347,16 @@ dailyAspectsTablePrepare <- function(dailyPlanets) {
   return(dailyAspects)
 }
 
+hourlyAspectsEffectIndex <- function(hourlyAspects) {
+  # Daily aspects effect index.
+  hourlyAspectsIndex <- hourlyAspects[, round(sum(effect), 2), by = c('Date', 'Hour')]
+  hourlyAspectsIndex[, diff := round(Delt(V1, k = 1), 2)]
+  setnames(hourlyAspectsIndex, c('Date', 'Hour', 'effect', 'diff'))
+  hourlyAspectsIndex[, effectMA := SMA(effect, 3)]
+
+  return(hourlyAspectsIndex)
+}
+
 # This model uses:
 # - Daily aspects & prices.
 # - Classical aspects set.
@@ -399,11 +409,7 @@ predictSecurityModelB <- function(symbol) {
   hourlyAspects <- dailyAspectsAddEffectM1(hourlyAspects)
 
   cat("\nHourly aspects index: \n")
-  # Daily aspects effect index.
-  hourlyAspectsIndex <- hourlyAspects[, round(sum(effect), 2), by = c('Date', 'Hour')]
-  hourlyAspectsIndex[, diff := round(Delt(V1, k = 1), 2)]
-  setnames(hourlyAspectsIndex, c('Date', 'Hour', 'effect', 'diff'))
-  hourlyAspectsIndex[, effectMA := SMA(effect, 5)]
+  hourlyAspectsIndex <- hourlyAspectsEffectIndex(hourlyAspects)
   print(hourlyAspectsIndex[Date > todayDate-1, ][0:100], topn = 100)
 
   # Calculate aspects effect indexes.
@@ -434,11 +440,7 @@ predictSecurityModelC <- function(symbol) {
   hourlyAspects <- dailyAspectsAddEffectM1(hourlyAspects)
 
   cat("\nHourly aspects index: \n")
-  # Daily aspects effect index.
-  hourlyAspectsIndex <- hourlyAspects[, round(sum(effect), 2), by = c('Date', 'Hour')]
-  hourlyAspectsIndex[, diff := round(Delt(V1, k = 1), 2)]
-  setnames(hourlyAspectsIndex, c('Date', 'Hour', 'effect', 'diff'))
-  hourlyAspectsIndex[, effectMA := SMA(effect, 3)]
+  hourlyAspectsIndex <- hourlyAspectsEffectIndex(hourlyAspects)
   print(hourlyAspectsIndex[Date > todayDate-1, ][0:100], topn = 100)
 
   # Calculate aspects effect indexes.
