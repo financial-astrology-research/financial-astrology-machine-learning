@@ -186,10 +186,12 @@ dailyAspectsAddLongitude <- function(dailyAspects, dailyPlanets, idCols = c('Dat
   dailyAspects <- merge(dailyAspects, dailyLongitudesX[, ..selectColsX], by = c(idCols, 'p.x'))
 }
 
-dailyAspectsAddEnergy <- function(dailyAspects, dailyPlanets, speedDecay = 0.6) {
+dailyAspectsAddEnergy <- function(dailyAspects, speedDecay = 0.6) {
   # For aspects: c( 0 , 30 , 45 , 60 , 90 , 120 , 135 , 150 , 180)
-  aspectsEnergyIndex <- matrix(aspectsEnergy, nrow = 1, ncol = length(aspectsEnergy), byrow = T,
-                               dimnames = list(c('energy'), aspects))
+  aspectsEnergyIndex <- matrix(
+    aspectsEnergy, nrow = 1, ncol = length(aspectsEnergy),
+    byrow = T, dimnames = list(c('energy'), aspects)
+  )
 
   # Calculate max and proportional energy.
   dailyAspects[, enmax := aspectsEnergyIndex['energy', as.character(aspect)]]
@@ -362,7 +364,7 @@ predictSecurityModelA <- function(symbol) {
   dailyPlanets <<- openPlanets('planets_10', clear = F)
 
   dailyAspects <- dailyAspectsTablePrepare(dailyPlanets)
-  dailyAspects <- dailyAspectsAddEnergy(dailyAspects, dailyPlanets, 0.5)
+  dailyAspects <- dailyAspectsAddEnergy(dailyAspects, 0.5)
   dailyAspects <- dailyAspectsAddCumulativeEnergy(dailyAspects, securityTrain)
   dailyAspects <- dailyAspectsAddEffectM1(dailyAspects)
   #dailyAspects <- dailyAspectsAddEffectM2(dailyAspects)
@@ -386,7 +388,7 @@ predictSecurityModelB <- function(symbol) {
   idCols <- c('Date', 'Hour')
 
   hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
-  hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, dailyPlanets, 0.5)
+  hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.5)
   hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, securityTrain)
   hourlyAspects <- dailyAspectsAddEffectM1(hourlyAspects)
 
@@ -415,7 +417,7 @@ predictSecurityModelC <- function(symbol) {
   idCols <- c('Date', 'Hour')
 
   hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
-  hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, dailyPlanets, 0.5)
+  hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.5)
   hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, securityTrain)
   hourlyAspects <- dailyAspectsAddEffectM1(hourlyAspects)
 
