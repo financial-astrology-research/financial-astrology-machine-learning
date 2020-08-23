@@ -348,7 +348,7 @@ dailyAspectsTablePrepare <- function(dailyPlanets) {
 }
 
 # This model uses:
-# - Daily planets & prices.
+# - Daily aspects & prices.
 # - Classical aspects set.
 # - Includes CE but not NN or SN cycles.
 # - Use common daily aspects true energy disregard the historical security effect.
@@ -377,6 +377,12 @@ predictSecurityModelA <- function(symbol) {
   return(dailyAspectsPriceEffect)
 }
 
+# This model uses:
+# - Hourly aspects & prices.
+# - Classical aspects set.
+# - Don't include MO, CE and NN.
+# - Use common daily aspects true energy disregard the historical security effect.
+# - Increase strength of 90 aspects energy by 2x.
 predictSecurityModelB <- function(symbol) {
   # Best effect correlation when using classic aspects only.
   setClassicAspectsSet()
@@ -405,6 +411,12 @@ predictSecurityModelB <- function(symbol) {
   predictSecurityModelReport(hourlyAspects, dailyAspectsIndex, securityTest)
 }
 
+# This model uses:
+# - Hourly aspects & prices.
+# - Classical aspects set.
+# - Don't include CE, and include all the planets and MO.
+# - Use common daily aspects true energy disregard the historical security effect.
+# - Increase strength of 90 aspects energy by 2x.
 predictSecurityModelC <- function(symbol) {
   # Best effect correlation when using classic aspects only.
   setClassicAspectsSet()
