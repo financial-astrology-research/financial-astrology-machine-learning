@@ -589,3 +589,38 @@ predictSecurityModelG <- function(symbol) {
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
   predictSecurityModelReport(hourlyAspects, dailyAspectsIndex, securityTest)
 }
+
+# This model uses:
+# - Hourly aspects & prices.
+# - Classical aspects set with energy polarity.
+# - Increase strength of 90 aspects energy by 2x.
+# - Effect is the proportion to the orb from the received aspects cumulative energy accounting with the original polarity.
+# - Don't include CE, and include all the planets and MO.
+# - Orb decay energy speed is slower to 0.2.
+# - MO energy only accounts as cumulative for other aspects.
+# - Use common daily aspects true energy disregard the historical security effect.
+predictSecurityModelH <- function(symbol) {
+  # Best effect correlation when using classic aspects only.
+  setClassicAspectsSet3()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
+  securityTrain <- security[Date <= as.Date("2020-06-30"),]
+  securityTest <- security[Date > as.Date("2020-06-30"),]
+  dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  idCols <- c('Date', 'Hour')
+
+  hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
+  hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.2)
+  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, securityTrain, idCols)
+  # MO only contribute to the cumulative effect but is not a major indicator.
+  hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
+  hourlyAspects <- dailyAspectsAddEffectM3(hourlyAspects)
+
+  cat("\nHourly aspects index: \n")
+  hourlyAspectsIndex <- hourlyAspectsEffectIndex(hourlyAspects)
+  print(hourlyAspectsIndex[Date > todayDate-1, ][0:100], topn = 100)
+
+  # Calculate aspects effect indexes.
+  dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
+  predictSecurityModelReport(hourlyAspects, dailyAspectsIndex, securityTest)
+}
