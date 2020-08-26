@@ -540,7 +540,7 @@ predictSecurityModelE <- function(symbol) {
 predictSecurityModelF <- function(symbol) {
   # Best effect correlation when using classic aspects only.
   setClassicAspectsSet3()
-  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  setPlanetsMOMEVESUMAJUSAURNEPL()
   security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
   securityTrain <- security[Date <= as.Date("2020-06-30"),]
   securityTest <- security[Date > as.Date("2020-06-30"),]
@@ -642,7 +642,7 @@ predictSecurityModelH <- function(symbol) {
 predictSecurityModelI <- function(symbol) {
   # Best effect correlation when using classic aspects only.
   setClassicAspectsSet4()
-  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  setPlanetsMOMEVESUMAJUSAURNEPL()
   security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
   securityTrain <- security[Date <= as.Date("2020-06-30"),]
   securityTest <- security[Date > as.Date("2020-06-30"),]
