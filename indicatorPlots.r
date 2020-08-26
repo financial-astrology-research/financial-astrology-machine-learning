@@ -636,7 +636,7 @@ predictSecurityModelH <- function(symbol) {
 # - Don't include CE, and include all the planets and MO.
 # - Orb decay energy speed is slower to 0.2.
 # - MO energy only accounts as cumulative for other aspects.
-# - Ignore slow to slow planets aspects.
+# - Ignore slow to slow planets aspects energy.
 # - Use common daily aspects true energy disregard the historical security effect.
 # - Changed orbs for all classic aspects to 5 degrees.
 predictSecurityModelI <- function(symbol) {
