@@ -636,6 +636,7 @@ predictSecurityModelH <- function(symbol) {
 # - Don't include CE, and include all the planets and MO.
 # - Orb decay energy speed is slower to 0.2.
 # - MO energy only accounts as cumulative for other aspects.
+# - Ignore slow to slow planets aspects.
 # - Use common daily aspects true energy disregard the historical security effect.
 # - Changed orbs for all classic aspects to 5 degrees.
 predictSecurityModelI <- function(symbol) {
@@ -651,6 +652,8 @@ predictSecurityModelI <- function(symbol) {
 
   hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.2)
+  # Ignore slow to slow planets aspects due we lack a complete cycle.
+  hourlyAspects <- hourlyAspects[p.x %ni% c('JU', 'SA', 'UR', 'NE', 'PL'),]
   hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, securityTrain, idCols)
   # MO only contribute to the cumulative effect but is not a major indicator.
   hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
