@@ -346,6 +346,8 @@ dailyHourlyAspectsTablePrepare <- function(dailyHourlyPlanets, idCols) {
   )
 
   dailyAspects[, origin := substr(origin, 1, 4)]
+  setkey(dailyAspects, 'Date', 'Hour')
+
   dailyAspects <- dailyAspectsAddOrbs(dailyAspects, dailyHourlyPlanets, idCols)
   dailyAspects <- dailyAspectsAddLongitude(dailyAspects, dailyHourlyPlanets, idCols)
   dailyAspects <- dailyAspectsAddSpeed(dailyAspects, dailyHourlyPlanets, idCols)
