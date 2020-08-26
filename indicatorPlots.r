@@ -307,7 +307,7 @@ predictSecurityModelReport <- function(dailyAspects, dailyAspectsIndex, security
     theme_black()
 
   p3 <- ggplot(data = modelTest) +
-    geom_point(aes(x = effect, y = abs(diffPercent)), colour = "white", alpha = 0.8) +
+    geom_point(aes(x = abs(effect), y = abs(diffPercent)), colour = "white", alpha = 0.8) +
     theme_black()
 
   p4 <- ggplot(data = modelTest) +
@@ -323,7 +323,7 @@ predictSecurityModelReport <- function(dailyAspects, dailyAspectsIndex, security
   pgridTop <- plot_grid(p1, p3, p2, p4)
   pgrid <- plot_grid(pgridTop, p5, ncol = 1, rel_heights = c(1.7, 1))
   print(pgrid)
-  cat("\nCORRELATION EFFECT / MOVE RANGE: ", cor(modelTest$effect, abs(modelTest$diffPercent), method = "pearson"), "\n")
+  cat("\nCORRELATION EFFECT / MOVE RANGE: ", cor(abs(modelTest$effect), abs(modelTest$diffPercent), method = "pearson"), "\n")
   cat("\nCORRELATION EFFECT / PRICE: ", cor(modelTest$effect, modelTest$Mid, method = "pearson"), "\n")
   cat("\nCORRELATION EFFECT MA / PRICE: ", cor(modelTest$effectMA, modelTest$Mid, method = "pearson"), "\n")
 }
@@ -607,6 +607,7 @@ predictSecurityModelH <- function(symbol) {
   securityTrain <- security[Date <= as.Date("2020-06-30"),]
   securityTest <- security[Date > as.Date("2020-06-30"),]
   dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  dailyHourlyPlanetsSecurity <<- merge(securityTrain, dailyHourlyPlanets, by = c("Date"))
   idCols <- c('Date', 'Hour')
 
   hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
@@ -618,7 +619,44 @@ predictSecurityModelH <- function(symbol) {
 
   cat("\nHourly aspects index: \n")
   hourlyAspectsIndex <- hourlyAspectsEffectIndex(hourlyAspects)
-  print(hourlyAspectsIndex[Date > todayDate-1, ][0:100], topn = 100)
+  print(hourlyAspectsIndex[Date > todayDate-2, ][0:100], topn = 100)
+
+  # Calculate aspects effect indexes.
+  dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
+  predictSecurityModelReport(hourlyAspects, dailyAspectsIndex, securityTest)
+}
+
+# This model uses:
+# - Hourly aspects & prices.
+# - Classical aspects set with energy polarity.
+# - Increase strength of 90 aspects energy by 2x.
+# - Effect is the proportion to the orb from the received aspects cumulative energy accounting with the original polarity.
+# - Don't include CE, and include all the planets and MO.
+# - Orb decay energy speed is slower to 0.2.
+# - MO energy only accounts as cumulative for other aspects.
+# - Use common daily aspects true energy disregard the historical security effect.
+# - Changed orbs for all classic aspects to 5 degrees.
+predictSecurityModelI <- function(symbol) {
+  # Best effect correlation when using classic aspects only.
+  setClassicAspectsSet4()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
+  securityTrain <- security[Date <= as.Date("2020-06-30"),]
+  securityTest <- security[Date > as.Date("2020-06-30"),]
+  dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  dailyHourlyPlanetsSecurity <<- merge(securityTrain, dailyHourlyPlanets, by = c("Date"))
+  idCols <- c('Date', 'Hour')
+
+  hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
+  hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.2)
+  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, securityTrain, idCols)
+  # MO only contribute to the cumulative effect but is not a major indicator.
+  hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
+  hourlyAspects <- dailyAspectsAddEffectM3(hourlyAspects)
+
+  cat("\nHourly aspects index: \n")
+  hourlyAspectsIndex <- hourlyAspectsEffectIndex(hourlyAspects)
+  print(hourlyAspectsIndex[Date > todayDate-2, ][0:100], topn = 100)
 
   # Calculate aspects effect indexes.
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
