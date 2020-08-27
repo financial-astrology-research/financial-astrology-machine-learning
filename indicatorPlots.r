@@ -503,7 +503,7 @@ predictSecurityModelD <- function(symbol) {
 # This model uses:
 # - Hourly aspects & prices.
 # - Classical aspects set with energy polarity.
-# - Increase strength of 90 aspects energy by 2x.
+# - Boost strength of 90 and 150 aspects energy over others.
 # - Don't include CE, and include all the planets and MO.
 # - Use common daily aspects true energy disregard the historical security effect.
 predictSecurityModelE <- function(symbol) {
@@ -533,7 +533,7 @@ predictSecurityModelE <- function(symbol) {
 # This model uses:
 # - Hourly aspects & prices.
 # - Classical aspects set with energy polarity.
-# - Increase strength of 90 aspects energy by 2x.
+# - Boost strength of 90 and 150 aspects energy over others.
 # - Effect is the proportion to the orb from the received aspect energy accounting with the original polarity.
 # - Don't include CE, and include all the planets and MO.
 # - Use common daily aspects true energy disregard the historical security effect.
@@ -564,7 +564,7 @@ predictSecurityModelF <- function(symbol) {
 # This model uses:
 # - Hourly aspects & prices.
 # - Classical aspects set with energy polarity.
-# - Increase strength of 90 aspects energy by 2x.
+# - Boost strength of 90 and 150 aspects energy over others.
 # - Effect is the sum of the cumulative and own energy.
 # - Don't include CE, and include all the planets and MO.
 # - Use common daily aspects true energy disregard the historical security effect.
@@ -595,7 +595,7 @@ predictSecurityModelG <- function(symbol) {
 # This model uses:
 # - Hourly aspects & prices.
 # - Classical aspects set with energy polarity.
-# - Increase strength of 90 aspects energy by 2x.
+# - Boost strength of 90 and 150 aspects energy over others.
 # - Effect is the proportion to the orb from the received aspects cumulative energy accounting with the original polarity.
 # - Don't include CE, and include all the planets and MO.
 # - Orb decay energy speed is slower to 0.2.
