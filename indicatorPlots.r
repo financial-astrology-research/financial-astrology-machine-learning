@@ -667,3 +667,31 @@ predictSecurityModelI <- function(symbol) {
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
   predictSecurityModelReport(hourlyAspects, dailyAspectsIndex, securityTest)
 }
+
+# Combines characteristics of Model E & H.
+predictSecurityModelJ <- function(symbol) {
+  # Best effect correlation when using classic aspects only.
+  setClassicAspectsSet3()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
+  securityTrain <- security[Date <= as.Date("2020-06-30"),]
+  securityTest <- security[Date > as.Date("2020-06-30"),]
+  dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  dailyHourlyPlanetsSecurity <<- merge(securityTrain, dailyHourlyPlanets, by = c("Date"))
+  idCols <- c('Date', 'Hour')
+
+  hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
+  hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.45)
+  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, securityTrain, idCols)
+  # MO only contribute to the cumulative effect but is not a major indicator.
+  hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
+  hourlyAspects <- dailyAspectsAddEffectM1(hourlyAspects)
+
+  cat("\nHourly aspects index: \n")
+  hourlyAspectsIndex <- hourlyAspectsEffectIndex(hourlyAspects)
+  print(hourlyAspectsIndex[Date > todayDate-2, ][0:100], topn = 100)
+
+  # Calculate aspects effect indexes.
+  dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
+  predictSecurityModelReport(hourlyAspects, dailyAspectsIndex, securityTest)
+}

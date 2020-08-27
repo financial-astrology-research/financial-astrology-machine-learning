@@ -20,3 +20,9 @@ dailyAspects <- predictSecurityModelH("EOS-USD")
 
 # The trend seems flat in some periods and is lagged for few few days but correlation is high.
 dailyAspects <- predictSecurityModelI("EOS-USD")
+
+# Combine characteristics from Model E & H to analyze more important hyperparameters:
+# The EffectM1 formula provides more accuracy and better magnitude on the plot against price.
+# The effect decay speed influence a lot on the trend lagging effect.
+# MO just as cumulative effect removes daily micro-trend resolution in favor clear weekly trend.
+dailyAspects <- predictSecurityModelJ("EOS-USD")
