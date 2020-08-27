@@ -304,6 +304,8 @@ predictSecurityModelReport <- function(dailyAspects, dailyAspectsIndex, security
   p2 <- ggplot(data = modelTest) +
     geom_line(aes(x = Date, y = effect), colour = "white", alpha = 0.8) +
     geom_line(aes(x = Date, y = effectMA), colour = "yellow", alpha = 0.8) +
+    # Do the effect index log conversion per model due to some energy models has negative values.
+    # scale_y_log10() +
     theme_black()
 
   p3 <- ggplot(data = modelTest) +
