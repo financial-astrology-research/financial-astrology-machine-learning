@@ -221,6 +221,7 @@ dailyAspectsAddCumulativeEnergy <- function(dailyAspects, idCols = c('Date')) {
     variable.name = 'origin', value.name = 'planet', measure.var = c('p.x', 'p.y')
   )
   dailyAspectsCumulativeEnergy <- dailyAspectsPlanetsEnergy[, round(sum(ennow), 2), by = c(idCols, 'planet')]
+  setkey(dailyAspectsCumulativeEnergy, 'Date', 'Hour')
 
   # Merge cumulative planets energy.
   setnames(dailyAspectsCumulativeEnergy, c(idCols, 'p.x', 'encum.x'))
@@ -374,7 +375,7 @@ dailyAspectsNameCols <- function(dailyAspects) {
 }
 
 dailyHourlyAspectsTablePrepare <- function(dailyHourlyPlanets, idCols) {
-  dailyHourlyPlanetsRange <- dailyHourlyPlanets[Date >= as.Date("2015-01-01") & Date <= as.Date("2023-01-01")]
+  dailyHourlyPlanetsRange <- dailyHourlyPlanets[Date >= as.Date("2016-01-01") & Date <= as.Date("2021-12-31")]
   # Melt aspects.
   dailyAspects <- melt(
     dailyHourlyPlanetsRange, id.var = idCols,
