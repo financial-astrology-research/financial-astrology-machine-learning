@@ -1704,7 +1704,7 @@ theme_black = function(base_size = 12, base_family = "") {
       panel.border = element_rect(fill = NA, color = "white"),
       panel.grid.major = element_line(color = "grey35"),
       panel.grid.minor = element_line(color = "grey20"),
-      panel.margin = unit(0.5, "lines"),
+      panel.spacing = unit(0.5, "lines"),
       # Specify facetting options
       strip.background = element_rect(fill = "grey30", color = "grey10"),
       strip.text.x = element_text(size = base_size*0.8, color = "white"),
