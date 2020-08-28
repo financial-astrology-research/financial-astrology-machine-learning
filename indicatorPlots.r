@@ -266,6 +266,14 @@ dailyAspectsAddEffectM4 <- function(dailyAspects) {
   return(dailyAspects)
 }
 
+# Cumulative log10 energy disregard the executor aspect polarity.
+dailyAspectsAddEffectM5 <- function(dailyAspects) {
+  dailyAspects[, entot := round(log10((encum.x + encum.y) * abs(ennow)), 2)]
+  dailyAspects[, effect := entot]
+
+  return(dailyAspects)
+}
+
 dailyAspectsEffectIndex <- function(dailyAspects, idCols = c('Date')) {
   # Daily aspects effect index.
   dailyAspectsIndex <- dailyAspects[, round(sum(effect), 2), by = idCols]
@@ -645,4 +653,26 @@ predictSecurityModelH1 <- function(security) {
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
 
   crossValidateModelReport("modelH1", dailyAspectsIndex, security)
+}
+
+# Based on ModelH with few variations:
+# - Decrease speed from 0.2 to 0.1
+# - Customize aspect set: use all aspects set.
+# - Enable 0 aspect energy.
+predictSecurityModelH2 <- function(security, hourlyAspects) {
+  # Best effect correlation when using classic aspects only.
+  setModernAspectsSet2()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+
+  idCols <- c('Date', 'Hour')
+  hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
+  hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.1)
+  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, idCols)
+  # MO only contribute to the cumulative effect but is not a major indicator.
+  hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
+  hourlyAspects <- dailyAspectsAddEffectM3(hourlyAspects)
+  dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
+
+  crossValidateModelReport("modelH2", dailyAspectsIndex, security)
 }
