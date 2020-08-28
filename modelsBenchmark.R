@@ -6,7 +6,7 @@ source("./indicatorPlots.r")
 
 symbol <- "EOS-USD"
 securityData <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
-securityData[, fold := kfold(securityData, k=5)]
+securityData[, fold := kfold(securityData, k = 5)]
 
 dailyAspects <- predictSecurityModelA(securityData)
 dailyAspects <- predictSecurityModelB(securityData)
@@ -44,4 +44,10 @@ dailyAspects <- predictSecurityModelH3(securityData)
 
 # Experiment grid search with different aspects energy factors.
 hourlyAspects <- prepareHourlyAspectsModelH2()
-dailyAspects <- predictSecurityModelH2A(securityData, hourlyAspects)
+searchResult <- grid_search(
+  predictSecurityModelH2A,
+  list(speedDecay = seq(0.001, 0.1, by=0.01)),
+  security = securityData,
+  hourlyAspects = hourlyAspects,
+  n.iter = 1
+)

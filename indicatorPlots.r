@@ -1,6 +1,7 @@
 library(grid)
 library(cowplot)
 library(dismo)
+library(paramtest)
 source("./analysis.r")
 todayDate <- as.Date(Sys.Date())
 
@@ -300,6 +301,8 @@ crossValidateModelOptimization <- function(modelId, dailyAspectsIndex, security)
   medianFit <- median(c(modelFit1, modelFit2, modelFit3))
   cat("MEDIAN FIT: ", medianFit, "\n")
   cat("\n")
+
+  return(medianFit)
 }
 
 predictSecurityFit <- function(dailyAspectsIndex, securityTest) {
@@ -729,15 +732,18 @@ prepareHourlyAspectsModelH2 <- function() {
 }
 
 # Based on ModelH2 with grid search optimization.
-predictSecurityModelH2A <- function(security, hourlyAspects) {
+predictSecurityModelH2A <- function(iter, security, hourlyAspects, speedDecay) {
+  cat("PARAMS - ",  "Speed: ", speedDecay, "\n")
   setModernAspectsSet2()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   idCols <- c('Date', 'Hour')
-  hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.1)
+  hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, speedDecay)
   hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, idCols)
   # MO only contribute to the cumulative effect but is not a major indicator.
   hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
   hourlyAspects <- dailyAspectsAddEffectM3(hourlyAspects)
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
-  crossValidateModelOptimization("modelH2", dailyAspectsIndex, security)
+  medianFit <- crossValidateModelOptimization("modelH2A", dailyAspectsIndex, security)
+
+  return(medianFit)
 }
