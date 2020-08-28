@@ -71,6 +71,14 @@ setModernAspectsSet3 <- function() {
   defpolarities <<- c(2, 1, 0, 1, 0, 1, 0, 1, 0)
 }
 
+# All aspects with second scale disabled by zero energy.
+setModernAspectsSet4 <- function() {
+  aspects <<- c(0, 30, 36, 40, 45, 51, 60, 72, 80, 90, 103, 120, 135, 144, 150, 154, 160, 180)
+  aspectsEnergy <<- c(-3, -1, 0, 0, 1, 1.5, -1, 0, 1, 1, -1.5, 1.5, -0.7, 2, 2, 0, 0, -1)
+  deforbs <<- c(12, 4, 2, 2, 3, 3, 5, 5, 2, 8, 3, 5, 6, 2, 2, 2, 2, 12)
+  defpolarities <<- c(2, 1, 0, 1, 0, 1, 0, 1, 0)
+}
+
 setMajorsAspectsSet <- function() {
   aspects <<- c(0, 45, 60, 90, 120, 135, 180)
   aspectsEnergy <<- c(1, 1, 1, 2, 1, 1, 1)

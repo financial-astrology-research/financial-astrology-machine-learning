@@ -661,7 +661,7 @@ predictSecurityModelH1 <- function(security) {
 # - Decrease speed from 0.2 to 0.1
 # - Customize aspect set: use all aspects set, except: minor 36, 40, 80, 108, 154 and 160.
 # - Enable 0 aspect energy.
-predictSecurityModelH2 <- function(security, hourlyAspects) {
+predictSecurityModelH2 <- function(security) {
   # Best effect correlation when using classic aspects only.
   setModernAspectsSet2()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
@@ -684,7 +684,7 @@ predictSecurityModelH2 <- function(security, hourlyAspects) {
 # - Customize aspect set: use all aspects set, including the minors second scale aspects.
 # - Enable 0 aspect energy.
 # - Is evident that when using second scale aspects we lost few points of effect/price correlation.
-predictSecurityModelH3 <- function(security, hourlyAspects) {
+predictSecurityModelH3 <- function(security) {
   # Best effect correlation when using classic aspects only.
   setModernAspectsSet3()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
