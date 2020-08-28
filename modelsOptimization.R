@@ -9,7 +9,7 @@ hourlyAspects <- prepareHourlyAspectsModelH2()
 enOpts <- seq(-3, 3, by=0.5)
 searchResult <- grid_search(
   predictSecurityModelH2A,
-  list(en0 = enOpts, en30 = enOpts, en45 = enOpts),
+  list(en0 = enOpts, en30 = enOpts, en45 = enOpts, en51 = enOpts, en60 = enOpts, en72 = enOpts),
   speedDecay = 0.001,
   security = securityData,
   hourlyAspects = hourlyAspects,
