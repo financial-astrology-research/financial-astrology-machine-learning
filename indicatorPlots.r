@@ -1,5 +1,6 @@
 library(grid)
 library(cowplot)
+library(dismo)
 source("./analysis.r")
 todayDate <- as.Date(Sys.Date())
 
@@ -275,27 +276,36 @@ dailyAspectsEffectIndex <- function(dailyAspects, idCols = c('Date')) {
   return(dailyAspectsIndex)
 }
 
-predictSecurityModelReport <- function(dailyAspects, dailyAspectsIndex, securityTest) {
-  cat("Today aspects:", format(todayDate, "%Y-%m-%d"), "\n")
-  print(dailyAspects[Date == todayDate,][order(-entot)], topn = 200)
+crossValidateModelReport <- function(modelId, dailyAspectsIndex, security) {
+  cat("Validating ", modelId, "\n")
+  predictSecurityModelReport(dailyAspectsIndex, security[fold == 1,])
+  predictSecurityModelReport(dailyAspectsIndex, security[fold == 2,])
+  predictSecurityModelReport(dailyAspectsIndex, security[fold == 3,])
   cat("\n")
+}
 
-  cat("Tomorrow aspects:", format(todayDate + 1, "%Y-%m-%d"), "\n")
-  print(dailyAspects[Date == todayDate + 1,][order(-entot)], topn = 200)
-  cat("\n")
-
-  cat("Past tomorrow aspects:", format(todayDate + 2, "%Y-%m-%d"), "\n")
-  print(dailyAspects[Date == todayDate + 2,][order(-entot)], topn = 200)
-  cat("\n")
-
+predictSecurityModelReport <- function(dailyAspectsIndex, securityTest) {
   dailyAspectsIndexProjected <- dailyAspectsIndex[Date > todayDate - 8,][0:60]
-  cat("Daily aspects effect index:\n")
-  print(dailyAspectsIndexProjected, topn = 100)
-  cat("\n")
-
-  cat("Daily test period:\n")
   modelTest <- merge(dailyAspectsIndex, securityTest[, c('Date', 'Mid', 'diffPercent')], by = c('Date'))
-  print(modelTest)
+
+  #cat("Today aspects:", format(todayDate, "%Y-%m-%d"), "\n")
+  #print(dailyAspects[Date == todayDate,][order(-entot)], topn = 200)
+  #cat("\n")
+  #
+  #cat("Tomorrow aspects:", format(todayDate + 1, "%Y-%m-%d"), "\n")
+  #print(dailyAspects[Date == todayDate + 1,][order(-entot)], topn = 200)
+  #cat("\n")
+  #
+  #cat("Past tomorrow aspects:", format(todayDate + 2, "%Y-%m-%d"), "\n")
+  #print(dailyAspects[Date == todayDate + 2,][order(-entot)], topn = 200)
+  #cat("\n")
+  #
+  #cat("Daily aspects effect index:\n")
+  #print(dailyAspectsIndexProjected, topn = 100)
+  #cat("\n")
+
+  # cat("Daily test period:\n")
+  # print(modelTest)
 
   p1 <- ggplot(data = modelTest) +
     geom_line(aes(x = Date, y = Mid), colour = "white", alpha = 0.8) +
@@ -393,8 +403,8 @@ predictSecurityModelA <- function(symbol) {
   setPlanetsMEVESUMACEJUSAURNEPL()
   #setPlanetsMEVESUMAJUSAURNEPL()
   security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
+  security[, fold := kfold(security, k=5)]
   securityTrain <- security[Date <= as.Date("2020-06-30"),]
-  securityTest <- security[Date > as.Date("2020-06-30"),]
   dailyPlanets <<- openPlanets('planets_10', clear = F)
 
   dailyAspects <- dailyAspectsTablePrepare(dailyPlanets)
@@ -405,10 +415,7 @@ predictSecurityModelA <- function(symbol) {
   dailyAspects <- dailyAspectsNameCols(dailyAspects)
   dailyAspectsIndex <- dailyAspectsEffectIndex(dailyAspects)
 
-  predictSecurityModelReport(dailyAspects, dailyAspectsIndex, securityTest)
-  dailyAspectsPriceEffect <- merge(dailyAspects, security[, c('Date', 'Mid', 'diffPercent')], by = c('Date'))
-
-  return(dailyAspectsPriceEffect)
+  crossValidateModelReport("modelA", dailyAspectsIndex, security)
 }
 
 # This model uses:
@@ -422,8 +429,8 @@ predictSecurityModelB <- function(symbol) {
   setClassicAspectsSet()
   setPlanetsMEVESUMAJUSAURNEPL()
   security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
+  security[, fold := kfold(security, k=5)]
   securityTrain <- security[Date <= as.Date("2020-06-30"),]
-  securityTest <- security[Date > as.Date("2020-06-30"),]
   dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   idCols <- c('Date', 'Hour')
 
@@ -431,14 +438,9 @@ predictSecurityModelB <- function(symbol) {
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.5)
   hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, securityTrain, idCols)
   hourlyAspects <- dailyAspectsAddEffectM1(hourlyAspects)
-
-  cat("\nHourly aspects index: \n")
-  hourlyAspectsIndex <- hourlyAspectsEffectIndex(hourlyAspects)
-  print(hourlyAspectsIndex[Date > todayDate-1, ][0:100], topn = 100)
-
-  # Calculate aspects effect indexes.
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
-  predictSecurityModelReport(hourlyAspects, dailyAspectsIndex, securityTest)
+
+  crossValidateModelReport("modelB", dailyAspectsIndex, security)
 }
 
 # This model uses:
@@ -453,8 +455,8 @@ predictSecurityModelC <- function(symbol) {
   #setPlanetsMOMEVESUMAJUSAURNEPL()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
+  security[, fold := kfold(security, k=5)]
   securityTrain <- security[Date <= as.Date("2020-06-30"),]
-  securityTest <- security[Date > as.Date("2020-06-30"),]
   dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   idCols <- c('Date', 'Hour')
 
@@ -462,14 +464,9 @@ predictSecurityModelC <- function(symbol) {
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.5)
   hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, securityTrain, idCols)
   hourlyAspects <- dailyAspectsAddEffectM1(hourlyAspects)
-
-  cat("\nHourly aspects index: \n")
-  hourlyAspectsIndex <- hourlyAspectsEffectIndex(hourlyAspects)
-  print(hourlyAspectsIndex[Date > todayDate-1, ][0:100], topn = 100)
-
-  # Calculate aspects effect indexes.
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
-  predictSecurityModelReport(hourlyAspects, dailyAspectsIndex, securityTest)
+
+  crossValidateModelReport("modelC", dailyAspectsIndex, security)
 }
 
 # This model uses:
@@ -483,6 +480,7 @@ predictSecurityModelD <- function(symbol) {
   setClassicAspectsSet2()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
+  security[, fold := kfold(security, k=5)]
   securityTrain <- security[Date <= as.Date("2020-06-30"),]
   securityTest <- security[Date > as.Date("2020-06-30"),]
   dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
@@ -492,14 +490,9 @@ predictSecurityModelD <- function(symbol) {
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.5)
   hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, securityTrain, idCols)
   hourlyAspects <- dailyAspectsAddEffectM1(hourlyAspects)
-
-  cat("\nHourly aspects index: \n")
-  hourlyAspectsIndex <- hourlyAspectsEffectIndex(hourlyAspects)
-  print(hourlyAspectsIndex[Date > todayDate-1, ][0:100], topn = 100)
-
-  # Calculate aspects effect indexes.
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
-  predictSecurityModelReport(hourlyAspects, dailyAspectsIndex, securityTest)
+
+  crossValidateModelReport("modelD", dailyAspectsIndex, security)
 }
 
 # This model uses:
@@ -513,8 +506,8 @@ predictSecurityModelE <- function(symbol) {
   setClassicAspectsSet3()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
+  security[, fold := kfold(security, k=5)]
   securityTrain <- security[Date <= as.Date("2020-06-30"),]
-  securityTest <- security[Date > as.Date("2020-06-30"),]
   dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   idCols <- c('Date', 'Hour')
 
@@ -522,14 +515,9 @@ predictSecurityModelE <- function(symbol) {
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.5)
   hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, securityTrain, idCols)
   hourlyAspects <- dailyAspectsAddEffectM1(hourlyAspects)
-
-  cat("\nHourly aspects index: \n")
-  hourlyAspectsIndex <- hourlyAspectsEffectIndex(hourlyAspects)
-  print(hourlyAspectsIndex[Date > todayDate-1, ][0:100], topn = 100)
-
-  # Calculate aspects effect indexes.
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
-  predictSecurityModelReport(hourlyAspects, dailyAspectsIndex, securityTest)
+
+  crossValidateModelReport("modelE", dailyAspectsIndex, security)
 }
 
 # This model uses:
@@ -544,8 +532,8 @@ predictSecurityModelF <- function(symbol) {
   setClassicAspectsSet3()
   setPlanetsMOMEVESUMAJUSAURNEPL()
   security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
+  security[, fold := kfold(security, k=5)]
   securityTrain <- security[Date <= as.Date("2020-06-30"),]
-  securityTest <- security[Date > as.Date("2020-06-30"),]
   dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   idCols <- c('Date', 'Hour')
 
@@ -553,14 +541,9 @@ predictSecurityModelF <- function(symbol) {
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.5)
   hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, securityTrain, idCols)
   hourlyAspects <- dailyAspectsAddEffectM3(hourlyAspects)
-
-  cat("\nHourly aspects index: \n")
-  hourlyAspectsIndex <- hourlyAspectsEffectIndex(hourlyAspects)
-  print(hourlyAspectsIndex[Date > todayDate-1, ][0:100], topn = 100)
-
-  # Calculate aspects effect indexes.
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
-  predictSecurityModelReport(hourlyAspects, dailyAspectsIndex, securityTest)
+
+  crossValidateModelReport("modelF", dailyAspectsIndex, security)
 }
 
 # This model uses:
@@ -575,23 +558,19 @@ predictSecurityModelG <- function(symbol) {
   setClassicAspectsSet3()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
+  security[, fold := kfold(security, k=5)]
   securityTrain <- security[Date <= as.Date("2020-06-30"),]
-  securityTest <- security[Date > as.Date("2020-06-30"),]
   dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
-  idCols <- c('Date', 'Hour')
 
+  idCols <- c('Date', 'Hour')
   hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.5)
   hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, securityTrain, idCols)
   hourlyAspects <- dailyAspectsAddEffectM4(hourlyAspects)
-
-  cat("\nHourly aspects index: \n")
-  hourlyAspectsIndex <- hourlyAspectsEffectIndex(hourlyAspects)
-  print(hourlyAspectsIndex[Date > todayDate-1, ][0:100], topn = 100)
-
-  # Calculate aspects effect indexes.
+  # hourlyAspectsIndex <- hourlyAspectsEffectIndex(hourlyAspects)
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
-  predictSecurityModelReport(hourlyAspects, dailyAspectsIndex, securityTest)
+
+  crossValidateModelReport("modelG", dailyAspectsIndex, security)
 }
 
 # This model uses:
@@ -608,8 +587,8 @@ predictSecurityModelH <- function(symbol) {
   setClassicAspectsSet3()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
+  security[, fold := kfold(security, k=5)]
   securityTrain <- security[Date <= as.Date("2020-06-30"),]
-  securityTest <- security[Date > as.Date("2020-06-30"),]
   dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   dailyHourlyPlanetsSecurity <<- merge(securityTrain, dailyHourlyPlanets, by = c("Date"))
   idCols <- c('Date', 'Hour')
@@ -620,14 +599,9 @@ predictSecurityModelH <- function(symbol) {
   # MO only contribute to the cumulative effect but is not a major indicator.
   hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
   hourlyAspects <- dailyAspectsAddEffectM3(hourlyAspects)
-
-  cat("\nHourly aspects index: \n")
-  hourlyAspectsIndex <- hourlyAspectsEffectIndex(hourlyAspects)
-  print(hourlyAspectsIndex[Date > todayDate-2, ][0:100], topn = 100)
-
-  # Calculate aspects effect indexes.
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
-  predictSecurityModelReport(hourlyAspects, dailyAspectsIndex, securityTest)
+
+  crossValidateModelReport("modelH", dailyAspectsIndex, security)
 }
 
 # This model uses:
@@ -646,12 +620,12 @@ predictSecurityModelI <- function(symbol) {
   setClassicAspectsSet4()
   setPlanetsMOMEVESUMAJUSAURNEPL()
   security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
+  security[, fold := kfold(security, k=5)]
   securityTrain <- security[Date <= as.Date("2020-06-30"),]
-  securityTest <- security[Date > as.Date("2020-06-30"),]
   dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   dailyHourlyPlanetsSecurity <<- merge(securityTrain, dailyHourlyPlanets, by = c("Date"))
-  idCols <- c('Date', 'Hour')
 
+  idCols <- c('Date', 'Hour')
   hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.2)
   # Ignore slow to slow planets aspects due we lack a complete cycle.
@@ -660,14 +634,9 @@ predictSecurityModelI <- function(symbol) {
   # MO only contribute to the cumulative effect but is not a major indicator.
   hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
   hourlyAspects <- dailyAspectsAddEffectM3(hourlyAspects)
-
-  cat("\nHourly aspects index: \n")
-  hourlyAspectsIndex <- hourlyAspectsEffectIndex(hourlyAspects)
-  print(hourlyAspectsIndex[Date > todayDate-2, ][0:100], topn = 100)
-
-  # Calculate aspects effect indexes.
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
-  predictSecurityModelReport(hourlyAspects, dailyAspectsIndex, securityTest)
+
+  crossValidateModelReport("modelI", dailyAspectsIndex, security)
 }
 
 # Combines characteristics of Model E & H.
@@ -676,24 +645,19 @@ predictSecurityModelJ <- function(symbol) {
   setClassicAspectsSet3()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   security <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
+  security[, fold := kfold(security, k=5)]
   securityTrain <- security[Date <= as.Date("2020-06-30"),]
-  securityTest <- security[Date > as.Date("2020-06-30"),]
   dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   dailyHourlyPlanetsSecurity <<- merge(securityTrain, dailyHourlyPlanets, by = c("Date"))
-  idCols <- c('Date', 'Hour')
 
+  idCols <- c('Date', 'Hour')
   hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.45)
   hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, securityTrain, idCols)
   # MO only contribute to the cumulative effect but is not a major indicator.
   hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
   hourlyAspects <- dailyAspectsAddEffectM1(hourlyAspects)
-
-  cat("\nHourly aspects index: \n")
-  hourlyAspectsIndex <- hourlyAspectsEffectIndex(hourlyAspects)
-  print(hourlyAspectsIndex[Date > todayDate-2, ][0:100], topn = 100)
-
-  # Calculate aspects effect indexes.
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
-  predictSecurityModelReport(hourlyAspects, dailyAspectsIndex, securityTest)
+
+  crossValidateModelReport("modelJ", dailyAspectsIndex, security)
 }

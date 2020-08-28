@@ -15,6 +15,8 @@ dailyAspects <- predictSecurityModelE("EOS-USD")
 # This uses EffectM3 that result in incorrect direction in last August 2020 observations.
 dailyAspects <- predictSecurityModelF("EOS-USD")
 
+dailyAspects <- predictSecurityModelG("EOS-USD")
+
 # We lost effect magnitude that makes trend chart seems flat in some periods although correlation is very high.
 dailyAspects <- predictSecurityModelH("EOS-USD")
 
