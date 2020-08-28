@@ -289,6 +289,8 @@ crossValidateModelReport <- function(modelId, dailyAspectsIndex, security) {
   predictSecurityModelReport(dailyAspectsIndex, security[fold == 1,])
   predictSecurityModelReport(dailyAspectsIndex, security[fold == 2,])
   predictSecurityModelReport(dailyAspectsIndex, security[fold == 3,])
+  #predictSecurityModelReport(dailyAspectsIndex, security[fold == 4,])
+  #predictSecurityModelReport(dailyAspectsIndex, security[fold == 5,])
   cat("\n")
 }
 
