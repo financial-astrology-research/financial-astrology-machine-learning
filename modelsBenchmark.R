@@ -41,13 +41,3 @@ dailyAspects <- predictSecurityModelH2(securityData)
 # Test complete list of modern aspects that needs reduced orbs to don't overlap,
 # the observations point to a reduction of accuracy when using minor second scale aspects.
 dailyAspects <- predictSecurityModelH3(securityData)
-
-# Experiment grid search with different aspects energy factors.
-hourlyAspects <- prepareHourlyAspectsModelH2()
-searchResult <- grid_search(
-  predictSecurityModelH2A,
-  list(speedDecay = seq(0.001, 0.1, by=0.01)),
-  security = securityData,
-  hourlyAspects = hourlyAspects,
-  n.iter = 1
-)
