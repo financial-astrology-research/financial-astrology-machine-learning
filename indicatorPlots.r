@@ -659,7 +659,7 @@ predictSecurityModelH1 <- function(security) {
 
 # Based on ModelH with few variations:
 # - Decrease speed from 0.2 to 0.1
-# - Customize aspect set: use all aspects set.
+# - Customize aspect set: use all aspects set, except: minor 36, 40, 80, 108, 154 and 160.
 # - Enable 0 aspect energy.
 predictSecurityModelH2 <- function(security, hourlyAspects) {
   # Best effect correlation when using classic aspects only.
@@ -677,4 +677,27 @@ predictSecurityModelH2 <- function(security, hourlyAspects) {
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
 
   crossValidateModelReport("modelH2", dailyAspectsIndex, security)
+}
+
+# Based on ModelH with few variations:
+# - Decrease speed from 0.2 to 0.1
+# - Customize aspect set: use all aspects set, including the minors second scale aspects.
+# - Enable 0 aspect energy.
+# - Is evident that when using second scale aspects we lost few points of effect/price correlation.
+predictSecurityModelH3 <- function(security, hourlyAspects) {
+  # Best effect correlation when using classic aspects only.
+  setModernAspectsSet3()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+
+  idCols <- c('Date', 'Hour')
+  hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
+  hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.1)
+  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, idCols)
+  # MO only contribute to the cumulative effect but is not a major indicator.
+  hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
+  hourlyAspects <- dailyAspectsAddEffectM3(hourlyAspects)
+  dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
+
+  crossValidateModelReport("modelH3", dailyAspectsIndex, security)
 }
