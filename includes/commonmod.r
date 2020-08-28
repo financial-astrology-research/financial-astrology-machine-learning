@@ -123,7 +123,7 @@ dayAspectsEnergy <- function(args) {
   # Use the appropriate daily aspects
   if (args$model == 'topNSigAspectsModel') {
     # significant longitude points aspects
-    aspects.day <- with(args, buildSignificantLongitudesAspects(planets, security, degsplit, tsdate, tedate, topn, F))
+    aspects.day <- with(args, buildSignificantLongitudesAspects(planets, securityData, degsplit, tsdate, tedate, topn, F))
   }
   else if (args$model == 'natalAspectsModel') {
     # natal points aspects
@@ -133,7 +133,7 @@ dayAspectsEnergy <- function(args) {
     stop("Not valid model was provided.")
   }
 
-  planets.pred.aspen <- with(args, meltedAndMergedDayAspects(aspects.day, planets, security, vsdate, vedate))
+  planets.pred.aspen <- with(args, meltedAndMergedDayAspects(aspects.day, planets, securityData, vsdate, vedate))
 
   if (args$asptype == 'sep') {
     # Use only the separating aspects & applying with at much 1 deg of orb

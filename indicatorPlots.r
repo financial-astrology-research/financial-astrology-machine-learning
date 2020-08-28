@@ -626,21 +626,23 @@ predictSecurityModelJ <- function(security) {
 }
 
 # Based on ModelH with few variations:
-# - Increased speed from 0.2 to 0.4.
+# - Decrease speed from 0.2 to 0.1
+# - Customize aspect set: increase orbs to the point of max correlation.
+# - Enable 0 aspect energy.
 predictSecurityModelH1 <- function(security) {
   # Best effect correlation when using classic aspects only.
-  setClassicAspectsSet3()
+  setClassicAspectsSet5()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
 
   idCols <- c('Date', 'Hour')
   hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
-  hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.2)
+  hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.1)
   hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, idCols)
   # MO only contribute to the cumulative effect but is not a major indicator.
   hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
   hourlyAspects <- dailyAspectsAddEffectM3(hourlyAspects)
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
 
-  crossValidateModelReport("modelH", dailyAspectsIndex, security)
+  crossValidateModelReport("modelH1", dailyAspectsIndex, security)
 }
