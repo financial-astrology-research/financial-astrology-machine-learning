@@ -201,6 +201,18 @@ dailyAspectsAddEnergy <- function(dailyAspects, speedDecay = 0.6) {
   return(dailyAspects)
 }
 
+dailyAspectsAddEnergy2 <- function(dailyAspects, speedDecay = 0.6) {
+  aspectsEnergyIndex <- matrix(
+    aspectsEnergy, nrow = 1, ncol = length(aspectsEnergy),
+    byrow = T, dimnames = list(c('energy'), aspects)
+  )
+
+  # Calculate max and proportional energy.
+  dailyAspects[, enmax := aspectsEnergyIndex['energy', as.character(aspect)]]
+  dailyAspects[, ennow := enmax]
+
+  return(dailyAspects)
+}
 dailyAspectsAddCumulativeEnergy <- function(dailyAspects, idCols = c('Date')) {
   # Merge daily security prices with aspects.
   # dailyAspectsPriceResearch <- merge(dailyAspects, securityTrain[, c('Date', 'diffPercent')], by = c('Date'))
@@ -378,7 +390,7 @@ dailyAspectsNameCols <- function(dailyAspects) {
 }
 
 dailyHourlyAspectsTablePrepare <- function(dailyHourlyPlanets, idCols) {
-  dailyHourlyPlanetsRange <- dailyHourlyPlanets[Date >= as.Date("2016-01-01") & Date <= as.Date("2021-12-31")]
+  dailyHourlyPlanetsRange <- dailyHourlyPlanets[Date >= as.Date("2017-01-01") & Date <= as.Date("2021-06-30")]
   # Melt aspects.
   dailyAspects <- melt(
     dailyHourlyPlanetsRange, id.var = idCols,
@@ -732,12 +744,24 @@ prepareHourlyAspectsModelH2 <- function() {
 }
 
 # Based on ModelH2 with grid search optimization.
-predictSecurityModelH2A <- function(iter, security, hourlyAspects, speedDecay) {
-  cat("PARAMS - ",  "Speed: ", speedDecay, "\n")
+predictSecurityModelH2A <- function(
+  iter, security, hourlyAspects, speedDecay, en0, en30, en45, en51, en60, en72, en90
+) {
+  cat(
+    "PARAMS - ",  "Speed: ", speedDecay,
+    "en0:", en0, "en30:", en30, "en45:", en45, "en51:", en51, "en60:", en60, "en72:", en72, "en90:", en90,
+    "\n"
+  )
+
   setModernAspectsSet2()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
+
+  # Customize energy for optimization
+  # aspects <<- c(0, 30, 45, 51, 60, 72, 90, 103, 120, 135, 144, 150, 180)
+  aspectsEnergy <<- c(en0, en30, en45, en51, en60, en72, en90, -1.5, 1.5, -0.7, 2, 2, -1)
+
   idCols <- c('Date', 'Hour')
-  hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, speedDecay)
+  hourlyAspects <- dailyAspectsAddEnergy2(hourlyAspects, speedDecay)
   hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, idCols)
   # MO only contribute to the cumulative effect but is not a major indicator.
   hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
