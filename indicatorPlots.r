@@ -188,7 +188,6 @@ dailyAspectsAddLongitude <- function(dailyAspects, dailyPlanets, idCols = c('Dat
 }
 
 dailyAspectsAddEnergy <- function(dailyAspects, speedDecay = 0.6) {
-  # For aspects: c( 0 , 30 , 45 , 60 , 90 , 120 , 135 , 150 , 180)
   aspectsEnergyIndex <- matrix(
     aspectsEnergy, nrow = 1, ncol = length(aspectsEnergy),
     byrow = T, dimnames = list(c('energy'), aspects)
@@ -196,7 +195,6 @@ dailyAspectsAddEnergy <- function(dailyAspects, speedDecay = 0.6) {
 
   # Calculate max and proportional energy.
   dailyAspects[, enmax := aspectsEnergyIndex['energy', as.character(aspect)]]
-  #dailyAspects[, enmax := 1]
   dailyAspects[, ennow := energyDecay(enmax, orb, speedDecay)]
 
   return(dailyAspects)
@@ -285,13 +283,30 @@ dailyAspectsEffectIndex <- function(dailyAspects, idCols = c('Date')) {
 }
 
 crossValidateModelReport <- function(modelId, dailyAspectsIndex, security) {
-  cat("Validating ", modelId, "\n")
+  cat("VALIDATING: ", modelId, "\n")
   predictSecurityModelReport(dailyAspectsIndex, security[fold == 1,])
   predictSecurityModelReport(dailyAspectsIndex, security[fold == 2,])
   predictSecurityModelReport(dailyAspectsIndex, security[fold == 3,])
   #predictSecurityModelReport(dailyAspectsIndex, security[fold == 4,])
   #predictSecurityModelReport(dailyAspectsIndex, security[fold == 5,])
+}
+
+crossValidateModelOptimization <- function(modelId, dailyAspectsIndex, security) {
+  cat("OPTIMIZING: ", modelId, "\n")
+  modelFit1 <- predictSecurityFit(dailyAspectsIndex, security[fold == 1,])
+  modelFit2 <- predictSecurityFit(dailyAspectsIndex, security[fold == 2,])
+  modelFit3 <- predictSecurityFit(dailyAspectsIndex, security[fold == 3,])
+  medianFit <- median(c(modelFit1, modelFit2, modelFit3))
+  cat("MEDIAN FIT: ", medianFit, "\n")
   cat("\n")
+}
+
+predictSecurityFit <- function(dailyAspectsIndex, securityTest) {
+  modelTest <- merge(dailyAspectsIndex, securityTest[, c('Date', 'Mid', 'diffPercent')], by = c('Date'))
+  modelFit <- cor(modelTest$effect, modelTest$Mid, method = "pearson")
+  cat("CORRELATION EFFECT / PRICE: ", modelFit, "\n")
+
+  return(modelFit)
 }
 
 predictSecurityModelReport <- function(dailyAspectsIndex, securityTest) {
@@ -700,4 +715,28 @@ predictSecurityModelH3 <- function(security) {
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
 
   crossValidateModelReport("modelH3", dailyAspectsIndex, security)
+}
+
+prepareHourlyAspectsModelH2 <- function() {
+  idCols <- c('Date', 'Hour')
+  setModernAspectsSet2()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
+
+  return (hourlyAspects)
+}
+
+# Based on ModelH2 with grid search optimization.
+predictSecurityModelH2A <- function(security, hourlyAspects) {
+  setModernAspectsSet2()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  idCols <- c('Date', 'Hour')
+  hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.1)
+  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, idCols)
+  # MO only contribute to the cumulative effect but is not a major indicator.
+  hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
+  hourlyAspects <- dailyAspectsAddEffectM3(hourlyAspects)
+  dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
+  crossValidateModelOptimization("modelH2", dailyAspectsIndex, security)
 }

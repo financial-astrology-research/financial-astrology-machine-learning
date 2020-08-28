@@ -36,3 +36,12 @@ dailyAspects <- predictSecurityModelJ(securityData)
 # In cross validation ModelH has demonstrated better generalization so next models are variations
 # to try to imporove the accuracy of the energy index.
 dailyAspects <- predictSecurityModelH1(securityData)
+# Test using all the aspects set with small orbs to avoid collisions.
+dailyAspects <- predictSecurityModelH2(securityData)
+# Test complete list of modern aspects that needs reduced orbs to don't overlap,
+# the observations point to a reduction of accuracy when using minor second scale aspects.
+dailyAspects <- predictSecurityModelH3(securityData)
+
+# Experiment grid search with different aspects energy factors.
+hourlyAspects <- prepareHourlyAspectsModelH2()
+dailyAspects <- predictSecurityModelH2A(securityData, hourlyAspects)
