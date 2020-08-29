@@ -1,4 +1,5 @@
 source("./indicatorPlots.r")
+setDTthreads(0)
 
 symbol <- "EOS-USD"
 securityData <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")

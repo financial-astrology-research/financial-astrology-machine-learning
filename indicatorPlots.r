@@ -763,12 +763,14 @@ predictSecurityModelH2A <- function(
   aspectsEnergyCustom <- c(en0, en30, en45, en51, en60, en72, en90, en103, en120, en135, en144, en150, en180)
 
   idCols <- c('Date', 'Hour')
-  hourlyAspects <- dailyAspectsAddEnergy2(hourlyAspects, speedDecay, aspectsEnergyCustom)
-  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, idCols)
+  # Create an iteration table so parallel run has it's own DT.
+  hourlyAspectsIteration <- copy(hourlyAspects)
+  hourlyAspectsIteration <- dailyAspectsAddEnergy2(hourlyAspectsIteration, speedDecay, aspectsEnergyCustom)
+  hourlyAspectsIteration <- dailyAspectsAddCumulativeEnergy(hourlyAspectsIteration, idCols)
   # MO only contribute to the cumulative effect but is not a major indicator.
-  hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
-  hourlyAspects <- dailyAspectsAddEffectM3(hourlyAspects)
-  dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
+  hourlyAspectsIteration <- hourlyAspectsIteration[ p.x != 'MO', ]
+  hourlyAspectsIteration <- dailyAspectsAddEffectM3(hourlyAspectsIteration)
+  dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspectsIteration)
   medianFit <- crossValidateModelOptimization("modelH2A", dailyAspectsIndex, security)
 
   return(medianFit)
