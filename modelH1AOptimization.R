@@ -9,10 +9,10 @@ securityData[, fold := kfold(securityData, k = 5)]
 hourlyAspects <- prepareHourlyAspectsModelH2()
 enOpts <- seq(-1, 1, by = 1)
 searchResult <- random_search(
-  predictSecurityModelH2A,
+  predictSecurityModelH1A,
   params = list(
-    en0 = enOpts, en30 = enOpts, en45 = enOpts, en51 = enOpts, en60 = enOpts, en72 = enOpts, en90 = enOpts,
-    en103 = enOpts, en120 = enOpts, en135 = enOpts, en144 = enOpts, en150 = enOpts, en180 = enOpts
+    en0 = enOpts, en30 = enOpts, en45 = enOpts, en60 = enOpts, en90 = enOpts,
+    en120 = enOpts, en135 = enOpts, en150 = enOpts, en180 = enOpts
   ),
   speedDecay = 0.001,
   security = securityData,
@@ -22,3 +22,4 @@ searchResult <- random_search(
 )
 
 print(searchResult)
+
