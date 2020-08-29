@@ -56,3 +56,7 @@ dailyAspects <- predictSecurityModelH3(securityData)
 # PARAMS -  Speed:  0.001 en0: -1 en30: -1 en45: -1 en51: 1 en60: -1 en72: 0 en90: 1
 # PARAMS -  Speed:  0.001 en0: -1 en30: -1 en45: -1 en51: 1 en60: 0 en72: 0 en90: 1
 # PARAMS -    -1   -1   -1    1    0    0    1
+
+# en0.test en30.test en45.test en51.test en60.test en72.test en90.test en103.test en120.test en135.test en144.test en150.test en180.test    output
+#    1       -1        -1         0         1         0         0         1         -1         -1         -1         -1          1          0 0.3998239
+#    1       -1        -1         1         0         0         0         1         -1         -1          0          0          1          0 0.3922397

@@ -10,17 +10,15 @@ hourlyAspects <- prepareHourlyAspectsModelH2()
 enOpts <- seq(-1, 1, by = 1)
 searchResult <- random_search(
   predictSecurityModelH2A,
-  list(
+  params = list(
     en0 = enOpts, en30 = enOpts, en45 = enOpts, en51 = enOpts, en60 = enOpts, en72 = enOpts, en90 = enOpts,
     en103 = enOpts, en120 = enOpts, en135 = enOpts, en144 = enOpts, en150 = enOpts, en180 = enOpts
   ),
   speedDecay = 0.001,
   security = securityData,
   hourlyAspects = hourlyAspects,
-  n.iter = 1,
   output = "data.frame",
-  parallel = "multicore",
-  ncpus = 8
+  n.sample = 10000,
 )
 
 print(searchResult)
