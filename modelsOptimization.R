@@ -6,8 +6,8 @@ securityData[, fold := kfold(securityData, k = 5)]
 
 # Experiment grid search with different aspects energy factors.
 hourlyAspects <- prepareHourlyAspectsModelH2()
-enOpts <- seq(-1, 1, by=1)
-searchResult <- grid_search(
+enOpts <- seq(-1, 1, by = 1)
+searchResult <- random_search(
   predictSecurityModelH2A,
   list(
     en0 = enOpts, en30 = enOpts, en45 = enOpts, en51 = enOpts, en60 = enOpts, en72 = enOpts, en90 = enOpts,
@@ -16,7 +16,10 @@ searchResult <- grid_search(
   speedDecay = 0.001,
   security = securityData,
   hourlyAspects = hourlyAspects,
-  n.iter = 1
+  n.iter = 1,
+  output = "data.frame",
+  parallel = "multicore",
+  ncpus = 8
 )
 
 print(searchResult)

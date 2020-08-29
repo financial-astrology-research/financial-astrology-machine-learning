@@ -201,9 +201,9 @@ dailyAspectsAddEnergy <- function(dailyAspects, speedDecay = 0.6) {
   return(dailyAspects)
 }
 
-dailyAspectsAddEnergy2 <- function(dailyAspects, speedDecay = 0.6) {
+dailyAspectsAddEnergy2 <- function(dailyAspects, speedDecay = 0.6, aspectsEnergyCustom) {
   aspectsEnergyIndex <- matrix(
-    aspectsEnergy, nrow = 1, ncol = length(aspectsEnergy),
+    aspectsEnergyCustom, nrow = 1, ncol = length(aspectsEnergyCustom),
     byrow = T, dimnames = list(c('energy'), aspects)
   )
 
@@ -760,10 +760,10 @@ predictSecurityModelH2A <- function(
 
   # Customize energy for optimization
   # aspects <<- c(0, 30, 45, 51, 60, 72, 90, 103, 120, 135, 144, 150, 180)
-  aspectsEnergy <<- c(en0, en30, en45, en51, en60, en72, en90, en103, en120, en135, en144, en150, en180)
+  aspectsEnergyCustom <- c(en0, en30, en45, en51, en60, en72, en90, en103, en120, en135, en144, en150, en180)
 
   idCols <- c('Date', 'Hour')
-  hourlyAspects <- dailyAspectsAddEnergy2(hourlyAspects, speedDecay)
+  hourlyAspects <- dailyAspectsAddEnergy2(hourlyAspects, speedDecay, aspectsEnergyCustom)
   hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, idCols)
   # MO only contribute to the cumulative effect but is not a major indicator.
   hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
