@@ -41,3 +41,18 @@ dailyAspects <- predictSecurityModelH2(securityData)
 # Test complete list of modern aspects that needs reduced orbs to don't overlap,
 # the observations point to a reduction of accuracy when using minor second scale aspects.
 dailyAspects <- predictSecurityModelH3(securityData)
+
+# TODO: Chart predictSecurityModelH3 energy index with this params:
+# ~ 0.35 correlation
+# PARAMS -  Speed:  0.001 en0: -1 en30: 0 en45: 0 en51: 1 en60: -1 en72: 1 en90: 0
+# PARAMS -  Speed:  0.001 en0: -1 en30: -1 en45: -1 en51: 1 en60: 0 en72: 1 en90: 0
+# PARAMS -  Speed:  0.001 en0: -1 en30: -1 en45: 0 en51: 1 en60: -1 en72: 0 en90: 0
+# PARAMS -  Speed:  0.001 en0: -1 en30: 0 en45: -1 en51: 1 en60: 0 en72: 1 en90: 0
+# PARAMS -  Speed:  0.001 en0: -1 en30: -1 en45: -1 en51: 0 en60: 0 en72: -1 en90: 1
+# PARAMS -  Speed:  0.001 en0: -1 en30: -1 en45: -1 en51: 1 en60: 0 en72: -1 en90: 1
+# PARAMS -  Speed:  0.001 en0: -1 en30: -1 en45: 0 en51: 1 en60: 1 en72: -1 en90: 1
+# ~ 0.4 correlation
+# PARAMS -  Speed:  0.001 en0: -1 en30: -1 en45: 0 en51: 1 en60: -1 en72: 0 en90: 1
+# PARAMS -  Speed:  0.001 en0: -1 en30: -1 en45: -1 en51: 1 en60: -1 en72: 0 en90: 1
+# PARAMS -  Speed:  0.001 en0: -1 en30: -1 en45: -1 en51: 1 en60: 0 en72: 0 en90: 1
+# PARAMS -    -1   -1   -1    1    0    0    1

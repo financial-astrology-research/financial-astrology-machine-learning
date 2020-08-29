@@ -745,11 +745,13 @@ prepareHourlyAspectsModelH2 <- function() {
 
 # Based on ModelH2 with grid search optimization.
 predictSecurityModelH2A <- function(
-  iter, security, hourlyAspects, speedDecay, en0, en30, en45, en51, en60, en72, en90
+  iter, security, hourlyAspects, speedDecay, en0, en30, en45, en51,
+  en60, en72, en90, en103, en120, en135, en144, en150, en180
 ) {
   cat(
-    "PARAMS - ",  "Speed: ", speedDecay,
+    "PARAMS - ",
     "en0:", en0, "en30:", en30, "en45:", en45, "en51:", en51, "en60:", en60, "en72:", en72, "en90:", en90,
+    "en103:", en103, "en120:", en120, "en135:", en135, "en144:", en144, "en150:", en150, "en180:", en180,
     "\n"
   )
 
@@ -758,7 +760,7 @@ predictSecurityModelH2A <- function(
 
   # Customize energy for optimization
   # aspects <<- c(0, 30, 45, 51, 60, 72, 90, 103, 120, 135, 144, 150, 180)
-  aspectsEnergy <<- c(en0, en30, en45, en51, en60, en72, en90, -1.5, 1.5, -0.7, 2, 2, -1)
+  aspectsEnergy <<- c(en0, en30, en45, en51, en60, en72, en90, en103, en120, en135, en144, en150, en180)
 
   idCols <- c('Date', 'Hour')
   hourlyAspects <- dailyAspectsAddEnergy2(hourlyAspects, speedDecay)
