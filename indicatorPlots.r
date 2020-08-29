@@ -773,6 +773,16 @@ predictSecurityModelH2A <- function(
   return(medianFit)
 }
 
+prepareHourlyAspectsModelH1 <- function() {
+  idCols <- c('Date', 'Hour')
+  setClassicAspectsSet5()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
+
+  return (hourlyAspects)
+}
+
 # Based on ModelH1 for grid search optimization.
 predictSecurityModelH1A <- function(
   iter, security, hourlyAspects, speedDecay, en0, en30, en45, en51,

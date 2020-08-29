@@ -6,7 +6,7 @@ securityData <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
 securityData[, fold := kfold(securityData, k = 5)]
 
 # Experiment grid search with different aspects energy factors.
-hourlyAspects <- prepareHourlyAspectsModelH2()
+hourlyAspects <- prepareHourlyAspectsModelH1()
 enOpts <- seq(-1, 1, by = 1)
 searchResult <- random_search(
   predictSecurityModelH1A,
