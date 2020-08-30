@@ -784,25 +784,21 @@ prepareHourlyAspectsModelH1 <- function() {
 }
 
 # Based on ModelH1 for grid search optimization.
-predictSecurityModelH1A <- function(
-  iter, security, hourlyAspects, speedDecay, en0, en30, en45, en51,
-  en60, en72, en90, en103, en120, en135, en144, en150, en180
-) {
+predictSecurityModelH1A <- function(params, security, hourlyAspects) {
   cat(
     "PARAMS - ",
-    "en0:", en0, "en30:", en30, "en45:", en45, "en60:", en60, "en90:", en90,
-    "en120:", en120, "en135:", en135, "en150:", en150, "en180:", en180,
+    "en0:", params[1], "en30:", params[2], "en45:", params[3], "en60:", params[4], "en90:", params[5],
+    "en120:", params[6], "en135:", params[7], "en150:", params[8], "en180:", params[9],
     "\n"
   )
 
   setClassicAspectsSet5()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
-  aspectsEnergyCustom <- c(en0, en30, en45, en60, en90, en120, en135, en150, en180)
 
   idCols <- c('Date', 'Hour')
   # Create an iteration table so parallel run has it's own DT.
   hourlyAspectsIteration <- copy(hourlyAspects)
-  hourlyAspectsIteration <- dailyAspectsAddEnergy2(hourlyAspectsIteration, speedDecay, aspectsEnergyCustom)
+  hourlyAspectsIteration <- dailyAspectsAddEnergy2(hourlyAspectsIteration, speedDecay, params)
   hourlyAspectsIteration <- dailyAspectsAddCumulativeEnergy(hourlyAspectsIteration, idCols)
   # MO only contribute to the cumulative effect but is not a major indicator.
   hourlyAspectsIteration <- hourlyAspectsIteration[ p.x != 'MO', ]
