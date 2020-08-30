@@ -10,9 +10,12 @@ optimizeGA <- function(args) {
     args <- bootstrapSecurity(symbol, args)
     cat("Starting GA optimization for ", args$symbol, " - ", args$sinkpathfile, "\n")
 
-    gar <- ga("real-valued", popSize=1000, elitism=100, pcrossover=0.9, pmutation=0.1, maxiter=100, run=50,
-              fitness=modelFitExec, parallel=T, min=args$gamin, max=args$gamax, monitor=gaMonitor,
-              selection=gaint_rwSelection, mutation=gaint_raMutation, crossover=gaint_spCrossover, population=gaint_Population, args=args)
+    gar <- ga(
+      "real-valued", popSize = 1000, elitism = 100, pcrossover = 0.9, pmutation = 0.1, maxiter = 100, run = 50,
+      fitness = modelFitExec, selection = gaint_rwSelection, mutation = gaint_raMutation,
+      crossover = gaint_spCrossover, population = gaint_Population, args = args,
+      parallel = T, min = args$gamin, max = args$gamax, monitor = gaMonitor,
+    )
 
     loopSolutionGA(gar, args)
   }
@@ -21,29 +24,29 @@ optimizeGA <- function(args) {
 }
 
 bootstrapOptimization <- function(args) {
-  args$branch=branchName()
-  args$verbose=F
-  args$doplot=F
-  args$plotsol=F
+  args$branch = branchName()
+  args$verbose = F
+  args$doplot = F
+  args$plotsol = F
 
   # Clear the cache directory before start
   clearCache()
   # Bootstrap model
-  args <- get('bootstrapModel', envir=args$modenv)(args)
+  args <- get('bootstrapModel', envir = args$modenv)(args)
   # Build single line model params
   strmodparams <- '# '
   for (argname in names(args)) {
-    if (typeof(args[[argname]]) %ni% c('list', 'environment') && length(args[[argname]])==1) {
-      strmodparams <- paste(strmodparams, paste(argname, ' = ', args[[argname]], sep=''), sep=', ')
+    if (typeof(args[[argname]]) %ni% c('list', 'environment') && length(args[[argname]]) == 1) {
+      strmodparams <- paste(strmodparams, paste(argname, ' = ', args[[argname]], sep = ''), sep = ', ')
     }
   }
 
   # redirect the output to symbol sink file
-  args$sinkpathfile <- with(args, npath(paste("~/trading/benchmarks/b", benchno, "_", sectype, ".txt", sep='')))
+  args$sinkpathfile <- with(args, npath(paste("~/trading/benchmarks/b", benchno, "_", sectype, ".txt", sep = '')))
 
   # Redirect output to file
   #if (exists('sinkfile', envir=parent.frame())) {
-  sink(args$sinkpathfile, append=T)
+  sink(args$sinkpathfile, append = T)
   cat(strmodparams, "\n")
   cat("bt <- list()\n\n")
   sink()
@@ -54,7 +57,7 @@ bootstrapOptimization <- function(args) {
 # Executed when GA optimization finished
 exitOptimization <- function(args) {
   # Print the BT execution lines
-  sink(args$sinkpathfile, append=T)
+  sink(args$sinkpathfile, append = T)
   cat("\n# Backtest summary\n")
   cat("testStrategyAllMean(bt)\n");
   sink()
@@ -65,11 +68,11 @@ bootstrapSecurity <- function(symbol, args) {
   ptm <<- proc.time()
   args$symbol <- symbol
   # buid securityfile and predfile paths
-  args$securityfile <- with(args, paste(sectype, symbol, sep="/"))
-  args$predfile <- with(args, paste('~/b', benchno, '/', symbol, '_', benchno, '.pdf', sep=""))
+  args$securityfile <- with(args, paste(sectype, symbol, sep = "/"))
+  args$predfile <- with(args, paste('~/b', benchno, '/', symbol, '_', benchno, '.pdf', sep = ""))
   # load the security data and leave only needed cols
   security <- with(args, openSecurity(securityfile, mapricefs, mapricesl, dateformat, tsdate))
-  args$security <- security[, c('Date', 'Year', 'Open', 'High', 'Low', 'Close', 'Mid', 'MidMAF', 'MidMAS', 'Eff'), with=F]
+  args$security <- security[, c('Date', 'Year', 'Open', 'High', 'Low', 'Close', 'Mid', 'MidMAF', 'MidMAS', 'Eff'), with = F]
   # load the security data in back testing format
   args$secdata <- openSecurityOnEnv(args$securityfile)
 
@@ -96,7 +99,7 @@ bootstrapSecurity <- function(symbol, args) {
 
 loopSolutionGA <- function(gar, args) {
   # output the solution string
-  sink(args$sinkpathfile, append=T)
+  sink(args$sinkpathfile, append = T)
   args$x <- gar@solution[1,]
   # Execute the appropriate params function
   args <- get(args$paramsfunc)('splitX', args)
@@ -104,7 +107,7 @@ loopSolutionGA <- function(gar, args) {
   cat("res <-", args$strsol)
   cat("# Fitness=", gar@fitnessValue, "\n")
   with(args, cat("bt$", symbol, " <- testStrategy(openSecurityOnEnv(", shQuote(securityfile), "), ",
-                 shQuote(benchno), ', ', shQuote(symbol), ", res$pred)\n\n", sep=''))
+                 shQuote(benchno), ', ', shQuote(symbol), ", res$pred)\n\n", sep = ''))
   sink()
 }
 
@@ -137,11 +140,11 @@ dayAspectsEnergy <- function(args) {
 
   if (args$asptype == 'sep') {
     # Use only the separating aspects & applying with at much 1 deg of orb
-    planets.pred.aspen <- planets.pred.aspen[orbdir == 1 | (orbdir == -1 & orb <= 1 ),]
+    planets.pred.aspen <- planets.pred.aspen[orbdir == 1 | (orbdir == -1 & orb <= 1),]
   }
   else if (args$asptype == 'app') {
     # Use only the applying aspects & separating with at much 1 deg of orb
-    planets.pred.aspen <- planets.pred.aspen[orbdir == -1 | (orbdir == 1 & orb <= 1 ),]
+    planets.pred.aspen <- planets.pred.aspen[orbdir == -1 | (orbdir == 1 & orb <= 1),]
   }
 
   # Add the aspects polarity
@@ -152,16 +155,16 @@ dayAspectsEnergy <- function(args) {
   }
 
   # Set columns with transit zodiacal energy / aspect energy / sigpoints energy
-  planets.pred.aspen[, tenergy := processAspEnergy(.SD, .BY), by=c('origin'), .SDcols=c('tzsign')]
-  planets.pred.aspen[, aenergy := args$aspectsenergy['energy', aspect], by=c('aspect')]
-  planets.pred.aspen[, spenergy := args$sigpenergy['energy', as.character(lon)], by=c('lon')]
+  planets.pred.aspen[, tenergy := processAspEnergy(.SD, .BY), by = c('origin'), .SDcols = c('tzsign')]
+  planets.pred.aspen[, aenergy := args$aspectsenergy['energy', aspect], by = c('aspect')]
+  planets.pred.aspen[, spenergy := args$sigpenergy['energy', as.character(lon)], by = c('lon')]
 
   # Calculate the energy considering significant point / transit / aspect energy
   if (args$enoperation == '*') {
-    planets.pred.aspen[, energy :=  aenergy * tenergy * spenergy]
+    planets.pred.aspen[, energy := aenergy * tenergy * spenergy]
   }
   else if (args$enoperation == '+') {
-    planets.pred.aspen[, energy :=  aenergy + tenergy + spenergy]
+    planets.pred.aspen[, energy := aenergy + tenergy + spenergy]
   }
   else {
     stop('Not valid enoperation configured.')
@@ -202,16 +205,16 @@ dayAspectsEnergy <- function(args) {
 # Process the yearly predictions and calculate the sample fitness
 calculateSamplesFitness <- function(args, samples) {
   # compute test predictions by year
-  res.test <- samples$opt[, processPredictions(.SD), by=Year]
-  resMean <- function(x) round(mean(x), digits=2)
-  res.test.mean <- res.test[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.t=resMean(matches.t))]
+  res.test <- samples$opt[, processPredictions(.SD), by = Year]
+  resMean <- function(x) round(mean(x), digits = 2)
+  res.test.mean <- res.test[, list(correlation = resMean(correlation), volatility = resMean(volatility), matches.t = resMean(matches.t))]
   # compute confirmation predictions by year
-  res.conf <- samples$cv[, processPredictions(.SD), by=Year]
-  res.conf.mean <- res.conf[, list(correlation=resMean(correlation), volatility=resMean(volatility), matches.t=resMean(matches.t))]
+  res.conf <- samples$cv[, processPredictions(.SD), by = Year]
+  res.conf.mean <- res.conf[, list(correlation = resMean(correlation), volatility = resMean(volatility), matches.t = resMean(matches.t))]
 
   # use appropriate fitness type
   if (args$fittype == 'matches') {
-    fitness <- round((res.test.mean$matches.t + res.conf.mean$matches.t) / 2, digits=0)
+    fitness <- round((res.test.mean$matches.t + res.conf.mean$matches.t) / 2, digits = 0)
   }
   else if (args$fittype == 'sdmatches') {
     matches.mean <- mean(c(res.test$matches.t, res.conf$matches.t))
@@ -224,8 +227,8 @@ calculateSamplesFitness <- function(args, samples) {
     }
   }
   else if (args$fittype == 'matcor') {
-    correlation <- round((res.test.mean$correlation + res.conf.mean$correlation) / 2, digits=3)
-    matches <- round((res.test.mean$matches.t + res.conf.mean$matches.t) / 2, digits=3)
+    correlation <- round((res.test.mean$correlation + res.conf.mean$correlation) / 2, digits = 3)
+    matches <- round((res.test.mean$matches.t + res.conf.mean$matches.t) / 2, digits = 3)
     fitness <- (matches + correlation) / 2
   }
   else {
@@ -235,7 +238,7 @@ calculateSamplesFitness <- function(args, samples) {
   if (args$verbose) {
     # plot solution snippet if doplot is enabled
     if (args$plotsol) {
-      snippet <- paste(strwrap(sout, width=170), collapse="\n")
+      snippet <- paste(strwrap(sout, width = 170), collapse = "\n")
       plotSolutionSnippet(snippet)
     }
 
@@ -246,12 +249,12 @@ calculateSamplesFitness <- function(args, samples) {
                                       print(planetszodenergy)))
 
     # print buffered output
-    cat(args$strsol, mout, "\n", sep="\n")
+    cat(args$strsol, mout, "\n", sep = "\n")
 
     # print yearly summary
-    apply(res.test, 1, printPredYearSummary, type="Optimization")
+    apply(res.test, 1, printPredYearSummary, type = "Optimization")
     with(res.test.mean, cat("\tvol =", volatility, " - cor =", correlation, " - matches.t =", matches.t, "\n"))
-    apply(res.conf, 1, printPredYearSummary, type="Confirmation")
+    apply(res.conf, 1, printPredYearSummary, type = "Confirmation")
     with(res.conf.mean, cat("\tvol =", volatility, " - cor =", correlation, " - matches.t =", matches.t, "\n"))
 
     # totals and execution time
@@ -269,7 +272,7 @@ modelCalculateFitness <- function(args, prediction) {
   planets.pred[, predval := SMA(predRaw, args$mapredsm)]
   planets.pred <- planets.pred[!is.na(predval),]
   # determine a factor prediction response
-  planets.pred[, predFactor := cut(predval, c(-10000, 0, 10000), labels=c('down', 'up'), right=F)]
+  planets.pred[, predFactor := cut(predval, c(-10000, 0, 10000), labels = c('down', 'up'), right = F)]
   # Add the Year for projected predictions rows
   planets.pred[is.na(Year), Year := as.character(format(Date, "%Y"))]
   # Split data using the appropriate function
@@ -280,7 +283,7 @@ modelCalculateFitness <- function(args, prediction) {
   # Calculate Fitness
   fitness <- calculateSamplesFitness(args, samples)
   #cat("\t Predict execution/loop time: ", proc.time()-ptm, " - ", proc.time()-looptm, "\n\n")
-  return(list(fitness=fitness, pred=planets.pred))
+  return(list(fitness = fitness, pred = planets.pred))
 }
 
 modelAspectsEnergy <- function(args) {
@@ -294,7 +297,7 @@ modelAspectsEnergy <- function(args) {
 }
 
 predictionsBackTest <- function(planets.pred, args) {
-  bt <- testYearStrategy(args$secdata, args$benchno, args$symbol, planets.pred, paste(min(planets.pred$Date), max(planets.pred$Date), sep='::'))
+  bt <- testYearStrategy(args$secdata, args$benchno, args$symbol, planets.pred, paste(min(planets.pred$Date), max(planets.pred$Date), sep = '::'))
   return(list(fitness = bt$astro.valley.sma$cagr))
 }
 
@@ -319,14 +322,14 @@ modelAspectsEnergyBackTest <- function(args) {
   samples$cv <- samples$cv[!is.na(Mid),]
 
   # Calculate Fitness
-  resMean <- function(x) round(mean(x), digits=2)
+  resMean <- function(x) round(mean(x), digits = 2)
   # compute test predictions by year
-  res.test <- samples$opt[, predictionsBackTest(.SD, args), by=Year]
+  res.test <- samples$opt[, predictionsBackTest(.SD, args), by = Year]
   # compute confirmation predictions by year
-  res.conf <- samples$cv[, predictionsBackTest(.SD, args), by=Year]
+  res.conf <- samples$cv[, predictionsBackTest(.SD, args), by = Year]
 
   # round fitness
-  fitness <- round((mean(res.test$fitness) + mean(res.conf$fitness)) / 2, digits=3)
+  fitness <- round((mean(res.test$fitness) + mean(res.conf$fitness)) / 2, digits = 3)
 
   if (args$verbose) {
     mout <- with(args, capture.output(print(cusorbs),
@@ -336,14 +339,14 @@ modelAspectsEnergyBackTest <- function(args) {
                                       print(planetszodenergy)))
 
     # print buffered output
-    cat(args$strsol, mout, "\n", sep="\n")
+    cat(args$strsol, mout, "\n", sep = "\n")
 
     # totals and execution time
     cat("\n\t Totals: fitness = ", fitness, "\n")
     cat("\t Optimized and confirmed with: ", nrow(samples$opt) + nrow(samples$cv), " days", "\n")
   }
 
-  return(list(fitness=fitness, pred=planets.pred))
+  return(list(fitness = fitness, pred = planets.pred))
 }
 
 # Build args list for aspects polarity, aspects energy, zodenergy, significant points energy
@@ -351,22 +354,22 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
   # build the parameters based on GA indexes
   splitX <- function(args) {
     # gamixedidx+1 is due indexes start at 1 not 0 so we need to select after that index
-    co.e=args$gamixedidx+1+length(deforbs)
+    co.e = args$gamixedidx + 1 + length(deforbs)
 
     # Calculate Aspects Polarity Index only if aspects polarities are enabled
     if (args$aspolarity) {
-      api.e=co.e+length(aspects)
-      args$aspectspolarity <- args$x[co.e:(api.e-1)]
+      api.e = co.e + length(aspects)
+      args$aspectspolarity <- args$x[co.e:(api.e - 1)]
     }
     else {
-      api.e=co.e
+      api.e = co.e
       args$aspectspolarity <- defpolarities
     }
 
-    ae.e=api.e+length(aspects)
-    pze.e=ae.e+lenZodEnergyMi
+    ae.e = api.e + length(aspects)
+    pze.e = ae.e + lenZodEnergyMi
     # 14 natal points
-    spe.e=pze.e+14
+    spe.e = pze.e + 14
 
     if (args$model == 'natalAspectsModel') {
       args$mapredsm <- args$x[1]
@@ -378,17 +381,17 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
     else if (args$model == 'daySignificantAspectsModel') {
       args$mapredsm <- x[1]
       args$degsplit <- args$x[2]
-      args$threshold <- x[3]/100
+      args$threshold <- x[3] / 100
       args$energymode <- x[4]
     }
     else {
       stop("Not valid model was provided.")
     }
 
-    args$cusorbs <- args$x[(args$gamixedidx+1):(co.e-1)]
-    args$aspectsenergy <- adjustEnergy(args$x[api.e:(ae.e-1)])
-    args$planetszodenergy <- adjustEnergy(args$x[ae.e:(pze.e-1)])
-    args$sigpenergy <- adjustEnergy(args$x[pze.e:(spe.e-1)])
+    args$cusorbs <- args$x[(args$gamixedidx + 1):(co.e - 1)]
+    args$aspectsenergy <- adjustEnergy(args$x[api.e:(ae.e - 1)])
+    args$planetszodenergy <- adjustEnergy(args$x[ae.e:(pze.e - 1)])
+    args$sigpenergy <- adjustEnergy(args$x[pze.e:(spe.e - 1)])
 
     # Set majors planets zodenergy all to 1 due we don't have historical data for a complete cycle
     # so in this case we only allow the planets aspects energy and polarity to act on.
@@ -415,35 +418,35 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
                                     ", tsdate=", shQuote(tsdate), ", tedate=", shQuote(tedate),
                                     ", vsdate=", shQuote(vsdate), ", vedate=", shQuote(vedate),
                                     ", mapredsm=", mapredsm, ", mapricefs=", mapricefs, ", mapricesl=", mapricesl,
-                                    ", cusorbs=c(", paste(cusorbs, collapse=", "), ")",
-                                    ", aspectsenergy=c(", paste(aspectsenergy, collapse=", "), ")",
-                                    ", sigpenergy=c(", paste(sigpenergy, collapse=", "), ")",
-                                    ", planetszodenergy=c(", paste(planetszodenergy, collapse=", "), ")",
-                                    ", aspectspolarity=c(", paste(aspectspolarity, collapse=", "), ")",
+                                    ", cusorbs=c(", paste(cusorbs, collapse = ", "), ")",
+                                    ", aspectsenergy=c(", paste(aspectsenergy, collapse = ", "), ")",
+                                    ", sigpenergy=c(", paste(sigpenergy, collapse = ", "), ")",
+                                    ", planetszodenergy=c(", paste(planetszodenergy, collapse = ", "), ")",
+                                    ", aspectspolarity=c(", paste(aspectspolarity, collapse = ", "), ")",
                                     ", dateformat=", shQuote(dateformat),
-                                    ", fittype=", shQuote(fittype), ")\n", sep=""))
+                                    ", fittype=", shQuote(fittype), ")\n", sep = ""))
 
     # Build the matrices after build solution, otherwise the paste maxtrix implode values by cols
     # instead by rows, resulting in totally different solution.
-    args$cusorbs <- matrix(args$cusorbs, nrow=1, ncol=length(aspects), byrow=T,
-                           dimnames=list('orbs', aspects))
+    args$cusorbs <- matrix(args$cusorbs, nrow = 1, ncol = length(aspects), byrow = T,
+                           dimnames = list('orbs', aspects))
 
-    args$aspectspolarity <- matrix(args$aspectspolarity, nrow=1, ncol=length(aspects), byrow=T,
-                                   dimnames=list('polarity', aspects))
+    args$aspectspolarity <- matrix(args$aspectspolarity, nrow = 1, ncol = length(aspects), byrow = T,
+                                   dimnames = list('polarity', aspects))
 
-    args$aspectsenergy <- matrix(args$aspectsenergy, nrow=1, ncol=length(args$aspectsenergy), byrow=T,
-                                 dimnames=list(c('energy'), aspects))
+    args$aspectsenergy <- matrix(args$aspectsenergy, nrow = 1, ncol = length(args$aspectsenergy), byrow = T,
+                                 dimnames = list(c('energy'), aspects))
 
     if (!is.null(args$sigpenergy)) {
-      args$sigpenergy <- matrix(args$sigpenergy, nrow=1, ncol=length(args$sigpenergy), byrow=T,
-                                dimnames=list(c('energy'), args$siglons$lon))
+      args$sigpenergy <- matrix(args$sigpenergy, nrow = 1, ncol = length(args$sigpenergy), byrow = T,
+                                dimnames = list(c('energy'), args$siglons$lon))
     }
     else {
       args$sigpenergy <- ''
     }
 
-    args$planetszodenergy <- matrix(args$planetszodenergy, nrow=length(planetsBaseCols), ncol=12, byrow=T,
-                                    dimnames=list(planetsBaseCols, zodSignsCols))
+    args$planetszodenergy <- matrix(args$planetszodenergy, nrow = length(planetsBaseCols), ncol = 12, byrow = T,
+                                    dimnames = list(planetsBaseCols, zodSignsCols))
     return(args)
   }
 
@@ -458,8 +461,8 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
     polaritymax <- c()
 
     if (args$aspolarity) {
-      polaritymin <- c(2, rep(0, length(aspects)-1))
-      polaritymax <- c(2, rep(1, length(aspects)-1))
+      polaritymin <- c(2, rep(0, length(aspects) - 1))
+      polaritymax <- c(2, rep(1, length(aspects) - 1))
     }
 
     if (args$model == 'natalAspectsModel') {
@@ -474,14 +477,14 @@ paramsPolarityAspZodSiglonEnergy <- function(func, args) {
       sigpenergymin <- rep(0, args$topn)
       sigpenergymax <- rep(30, args$topn)
       args$gamixedidx <- 2
-      mixedmin <- c(2,  4)
+      mixedmin <- c(2, 4)
       mixedmax <- c(10, 6)
     }
     else if (args$model == 'daySignificantAspectsModel') {
       sigpenergymin <- c()
       sigpenergymax <- c()
       args$gamixedidx <- 2
-      mixedmin <- c(2,  4)
+      mixedmin <- c(2, 4)
       mixedmax <- c(10, 6)
     }
     else {
@@ -510,10 +513,10 @@ testSolution <- function(args) {
 
   # Create directory if do not exists
   if (!file.exists(dirname(args$predfile))) {
-    dir.create(dirname(args$predfile), recursive=T)
+    dir.create(dirname(args$predfile), recursive = T)
   }
 
-  if (args$doplot) pdf(args$predfile, width=11, height=8, family='Helvetica', pointsize=12)
+  if (args$doplot) pdf(args$predfile, width = 11, height = 8, family = 'Helvetica', pointsize = 12)
   res <- get(args$fitfunc)(args)
   if (args$doplot) dev.off()
   # Return a response
