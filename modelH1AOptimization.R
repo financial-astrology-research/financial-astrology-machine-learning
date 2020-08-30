@@ -23,3 +23,9 @@ searchResult <- random_search(
 
 print(searchResult)
 
+# Best parameters results:
+# en0.test en30.test en45.test en60.test en90.test en120.test en135.test en150.test en180.test    output
+#     -1         0         0         0         1          0          0          1          0     0.3969207
+#     -1        -1         0         0         1          0         -1          1          0     0.4151665
+#     -1         0         0         0         1          1         -1          1          0     0.3942058
+#     -1         0         0         0         1          1         -1          1          0     0.3942058
