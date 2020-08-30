@@ -33,8 +33,9 @@ enOpts <- seq(-1, 1, by = 1)
 
 # Suggest the best solutions found through random search.
 solutions < rbind(
+  c(-3, -1, 1, -1, 1, 2, -1, 2, -1),
   c(-1, 0, 0, 0, 1, 0, 0, 1, 0),
-  c(, -1, -1, 0, 0, 1, 0, -1, 1, 0),
+  c(-1, -1, 0, 0, 1, 0, -1, 1, 0),
   c(-1, 0, 0, 0, 1, 1, -1, 1, 0),
   c(-1, 0, 0, 0, 1, 1, -1, 1, 0),
 )
@@ -42,8 +43,8 @@ solutions < rbind(
 gar <- ga(
   "real-valued",
   fitness = predictSecurityModelH1A,
-  lower = c(-2, -2, -2, -2, -2, -2, -2, -2, -2),
-  upper = c(2, 2, 2, 2, 2, 2, 2, 2, 2),
+  lower = c(-3, -2, -2, -2, -3, -2, -2, -2, -3),
+  upper = c(3, 2, 2, 2, 3, 2, 2, 2, 3),
   names = c('a0', 'a30', 'a45', 'a60', 'a90', 'a120', 'a135', 'a150', 'a180'),
   suggestions = solutions,
   popSize = 200, elitism = 20, pcrossover = 0.9, pmutation = 0.1,
