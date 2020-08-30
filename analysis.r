@@ -57,8 +57,8 @@ decToDeg <- function(num) {
 }
 
 gaint_Population <- function (object, ...) {
-  min <- object@min
-  max <- object@max
+  min <- object@lower
+  max <- object@upper
   nvars <- length(min)
   population <- matrix(NA, nrow = object@popSize, ncol = nvars)
   for (j in 1:nvars) {
@@ -73,7 +73,7 @@ gaint_raMutation <- function(object, parent, k = 1) {
   n <- length(parent)
   j <- sample(1:n, size = k)
   # mutate the parameters
-  mutate[j] <- sapply(j, function(x) sample(object@min[x[1]]:object@max[x[1]], 1))
+  mutate[j] <- sapply(j, function(x) sample(object@lower[x[1]]:object@upper[x[1]], 1))
   return(mutate)
 }
 
