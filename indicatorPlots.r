@@ -405,6 +405,18 @@ dailyHourlyAspectsTablePrepare <- function(dailyHourlyPlanets, idCols) {
   dailyAspects <- dailyAspectsAddLongitude(dailyAspects, dailyHourlyPlanets, idCols)
   dailyAspects <- dailyAspectsAddSpeed(dailyAspects, dailyHourlyPlanets, idCols)
 
+  # Calculate the proportion of positive / negative daily aspects.
+  dailyAspectsCount <- dailyAspects[, data.table(prop.table(table(aspect))), by=list(Date)]
+  dailyAspectsCount[, aspect := paste("a", aspect, sep = "")]
+  dailyAspectsCountWide <- dcast(dailyAspectsCount, Date ~ aspect, value.var = "N")
+  setDT(dailyAspectsCountWide)
+  aspCols <- paste("a", aspects, sep = "")
+  dailyAspectsCountWide[, c(aspCols) := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols=aspCols]
+  # Merge aspects count proportion to main aspects table.
+  dailyAspects <- merge(dailyAspects, dailyAspectsCountWide, by="Date")
+  dailyAspects[, apos := a30 + a60 + a120]
+  dailyAspects[, aneg := a45 + a90 + a135]
+
   return(dailyAspects)
 }
 

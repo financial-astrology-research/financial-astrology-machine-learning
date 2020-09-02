@@ -1,13 +1,46 @@
 source("./indicatorPlots.r")
-dailyAspects <- predictSecurityModelA("EOS-USD")
-dailyAspects[, diffPercent := round(diffPercent * 100, 1)]
+
+symbol <- "EOS-USD"
+securityData <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
+securityData[, diffPercent := round(diffPercent * 100, 1)]
+
+# Experiment grid search with different aspects energy factors.
+dailyAspects <- prepareHourlyAspectsModelH1()
+dailyAspects[, amom := ifelse(apos > aneg, (apos+a0)-aneg, apos-(aneg+a0))]
+dailyAspects[, amom2 := abs(ifelse(apos > aneg, (apos+a0+a180)-aneg, apos-(aneg+a0+a180)))]
+dailyAspects <- merge(securityData[, c('Date', 'diffPercent')], dailyAspects, by="Date")
 dailyAspectsFast <- dailyAspects[
   p.x %ni% c('CE', 'JU', 'SA', 'UR', 'NE', 'PL')
 ][
-  orb <= 2,
+  orb <= 1,
 ][
   origin %ni% c('MESU')
 ]
+
+# Price and pos/neg momentum.
+ggplot(data = dailyAspectsFast) +
+  aes(y = amom2, x = diffPercent, color=type) +
+  #aes(y=spn.x, x=diffPercent, color=type) +
+  geom_point() +
+  #facet_grid(aspect ~ origin, scales = "free_y") +
+  stat_ellipse(type = "norm", color = "yellow") +
+  scale_x_continuous(limits = c(-10, 10)) +
+  #scale_y_continuous(limits=c(0, 1)) +
+  #geom_smooth(orientation="y") +
+  theme_black()
+
+
+# Fast planets former bodies speed effect.
+ggplot(data = dailyAspectsFast) +
+  aes(y = sp.x, x = diffPercent) +
+  #aes(y=spn.x, x=diffPercent, color=type) +
+  geom_point(color = "white") +
+  facet_grid(aspect ~ origin, scales = "free_y") +
+  stat_ellipse(type = "norm", color = "yellow") +
+  scale_x_continuous(limits = c(-10, 10)) +
+  #scale_y_continuous(limits=c(0, 1)) +
+  #geom_smooth(orientation="y") +
+  theme_black()
 
 # Fast planets former bodies speed effect.
 ggplot(data = dailyAspectsFast) +
