@@ -126,22 +126,32 @@ analyzeSecurity <- function(security) {
 
 dailyAspectsAddSpeed <- function(dailyAspects, dailyPlanets, idCols = c('Date')) {
   # Melt speeds.
-  dailySpeed <- melt(dailyPlanets, id.var = idCols, variable.name = 'origin', value.name = 'sp', measure.var = planetsSpCols)
+  dailySpeed <- melt(
+    dailyPlanets, id.var = idCols, variable.name = 'origin',
+    value.name = 'sp', measure.var = planetsSpCols
+  )
+
+  # Aggregate by date.
+  dailySpeed <- dailySpeed[, mean(sp), by=list(Date, origin)]
+  setnames(dailySpeed, c('Date', 'origin', 'sp'))
+
+  # Min/Max normalized speed.
   dailySpeed[, spn := normalize(sp), by = c('origin')]
+
   # dailyPlanets[, c(planetsSpCols) := lapply(.SD, normalize), .SDcols=planetsSpCols]
   dailySpeedX <- copy(dailySpeed)
   dailySpeedX[, p.x := substr(origin, 1, 2)]
-  dailySpeedX[, sp.x := round(sp / 24, 3)]
+  dailySpeedX[, sp.x := round(sp, 3)]
   dailySpeedX[, spn.x := spn]
   # Merge daily speed.
   dailySpeedY <- copy(dailySpeed)
   dailySpeedY[, p.y := substr(origin, 1, 2)]
-  dailySpeedY[, sp.y := round(sp / 24, 3)]
+  dailySpeedY[, sp.y := round(sp, 3)]
   dailySpeedY[, spn.y := spn]
-  selectColsY <- c(idCols, 'p.y', 'sp.y', 'spn.y')
-  dailyAspects <- merge(dailyAspects, dailySpeedY[, ..selectColsY], by = c(idCols, 'p.y'))
-  selectColsX <- c(idCols, 'p.x', 'sp.x', 'spn.x')
-  dailyAspects <- merge(dailyAspects, dailySpeedX[, ..selectColsX], by = c(idCols, 'p.x'))
+  selectColsY <- c('Date', 'p.y', 'sp.y', 'spn.y')
+  dailyAspects <- merge(dailyAspects, dailySpeedY[, ..selectColsY], by = c('Date', 'p.y'))
+  selectColsX <- c('Date', 'p.x', 'sp.x', 'spn.x')
+  dailyAspects <- merge(dailyAspects, dailySpeedX[, ..selectColsX], by = c('Date', 'p.x'))
 
   return(dailyAspects)
 }
@@ -159,6 +169,10 @@ dailyAspectsAddOrbs <- function(dailyAspects, dailyPlanets, idCols = c('Date')) 
   # Join aspects & orbs.
   dailyAspects <- merge(dailyAspects, dailyAspectsOrbs, by = c(idCols, 'origin'))
 
+  # Aggregate aspect by day with average orb.
+  dailyAspects <- dailyAspects[, mean(orb), by=list(Date, origin, aspect)]
+  setnames(dailyAspects, c('Date', 'origin', 'aspect', 'orb'))
+
   # Calculate orb direction (applicative, separative).
   dailyAspects[, orbdir := round(orb - Lag(orb), 2), by = c('origin', 'aspect')]
   dailyAspects[, type := cut(orbdir, c(-100, 0, 100), labels = (c('applicative', 'separative')))]
@@ -170,6 +184,9 @@ dailyAspectsAddLongitude <- function(dailyAspects, dailyPlanets, idCols = c('Dat
   # Melt longitudes.
   dailyLongitudes <- melt(dailyPlanets, id.var = idCols, variable.name = 'origin',
                           value.name = 'lon', measure.var = planetsLonCols)
+  # Aggregate by date.
+  dailyLongitudes <- dailyLongitudes[, mean(lon), by=list(Date, origin)]
+  setnames(dailyLongitudes, c('Date', 'origin', 'lon'))
 
   # For first planet.
   dailyLongitudesX <- copy(dailyLongitudes)
@@ -182,10 +199,10 @@ dailyAspectsAddLongitude <- function(dailyAspects, dailyPlanets, idCols = c('Dat
   # Merge
   dailyAspects[, p.x := substr(origin, 1, 2)]
   dailyAspects[, p.y := substr(origin, 3, 4)]
-  selectColsY <- c(idCols, 'p.y', 'lon.y')
-  dailyAspects <- merge(dailyAspects, dailyLongitudesY[, ..selectColsY], by = c(idCols, 'p.y'))
-  selectColsX <- c(idCols, 'p.x', 'lon.x')
-  dailyAspects <- merge(dailyAspects, dailyLongitudesX[, ..selectColsX], by = c(idCols, 'p.x'))
+  selectColsY <- c('Date', 'p.y', 'lon.y')
+  dailyAspects <- merge(dailyAspects, dailyLongitudesY[, ..selectColsY], by = c('Date', 'p.y'))
+  selectColsX <- c('Date', 'p.x', 'lon.x')
+  dailyAspects <- merge(dailyAspects, dailyLongitudesX[, ..selectColsX], by = c('Date', 'p.x'))
 }
 
 dailyAspectsAddEnergy <- function(dailyAspects, speedDecay = 0.6) {
@@ -406,16 +423,28 @@ dailyHourlyAspectsTablePrepare <- function(dailyHourlyPlanets, idCols) {
   dailyAspects <- dailyAspectsAddSpeed(dailyAspects, dailyHourlyPlanets, idCols)
 
   # Calculate the proportion of positive / negative daily aspects.
-  dailyAspectsCount <- dailyAspects[, data.table(table(aspect)), by=list(Date)]
+  dailyPlanetAspects <- melt(
+    dailyAspects, id.var = c('Date', 'aspect'),
+    variable.name = 'origin', measure.var = c('p.x', 'p.y')
+  )
+  setnames(dailyPlanetAspects, c('Date', 'aspect', 'origin', 'planet'))
+
+  dailyAspectsCount <- dailyPlanetAspects[, data.table(table(aspect, planet)), by=list(Date)]
   dailyAspectsCount[, aspect := paste("a", aspect, sep = "")]
-  dailyAspectsCountWide <- dcast(dailyAspectsCount, Date ~ aspect, value.var = "N")
-  setDT(dailyAspectsCountWide)
+  dailyAspectsCountWide <- dcast(dailyAspectsCount, Date + planet ~ aspect, value.var = "N")
+
   aspCols <- paste("a", aspects, sep = "")
+  setDT(dailyAspectsCountWide)
   dailyAspectsCountWide[, c(aspCols) := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols=aspCols]
-  # Merge aspects count proportion to main aspects table.
-  dailyAspects <- merge(dailyAspects, dailyAspectsCountWide, by="Date")
-  dailyAspects[, apos := a30 + a60 + a120]
-  dailyAspects[, aneg := a45 + a90 + a135]
+
+  # Merge aspects count once per each former planets.
+  setnames(dailyAspectsCountWide, c('Date', 'p.x', paste(aspCols, 'x', sep=".")))
+  dailyAspects <- merge(dailyAspects, dailyAspectsCountWide, by=c("Date", "p.x"))
+
+  setnames(dailyAspectsCountWide, c('Date', 'p.y', paste(aspCols, 'y', sep=".")))
+  dailyAspects <- merge(dailyAspects, dailyAspectsCountWide, by=c("Date", "p.y"))
+  #dailyAspects[, apos := a30 + a60 + a120]
+  #dailyAspects[, aneg := a45 + a90 + a135]
 
   return(dailyAspects)
 }
