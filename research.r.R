@@ -6,29 +6,35 @@ securityData[, diffPercent := round(diffPercent * 100, 1)]
 
 # Experiment grid search with different aspects energy factors.
 dailyAspects <- prepareHourlyAspectsModelH1()
-dailyAspects[, amom := ifelse(apos > aneg, (apos+a0)-aneg, apos-(aneg+a0))]
-dailyAspects[, amom2 := abs(ifelse(apos > aneg, (apos+a0+a180)-aneg, apos-(aneg+a0+a180)))]
-dailyAspects <- merge(securityData[, c('Date', 'diffPercent')], dailyAspects, by="Date")
+dailyAspects <- merge(securityData[, c('Date', 'diffPercent')], dailyAspects, by = "Date")
+dailyAspects[, adiff := apos - aneg]
+dailyAspects[, apos2 := apos]
+dailyAspects[adiff > 0, apos2 := apos + a0 + a180 + a150]
+dailyAspects[, aneg2 := aneg]
+dailyAspects[adiff < 0, aneg2 := aneg + a0 + a180 + a150]
+dailyAspects[, adiff2 := apos2 - aneg2]
+dailyAspects[, orbtype := cut(orb, seq(0, 12, by = 1))]
+
+# Price and pos/neg momentum.
+ggplot(data = dailyAspects[orb <= 2 & p.x %ni% c('MO', 'ME', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
+  aes(y = adiff, x = diffPercent) +
+  #aes(y=spn.x, x=diffPercent, color=type) +
+  geom_point(color = "gray") +
+  #facet_grid(aspect ~ origin, scales = "free_y") +
+  stat_ellipse(type = "norm", color = "yellow") +
+  scale_x_continuous(limits = c(-10, 10)) +
+  facet_grid(aspect ~ origin, scales = "free_y") +
+  #scale_y_continuous(limits=c(0, 1)) +
+  #geom_smooth(orientation="y") +
+  theme_black()
+
 dailyAspectsFast <- dailyAspects[
   p.x %ni% c('CE', 'JU', 'SA', 'UR', 'NE', 'PL')
 ][
   orb <= 1,
 ][
-  origin %ni% c('MESU')
+  origin %ni% c('MESU'),
 ]
-
-# Price and pos/neg momentum.
-ggplot(data = dailyAspectsFast) +
-  aes(y = amom2, x = diffPercent, color=type) +
-  #aes(y=spn.x, x=diffPercent, color=type) +
-  geom_point() +
-  #facet_grid(aspect ~ origin, scales = "free_y") +
-  stat_ellipse(type = "norm", color = "yellow") +
-  scale_x_continuous(limits = c(-10, 10)) +
-  #scale_y_continuous(limits=c(0, 1)) +
-  #geom_smooth(orientation="y") +
-  theme_black()
-
 
 # Fast planets former bodies speed effect.
 ggplot(data = dailyAspectsFast) +
@@ -55,31 +61,6 @@ ggplot(data = dailyAspectsFast) +
   theme_black()
 
 ggplot(data = dailyAspectsFast) +
-  aes(y = sp.y, x = diffPercent) +
-  geom_point(color = "white") +
-  facet_grid(aspect ~ origin, scales = "free_y") +
-  stat_ellipse(type = "norm", color = "yellow") +
-  scale_x_continuous(limits = c(-10, 10)) +
-  theme_black()
-
-# Slow planets former bodies speed effect.
-dailyAspectsSlow <- dailyAspects[
-  p.x %in% c('CE', 'JU', 'SA', 'UR', 'NE', 'PL')
-][
-  orb <= 2,
-][
-  origin %ni% c('MESU')
-]
-
-ggplot(data = dailyAspectsSlow) +
-  aes(y = sp.x, x = diffPercent) +
-  geom_point(color = "white") +
-  facet_grid(aspect ~ origin, scales = "free_y") +
-  stat_ellipse(type = "norm", color = "yellow") +
-  scale_x_continuous(limits = c(-10, 10)) +
-  theme_black()
-
-ggplot(data = dailyAspectsSlow) +
   aes(y = sp.y, x = diffPercent) +
   geom_point(color = "white") +
   facet_grid(aspect ~ origin, scales = "free_y") +
@@ -89,7 +70,7 @@ ggplot(data = dailyAspectsSlow) +
 
 # Cumulative former bodies external aspects energy effect.
 ggplot(data = dailyAspectsFast) +
-  aes(y = entot, x = abs(diffPercent)) +
+  aes(y = enpos, x = abs(diffPercent)) +
   #aes(y=spn.x, x=diffPercent, color=type) +
   geom_point(color = "white") +
   facet_grid(aspect ~ origin, scales = "free_y") +
@@ -122,6 +103,32 @@ ggplot(data = dailyAspectsFast) +
   #scale_y_continuous(limits=c(0, 1)) +
   #geom_smooth(orientation="y") +
   theme_black()
+
+# Slow planets former bodies speed effect.
+dailyAspectsSlow <- dailyAspects[
+  p.x %in% c('CE', 'JU', 'SA', 'UR', 'NE', 'PL')
+][
+  orb <= 2,
+][
+  origin %ni% c('MESU')
+]
+
+ggplot(data = dailyAspectsSlow) +
+  aes(y = sp.x, x = diffPercent) +
+  geom_point(color = "white") +
+  facet_grid(aspect ~ origin, scales = "free_y") +
+  stat_ellipse(type = "norm", color = "yellow") +
+  scale_x_continuous(limits = c(-10, 10)) +
+  theme_black()
+
+ggplot(data = dailyAspectsSlow) +
+  aes(y = sp.y, x = diffPercent) +
+  geom_point(color = "white") +
+  facet_grid(aspect ~ origin, scales = "free_y") +
+  stat_ellipse(type = "norm", color = "yellow") +
+  scale_x_continuous(limits = c(-10, 10)) +
+  theme_black()
+
 
 # Own aspect energy.
 ggplot(data = dailyAspectsFast) +
