@@ -6,23 +6,36 @@ securityData[, diffPercent := round(diffPercent * 100, 1)]
 
 # Experiment grid search with different aspects energy factors.
 dailyAspects <- prepareHourlyAspectsModelH1()
-
 dailyAspects <- merge(securityData[, c('Date', 'diffPercent')], dailyAspects, by = "Date")
+dailyAspects[, apos := a60.x + a60.y + a120.x + a120.y]
+dailyAspects[, aneg := a90.x + a90.y + a150.x + a150.y]
+#dailyAspects[, aneg := a90.x + a90.y + a180.x + a180.y]
+#dailyAspects[, apos := a60.x + a60.y + a120.x + a120.y]
 dailyAspects[, adiff := apos - aneg]
-dailyAspects[, apos2 := apos]
-dailyAspects[adiff > 0, apos2 := apos + a0 + a180 + a150]
-dailyAspects[, aneg2 := aneg]
-dailyAspects[adiff < 0, aneg2 := aneg + a0 + a180 + a150]
-dailyAspects[, adiff2 := apos2 - aneg2]
-dailyAspects[, orbtype := cut(orb, seq(0, 12, by = 1))]
+# dailyAspects[, adiff := apos - aneg]
+# dailyAspects[, apos2 := apos]
+# dailyAspects[adiff > 0, apos2 := apos + a0 + a180 + a150]
+# dailyAspects[, aneg2 := aneg]
+# dailyAspects[adiff < 0, aneg2 := aneg + a0 + a180 + a150]
+# dailyAspects[, adiff2 := apos2 - aneg2]
+# dailyAspects[, orbtype := cut(orb, seq(0, 12, by = 1))]
 
-# Price and pos/neg momentum.
+# Price diff to speed.
+ggplot(data = dailyAspects[orb <= 1 & p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
+  geom_point(aes(y = spn.y, x = diffPercent, alpha = 0.5), color = "gray") +
+  stat_ellipse(aes(y = spn.y, x = diffPercent, alpha = 0.5), type = "norm", color = "yellow") +
+  scale_x_continuous(limits = c(-10, 10)) +
+  facet_grid(aspect ~ origin, scales = "free_y") +
+  #scale_y_continuous(limits=c(0, 1)) +
+  #geom_smooth(orientation="y") +
+  theme_black()
+
+# Price diff to pos/neg momentum.
 ggplot(data = dailyAspects[orb <= 2 & p.x %ni% c('MO', 'ME', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
-  aes(y = adiff, x = diffPercent) +
-  #aes(y=spn.x, x=diffPercent, color=type) +
-  geom_point(color = "gray") +
-  #facet_grid(aspect ~ origin, scales = "free_y") +
-  stat_ellipse(type = "norm", color = "yellow") +
+  geom_point(aes(y = aneg, x = diffPercent, alpha = 0.5), color = "gray") +
+  stat_ellipse(aes(y = aneg, x = diffPercent, alpha = 0.5), type = "norm", color = "yellow") +
+  geom_point(aes(y = apos, x = diffPercent, alpha = 0.5), color = "pink") +
+  stat_ellipse(aes(y = apos, x = diffPercent, alpha = 0.5), type = "norm", color = "pink") +
   scale_x_continuous(limits = c(-10, 10)) +
   facet_grid(aspect ~ origin, scales = "free_y") +
   #scale_y_continuous(limits=c(0, 1)) +
