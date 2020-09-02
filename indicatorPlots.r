@@ -442,11 +442,13 @@ dailyHourlyAspectsTablePrepare <- function(dailyHourlyPlanets, idCols) {
   # Merge aspects count once per each former planets.
   setnames(dailyAspectsCountWide, c('Date', 'p.x', paste(aspCols, 'x', sep=".")))
   dailyAspects <- merge(dailyAspects, dailyAspectsCountWide, by=c("Date", "p.x"))
-  aspColsXY <- c(paste(aspCols, 'x', sep="."), paste(aspCols, 'y', sep="."))
-  dailyAspects[, c(aspColsXY) := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols=aspColsXY]
+  aspColsX <- paste(aspCols, 'x', sep=".")
+  dailyAspects[, c(aspColsX) := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols=aspColsX]
 
   setnames(dailyAspectsCountWide, c('Date', 'p.y', paste(aspCols, 'y', sep=".")))
   dailyAspects <- merge(dailyAspects, dailyAspectsCountWide, by=c("Date", "p.y"))
+  aspColsY <- paste(aspCols, 'y', sep=".")
+  dailyAspects[, c(aspColsY) := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols=aspColsY]
   #dailyAspects[, apos := a30 + a60 + a120]
   #dailyAspects[, aneg := a45 + a90 + a135]
 
