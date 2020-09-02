@@ -7,10 +7,14 @@ securityData[, diffPercent := round(diffPercent * 100, 1)]
 # Experiment grid search with different aspects energy factors.
 dailyAspects <- prepareHourlyAspectsModelH1()
 dailyAspects <- merge(securityData[, c('Date', 'diffPercent')], dailyAspects, by = "Date")
-dailyAspects[, apos := a60.x + a60.y + a120.x + a120.y]
-dailyAspects[, aneg := a90.x + a90.y + a150.x + a150.y]
+#dailyAspects[, apos := a60.x + a60.y + a120.x + a120.y]
+#dailyAspects[, aneg := a90.x + a90.y + a150.x + a150.y]
 #dailyAspects[, aneg := a90.x + a90.y + a180.x + a180.y]
 #dailyAspects[, apos := a60.x + a60.y + a120.x + a120.y]
+#dailyAspects[, apos := a60.t + a60.t + a120.t + a120.t]
+#dailyAspects[, aneg := a90.t + a90.t + a150.t + a150.t]
+dailyAspects[, apos := a30.t + a60.t + a120.t]
+dailyAspects[, aneg := a45.t + a90.t + a135.t]
 dailyAspects[, adiff := apos - aneg]
 # dailyAspects[, adiff := apos - aneg]
 # dailyAspects[, apos2 := apos]
@@ -26,8 +30,21 @@ ggplot(data = dailyAspects[orb <= 1 & p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', '
   stat_ellipse(aes(y = spn.y, x = diffPercent, alpha = 0.5), type = "norm", color = "yellow") +
   scale_x_continuous(limits = c(-10, 10)) +
   facet_grid(aspect ~ origin, scales = "free_y") +
-  #scale_y_continuous(limits=c(0, 1)) +
-  #geom_smooth(orientation="y") +
+  theme_black()
+
+ggplot(data = dailyAspects[orb <= 1 & p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
+  geom_point(aes(y = spn.x, x = diffPercent, alpha = 0.5), color = "gray") +
+  stat_ellipse(aes(y = spn.x, x = diffPercent, alpha = 0.5), type = "norm", color = "yellow") +
+  scale_x_continuous(limits = c(-10, 10)) +
+  facet_grid(aspect ~ origin, scales = "free_y") +
+  theme_black()
+
+# Price diff to orb.
+ggplot(data = dailyAspects[orb <= 1 & p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
+  geom_point(aes(y = orb, x = diffPercent, alpha = 0.5), color = "gray") +
+  stat_ellipse(aes(y = orb, x = diffPercent, alpha = 0.5), type = "norm", color = "yellow") +
+  scale_x_continuous(limits = c(-10, 10)) +
+  facet_grid(aspect ~ origin, scales = "free_y") +
   theme_black()
 
 # Price diff to pos/neg momentum.
