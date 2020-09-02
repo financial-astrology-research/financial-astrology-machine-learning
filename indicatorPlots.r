@@ -170,7 +170,7 @@ dailyAspectsAddOrbs <- function(dailyAspects, dailyPlanets, idCols = c('Date')) 
   dailyAspects <- merge(dailyAspects, dailyAspectsOrbs, by = c(idCols, 'origin'))
 
   # Aggregate aspect by day with average orb.
-  dailyAspects <- dailyAspects[, mean(orb), by=list(Date, origin, aspect)]
+  dailyAspects <- dailyAspects[, min(orb), by=list(Date, origin, aspect)]
   setnames(dailyAspects, c('Date', 'origin', 'aspect', 'orb'))
 
   # Calculate orb direction (applicative, separative).
