@@ -6,16 +6,16 @@ securityData[, diffPercent := round(diffPercent * 100, 1)]
 
 # Experiment grid search with different aspects energy factors.
 dailyAspects <- prepareHourlyAspectsModelH1()
-dailyAspects <- merge(securityData[, c('Date', 'diffPercent')], dailyAspects, by = "Date")
+dailyAspectsPrice <- merge(securityData[, c('Date', 'diffPercent')], dailyAspects, by = "Date")
 #dailyAspects[, apos := a60.x + a60.y + a120.x + a120.y]
 #dailyAspects[, aneg := a90.x + a90.y + a150.x + a150.y]
 #dailyAspects[, aneg := a90.x + a90.y + a180.x + a180.y]
 #dailyAspects[, apos := a60.x + a60.y + a120.x + a120.y]
 #dailyAspects[, apos := a60.t + a60.t + a120.t + a120.t]
 #dailyAspects[, aneg := a90.t + a90.t + a150.t + a150.t]
-dailyAspects[, apos := a30.t + a60.t + a120.t]
-dailyAspects[, aneg := a45.t + a90.t + a135.t]
-dailyAspects[, adiff := apos - aneg]
+dailyAspectsPrice[, apos := a30.t + a60.t + a120.t]
+dailyAspectsPrice[, aneg := a45.t + a90.t + a135.t]
+dailyAspectsPrice[, adiff := apos - aneg]
 # dailyAspects[, adiff := apos - aneg]
 # dailyAspects[, apos2 := apos]
 # dailyAspects[adiff > 0, apos2 := apos + a0 + a180 + a150]
@@ -25,30 +25,30 @@ dailyAspects[, adiff := apos - aneg]
 # dailyAspects[, orbtype := cut(orb, seq(0, 12, by = 1))]
 
 # Price diff to speed.
-ggplot(data = dailyAspects[orb <= 1 & p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
+ggplot(data = dailyAspectsPrice[orb <= 0.5 & p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
   geom_point(aes(y = spn.y, x = diffPercent, alpha = 0.5), color = "gray") +
   stat_ellipse(aes(y = spn.y, x = diffPercent, alpha = 0.5), type = "norm", color = "yellow") +
   scale_x_continuous(limits = c(-10, 10)) +
   facet_grid(aspect ~ origin, scales = "free_y") +
   theme_black()
 
-ggplot(data = dailyAspects[orb <= 1 & p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
+ggplot(data = dailyAspectsPrice[orb <= 0.5 & p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
   geom_point(aes(y = spn.x, x = diffPercent, alpha = 0.5), color = "gray") +
   stat_ellipse(aes(y = spn.x, x = diffPercent, alpha = 0.5), type = "norm", color = "yellow") +
   scale_x_continuous(limits = c(-10, 10)) +
   facet_grid(aspect ~ origin, scales = "free_y") +
   theme_black()
 
-# Price diff to orb.
-ggplot(data = dailyAspects[orb <= 1 & p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
-  geom_point(aes(y = orb, x = diffPercent, alpha = 0.5), color = "gray") +
-  stat_ellipse(aes(y = orb, x = diffPercent, alpha = 0.5), type = "norm", color = "yellow") +
-  scale_x_continuous(limits = c(-10, 10)) +
+# Price diff aspect histogram.
+ggplot(data = dailyAspectsPrice[orb <= 0.5 & p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
+  aes(x = diffPercent) +
+  geom_histogram(color = "gray", bins = 25) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red", size = 0.6, alpha = 0.7) +
   facet_grid(aspect ~ origin, scales = "free_y") +
   theme_black()
 
 # Price diff to pos/neg momentum.
-ggplot(data = dailyAspects[orb <= 2 & p.x %ni% c('MO', 'ME', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
+ggplot(data = dailyAspectsPrice[orb <= 2 & p.x %ni% c('MO', 'ME', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
   geom_point(aes(y = aneg, x = diffPercent, alpha = 0.5), color = "gray") +
   stat_ellipse(aes(y = aneg, x = diffPercent, alpha = 0.5), type = "norm", color = "yellow") +
   geom_point(aes(y = apos, x = diffPercent, alpha = 0.5), color = "pink") +
@@ -59,7 +59,7 @@ ggplot(data = dailyAspects[orb <= 2 & p.x %ni% c('MO', 'ME', 'NN', 'SA', 'UR', '
   #geom_smooth(orientation="y") +
   theme_black()
 
-dailyAspectsFast <- dailyAspects[
+dailyAspectsFast <- dailyAspectsPrice[
   p.x %ni% c('CE', 'JU', 'SA', 'UR', 'NE', 'PL')
 ][
   orb <= 1,
@@ -136,7 +136,7 @@ ggplot(data = dailyAspectsFast) +
   theme_black()
 
 # Slow planets former bodies speed effect.
-dailyAspectsSlow <- dailyAspects[
+dailyAspectsSlow <- dailyAspectsPrice[
   p.x %in% c('CE', 'JU', 'SA', 'UR', 'NE', 'PL')
 ][
   orb <= 2,
