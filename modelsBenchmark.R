@@ -43,6 +43,5 @@ dailyAspects <- predictSecurityModelH2(securityData)
 dailyAspects <- predictSecurityModelH3(securityData)
 
 hourlyAspects <- prepareHourlyAspectsModelH1()
-hourlyAspectsPrice <- merge(hourlyAspects, securityData[, c('Date', 'diffPercent')], by = "Date")
 params <- c(-3, -2, 0, -1, 3, -1, -1, 3, 0)
 predictSecurityModelH1A(params, securityData, hourlyAspects)
