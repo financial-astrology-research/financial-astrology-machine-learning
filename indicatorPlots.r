@@ -432,25 +432,34 @@ dailyHourlyAspectsTablePrepare <- function(dailyHourlyPlanets, idCols) {
   )
   setnames(dailyPlanetAspects, c('Date', 'aspect', 'origin', 'planet'))
 
-  dailyAspectsCount <- dailyPlanetAspects[, data.table(table(aspect, planet)), by=list(Date)]
-  dailyAspectsCount[, aspect := paste("a", aspect, sep = "")]
-  dailyAspectsCountWide <- dcast(dailyAspectsCount, Date + planet ~ aspect, value.var = "N")
-
+  # Daily total aspects per planet count.
+  dailyAspectsPlanetCount <- dailyPlanetAspects[, data.table(table(aspect, planet)), by=list(Date)]
+  dailyAspectsPlanetCount[, aspect := paste("a", aspect, sep = "")]
+  dailyAspectsPlanetCountWide <- dcast(dailyAspectsPlanetCount, Date + planet ~ aspect, value.var = "N")
   aspCols <- paste("a", aspects, sep = "")
-  setDT(dailyAspectsCountWide)
+  setDT(dailyAspectsPlanetCountWide)
 
   # Merge aspects count once per each former planets.
-  setnames(dailyAspectsCountWide, c('Date', 'p.x', paste(aspCols, 'x', sep=".")))
-  dailyAspects <- merge(dailyAspects, dailyAspectsCountWide, by=c("Date", "p.x"))
+  setnames(dailyAspectsPlanetCountWide, c('Date', 'p.x', paste(aspCols, 'x', sep=".")))
+  dailyAspects <- merge(dailyAspects, dailyAspectsPlanetCountWide, by=c("Date", "p.x"))
   aspColsX <- paste(aspCols, 'x', sep=".")
   dailyAspects[, c(aspColsX) := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols=aspColsX]
 
-  setnames(dailyAspectsCountWide, c('Date', 'p.y', paste(aspCols, 'y', sep=".")))
-  dailyAspects <- merge(dailyAspects, dailyAspectsCountWide, by=c("Date", "p.y"))
+  setnames(dailyAspectsPlanetCountWide, c('Date', 'p.y', paste(aspCols, 'y', sep=".")))
+  dailyAspects <- merge(dailyAspects, dailyAspectsPlanetCountWide, by=c("Date", "p.y"))
   aspColsY <- paste(aspCols, 'y', sep=".")
   dailyAspects[, c(aspColsY) := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols=aspColsY]
-  #dailyAspects[, apos := a30 + a60 + a120]
-  #dailyAspects[, aneg := a45 + a90 + a135]
+
+  # Daily total aspects count.
+  dailyAspectsCount <- dailyPlanetAspects[, data.table(table(aspect)), by=list(Date)]
+  dailyAspectsCount[, aspect := paste("a", aspect, sep = "")]
+  dailyAspectsCountWide <- dcast(dailyAspectsCount, Date ~ aspect, value.var = "N")
+  aspCols <- paste("a", aspects, sep = "")
+  setDT(dailyAspectsCountWide)
+  setnames(dailyAspectsCountWide, c('Date', paste(aspCols, 't', sep=".")))
+  dailyAspects <- merge(dailyAspects, dailyAspectsCountWide, by=c("Date"))
+  aspColsT <- paste(aspCols, 't', sep=".")
+  dailyAspects[, c(aspColsT) := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols=aspColsT]
 
   return(dailyAspects)
 }
