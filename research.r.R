@@ -6,6 +6,7 @@ securityData[, diffPercent := round(diffPercent * 100, 1)]
 
 # Experiment grid search with different aspects energy factors.
 dailyAspects <- prepareHourlyAspectsModelH1()
+
 dailyAspects <- merge(securityData[, c('Date', 'diffPercent')], dailyAspects, by = "Date")
 dailyAspects[, adiff := apos - aneg]
 dailyAspects[, apos2 := apos]

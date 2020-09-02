@@ -230,7 +230,8 @@ dailyAspectsAddEnergy2 <- function(dailyAspects, speedDecay = 0.6, aspectsEnergy
 
   return(dailyAspects)
 }
-dailyAspectsAddCumulativeEnergy <- function(dailyAspects, idCols = c('Date')) {
+
+dailyAspectsAddCumulativeEnergy <- function(dailyAspects) {
   # Merge daily security prices with aspects.
   # dailyAspectsPriceResearch <- merge(dailyAspects, securityTrain[, c('Date', 'diffPercent')], by = c('Date'))
 
@@ -247,17 +248,19 @@ dailyAspectsAddCumulativeEnergy <- function(dailyAspects, idCols = c('Date')) {
 
   # Melt involved planets current energy for body strength calculation.
   dailyAspectsPlanetsEnergy <- melt(
-    dailyAspects, id.var = c(idCols, 'ennow'),
-    variable.name = 'origin', value.name = 'planet', measure.var = c('p.x', 'p.y')
+    dailyAspects, id.var = c('Date', 'ennow'),
+    variable.name = 'origin', value.name = 'planet',
+    measure.var = c('p.x', 'p.y')
   )
-  dailyAspectsCumulativeEnergy <- dailyAspectsPlanetsEnergy[, round(sum(ennow), 2), by = c(idCols, 'planet')]
-  setkey(dailyAspectsCumulativeEnergy, 'Date', 'Hour')
+
+  dailyAspectsCumulativeEnergy <- dailyAspectsPlanetsEnergy[, round(sum(ennow), 2), by = c('Date', 'planet')]
+  setkey(dailyAspectsCumulativeEnergy, 'Date')
 
   # Merge cumulative planets energy.
-  setnames(dailyAspectsCumulativeEnergy, c(idCols, 'p.x', 'encum.x'))
-  dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c(idCols, 'p.x'))
-  setnames(dailyAspectsCumulativeEnergy, c(idCols, 'p.y', 'encum.y'))
-  dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c(idCols, 'p.y'))
+  setnames(dailyAspectsCumulativeEnergy, c('Date', 'p.x', 'encum.x'))
+  dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c('Date', 'p.x'))
+  setnames(dailyAspectsCumulativeEnergy, c('Date', 'p.y', 'encum.y'))
+  dailyAspects <- merge(dailyAspects, dailyAspectsCumulativeEnergy, by = c('Date', 'p.y'))
 
   return(dailyAspects)
 }
@@ -720,7 +723,7 @@ predictSecurityModelH1 <- function(security) {
   idCols <- c('Date', 'Hour')
   hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.1)
-  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, idCols)
+  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects)
   # MO only contribute to the cumulative effect but is not a major indicator.
   hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
   hourlyAspects <- dailyAspectsAddEffectM3(hourlyAspects)
@@ -742,7 +745,7 @@ predictSecurityModelH2 <- function(security) {
   idCols <- c('Date', 'Hour')
   hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.1)
-  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, idCols)
+  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects)
   # MO only contribute to the cumulative effect but is not a major indicator.
   hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
   hourlyAspects <- dailyAspectsAddEffectM3(hourlyAspects)
@@ -765,7 +768,7 @@ predictSecurityModelH3 <- function(security) {
   idCols <- c('Date', 'Hour')
   hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.1)
-  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, idCols)
+  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects)
   # MO only contribute to the cumulative effect but is not a major indicator.
   hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
   hourlyAspects <- dailyAspectsAddEffectM3(hourlyAspects)
@@ -804,7 +807,7 @@ predictSecurityModelH2A <- function(
   # Create an iteration table so parallel run has it's own DT.
   hourlyAspectsIteration <- copy(hourlyAspects)
   hourlyAspectsIteration <- dailyAspectsAddEnergy2(hourlyAspectsIteration, speedDecay, aspectsEnergyCustom)
-  hourlyAspectsIteration <- dailyAspectsAddCumulativeEnergy(hourlyAspectsIteration, idCols)
+  hourlyAspectsIteration <- dailyAspectsAddCumulativeEnergy(hourlyAspectsIteration)
   # MO only contribute to the cumulative effect but is not a major indicator.
   hourlyAspectsIteration <- hourlyAspectsIteration[ p.x != 'MO', ]
   hourlyAspectsIteration <- dailyAspectsAddEffectM3(hourlyAspectsIteration)
@@ -840,7 +843,7 @@ predictSecurityModelH1A <- function(params, security, hourlyAspects) {
   # Create an iteration table so parallel run has it's own DT.
   hourlyAspectsIteration <- copy(hourlyAspects)
   hourlyAspectsIteration <- dailyAspectsAddEnergy2(hourlyAspectsIteration, speedDecay, params)
-  hourlyAspectsIteration <- dailyAspectsAddCumulativeEnergy(hourlyAspectsIteration, idCols)
+  hourlyAspectsIteration <- dailyAspectsAddCumulativeEnergy(hourlyAspectsIteration)
   # MO only contribute to the cumulative effect but is not a major indicator.
   hourlyAspectsIteration <- hourlyAspectsIteration[ p.x != 'MO', ]
   hourlyAspectsIteration <- dailyAspectsAddEffectM3(hourlyAspectsIteration)
