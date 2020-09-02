@@ -1718,5 +1718,5 @@ theme_black = function(base_size = 12, base_family = "") {
 
 # Min/Max normalization.
 normalize <- function(x) {
-  return(round((x - min(x)) / (max(x) - min(x)), 2))
+  return(round((x - min(x)) / (max(x) - min(x)), 4))
 }

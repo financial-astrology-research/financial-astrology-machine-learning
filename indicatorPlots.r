@@ -850,5 +850,7 @@ predictSecurityModelH1A <- function(params, security, hourlyAspects) {
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspectsIteration)
   medianFit <- crossValidateModelOptimization("modelH2A", dailyAspectsIndex, security)
 
+  crossValidateModelReport("modelH1A", dailyAspectsIndex, security)
+
   return(medianFit)
 }

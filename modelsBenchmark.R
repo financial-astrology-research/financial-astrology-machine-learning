@@ -41,3 +41,8 @@ dailyAspects <- predictSecurityModelH2(securityData)
 # Test complete list of modern aspects that needs reduced orbs to don't overlap,
 # the observations point to a reduction of accuracy when using minor second scale aspects.
 dailyAspects <- predictSecurityModelH3(securityData)
+
+hourlyAspects <- prepareHourlyAspectsModelH1()
+hourlyAspectsPrice <- merge(hourlyAspects, securityData[, c('Date', 'diffPercent')], by = "Date")
+params <- c(-3, -2, 0, -1, 3, -1, -1, 3, 0)
+predictSecurityModelH1A(params, securityData, hourlyAspects)
