@@ -152,8 +152,13 @@ dailyAspectsAddSpeed <- function(dailyAspects, dailyPlanets, idCols = c('Date'))
   dailyAspects <- merge(dailyAspects, dailySpeedY[, ..selectColsY], by = c('Date', 'p.y'))
   selectColsX <- c('Date', 'p.x', 'sp.x', 'spn.x')
   dailyAspects <- merge(dailyAspects, dailySpeedX[, ..selectColsX], by = c('Date', 'p.x'))
+}
 
-  return(dailyAspects)
+# Aggregate hourly observations by day leaving the min orb.
+hourlyAspectsDateAggregate <- function(hourlyAspects) {
+  # Aggregate aspect by day with average orb.
+  hourlyAspects <- hourlyAspects[, min(orb), by=list(Date, origin, aspect)]
+  setnames(hourlyAspects, c('Date', 'origin', 'aspect', 'orb'))
 }
 
 dailyAspectsAddOrbs <- function(dailyAspects, dailyPlanets, idCols = c('Date')) {
@@ -165,19 +170,14 @@ dailyAspectsAddOrbs <- function(dailyAspects, dailyPlanets, idCols = c('Date')) 
 
   dailyAspectsOrbs[, orb := round(orb, 2)]
   dailyAspectsOrbs[, origin := substr(origin, 1, 4)]
-  #aspects.day.long[, orbdir := sign(orb - Lag(orb)), by=c('lon', 'origin', 'aspect')]
   # Join aspects & orbs.
   dailyAspects <- merge(dailyAspects, dailyAspectsOrbs, by = c(idCols, 'origin'))
+}
 
-  # Aggregate aspect by day with average orb.
-  dailyAspects <- dailyAspects[, min(orb), by=list(Date, origin, aspect)]
-  setnames(dailyAspects, c('Date', 'origin', 'aspect', 'orb'))
-
+dailyAspectsAddOrbsDir <- function(dailyAspects) {
   # Calculate orb direction (applicative, separative).
   dailyAspects[, orbdir := round(orb - Lag(orb), 2), by = c('origin', 'aspect')]
   dailyAspects[, type := cut(orbdir, c(-100, 0, 100), labels = (c('applicative', 'separative')))]
-
-  return(dailyAspects)
 }
 
 dailyAspectsAddLongitude <- function(dailyAspects, dailyPlanets, idCols = c('Date')) {
@@ -449,22 +449,23 @@ dailyAspectsNameCols <- function(dailyAspects) {
   return(dailyAspects)
 }
 
-dailyHourlyAspectsTablePrepare <- function(dailyHourlyPlanets, idCols) {
-  dailyHourlyPlanetsRange <- dailyHourlyPlanets[Date >= as.Date("2017-01-01") & Date <= as.Date("2021-06-30")]
+dailyHourlyAspectsTablePrepare <- function(hourlyPlanets, idCols) {
+  hourlyPlanetsRange <- hourlyPlanets[Date >= as.Date("2017-01-01") & Date <= as.Date("2021-06-30")]
   # Melt aspects.
-  dailyAspects <- melt(
-    dailyHourlyPlanetsRange, id.var = idCols,
+  hourlyAspects <- melt(
+    hourlyPlanetsRange, id.var = idCols,
     variable.name = 'origin', value.name = 'aspect',
     value.factor = T, measure.var = planetsCombAsp, na.rm = T
   )
 
-  dailyAspects[, origin := substr(origin, 1, 4)]
-  setkey(dailyAspects, 'Date', 'Hour')
+  hourlyAspects[, origin := substr(origin, 1, 4)]
+  setkey(hourlyAspects, 'Date', 'Hour')
 
-  dailyAspects <- dailyAspectsAddOrbs(dailyAspects, dailyHourlyPlanets, idCols)
-  dailyAspects <- dailyAspectsAddLongitude(dailyAspects, dailyHourlyPlanets, idCols)
-  dailyAspects <- dailyAspectsAddSpeed(dailyAspects, dailyHourlyPlanets, idCols)
-  dailyAspects <- dailyAspectsAddAspectsCount(dailyAspects, idCols)
+  hourlyAspects <- dailyAspectsAddOrbs(hourlyAspects, hourlyPlanetsRange, idCols)
+  dailyAspects <- hourlyAspectsDateAggregate(hourlyAspects)
+  dailyAspects <- dailyAspectsAddOrbsDir(dailyAspects)
+  dailyAspects <- dailyAspectsAddLongitude(dailyAspects, hourlyPlanetsRange, idCols)
+  dailyAspects <- dailyAspectsAddSpeed(dailyAspects, hourlyPlanetsRange, idCols)
 
   return(dailyAspects)
 }
@@ -838,8 +839,9 @@ prepareHourlyAspectsModelH1 <- function() {
   idCols <- c('Date', 'Hour')
   setClassicAspectsSet5()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
-  dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
-  hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
+  hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  hourlyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols)
+  hourlyAspects <- dailyAspectsAddAspectsCount(hourlyAspects)
 
   return (hourlyAspects)
 }
