@@ -25,7 +25,7 @@ dailyAspectsPrice[, adiff := apos - aneg]
 # dailyAspects[, orbtype := cut(orb, seq(0, 12, by = 1))]
 
 # Price diff to speed.
-ggplot(data = dailyAspectsPrice[orb <= 0.2 & p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
+ggplot(data = dailyAspectsPrice[p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
   geom_point(aes(y = spn.y, x = diffPercent), color = "gray") +
   stat_ellipse(aes(y = spn.y, x = diffPercent), type = "norm", color = "yellow") +
   scale_x_continuous(limits = c(-10, 10)) +
@@ -33,7 +33,7 @@ ggplot(data = dailyAspectsPrice[orb <= 0.2 & p.x %ni% c('MO', 'NN', 'SA', 'UR', 
   facet_grid(aspect ~ origin, scales = "free_y") +
   theme_black()
 
-ggplot(data = dailyAspectsPrice[orb <= 0.2 & p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
+ggplot(data = dailyAspectsPrice[p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
   geom_point(aes(y = spn.x, x = diffPercent), color = "gray") +
   stat_ellipse(aes(y = spn.x, x = diffPercent), type = "norm", color = "yellow") +
   scale_x_continuous(limits = c(-10, 10)) +
@@ -41,7 +41,7 @@ ggplot(data = dailyAspectsPrice[orb <= 0.2 & p.x %ni% c('MO', 'NN', 'SA', 'UR', 
   theme_black()
 
 # Price diff aspect histogram.
-ggplot(data = dailyAspectsPrice[orb <= 0.2 & p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
+ggplot(data = dailyAspectsPrice[p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
   aes(x = diffPercent) +
   geom_histogram(color = "gray", bins = 25) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "red", size = 0.6, alpha = 0.7) +
@@ -49,7 +49,7 @@ ggplot(data = dailyAspectsPrice[orb <= 0.2 & p.x %ni% c('MO', 'NN', 'SA', 'UR', 
   theme_black()
 
 # Price diff to pos/neg momentum.
-ggplot(data = dailyAspectsPrice[orb <= 0.2 & p.x %ni% c('MO', 'ME', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
+ggplot(data = dailyAspectsPrice[p.x %ni% c('MO', 'ME', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
   geom_point(aes(y = aneg, x = diffPercent, alpha = 0.5), color = "gray") +
   stat_ellipse(aes(y = aneg, x = diffPercent, alpha = 0.5), type = "norm", color = "yellow") +
   geom_point(aes(y = apos, x = diffPercent, alpha = 0.5), color = "pink") +
@@ -62,8 +62,6 @@ ggplot(data = dailyAspectsPrice[orb <= 0.2 & p.x %ni% c('MO', 'ME', 'NN', 'SA', 
 
 dailyAspectsFast <- dailyAspectsPrice[
   p.x %ni% c('CE', 'JU', 'SA', 'UR', 'NE', 'PL')
-][
-  orb <= 1,
 ][
   origin %ni% c('MESU'),
 ]
@@ -139,8 +137,6 @@ ggplot(data = dailyAspectsFast) +
 # Slow planets former bodies speed effect.
 dailyAspectsSlow <- dailyAspectsPrice[
   p.x %in% c('CE', 'JU', 'SA', 'UR', 'NE', 'PL')
-][
-  orb <= 2,
 ][
   origin %ni% c('MESU')
 ]
