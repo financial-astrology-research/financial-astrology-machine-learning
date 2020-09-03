@@ -177,7 +177,7 @@ dailyAspectsAddOrbs <- function(dailyAspects, dailyPlanets, idCols = c('Date')) 
 dailyAspectsAddOrbsDir <- function(dailyAspects) {
   # Calculate orb direction (applicative, separative).
   dailyAspects[, orbdir := round(orb - Lag(orb), 2), by = c('origin', 'aspect')]
-  dailyAspects[, type := cut(orbdir, c(-100, 0, 100), labels = (c('applicative', 'separative')))]
+  dailyAspects[, type := cut(orbdir, c(-100, 0, 100), labels = (c('A', 'S')))]
 }
 
 dailyAspectsAddLongitude <- function(dailyAspects, dailyPlanets, idCols = c('Date')) {
