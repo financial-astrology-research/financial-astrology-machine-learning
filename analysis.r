@@ -227,14 +227,14 @@ openPlanets <- function(planetsfile, cusorbs=deforbs, calcasps=T, clear=F) {
 
 # Open daily/hourly planets file and handle caching
 openHourlyPlanets <- function(planetsfile, cusorbs=deforbs, calcasps=T, clear=F) {
-  ckey <- list(as.character(c('openHourlyPlanets', planetsfile, cusorbs)))
+  ckey <- list(as.character(c('openHourlyPlanets', planetsfile, aspects, cusorbs, planetsBaseCols)))
   planets <- secureLoadCache(key=ckey)
   selectColNames <- c('Date', 'Hour', planetsLonCols, planetsDecCols, planetsSpCols)
 
   if (is.null(planets) || clear) {
     planets <- mainOpenPlanets(planetsfile, selectColNames, cusorbs, calcasps)
-    saveCache(planets, key=ckey)
-    cat("Set openPlanets cache\n")
+    cacheFile <- saveCache(planets, key=ckey)
+    cat("Set openPlanets cache: ", cacheFile, "\n")
   }
 
   return(planets)
