@@ -24,28 +24,44 @@ dailyAspectsPrice[, adiff := apos - aneg]
 # dailyAspects[, adiff2 := apos2 - aneg2]
 # dailyAspects[, orbtype := cut(orb, seq(0, 12, by = 1))]
 
-# Price diff to speed.
-ggplot(data = dailyAspectsPrice[p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
+# Price diff aspect histogram / x & y speed for fast planets except MO.
+ggplot(data = dailyAspectsPrice[p.x %ni% c('MO', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
   geom_point(aes(y = spn.y, x = diffPercent), color = "gray") +
   stat_ellipse(aes(y = spn.y, x = diffPercent), type = "norm", color = "yellow") +
-  scale_x_continuous(limits = c(-10, 10)) +
-  #scale_y_continuous(limits = c(0, 1)) +
-  facet_grid(aspect ~ origin, scales = "free_y") +
+  facet_grid(aspect ~ origin, scales = "free") +
   theme_black()
 
-ggplot(data = dailyAspectsPrice[p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
+ggplot(data = dailyAspectsPrice[p.x %ni% c('MO', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
   geom_point(aes(y = spn.x, x = diffPercent), color = "gray") +
   stat_ellipse(aes(y = spn.x, x = diffPercent), type = "norm", color = "yellow") +
-  scale_x_continuous(limits = c(-10, 10)) +
-  facet_grid(aspect ~ origin, scales = "free_y") +
+  facet_grid(aspect ~ origin, scales = "free") +
   theme_black()
 
-# Price diff aspect histogram.
-ggplot(data = dailyAspectsPrice[p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
+ggplot(data = dailyAspectsPrice[p.x %ni% c('MO', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
   aes(x = diffPercent) +
   geom_histogram(color = "gray", bins = 25) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "red", size = 0.6, alpha = 0.7) +
   facet_grid(aspect ~ origin, scales = "free_y") +
+  theme_black()
+
+# Price diff aspect histogram / x & y speed for MO and slow planets.
+ggplot(data = dailyAspectsPrice[p.x %in% c('MO', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
+  aes(x = diffPercent) +
+  geom_histogram(color = "gray", bins = 25) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red", size = 0.6, alpha = 0.7) +
+  facet_grid(aspect ~ origin, scales = "free_y") +
+  theme_black()
+
+ggplot(data = dailyAspectsPrice[p.x %in% c('MO', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
+  geom_point(aes(y = spn.y, x = diffPercent), color = "gray") +
+  stat_ellipse(aes(y = spn.y, x = diffPercent), type = "norm", color = "yellow") +
+  facet_grid(aspect ~ origin, scales = "free") +
+  theme_black()
+
+ggplot(data = dailyAspectsPrice[p.x %in% c('MO', 'JU', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
+  geom_point(aes(y = spn.x, x = diffPercent), color = "gray") +
+  stat_ellipse(aes(y = spn.x, x = diffPercent), type = "norm", color = "yellow") +
+  facet_grid(aspect ~ origin, scales = "free") +
   theme_black()
 
 # Price diff to pos/neg momentum.
