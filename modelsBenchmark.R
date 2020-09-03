@@ -42,6 +42,6 @@ dailyAspects <- predictSecurityModelH2(securityData)
 # the observations point to a reduction of accuracy when using minor second scale aspects.
 dailyAspects <- predictSecurityModelH3(securityData)
 
-hourlyAspects <- prepareHourlyAspectsModelH1()
+dailyAspects <- prepareHourlyAspectsModelH1()
 params <- c(-3, -2, 0, -1, 3, -1, -1, 3, 0)
-predictSecurityModelH1A(params, securityData, hourlyAspects)
+predictSecurityModelH1A(params, securityData, dailyAspects)
