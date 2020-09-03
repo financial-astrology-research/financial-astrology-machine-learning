@@ -5,7 +5,7 @@ securityData <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
 securityData[, diffPercent := round(diffPercent * 100, 1)]
 
 # Experiment grid search with different aspects energy factors.
-dailyAspects <- prepareHourlyAspectsModelH1()
+dailyAspects <- prepareHourlyAspectsModelK()
 dailyAspectsPrice <- merge(securityData[, c('Date', 'diffPercent')], dailyAspects, by = "Date")
 #dailyAspects[, apos := a60.x + a60.y + a120.x + a120.y]
 #dailyAspects[, aneg := a90.x + a90.y + a150.x + a150.y]
@@ -25,22 +25,23 @@ dailyAspectsPrice[, adiff := apos - aneg]
 # dailyAspects[, orbtype := cut(orb, seq(0, 12, by = 1))]
 
 # Price diff to speed.
-ggplot(data = dailyAspectsPrice[orb <= 0.5 & p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
-  geom_point(aes(y = spn.y, x = diffPercent, alpha = 0.5), color = "gray") +
-  stat_ellipse(aes(y = spn.y, x = diffPercent, alpha = 0.5), type = "norm", color = "yellow") +
+ggplot(data = dailyAspectsPrice[orb <= 0.2 & p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
+  geom_point(aes(y = spn.y, x = diffPercent), color = "gray") +
+  stat_ellipse(aes(y = spn.y, x = diffPercent), type = "norm", color = "yellow") +
   scale_x_continuous(limits = c(-10, 10)) +
+  #scale_y_continuous(limits = c(0, 1)) +
   facet_grid(aspect ~ origin, scales = "free_y") +
   theme_black()
 
-ggplot(data = dailyAspectsPrice[orb <= 0.5 & p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
-  geom_point(aes(y = spn.x, x = diffPercent, alpha = 0.5), color = "gray") +
-  stat_ellipse(aes(y = spn.x, x = diffPercent, alpha = 0.5), type = "norm", color = "yellow") +
+ggplot(data = dailyAspectsPrice[orb <= 0.2 & p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
+  geom_point(aes(y = spn.x, x = diffPercent), color = "gray") +
+  stat_ellipse(aes(y = spn.x, x = diffPercent), type = "norm", color = "yellow") +
   scale_x_continuous(limits = c(-10, 10)) +
   facet_grid(aspect ~ origin, scales = "free_y") +
   theme_black()
 
 # Price diff aspect histogram.
-ggplot(data = dailyAspectsPrice[orb <= 0.5 & p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
+ggplot(data = dailyAspectsPrice[orb <= 0.2 & p.x %ni% c('MO', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
   aes(x = diffPercent) +
   geom_histogram(color = "gray", bins = 25) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "red", size = 0.6, alpha = 0.7) +
@@ -48,7 +49,7 @@ ggplot(data = dailyAspectsPrice[orb <= 0.5 & p.x %ni% c('MO', 'NN', 'SA', 'UR', 
   theme_black()
 
 # Price diff to pos/neg momentum.
-ggplot(data = dailyAspectsPrice[orb <= 2 & p.x %ni% c('MO', 'ME', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
+ggplot(data = dailyAspectsPrice[orb <= 0.2 & p.x %ni% c('MO', 'ME', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
   geom_point(aes(y = aneg, x = diffPercent, alpha = 0.5), color = "gray") +
   stat_ellipse(aes(y = aneg, x = diffPercent, alpha = 0.5), type = "norm", color = "yellow") +
   geom_point(aes(y = apos, x = diffPercent, alpha = 0.5), color = "pink") +

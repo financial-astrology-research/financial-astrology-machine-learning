@@ -846,6 +846,19 @@ prepareHourlyAspectsModelH1 <- function() {
   return (hourlyAspects)
 }
 
+# Aggregated hourly planets that filter partil aspects.
+prepareHourlyAspectsModelK <- function() {
+  idCols <- c('Date', 'Hour')
+  setClassicAspectsSet5()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  hourlyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols)
+  hourlyAspects <- hourlyAspects[orb <= 0.2, ]
+  hourlyAspects <- dailyAspectsAddAspectsCount(hourlyAspects)
+
+  return (hourlyAspects)
+}
+
 # Based on ModelH1 for grid search optimization.
 predictSecurityModelH1A <- function(params, security, hourlyAspects) {
   cat(
@@ -868,7 +881,7 @@ predictSecurityModelH1A <- function(params, security, hourlyAspects) {
   hourlyAspectsIteration <- dailyAspectsAddEffectM3(hourlyAspectsIteration)
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspectsIteration)
   medianFit <- crossValidateModelOptimization("modelH2A", dailyAspectsIndex, security)
-  # crossValidateModelReport("modelH1A", dailyAspectsIndex, security)
+  crossValidateModelReport("modelH1A", dailyAspectsIndex, security)
 
   return(medianFit)
 }
