@@ -853,8 +853,13 @@ prepareHourlyAspectsModelK <- function() {
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols)
-  dailyAspects <- dailyAspects[orb <= 0.2, ]
+
+  # Filter aspects within 2 degrees of orb for cumulative aspects count.
+  dailyAspects <- dailyAspects[orb <= 2, ]
   dailyAspects <- dailyAspectsAddAspectsCount(dailyAspects)
+
+  # Only leave partil aspects for the observations.
+  dailyAspects <- dailyAspects[orb <= 0.2, ]
 
   return (dailyAspects)
 }
