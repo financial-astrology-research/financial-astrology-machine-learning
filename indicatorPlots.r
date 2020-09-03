@@ -132,7 +132,7 @@ dailyAspectsAddSpeed <- function(dailyAspects, dailyPlanets, idCols = c('Date'))
   )
 
   # Aggregate by date.
-  dailySpeed <- dailySpeed[, mean(sp), by=list(Date, origin)]
+  dailySpeed <- dailySpeed[, mean(sp), by = list(Date, origin)]
   setnames(dailySpeed, c('Date', 'origin', 'sp'))
 
   # Min/Max normalized speed.
@@ -157,7 +157,7 @@ dailyAspectsAddSpeed <- function(dailyAspects, dailyPlanets, idCols = c('Date'))
 # Aggregate hourly observations by day leaving the min orb.
 hourlyAspectsDateAggregate <- function(hourlyAspects) {
   # Aggregate aspect by day with average orb.
-  hourlyAspects <- hourlyAspects[, min(orb), by=list(Date, origin, aspect)]
+  hourlyAspects <- hourlyAspects[, min(orb), by = list(Date, origin, aspect)]
   setnames(hourlyAspects, c('Date', 'origin', 'aspect', 'orb'))
 }
 
@@ -185,7 +185,7 @@ dailyAspectsAddLongitude <- function(dailyAspects, dailyPlanets, idCols = c('Dat
   dailyLongitudes <- melt(dailyPlanets, id.var = idCols, variable.name = 'origin',
                           value.name = 'lon', measure.var = planetsLonCols)
   # Aggregate by date.
-  dailyLongitudes <- dailyLongitudes[, mean(lon), by=list(Date, origin)]
+  dailyLongitudes <- dailyLongitudes[, mean(lon), by = list(Date, origin)]
   setnames(dailyLongitudes, c('Date', 'origin', 'lon'))
 
   # For first planet.
@@ -206,6 +206,7 @@ dailyAspectsAddLongitude <- function(dailyAspects, dailyPlanets, idCols = c('Dat
 }
 
 dailyAspectsAddAspectsCount <- function(dailyAspects) {
+  aspCols <- paste("a", aspects, sep = "")
   # Calculate the proportion of positive / negative daily aspects.
   dailyPlanetAspects <- melt(
     dailyAspects, id.var = c('Date', 'aspect'),
@@ -214,33 +215,39 @@ dailyAspectsAddAspectsCount <- function(dailyAspects) {
   setnames(dailyPlanetAspects, c('Date', 'aspect', 'origin', 'planet'))
 
   # Daily total aspects per planet count.
-  dailyAspectsPlanetCount <- dailyPlanetAspects[, data.table(table(aspect, planet)), by=list(Date)]
+  dailyAspectsPlanetCount <- dailyPlanetAspects[, data.table(table(aspect, planet)), by = list(Date)]
   dailyAspectsPlanetCount[, aspect := paste("a", aspect, sep = "")]
-  dailyAspectsPlanetCountWide <- dcast(dailyAspectsPlanetCount, Date + planet ~ aspect, value.var = "N")
-  aspCols <- paste("a", aspects, sep = "")
+  dailyAspectsPlanetCountWide <- dcast(
+    dailyAspectsPlanetCount,
+    Date + planet ~ factor(aspect, levels = aspCols),
+    value.var = "N"
+  )
   setDT(dailyAspectsPlanetCountWide)
 
   # Merge aspects count once per each former planets.
-  setnames(dailyAspectsPlanetCountWide, c('Date', 'p.x', paste(aspCols, 'x', sep=".")))
-  dailyAspects <- merge(dailyAspects, dailyAspectsPlanetCountWide, by=c("Date", "p.x"))
-  aspColsX <- paste(aspCols, 'x', sep=".")
-  dailyAspects[, c(aspColsX) := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols=aspColsX]
+  setnames(dailyAspectsPlanetCountWide, c('Date', 'p.x', paste(aspCols, 'x', sep = ".")))
+  dailyAspects <- merge(dailyAspects, dailyAspectsPlanetCountWide, by = c("Date", "p.x"))
+  aspColsX <- paste(aspCols, 'x', sep = ".")
+  dailyAspects[, c(aspColsX) := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols = aspColsX]
 
-  setnames(dailyAspectsPlanetCountWide, c('Date', 'p.y', paste(aspCols, 'y', sep=".")))
-  dailyAspects <- merge(dailyAspects, dailyAspectsPlanetCountWide, by=c("Date", "p.y"))
-  aspColsY <- paste(aspCols, 'y', sep=".")
-  dailyAspects[, c(aspColsY) := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols=aspColsY]
+  setnames(dailyAspectsPlanetCountWide, c('Date', 'p.y', paste(aspCols, 'y', sep = ".")))
+  dailyAspects <- merge(dailyAspects, dailyAspectsPlanetCountWide, by = c("Date", "p.y"))
+  aspColsY <- paste(aspCols, 'y', sep = ".")
+  dailyAspects[, c(aspColsY) := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols = aspColsY]
 
   # Daily total aspects count.
-  dailyAspectsCount <- dailyPlanetAspects[, data.table(table(aspect)), by=list(Date)]
+  dailyAspectsCount <- dailyPlanetAspects[, data.table(table(aspect)), by = list(Date)]
   dailyAspectsCount[, aspect := paste("a", aspect, sep = "")]
-  dailyAspectsCountWide <- dcast(dailyAspectsCount, Date ~ aspect, value.var = "N")
-  aspCols <- paste("a", aspects, sep = "")
+  dailyAspectsCountWide <- dcast(
+    dailyAspectsCount,
+    Date ~ factor(aspect, levels = aspCols),
+    value.var = "N"
+  )
   setDT(dailyAspectsCountWide)
-  setnames(dailyAspectsCountWide, c('Date', paste(aspCols, 'g', sep=".")))
-  dailyAspects <- merge(dailyAspects, dailyAspectsCountWide, by=c("Date"))
-  aspColsT <- paste(aspCols, 'g', sep=".")
-  dailyAspects[, c(aspColsT) := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols=aspColsT]
+  setnames(dailyAspectsCountWide, c('Date', paste(aspCols, 'g', sep = ".")))
+  dailyAspects <- merge(dailyAspects, dailyAspectsCountWide, by = c("Date"))
+  aspColsT <- paste(aspCols, 'g', sep = ".")
+  dailyAspects[, c(aspColsT) := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols = aspColsT]
 
   return(dailyAspects)
 }
@@ -671,7 +678,7 @@ predictSecurityModelH <- function(security) {
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.2)
   hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects)
   # MO only contribute to the cumulative effect but is not a major indicator.
-  hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
+  hourlyAspects <- hourlyAspects[p.x != 'MO',]
   hourlyAspects <- dailyAspectsAddEffectM3(hourlyAspects)
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
 
@@ -702,7 +709,7 @@ predictSecurityModelI <- function(security) {
   hourlyAspects <- hourlyAspects[p.x %ni% c('JU', 'SA', 'UR', 'NE', 'PL'),]
   hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects)
   # MO only contribute to the cumulative effect but is not a major indicator.
-  hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
+  hourlyAspects <- hourlyAspects[p.x != 'MO',]
   hourlyAspects <- dailyAspectsAddEffectM3(hourlyAspects)
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
 
@@ -721,7 +728,7 @@ predictSecurityModelJ <- function(security) {
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.45)
   hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects)
   # MO only contribute to the cumulative effect but is not a major indicator.
-  hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
+  hourlyAspects <- hourlyAspects[p.x != 'MO',]
   hourlyAspects <- dailyAspectsAddEffectM1(hourlyAspects)
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
 
@@ -743,7 +750,7 @@ predictSecurityModelH1 <- function(security) {
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.1)
   hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects)
   # MO only contribute to the cumulative effect but is not a major indicator.
-  hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
+  hourlyAspects <- hourlyAspects[p.x != 'MO',]
   hourlyAspects <- dailyAspectsAddEffectM3(hourlyAspects)
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
 
@@ -765,7 +772,7 @@ predictSecurityModelH2 <- function(security) {
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.1)
   hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects)
   # MO only contribute to the cumulative effect but is not a major indicator.
-  hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
+  hourlyAspects <- hourlyAspects[p.x != 'MO',]
   hourlyAspects <- dailyAspectsAddEffectM3(hourlyAspects)
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
 
@@ -788,7 +795,7 @@ predictSecurityModelH3 <- function(security) {
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.1)
   hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects)
   # MO only contribute to the cumulative effect but is not a major indicator.
-  hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
+  hourlyAspects <- hourlyAspects[p.x != 'MO',]
   hourlyAspects <- dailyAspectsAddEffectM3(hourlyAspects)
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
 
@@ -802,7 +809,7 @@ prepareHourlyAspectsModelH2 <- function() {
   dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   dailyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
 
-  return (dailyAspects)
+  return(dailyAspects)
 }
 
 # Based on ModelH2 for grid search optimization.
@@ -827,7 +834,7 @@ predictSecurityModelH2A <- function(
   hourlyAspectsIteration <- dailyAspectsAddEnergy2(hourlyAspectsIteration, speedDecay, aspectsEnergyCustom)
   hourlyAspectsIteration <- dailyAspectsAddCumulativeEnergy(hourlyAspectsIteration)
   # MO only contribute to the cumulative effect but is not a major indicator.
-  hourlyAspectsIteration <- hourlyAspectsIteration[ p.x != 'MO', ]
+  hourlyAspectsIteration <- hourlyAspectsIteration[p.x != 'MO',]
   hourlyAspectsIteration <- dailyAspectsAddEffectM3(hourlyAspectsIteration)
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspectsIteration)
   medianFit <- crossValidateModelOptimization("modelH2A", dailyAspectsIndex, security)
@@ -843,7 +850,7 @@ prepareHourlyAspectsModelH1 <- function() {
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols)
   dailyAspects <- dailyAspectsAddAspectsCount(dailyAspects)
 
-  return (dailyAspects)
+  return(dailyAspects)
 }
 
 # Aggregated hourly planets that filter partil aspects.
@@ -855,7 +862,7 @@ prepareHourlyAspectsModelK <- function() {
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols)
 
   # Filter aspects within 2 degrees of orb for cumulative aspects count.
-  dailyAspects <- dailyAspects[orb <= 2, ]
+  dailyAspects <- dailyAspects[orb <= 1,]
   dailyAspects <- dailyAspectsAddAspectsCount(dailyAspects)
 
   # Aggregate X/Y aspects count by type.
@@ -871,13 +878,13 @@ prepareHourlyAspectsModelK <- function() {
 
   # Remove separated x/y counts.
   aspCols <- paste("a", aspects, sep = "")
-  aspColsXY <- c(paste(aspCols, 'x', sep="."), paste(aspCols, 'y', sep="."))
+  aspColsXY <- c(paste(aspCols, 'x', sep = "."), paste(aspCols, 'y', sep = "."))
   dailyAspects <- dailyAspects[, -..aspColsXY]
 
   # Only leave partil aspects for the observations.
-  dailyAspects <- dailyAspects[orb <= 0.2, ]
+  dailyAspects <- dailyAspects[orb <= 0.2,]
 
-  return (dailyAspects)
+  return(dailyAspects)
 }
 
 # Based on ModelH1 for grid search optimization.
@@ -898,7 +905,7 @@ predictSecurityModelH1A <- function(params, security, hourlyAspects) {
   hourlyAspectsIteration <- dailyAspectsAddEnergy2(hourlyAspectsIteration, speedDecay, params)
   hourlyAspectsIteration <- dailyAspectsAddCumulativeEnergy(hourlyAspectsIteration)
   # MO only contribute to the cumulative effect but is not a major indicator.
-  hourlyAspectsIteration <- hourlyAspectsIteration[ p.x != 'MO', ]
+  hourlyAspectsIteration <- hourlyAspectsIteration[p.x != 'MO',]
   hourlyAspectsIteration <- dailyAspectsAddEffectM3(hourlyAspectsIteration)
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspectsIteration)
   medianFit <- crossValidateModelOptimization("modelH2A", dailyAspectsIndex, security)
