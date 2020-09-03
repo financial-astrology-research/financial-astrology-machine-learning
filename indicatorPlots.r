@@ -530,7 +530,7 @@ predictSecurityModelB <- function(security) {
   idCols <- c('Date', 'Hour')
   hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.5)
-  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, idCols)
+  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects)
   hourlyAspects <- dailyAspectsAddEffectM1(hourlyAspects)
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
 
@@ -553,7 +553,7 @@ predictSecurityModelC <- function(security) {
   idCols <- c('Date', 'Hour')
   hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.5)
-  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, idCols)
+  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects)
   hourlyAspects <- dailyAspectsAddEffectM1(hourlyAspects)
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
 
@@ -575,7 +575,7 @@ predictSecurityModelD <- function(security) {
   idCols <- c('Date', 'Hour')
   hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.5)
-  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, idCols)
+  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects)
   hourlyAspects <- dailyAspectsAddEffectM1(hourlyAspects)
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
 
@@ -597,7 +597,7 @@ predictSecurityModelE <- function(security) {
   idCols <- c('Date', 'Hour')
   hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.5)
-  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, idCols)
+  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects)
   hourlyAspects <- dailyAspectsAddEffectM1(hourlyAspects)
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
 
@@ -620,7 +620,7 @@ predictSecurityModelF <- function(security) {
   idCols <- c('Date', 'Hour')
   hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.5)
-  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, idCols)
+  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects)
   hourlyAspects <- dailyAspectsAddEffectM3(hourlyAspects)
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
 
@@ -643,7 +643,7 @@ predictSecurityModelG <- function(security) {
   idCols <- c('Date', 'Hour')
   hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.5)
-  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, idCols)
+  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects)
   hourlyAspects <- dailyAspectsAddEffectM4(hourlyAspects)
   # hourlyAspectsIndex <- hourlyAspectsEffectIndex(hourlyAspects)
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspects)
@@ -669,7 +669,7 @@ predictSecurityModelH <- function(security) {
   idCols <- c('Date', 'Hour')
   hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.2)
-  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, idCols)
+  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects)
   # MO only contribute to the cumulative effect but is not a major indicator.
   hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
   hourlyAspects <- dailyAspectsAddEffectM3(hourlyAspects)
@@ -700,7 +700,7 @@ predictSecurityModelI <- function(security) {
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.2)
   # Ignore slow to slow planets aspects due we lack a complete cycle.
   hourlyAspects <- hourlyAspects[p.x %ni% c('JU', 'SA', 'UR', 'NE', 'PL'),]
-  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, idCols)
+  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects)
   # MO only contribute to the cumulative effect but is not a major indicator.
   hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
   hourlyAspects <- dailyAspectsAddEffectM3(hourlyAspects)
@@ -719,7 +719,7 @@ predictSecurityModelJ <- function(security) {
   idCols <- c('Date', 'Hour')
   hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
   hourlyAspects <- dailyAspectsAddEnergy(hourlyAspects, 0.45)
-  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects, idCols)
+  hourlyAspects <- dailyAspectsAddCumulativeEnergy(hourlyAspects)
   # MO only contribute to the cumulative effect but is not a major indicator.
   hourlyAspects <- hourlyAspects[ p.x != 'MO', ]
   hourlyAspects <- dailyAspectsAddEffectM1(hourlyAspects)
