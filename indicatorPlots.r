@@ -800,9 +800,9 @@ prepareHourlyAspectsModelH2 <- function() {
   setModernAspectsSet2()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   dailyHourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
-  hourlyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
+  dailyAspects <- dailyHourlyAspectsTablePrepare(dailyHourlyPlanets, idCols)
 
-  return (hourlyAspects)
+  return (dailyAspects)
 }
 
 # Based on ModelH2 for grid search optimization.
@@ -840,10 +840,10 @@ prepareHourlyAspectsModelH1 <- function() {
   setClassicAspectsSet5()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
-  hourlyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols)
-  hourlyAspects <- dailyAspectsAddAspectsCount(hourlyAspects)
+  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols)
+  dailyAspects <- dailyAspectsAddAspectsCount(dailyAspects)
 
-  return (hourlyAspects)
+  return (dailyAspects)
 }
 
 # Aggregated hourly planets that filter partil aspects.
@@ -852,11 +852,11 @@ prepareHourlyAspectsModelK <- function() {
   setClassicAspectsSet5()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
-  hourlyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols)
-  hourlyAspects <- hourlyAspects[orb <= 0.2, ]
-  hourlyAspects <- dailyAspectsAddAspectsCount(hourlyAspects)
+  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols)
+  dailyAspects <- dailyAspects[orb <= 0.2, ]
+  dailyAspects <- dailyAspectsAddAspectsCount(dailyAspects)
 
-  return (hourlyAspects)
+  return (dailyAspects)
 }
 
 # Based on ModelH1 for grid search optimization.
@@ -881,7 +881,7 @@ predictSecurityModelH1A <- function(params, security, hourlyAspects) {
   hourlyAspectsIteration <- dailyAspectsAddEffectM3(hourlyAspectsIteration)
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspectsIteration)
   medianFit <- crossValidateModelOptimization("modelH2A", dailyAspectsIndex, security)
-  crossValidateModelReport("modelH1A", dailyAspectsIndex, security)
+  # crossValidateModelReport("modelH1A", dailyAspectsIndex, security)
 
   return(medianFit)
 }
