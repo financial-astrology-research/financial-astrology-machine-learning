@@ -237,9 +237,9 @@ dailyAspectsAddAspectsCount <- function(dailyAspects) {
   dailyAspectsCountWide <- dcast(dailyAspectsCount, Date ~ aspect, value.var = "N")
   aspCols <- paste("a", aspects, sep = "")
   setDT(dailyAspectsCountWide)
-  setnames(dailyAspectsCountWide, c('Date', paste(aspCols, 't', sep=".")))
+  setnames(dailyAspectsCountWide, c('Date', paste(aspCols, 'g', sep=".")))
   dailyAspects <- merge(dailyAspects, dailyAspectsCountWide, by=c("Date"))
-  aspColsT <- paste(aspCols, 't', sep=".")
+  aspColsT <- paste(aspCols, 'g', sep=".")
   dailyAspects[, c(aspColsT) := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols=aspColsT]
 
   return(dailyAspects)
@@ -857,6 +857,22 @@ prepareHourlyAspectsModelK <- function() {
   # Filter aspects within 2 degrees of orb for cumulative aspects count.
   dailyAspects <- dailyAspects[orb <= 2, ]
   dailyAspects <- dailyAspectsAddAspectsCount(dailyAspects)
+
+  # Aggregate X/Y aspects count by type.
+  dailyAspects[, a0 := a0.x + a0.y]
+  dailyAspects[, a30 := a30.x + a30.y]
+  dailyAspects[, a45 := a45.x + a45.y]
+  dailyAspects[, a60 := a60.x + a60.y]
+  dailyAspects[, a90 := a90.x + a90.y]
+  dailyAspects[, a120 := a120.x + a120.y]
+  dailyAspects[, a135 := a135.x + a135.y]
+  dailyAspects[, a150 := a150.x + a150.y]
+  dailyAspects[, a180 := a180.x + a180.y]
+
+  # Remove separated x/y counts.
+  aspCols <- paste("a", aspects, sep = "")
+  aspColsXY <- c(paste(aspCols, 'x', sep="."), paste(aspCols, 'y', sep="."))
+  dailyAspects <- dailyAspects[, -..aspColsXY]
 
   # Only leave partil aspects for the observations.
   dailyAspects <- dailyAspects[orb <= 0.2, ]
