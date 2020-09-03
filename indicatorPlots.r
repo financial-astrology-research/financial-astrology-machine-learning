@@ -876,10 +876,20 @@ prepareHourlyAspectsModelK <- function() {
   dailyAspects[, a150 := a150.x + a150.y]
   dailyAspects[, a180 := a180.x + a180.y]
 
+  # Total aspect cumulative and daily totals count.
+  dailyAspects[, act := a0 + a30 + a45 + a60 + a90 + a120 + a135 + a150 + a180]
+  #dailyAspects[, acp := a30 + a60 + a120]
+  #dailyAspects[, acn := a45 + a90 + a135]
+  dailyAspects[, agt := a0.g + a30.g + a45.g + a60.g + a90.g + a120.g + a135.g + a150.g + a180.g]
+
   # Remove separated x/y counts.
   aspCols <- paste("a", aspects, sep = "")
   aspColsXY <- c(paste(aspCols, 'x', sep = "."), paste(aspCols, 'y', sep = "."))
   dailyAspects <- dailyAspects[, -..aspColsXY]
+
+  # Remove other redundant cols.
+  filterCols <- c('orbdir', 'p.y')
+  dailyAspects <- dailyAspects[, -..filterCols]
 
   # Only leave partil aspects for the observations.
   dailyAspects <- dailyAspects[orb <= 0.2,]
