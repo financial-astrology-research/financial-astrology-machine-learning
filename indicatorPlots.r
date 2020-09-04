@@ -134,16 +134,12 @@ dailyAspectsAddSpeed <- function(dailyAspects, dailyPlanets, idCols = c('Date'))
   # Aggregate by date.
   dailySpeed <- dailySpeed[, mean(sp), by = list(Date, origin)]
   setnames(dailySpeed, c('Date', 'origin', 'sp'))
-
-  # Min/Max normalized speed.
   dailySpeed[, spn := normalize(sp), by = c('origin')]
 
-  # dailyPlanets[, c(planetsSpCols) := lapply(.SD, normalize), .SDcols=planetsSpCols]
   dailySpeedX <- copy(dailySpeed)
   dailySpeedX[, p.x := substr(origin, 1, 2)]
   dailySpeedX[, sp.x := round(sp, 3)]
   dailySpeedX[, spn.x := spn]
-  # Merge daily speed.
   dailySpeedY <- copy(dailySpeed)
   dailySpeedY[, p.y := substr(origin, 1, 2)]
   dailySpeedY[, sp.y := round(sp, 3)]
@@ -152,6 +148,32 @@ dailyAspectsAddSpeed <- function(dailyAspects, dailyPlanets, idCols = c('Date'))
   dailyAspects <- merge(dailyAspects, dailySpeedY[, ..selectColsY], by = c('Date', 'p.y'))
   selectColsX <- c('Date', 'p.x', 'sp.x', 'spn.x')
   dailyAspects <- merge(dailyAspects, dailySpeedX[, ..selectColsX], by = c('Date', 'p.x'))
+}
+
+dailyAspectsAddDeclination <- function(dailyAspects, dailyPlanets, idCols = c('Date')) {
+  # Melt speeds.
+  dailyDeclination <- melt(
+    dailyPlanets, id.var = idCols, variable.name = 'origin',
+    value.name = 'dc', measure.var = planetsDecCols
+  )
+
+  # Aggregate by date.
+  dailyDeclination <- dailyDeclination[, mean(dc), by = list(Date, origin)]
+  setnames(dailyDeclination, c('Date', 'origin', 'dc'))
+  dailyDeclination[, dcn := normalize(dc), by = c('origin')]
+
+  dailyDeclinationX <- copy(dailyDeclination)
+  dailyDeclinationX[, p.x := substr(origin, 1, 2)]
+  dailyDeclinationX[, dc.x := round(dc, 3)]
+  dailyDeclinationX[, dcn.x := dcn]
+  dailyDeclinationY <- copy(dailyDeclination)
+  dailyDeclinationY[, p.y := substr(origin, 1, 2)]
+  dailyDeclinationY[, dc.y := round(dc, 3)]
+  dailyDeclinationY[, dcn.y := dcn]
+  selectColsY <- c('Date', 'p.y', 'dc.y', 'dcn.y')
+  dailyAspects <- merge(dailyAspects, dailyDeclinationY[, ..selectColsY], by = c('Date', 'p.y'))
+  selectColsX <- c('Date', 'p.x', 'dc.x', 'dcn.x')
+  dailyAspects <- merge(dailyAspects, dailyDeclinationX[, ..selectColsX], by = c('Date', 'p.x'))
 }
 
 # Aggregate hourly observations by day leaving the min orb.
@@ -473,6 +495,7 @@ dailyHourlyAspectsTablePrepare <- function(hourlyPlanets, idCols) {
   dailyAspects <- dailyAspectsAddOrbsDir(dailyAspects)
   dailyAspects <- dailyAspectsAddLongitude(dailyAspects, hourlyPlanetsRange, idCols)
   dailyAspects <- dailyAspectsAddSpeed(dailyAspects, hourlyPlanetsRange, idCols)
+  dailyAspects <- dailyAspectsAddDeclination(dailyAspects, hourlyPlanetsRange, idCols)
 
   return(dailyAspects)
 }
