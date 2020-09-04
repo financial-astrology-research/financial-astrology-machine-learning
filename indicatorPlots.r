@@ -884,10 +884,14 @@ prepareHourlyAspectsModelK <- function() {
   hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols)
 
-  # Speed x/y diff.
-  dailyAspects <- dailyAspects[, spd := spn.x - spn.y]
-  # Declination x/y diff.
-  dailyAspects <- dailyAspects[, dcd := dcn.x - dcn.y]
+  # Speed x/y diff, product and ratio.
+  dailyAspects <- dailyAspects[, spd := sp.x - sp.y]
+  dailyAspects <- dailyAspects[, spp := sp.x * sp.y]
+  dailyAspects <- dailyAspects[, spr := sp.x / sp.y]
+  # Declination x/y diff, product and ratio.
+  dailyAspects <- dailyAspects[, dcd := dc.x - dc.y]
+  dailyAspects <- dailyAspects[, dcp := dc.x * dc.y]
+  dailyAspects <- dailyAspects[, dcr := dc.x / dc.y]
 
   # Filter aspects within 2 degrees of orb for cumulative aspects count.
   dailyAspects <- dailyAspects[orb <= 1,]
