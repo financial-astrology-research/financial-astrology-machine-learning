@@ -260,6 +260,17 @@ dailyAspectsAddPlanetsActivation <- function(dailyAspects) {
   # Merge X/Y planets activation counts.
   dailyAspects <- merge(dailyAspects, dailyPlanetActivationCountXWide, by = c("Date", "p.x"))
   dailyAspects <- merge(dailyAspects, dailyPlanetActivationCountYWide, by = c("Date", "p.y"))
+
+  # Calculate cumulative planets activation.
+  dailyAspects[, ME := ME.x + ME.y]
+  dailyAspects[, VE := VE.x + VE.y]
+  dailyAspects[, SU := SU.x + SU.y]
+  dailyAspects[, MA := MA.x + MA.y]
+  dailyAspects[, JU := JU.x + JU.y]
+  dailyAspects[, SA := SA.x + SA.y]
+  #dailyAspects[, UR := UR.x + UR.y]
+  #dailyAspects[, NE := NE.x + NE.y]
+  #dailyAspects[, PL := PL.x + PL.y]
 }
 
 dailyAspectsAddAspectsCount <- function(dailyAspects) {
