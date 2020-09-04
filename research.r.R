@@ -6,7 +6,17 @@ securityData[, diffPercent := round(diffPercent * 100, 1)]
 
 
 # Experiment grid search with different aspects energy factors.
-filterFeatures <- c('Date', 'origin', 'type', 'p.x', 'p.y', 'orbdir', 'lon.y', 'lon.x', 'sp.y', 'sp.x')
+filterFeatures <- c(
+  'Date', 'origin', 'type', 'p.x', 'p.y',
+  'orb', 'lon.y', 'lon.x',
+  #'sp.y', 'sp.x', 'spn.y', 'spn.x',
+  #'act', 'agt',
+  paste("a", aspects, ".x", sep = ""),
+  #paste("a", aspects, ".y", sep = ""),
+  paste("a", aspects, sep = ""),
+  paste("a", aspects, ".g", sep = ""),
+  'orbdir'
+)
 dailyAspects <- prepareHourlyAspectsModelK()
 dailyAspectsPrice <- merge(securityData[, c('Date', 'diffPercent')], dailyAspects, by = "Date")
 #dailyAspects[, apos := a60.x + a60.y + a120.x + a120.y]
