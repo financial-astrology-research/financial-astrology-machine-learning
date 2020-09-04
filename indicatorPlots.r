@@ -227,9 +227,43 @@ dailyAspectsAddLongitude <- function(dailyAspects, dailyPlanets, idCols = c('Dat
   dailyAspects <- merge(dailyAspects, dailyLongitudesX[, ..selectColsX], by = c('Date', 'p.x'))
 }
 
+dailyAspectsAddPlanetsActivation <- function(dailyAspects) {
+  aspCols <- paste("a", aspects, sep = "")
+  dailyPlanetActivation <- melt(
+    dailyAspects, id.var = c('Date', 'p.x'),
+    variable.name = 'origin', measure.var = c('p.y')
+  )
+  setnames(dailyPlanetActivation, c('Date', 'p.x', 'origin', 'p.y'))
+
+  dailyPlanetActivationCountX <- dailyPlanetActivation[,
+    data.table(table(p.x, p.y)), by = list(Date)
+  ]
+
+  dailyPlanetActivationCountXWide <- dcast(
+    dailyPlanetActivationCountX,
+    Date + p.x ~ factor(p.y, levels = planetsBaseCols),
+    value.var = "N", fill = 0
+  )
+  setDT(dailyPlanetActivationCountXWide)
+
+  dailyPlanetActivationCountY <- dailyPlanetActivation[,
+    data.table(table(p.x, p.y)), by = list(Date)
+  ]
+
+  dailyPlanetActivationCountYWide <- dcast(
+    dailyPlanetActivationCountY,
+    Date + p.y ~ factor(p.x, levels = planetsBaseCols),
+    value.var = "N", fill = 0
+  )
+  setDT(dailyPlanetActivationCountYWide)
+
+  # Merge X/Y planets activation counts.
+  dailyAspects <- merge(dailyAspects, dailyPlanetActivationCountXWide, by = c("Date", "p.x"))
+  dailyAspects <- merge(dailyAspects, dailyPlanetActivationCountYWide, by = c("Date", "p.y"))
+}
+
 dailyAspectsAddAspectsCount <- function(dailyAspects) {
   aspCols <- paste("a", aspects, sep = "")
-  # Calculate the proportion of positive / negative daily aspects.
   dailyPlanetAspects <- melt(
     dailyAspects, id.var = c('Date', 'aspect'),
     variable.name = 'origin', measure.var = c('p.x', 'p.y')
@@ -242,7 +276,7 @@ dailyAspectsAddAspectsCount <- function(dailyAspects) {
   dailyAspectsPlanetCountWide <- dcast(
     dailyAspectsPlanetCount,
     Date + planet ~ factor(aspect, levels = aspCols),
-    value.var = "N"
+    value.var = "N", fill = 0
   )
   setDT(dailyAspectsPlanetCountWide)
 
@@ -250,12 +284,12 @@ dailyAspectsAddAspectsCount <- function(dailyAspects) {
   setnames(dailyAspectsPlanetCountWide, c('Date', 'p.x', paste(aspCols, 'x', sep = ".")))
   dailyAspects <- merge(dailyAspects, dailyAspectsPlanetCountWide, by = c("Date", "p.x"))
   aspColsX <- paste(aspCols, 'x', sep = ".")
-  dailyAspects[, c(aspColsX) := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols = aspColsX]
+  #dailyAspects[, c(aspColsX) := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols = aspColsX]
 
   setnames(dailyAspectsPlanetCountWide, c('Date', 'p.y', paste(aspCols, 'y', sep = ".")))
   dailyAspects <- merge(dailyAspects, dailyAspectsPlanetCountWide, by = c("Date", "p.y"))
   aspColsY <- paste(aspCols, 'y', sep = ".")
-  dailyAspects[, c(aspColsY) := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols = aspColsY]
+  #dailyAspects[, c(aspColsY) := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols = aspColsY]
 
   # Daily total aspects count.
   dailyAspectsCount <- dailyPlanetAspects[, data.table(table(aspect)), by = list(Date)]
@@ -263,13 +297,61 @@ dailyAspectsAddAspectsCount <- function(dailyAspects) {
   dailyAspectsCountWide <- dcast(
     dailyAspectsCount,
     Date ~ factor(aspect, levels = aspCols),
-    value.var = "N"
+    value.var = "N", fill = 0
   )
   setDT(dailyAspectsCountWide)
+
   setnames(dailyAspectsCountWide, c('Date', paste(aspCols, 'g', sep = ".")))
   dailyAspects <- merge(dailyAspects, dailyAspectsCountWide, by = c("Date"))
   aspColsT <- paste(aspCols, 'g', sep = ".")
-  dailyAspects[, c(aspColsT) := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols = aspColsT]
+  #dailyAspects[, c(aspColsT) := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols = aspColsT]
+
+  # Aggregate X/Y aspects count by type.
+  dailyAspects[, a0 := a0.x + a0.y]
+  dailyAspects[, a30 := a30.x + a30.y]
+  dailyAspects[, a45 := a45.x + a45.y]
+  dailyAspects[, a60 := a60.x + a60.y]
+  dailyAspects[, a90 := a90.x + a90.y]
+  dailyAspects[, a120 := a120.x + a120.y]
+  dailyAspects[, a135 := a135.x + a135.y]
+  dailyAspects[, a150 := a150.x + a150.y]
+  dailyAspects[, a180 := a180.x + a180.y]
+
+  # Total aspect cumulative and daily totals count.
+  dailyAspects[, acx := a0.x +
+    a30.x +
+    a45.x +
+    a60.x +
+    a90.x +
+    a120.x +
+    a135.x +
+    a150.x +
+    a180.x
+  ]
+
+  dailyAspects[, acy := a0.y +
+    a30.y +
+    a45.y +
+    a60.y +
+    a90.y +
+    a120.y +
+    a135.y +
+    a150.y +
+    a180.y
+  ]
+
+  dailyAspects[, agt := a0.g +
+    a30.g +
+    a45.g +
+    a60.g +
+    a90.g +
+    a120.g +
+    a135.g +
+    a150.g +
+    a180.g
+  ]
+  #dailyAspects[, acp := a30 + a60 + a120]
+  #dailyAspects[, acn := a45 + a90 + a135]
 
   return(dailyAspects)
 }
@@ -896,54 +978,7 @@ prepareHourlyAspectsModelK <- function() {
   # Filter aspects within 2 degrees of orb for cumulative aspects count.
   dailyAspects <- dailyAspects[orb <= 1,]
   dailyAspects <- dailyAspectsAddAspectsCount(dailyAspects)
-
-  # Aggregate X/Y aspects count by type.
-  dailyAspects[, a0 := a0.x + a0.y]
-  dailyAspects[, a30 := a30.x + a30.y]
-  dailyAspects[, a45 := a45.x + a45.y]
-  dailyAspects[, a60 := a60.x + a60.y]
-  dailyAspects[, a90 := a90.x + a90.y]
-  dailyAspects[, a120 := a120.x + a120.y]
-  dailyAspects[, a135 := a135.x + a135.y]
-  dailyAspects[, a150 := a150.x + a150.y]
-  dailyAspects[, a180 := a180.x + a180.y]
-
-  # Total aspect cumulative and daily totals count.
-  dailyAspects[, acx := a0.x +
-    a30.x +
-    a45.x +
-    a60.x +
-    a90.x +
-    a120.x +
-    a135.x +
-    a150.x +
-    a180.x
-  ]
-
-  dailyAspects[, acy := a0.y +
-    a30.y +
-    a45.y +
-    a60.y +
-    a90.y +
-    a120.y +
-    a135.y +
-    a150.y +
-    a180.y
-  ]
-
-  dailyAspects[, agt := a0.g +
-    a30.g +
-    a45.g +
-    a60.g +
-    a90.g +
-    a120.g +
-    a135.g +
-    a150.g +
-    a180.g
-  ]
-  #dailyAspects[, acp := a30 + a60 + a120]
-  #dailyAspects[, acn := a45 + a90 + a135]
-
+  dailyAspects <- dailyAspectsAddPlanetsActivation(dailyAspects)
   # Add week day.
   dailyAspects[, wd := as.numeric(format(Date, "%w")) + 1]
   # Add zodiacal signs.
@@ -951,7 +986,7 @@ prepareHourlyAspectsModelK <- function() {
   dailyAspects[, zy := ceiling((lon.y + 0.01) / 30)]
 
   # Remove other redundant cols.
-  filterCols <- c('orbdir', 'p.y')
+  filterCols <- c('orbdir')
   dailyAspects <- dailyAspects[, -..filterCols]
 
   # Only leave partil aspects for the observations.
