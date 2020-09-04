@@ -877,21 +877,46 @@ prepareHourlyAspectsModelK <- function() {
   dailyAspects[, a180 := a180.x + a180.y]
 
   # Total aspect cumulative and daily totals count.
-  dailyAspects[, acx := a0.x + a30.x + a45.x + a60.x + a90.x + a120.x + a135.x + a150.x + a180.x]
-  dailyAspects[, acy := a0.y + a30.y + a45.y + a60.y + a90.y + a120.y + a135.y + a150.y + a180.y]
-  dailyAspects[, agt := a0.g + a30.g + a45.g + a60.g + a90.g + a120.g + a135.g + a150.g + a180.g]
+  dailyAspects[, acx := a0.x +
+    a30.x +
+    a45.x +
+    a60.x +
+    a90.x +
+    a120.x +
+    a135.x +
+    a150.x +
+    a180.x
+  ]
+
+  dailyAspects[, acy := a0.y +
+    a30.y +
+    a45.y +
+    a60.y +
+    a90.y +
+    a120.y +
+    a135.y +
+    a150.y +
+    a180.y
+  ]
+
+  dailyAspects[, agt := a0.g +
+    a30.g +
+    a45.g +
+    a60.g +
+    a90.g +
+    a120.g +
+    a135.g +
+    a150.g +
+    a180.g
+  ]
   #dailyAspects[, acp := a30 + a60 + a120]
   #dailyAspects[, acn := a45 + a90 + a135]
 
-  aspCols <- paste("a", aspects, sep = "")
-  # Remove x aspects counts.
-  aspColsX <- paste(aspCols, 'x', sep = ".")
-  # dailyAspects <- dailyAspects[, -..aspColsX]
-  # Remove y aspects count.
-  aspColsY <- paste(aspCols, 'y', sep = ".")
-  # dailyAspects <- dailyAspects[, -..aspColsY]
-  # Remove xy aspects count.
-  # dailyAspects <- dailyAspects[, -..aspCols]
+  # Add week day.
+  dailyAspects[, wd := as.numeric(format(Date, "%w")) + 1]
+  # Add zodiacal signs.
+  dailyAspects[, zx := ceiling((lon.x + 0.01) / 30)]
+  dailyAspects[, zy := ceiling((lon.y + 0.01) / 30)]
 
   # Remove other redundant cols.
   filterCols <- c('orbdir', 'p.y')
