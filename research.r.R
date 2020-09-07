@@ -1,8 +1,9 @@
+library(psych)
+library(magrittr)
 source("./indicatorPlots.r")
 
 symbol <- "EOS-USD"
 securityData <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
-securityData[, diffPercent := round(diffPercent * 100, 1)]
 
 # Experiment grid search with different aspects energy factors.
 filterFeatures <- c(
@@ -19,6 +20,7 @@ filterFeatures <- c(
 
 dailyAspects <- prepareHourlyAspectsModelK()
 dailyAspectsPrice <- merge(securityData[, c('Date', 'diffPercent')], dailyAspects, by = "Date")
+dailyAspectsPrice[, result := cut(diffPercent, c(-100, 0, 100), c("down", "up"))]
 #dailyAspects[, apos := a60.x + a60.y + a120.x + a120.y]
 #dailyAspects[, aneg := a90.x + a90.y + a150.x + a150.y]
 #dailyAspects[, aneg := a90.x + a90.y + a180.x + a180.y]
@@ -208,4 +210,45 @@ ggplot(data = dailyAspectsFast) +
 #    in few aspects, for higher cumulative energy more drastical price moves.
 # 7) Some aspects with high cumulative energy activation seems to block price move effect that resume when effect pass away,
 #    is possible that this is caused by the opposite polarity combination of former planets or external aspects that neutralize.
+
+library(caret)
+library(rattle)
+library(tidyverse)
+aspectView <- dailyAspectsPrice[p.x == "MO" & aspect == 0]
+aspectView[, result := cut(diffPercent, c(-1, 0, 1), c("down", "up"))]
+selectCols <- c("spd", "spp", "spr", "dcd", "dcp", "dcr", "VE", "VE.x", "acx", "acy", "result")
+#selectCols <- c("dcd", "dcp", "dcr", "result")
+#selectCols <- c(20, 22, 81:91, 92)
+aspectView <- aspectView[, ..selectCols]
+aspectViewTrain <- aspectView %>% sample_frac(.70)
+aspectViewTest <- aspectView %>% anti_join(aspectViewTrain)
+
+tree1 = train(
+  result ~ .,
+  data = aspectViewTrain,
+  method = "rpart",
+  trControl = trainControl(method = "cv")
+)
+
+summary(tree1$finalModel)
+
+effect_p <- tree1 %>% predict(newdata = aspectViewTrain)
+# Prediction results on train.
+table(
+  actualclass = aspectViewTrain$result,
+  predictedclass = effect_p
+) %>% confusionMatrix() %>% print()
+
+effect_p <- tree1 %>% predict(newdata = aspectViewTest)
+# Prediction results on test.
+table(
+  actualclass = aspectViewTest$result,
+  predictedclass = effect_p
+) %>% confusionMatrix() %>% print()
+
+futureAspectsView <- dailyAspects[p.x == "MO" & aspect == 0 & Date >= as.Date("2020-08-01")]
+selectCols <- c("spd", "spp", "spr", "dcd", "dcp", "dcr", "VE", "VE.x", "acx", "acy")
+futureAspectsFeatures <- futureAspectsView[, ..selectCols]
+effect_p <- tree1 %>% predict(newdata = futureAspectsFeatures)
+futureAspectsView$effect_p <- effect_p
 
