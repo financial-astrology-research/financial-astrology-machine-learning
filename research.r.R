@@ -212,9 +212,12 @@ ggplot(data = dailyAspectsFast) +
 #    is possible that this is caused by the opposite polarity combination of former planets or external aspects that neutralize.
 
 library(caret)
+library(randomForest)
 library(rattle)
 library(tidyverse)
-aspectView <- dailyAspectsPrice[p.x == "MO" & aspect == 0]
+library(parallel)
+
+aspectView <- dailyAspectsPrice[p.x == "MO" & aspect == 120]
 aspectView[, result := cut(diffPercent, c(-1, 0, 1), c("down", "up"))]
 selectCols <- c("spd", "spp", "spr", "dcd", "dcp", "dcr", "VE", "VE.x", "acx", "acy", "result")
 #selectCols <- c("dcd", "dcp", "dcr", "result")
@@ -237,18 +240,100 @@ effect_p <- tree1 %>% predict(newdata = aspectViewTrain)
 table(
   actualclass = aspectViewTrain$result,
   predictedclass = effect_p
-) %>% confusionMatrix() %>% print()
+) %>%
+  confusionMatrix() %>%
+  print()
 
 effect_p <- tree1 %>% predict(newdata = aspectViewTest)
 # Prediction results on test.
 table(
   actualclass = aspectViewTest$result,
   predictedclass = effect_p
-) %>% confusionMatrix() %>% print()
+) %>%
+  confusionMatrix() %>%
+  print()
 
-futureAspectsView <- dailyAspects[p.x == "MO" & aspect == 0 & Date >= as.Date("2020-08-01")]
-selectCols <- c("spd", "spp", "spr", "dcd", "dcp", "dcr", "VE", "VE.x", "acx", "acy")
-futureAspectsFeatures <- futureAspectsView[, ..selectCols]
+# Project futures predictions.
+futureAspectsView <- dailyAspects[p.x == "MO" & Date == as.Date("2020-09-15")]
+selectCols2 <- selectCols[selectCols != "result"]
+futureAspectsFeatures <- futureAspectsView[, ..selectCols2]
 effect_p <- tree1 %>% predict(newdata = futureAspectsFeatures)
 futureAspectsView$effect_p <- effect_p
 
+# Experiment with Random Forest model.
+aspectViewRaw <- dailyAspectsPrice[p.x == "MO"]
+aspectViewRaw[, result := cut(diffPercent, c(-1, 0, 1), c("down", "up"))]
+#selectCols <- c("spp", "dcp", "VE", "VE.x", "acx", "acy", "result")
+#selectCols <- c("dcd", "dcp", "dcr", "result")
+aspectsT <- paste("a", aspects, sep = "")
+aspectsX <- paste("a", aspects, ".x", sep = "")
+aspectsY <- paste("a", aspects, ".y", sep = "")
+#selectCols <- c("result", "acx", aspectsX, "spp", "dcp", "zx", "zy", "MO", "ME", "VE", "SU", "MA", "JU", "SA")
+#selectCols <- c("result", aspectsX, "ME.x", "VE.x", "MA.x", "JU.x", "SA.x", "NN.x")
+selectCols <- c("result", aspectsX)
+aspectView <- aspectViewRaw[, ..selectCols]
+trainIndex <- createDataPartition(aspectView$result, p=0.70, list=FALSE)
+aspectViewTrain <- aspectView[trainIndex,]
+aspectViewTest <- aspectView[-trainIndex,]
+#aspectViewTrain <- aspectView %>% sample_frac(.70)
+#aspectViewTest <- aspectView %>% anti_join(aspectViewTrain)
+
+tree.rf <- randomForest(
+  result ~ .,
+  data = aspectViewTrain,
+  ntree = 200,
+  importance = T,
+  metric = "Accuracy"
+)
+
+print(tree.rf)
+varImpPlot(tree.rf)
+importance(tree.rf)
+
+control <- trainControl(
+  method = "repeatedcv",
+  number = 10,
+  repeats = 2,
+  search = "random",
+  allowParallel = T
+)
+
+tree1 = train(
+  formula(result ~ .),
+  data = aspectViewTrain,
+  method = "rf",
+  metric = "Accuracy",
+  tuneLength = 2,
+  ntree = 100,
+  trControl = control,
+  importance = T
+)
+#summary(tree1)
+
+effect_p <- tree1 %>% predict(newdata = aspectViewTrain)
+# Prediction results on train.
+table(
+  actualclass = aspectViewTrain$result,
+  predictedclass = effect_p
+) %>%
+  confusionMatrix() %>%
+  print()
+
+effect_p <- tree1 %>% predict(newdata = aspectViewTest)
+# Prediction results on test.
+table(
+  actualclass = aspectViewTest$result,
+  predictedclass = effect_p
+) %>%
+  confusionMatrix() %>%
+  print()
+
+saveRDS(tree1, "./models/MO_general_rf4.rds")
+
+selectCols2 <- selectCols[selectCols != "result"]
+futureAspects <- dailyAspects[Date >= as.Date("2020-08-20") & p.x == "MO",]
+futureAspectsFeatures <- futureAspects[, ..selectCols2]
+effect_p <- tree1 %>% predict(newdata = futureAspectsFeatures)
+futureAspects$effect_p <- effect_p
+marketPrediction <- futureAspects[, c('Date', "origin", "aspect", "effect_p")]
+view(marketPrediction)
