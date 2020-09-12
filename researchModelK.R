@@ -82,4 +82,4 @@ effect_p <- tree1 %>% predict(newdata = futureAspectsFeatures)
 futureAspects$effect_p <- mapvalues(effect_p, from = c("down", "up"), to = c("sell", "buy"))
 marketPrediction <- futureAspects[, c('Date', "effect_p")]
 setnames(marketPrediction, c('Date', 'Action'))
-fwrite(marketPrediction, paste("~/Desktop/ml", symbol, "daily.csv", sep = "-"))
+fwrite(marketPrediction[Date <= Sys.Date()+60], paste("~/Desktop/ml", symbol, "daily.csv", sep = "-"))
