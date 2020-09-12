@@ -7,16 +7,20 @@ library(caret)
 library(magrittr)
 library(parallel)
 library(psych)
+library(plyr)
 library(randomForest)
 library(rattle)
 library(tidyverse)
 source("./indicatorPlots.r")
 
-symbol <- "EOS-USD"
-securityData <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
 dailyAspects <- prepareHourlyAspectsModelK()
+symbol <- "LINK-USD"
+securityData <- mainOpenSecurity(
+  symbol, 14, 28, "%Y-%m-%d",
+  "2010-01-01", "2020-08-15"
+)
 dailyAspectsPrice <- merge(securityData[, c('Date', 'diffPercent')], dailyAspects, by = "Date")
-dailyAspectsPrice[, result := cut(diffPercent, c(-1, 0, 1), c("down", "up"))]
+dailyAspectsPrice[, result := cut(diffPercent, c(-100, 0, 100), c("down", "up"))]
 
 # Experiment with Random Forest model.
 aspectViewRaw <- dailyAspectsPrice[p.x == "MO"]
@@ -27,14 +31,14 @@ aspectsY <- paste("a", aspects, ".y", sep = "")
 #selectCols <- c("result", aspectsX, "ME.x", "VE.x", "MA.x", "JU.x", "SA.x", "NN.x")
 selectCols <- c("result", aspectsX)
 aspectView <- aspectViewRaw[, ..selectCols]
-trainIndex <- createDataPartition(aspectView$result, p=0.70, list=FALSE)
+trainIndex <- createDataPartition(aspectView$result, p = 0.70, list = FALSE)
 aspectViewTrain <- aspectView[trainIndex,]
 aspectViewTest <- aspectView[-trainIndex,]
 
 control <- trainControl(
   method = "repeatedcv",
   number = 10,
-  repeats = 2,
+  repeats = 5,
   search = "random",
   allowParallel = T
 )
@@ -69,12 +73,13 @@ table(
   confusionMatrix() %>%
   print()
 
-#saveRDS(tree1, "./models/MO_general_rf4.rds")
+#saveRDS(tree1, "./models/LINK_MO_general_rf4.rds")
 
 selectCols2 <- selectCols[selectCols != "result"]
 futureAspects <- dailyAspects[Date >= as.Date("2020-08-20") & p.x == "MO",]
 futureAspectsFeatures <- futureAspects[, ..selectCols2]
 effect_p <- tree1 %>% predict(newdata = futureAspectsFeatures)
-futureAspects$effect_p <- effect_p
-marketPrediction <- futureAspects[, c('Date', "origin", "aspect", "effect_p")]
-view(marketPrediction)
+futureAspects$effect_p <- mapvalues(effect_p, from = c("down", "up"), to = c("sell", "buy"))
+marketPrediction <- futureAspects[, c('Date', "effect_p")]
+setnames(marketPrediction, c('Date', 'Action'))
+fwrite(marketPrediction, paste("~/Desktop/ml", symbol, "daily.csv", sep = "-"))
