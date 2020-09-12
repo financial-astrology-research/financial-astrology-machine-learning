@@ -240,7 +240,7 @@ openHourlyPlanets <- function(planetsfile, cusorbs=deforbs, calcasps=T, clear=F)
   return(planets)
 }
 
-mainOpenSecurity <- function(securityfile, mapricefs=20, mapricesl=50, dateformat="%Y-%m-%d", sdate='1970-01-01') {
+mainOpenSecurity <- function(securityfile, mapricefs=20, mapricesl=50, dateformat="%Y-%m-%d", sdate='1970-01-01', edate=Sys.Date()) {
   filename <- npath(paste("~/Sites/own/astro-trading/trading/stocks/", securityfile, ".csv", sep=''))
   security <- fread(filename)
   security <- security[!is.na(Open)]
@@ -249,7 +249,7 @@ mainOpenSecurity <- function(securityfile, mapricefs=20, mapricesl=50, dateforma
   # sort by Date and key it
   setkey(security, 'Date')
   # take data starging from sdate
-  security <- security[Date >= sdate,]
+  security <- security[Date >= sdate & Date <= edate,]
   security[, Mid := (High + Low + Close + Open) / 4]
   #security[, Mid := (High + Low) / 2]
   security[, MidMAF := SMA(Mid, n=mapricefs)]
