@@ -20,8 +20,6 @@ securityData <- mainOpenSecurity(
   "2010-01-01", "2020-08-31"
 )
 
-# Experiment with Random Forest model.
-aspectViewRaw <- dailyAspects[p.x == "VE" & aspect == 60,]
 #aspectViewRaw <- dailyAspects[p.x != "MO"]
 aspectsT <- paste("a", aspects, sep = "")
 aspectsX <- paste("a", aspects, ".x", sep = "")
@@ -37,6 +35,9 @@ aspectsCols <- c(
 )
 
 selectCols <- c("Date", aspectsCols)
+
+#  Evaluate polarity effect on VE60 aspects.
+aspectViewRaw <- dailyAspects[p.x == "VE" & aspect == 60,]
 aspectView <- aspectViewRaw[, ..selectCols]
 aspectView <- merge(securityData[, c('Date', 'diffPercent')], aspectView, by = "Date")
 
@@ -49,7 +50,7 @@ print(finalCorrelations)
 # The effect polarity of an aspects seems to depend on the 150 angle that is neutral
 # and apply differently depending on other active aspect polarities when JU and MA
 # form part of that interactions.
-effectLinearModel <- lm(
+lm(
   diffPercent ~ MO +
     JU.y +
     MA.y +
@@ -63,3 +64,25 @@ effectLinearModel <- lm(
   data = aspectView
 ) %>% summary()
 
+# Evaluate polarity effect on VE90 aspect.
+aspectViewRaw <- dailyAspects[p.x == "VE" & aspect == 90,]
+aspectView <- aspectViewRaw[, ..selectCols]
+aspectView <- merge(securityData[, c('Date', 'diffPercent')], aspectView, by = "Date")
+
+varCorrelations <- aspectView[, -c('Date')] %>%
+  cor() %>%
+  round(digits = 2)
+finalCorrelations <- sort(varCorrelations[, 1])
+print(finalCorrelations)
+
+lm(
+  diffPercent ~
+    dc.x +
+      UR.x +
+      SU.y +
+      SU.x +
+      SA.x +
+      a90.x +
+      a135.x,
+  data = aspectView
+) %>% summary()
