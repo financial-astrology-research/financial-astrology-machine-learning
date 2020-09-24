@@ -19,25 +19,30 @@ securityData <- mainOpenSecurity(
   symbol, 14, 28, "%Y-%m-%d",
   "2010-01-01", "2020-08-15"
 )
-dailyAspectsPrice <- merge(securityData[, c('Date', 'diffPercent')], dailyAspects, by = "Date")
-dailyAspectsPrice[, result := cut(diffPercent, c(-100, 0, 100), c("down", "up"))]
 
 # Experiment with Random Forest model.
-aspectViewRaw <- dailyAspectsPrice[p.x == "MO"]
+aspectViewRaw <- dailyAspects[p.x == "MO"]
 aspectsT <- paste("a", aspects, sep = "")
 aspectsX <- paste("a", aspects, ".x", sep = "")
 aspectsY <- paste("a", aspects, ".y", sep = "")
 #selectCols <- c("result", "acx", aspectsX, "spp", "dcp", "zx", "zy", "MO", "ME", "VE", "SU", "MA", "JU", "SA")
 #selectCols <- c("result", aspectsX, "ME.x", "VE.x", "MA.x", "JU.x", "SA.x", "NN.x")
-selectCols <- c("result", aspectsX)
+aspectsCols <- c(aspectsX, aspectsY, "acx", "acy")
+selectCols <- c("Date", aspectsCols)
 aspectView <- aspectViewRaw[, ..selectCols]
-trainIndex <- createDataPartition(aspectView$result, p = 0.70, list = FALSE)
-aspectViewTrain <- aspectView[trainIndex,]
-aspectViewTest <- aspectView[-trainIndex,]
+aspectView <- aspectView[, lapply(.SD, sum), by=Date, .SDcols=aspectsCols]
+aspectView <- merge(securityData[, c('Date', 'diffPercent')], aspectView, by = "Date")
+aspectView[, result := cut(diffPercent, c(-100, 0, 100), c("sell", "buy"))]
+
+selectColsFiltered <- c("result", aspectsCols)
+aspectViewFiltered <- aspectView[, ..selectColsFiltered]
+trainIndex <- createDataPartition(aspectViewFiltered$result, p = 0.70, list = FALSE)
+aspectViewTrain <- aspectViewFiltered[trainIndex,]
+aspectViewTest <- aspectViewFiltered[-trainIndex,]
 
 control <- trainControl(
   method = "repeatedcv",
-  number = 10,
+  number = 20,
   repeats = 5,
   search = "random",
   allowParallel = T
@@ -48,10 +53,10 @@ tree1 = train(
   data = aspectViewTrain,
   method = "rf",
   metric = "Accuracy",
-  tuneLength = 2,
+  tuneLength = 3,
   ntree = 100,
   trControl = control,
-  importance = T
+  importance = F
 )
 #summary(tree1)
 
@@ -82,4 +87,4 @@ effect_p <- tree1 %>% predict(newdata = futureAspectsFeatures)
 futureAspects$effect_p <- mapvalues(effect_p, from = c("down", "up"), to = c("sell", "buy"))
 marketPrediction <- futureAspects[, c('Date', "effect_p")]
 setnames(marketPrediction, c('Date', 'Action'))
-fwrite(marketPrediction[Date <= Sys.Date()+60], paste("~/Desktop/ml", symbol, "daily.csv", sep = "-"))
+fwrite(marketPrediction[Date <= Sys.Date() + 60], paste("~/Desktop/ml", symbol, "daily.csv", sep = "-"))
