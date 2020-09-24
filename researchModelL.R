@@ -86,3 +86,29 @@ lm(
       a135.x,
   data = aspectView
 ) %>% summary()
+
+# Evaluate polarity effect on ME90 aspect.
+aspectViewRaw <- dailyAspects[p.x == "ME" & aspect == 90,]
+aspectView <- aspectViewRaw[, ..selectCols]
+aspectView <- merge(securityData[, c('Date', 'diffPercent')], aspectView, by = "Date")
+
+varCorrelations <- aspectView[, -c('Date')] %>%
+  cor() %>%
+  round(digits = 2)
+finalCorrelations <- sort(varCorrelations[, 1])
+print(finalCorrelations)
+
+lm(
+  diffPercent ~
+    spp +
+      agt +
+      MA.y +
+      MO +
+      VE.x +
+      a0.x +
+      a60.y +
+      a45.y +
+      a90.y +
+      a120.y,
+  data = aspectView
+) %>% summary()
