@@ -11,6 +11,8 @@ library(plyr)
 library(randomForest)
 library(rattle)
 library(tidyverse)
+library(gvlma)
+library(arm)
 source("./indicatorPlots.r")
 
 dailyAspects <- prepareHourlyAspectsModelK()
@@ -124,21 +126,21 @@ varCorrelations <- aspectView[, -c('Date')] %>%
 finalCorrelations <- sort(varCorrelations[, 1])
 print(finalCorrelations)
 
-lm(
+modelFit <- lm(
   diffPercent ~
     dc.y +
-      dc.x +
-      sp.y +
-      sp.x +
       JU.y +
       SA.x +
       SA.y +
-      UR.y +
-      a0.x +
       a0.y +
       a120.x +
       a135.y +
-      a90.x +
-      UR.y,
+      a90.x,
   data = aspectView
-) %>% summary()
+)
+
+modelFit %>% summary()
+# modelFit %>% confint()
+# modelFit %>% plot()
+modelFit %>% coefplot()
+modelFit %>% gvlma() %>% summary()
