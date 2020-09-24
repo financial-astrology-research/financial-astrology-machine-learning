@@ -52,19 +52,24 @@ print(finalCorrelations)
 # The effect polarity of an aspects seems to depend on the 150 angle that is neutral
 # and apply differently depending on other active aspect polarities when JU and MA
 # form part of that interactions.
-lm(
-  diffPercent ~ MO +
+modelFit <- lm(
+  diffPercent ~
+    SU.x +
+    MO +
     JU.y +
     MA.y +
     a135.y +
     a150.y +
     a180.y +
-    a45.x +
     a60.x +
     a150.x +
     a90.y,
   data = aspectView
-) %>% summary()
+)
+modelFit %>% summary()
+modelFit %>% plot()
+modelFit %>% coefplot()
+modelFit %>% gvlma() %>% summary()
 
 # Evaluate polarity effect on VE90 aspect.
 aspectViewRaw <- dailyAspects[p.x == "VE" & aspect == 90,]
