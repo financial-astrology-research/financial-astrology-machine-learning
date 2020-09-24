@@ -45,14 +45,11 @@ varCorrelations <- aspectView[, -c('Date')] %>%
   round(digits = 2)
 finalCorrelations <- sort(varCorrelations[, 1])
 print(finalCorrelations)
-# Select significant columns with relevant correlation.
-significantCols <- names(finalCorrelations[abs(finalCorrelations) > 0.03])
-print(significantCols)
 
 # The effect polarity of an aspects seems to depend on the 150 angle that is neutral
 # and apply differently depending on other active aspect polarities when JU and MA
 # form part of that interactions.
-lm(
+effectLinearModel <- lm(
   diffPercent ~ MO +
     JU.y +
     MA.y +
