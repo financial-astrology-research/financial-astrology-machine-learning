@@ -2,6 +2,10 @@
 # Objective : Evaluate how well fits the RF model to multiples symbols.
 # Created by: pablocc
 # Created on: 08/09/2020
+# CONCLUSION: Generalized daily aspects / planets activation don't provide a significant relationship
+# that can help to predict price difference, seems that aspect effect cannot be separated from
+# the planets that originated the aspect relationship. The next investigation is to verify
+# if keeping one aspect feature per fast planet could provide relevant significance and generalization.
 
 library(caret)
 library(magrittr)
@@ -41,7 +45,7 @@ aspectsCols <- c(
 
 selectCols <- c("Date", aspectsCols)
 aspectView <- aspectViewRaw[, ..selectCols]
-aspectView <- aspectView[, lapply(.SD, function(x) sum(x)), .SDcols = aspectsCols, by="Date"]
+aspectView <- aspectView[, lapply(.SD, function(x) max(x)), .SDcols = aspectsCols, by="Date"]
 aspectView <- merge(securityData[, c('Date', 'diffPercent')], aspectView, by = "Date")
 varCorrelations <- aspectView[, -c('Date')] %>%
   cor() %>%
@@ -49,7 +53,7 @@ varCorrelations <- aspectView[, -c('Date')] %>%
 finalCorrelations <- sort(varCorrelations[, 1])
 print(finalCorrelations)
 # Select significant columns with relevant correlation.
-significantCols <- names(finalCorrelations[finalCorrelations <= -0.04])
+significantCols <- names(finalCorrelations[abs(finalCorrelations) > 0.03])
 print(significantCols)
 aspectView[, result := cut(diffPercent, c(-100, 0, 100), c("sell", "buy"))]
 
@@ -58,6 +62,9 @@ aspectViewFiltered <- aspectView[, ..selectColsFiltered]
 trainIndex <- createDataPartition(aspectViewFiltered$result, p = 0.70, list = FALSE)
 aspectViewTrain <- aspectViewFiltered[trainIndex,]
 aspectViewTest <- aspectViewFiltered[-trainIndex,]
+
+#linearModel <- lm(diffPercent ~ JU.y + sp.x, data = aspectViewTrain)
+#summary(linearModel)
 
 control <- trainControl(
   method = "repeatedcv",
