@@ -1,4 +1,4 @@
-# Title     : Research for model K using Random Forest trees.
+# Title,  : Research for model K using Random Forest trees.
 # Objective : Evaluate how well fits the RF model to multiples symbols.
 # Created by: pablocc
 # Created on: 08/09/2020
@@ -21,20 +21,39 @@ securityData <- mainOpenSecurity(
 )
 
 # Experiment with Random Forest model.
-aspectViewRaw <- dailyAspects[p.x == "MO"]
+aspectViewRaw <- dailyAspects
+#aspectViewRaw <- dailyAspects[p.x != "MO"]
 aspectsT <- paste("a", aspects, sep = "")
 aspectsX <- paste("a", aspects, ".x", sep = "")
 aspectsY <- paste("a", aspects, ".y", sep = "")
+aspectsG <- paste("a", aspects, ".g", sep = "")
 #selectCols <- c("result", "acx", aspectsX, "spp", "dcp", "zx", "zy", "MO", "ME", "VE", "SU", "MA", "JU", "SA")
 #selectCols <- c("result", aspectsX, "ME.x", "VE.x", "MA.x", "JU.x", "SA.x", "NN.x")
-aspectsCols <- c(aspectsX, aspectsY, "acx", "acy")
+aspectsCols <- c(
+  aspectsX, aspectsY,
+  "agt", "wd",
+  "VE.x", "SU.x", "MA.x", "JU.x", "NN.x",
+  "PL", "MO",
+  "ME.y", "VE.y", "SU.y", "MA.y", "JU.y", "NN.y", "UR.y",
+  "sp.x", "sp.y",
+  "dc.x", "dc.y"
+)
+
 selectCols <- c("Date", aspectsCols)
 aspectView <- aspectViewRaw[, ..selectCols]
-aspectView <- aspectView[, lapply(.SD, sum), by=Date, .SDcols=aspectsCols]
+aspectView <- aspectView[, lapply(.SD, function(x) sum(x)), .SDcols = aspectsCols, by="Date"]
 aspectView <- merge(securityData[, c('Date', 'diffPercent')], aspectView, by = "Date")
+varCorrelations <- aspectView[, -c('Date')] %>%
+  cor() %>%
+  round(digits = 2)
+finalCorrelations <- sort(varCorrelations[, 1])
+print(finalCorrelations)
+# Select significant columns with relevant correlation.
+significantCols <- names(finalCorrelations[finalCorrelations <= -0.04])
+print(significantCols)
 aspectView[, result := cut(diffPercent, c(-100, 0, 100), c("sell", "buy"))]
 
-selectColsFiltered <- c("result", aspectsCols)
+selectColsFiltered <- c("result", significantCols[significantCols != "diffPercent"])
 aspectViewFiltered <- aspectView[, ..selectColsFiltered]
 trainIndex <- createDataPartition(aspectViewFiltered$result, p = 0.70, list = FALSE)
 aspectViewTrain <- aspectViewFiltered[trainIndex,]
@@ -42,8 +61,8 @@ aspectViewTest <- aspectViewFiltered[-trainIndex,]
 
 control <- trainControl(
   method = "repeatedcv",
-  number = 20,
-  repeats = 5,
+  number = 10,
+  repeats = 1,
   search = "random",
   allowParallel = T
 )
@@ -53,21 +72,21 @@ tree1 = train(
   data = aspectViewTrain,
   method = "rf",
   metric = "Accuracy",
-  tuneLength = 3,
+  tuneLength = 10,
   ntree = 100,
   trControl = control,
   importance = F
 )
 #summary(tree1)
 
-effect_p <- tree1 %>% predict(newdata = aspectViewTrain)
+# effect_p <- tree1 %>% predict(newdata = aspectViewTrain)
 # Prediction results on train.
-table(
-  actualclass = aspectViewTrain$result,
-  predictedclass = effect_p
-) %>%
-  confusionMatrix() %>%
-  print()
+#table(
+#  actualclass = aspectViewTrain$result,
+#  predictedclass = effect_p
+#) %>%
+#  confusionMatrix() %>%
+#  print()
 
 effect_p <- tree1 %>% predict(newdata = aspectViewTest)
 # Prediction results on test.
@@ -83,10 +102,11 @@ table(
 selectCols2 <- selectCols[selectCols != "result"]
 futureAspects <- dailyAspects[Date >= as.Date("2020-08-20") & p.x == "MO",]
 futureAspectsFeatures <- futureAspects[, ..selectCols2]
-futureAspectsFeatures <- futureAspects[, lapply(.SD, sum), by=Date, .SDcols=aspectsCols]
+futureAspectsFeatures <- futureAspects[, lapply(.SD, sum), by = Date, .SDcols = aspectsCols]
 effect_p <- tree1 %>% predict(newdata = futureAspectsFeatures)
 #futureAspects$effect_p <- mapvalues(effect_p, from = c("sell", "buy"), to = c(0, 1))
 futureAspectsFeatures$effect_p <- effect_p
 marketPrediction <- futureAspectsFeatures[, c('Date', "effect_p")]
 setnames(marketPrediction, c('Date', 'Action'))
 fwrite(marketPrediction[Date <= Sys.Date() + 60], paste("~/Desktop/ml", symbol, "daily.csv", sep = "-"))
+
