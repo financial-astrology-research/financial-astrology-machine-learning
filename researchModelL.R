@@ -33,7 +33,7 @@ aspectsCols <- c(
   "ME.x", "VE.x", "SU.x", "MA.x", "JU.x", "NN.x", "SA.x", "UR.x",
   "MO", "NE", "PL",
   "ME.y", "VE.y", "SU.y", "MA.y", "JU.y", "NN.y", "SA.y", "UR.y",
-  "wd", "zx", "zy"
+  "zx", "zy"
 )
 
 selectCols <- c("Date", aspectsCols)
@@ -141,6 +141,36 @@ modelFit <- lm(
 
 modelFit %>% summary()
 # modelFit %>% confint()
-# modelFit %>% plot()
+modelFit %>% plot()
+modelFit %>% coefplot()
+modelFit %>% gvlma() %>% summary()
+
+# Evaluate polarity effect on SU120 aspect.
+aspectViewRaw <- dailyAspects[p.x == "SU" & aspect == 120,]
+aspectView <- aspectViewRaw[, ..selectCols]
+aspectView <- merge(securityData[, c('Date', 'diffPercent')], aspectView, by = "Date")
+
+varCorrelations <- aspectView[, -c('Date')] %>%
+  cor() %>%
+  round(digits = 2)
+finalCorrelations <- sort(varCorrelations[, 1])
+print(finalCorrelations)
+
+modelFit <- lm(
+  diffPercent ~
+    JU.x +
+      MO +
+      NE +
+      a45.x +
+      a135.x +
+      a135.y +
+      a30.x +
+      a90.x +
+      dc.x,
+  data = aspectView
+)
+
+modelFit %>% summary()
+modelFit %>% plot()
 modelFit %>% coefplot()
 modelFit %>% gvlma() %>% summary()
