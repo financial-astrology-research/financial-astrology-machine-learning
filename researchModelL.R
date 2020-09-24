@@ -26,10 +26,10 @@ aspectsX <- paste("a", aspects, ".x", sep = "")
 aspectsY <- paste("a", aspects, ".y", sep = "")
 aspectsG <- paste("a", aspects, ".g", sep = "")
 aspectsCols <- c(
-  aspectsX, aspectsY, aspectsT,
+  aspectsX, aspectsY,
   "sp.y", "sp.x", "dc.y", "dc.x", "spd", "spp", "acx", "acy", "agt",
   "ME.x", "VE.x", "SU.x", "MA.x", "JU.x", "NN.x", "SA.x", "UR.x",
-  "NE", "PL", "MO", "ME", "VE", "SU", "MA", "JU", "SA",
+  "MO", "NE", "PL",
   "ME.y", "VE.y", "SU.y", "MA.y", "JU.y", "NN.y", "SA.y", "UR.y",
   "wd", "zx", "zy"
 )
@@ -110,5 +110,35 @@ lm(
       a45.y +
       a90.y +
       a120.y,
+  data = aspectView
+) %>% summary()
+
+# Evaluate polarity effect on SU90 aspect.
+aspectViewRaw <- dailyAspects[p.x == "SU" & aspect == 90,]
+aspectView <- aspectViewRaw[, ..selectCols]
+aspectView <- merge(securityData[, c('Date', 'diffPercent')], aspectView, by = "Date")
+
+varCorrelations <- aspectView[, -c('Date')] %>%
+  cor() %>%
+  round(digits = 2)
+finalCorrelations <- sort(varCorrelations[, 1])
+print(finalCorrelations)
+
+lm(
+  diffPercent ~
+    dc.y +
+      dc.x +
+      sp.y +
+      sp.x +
+      JU.y +
+      SA.x +
+      SA.y +
+      UR.y +
+      a0.x +
+      a0.y +
+      a120.x +
+      a135.y +
+      a90.x +
+      UR.y,
   data = aspectView
 ) %>% summary()
