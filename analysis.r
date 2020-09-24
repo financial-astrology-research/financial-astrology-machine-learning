@@ -244,12 +244,10 @@ mainOpenSecurity <- function(securityfile, mapricefs=20, mapricesl=50, dateforma
   filename <- npath(paste("~/Sites/own/astro-trading/trading/stocks/", securityfile, ".csv", sep=''))
   security <- fread(filename)
   security <- security[!is.na(Open)]
-  security[, Date := as.Date(as.character(Date), format=dateformat)]
+  security[, Date := as.Date(Date, format=dateformat)]
   security[, Year := as.character(format(Date, "%Y"))]
   # sort by Date and key it
   setkey(security, 'Date')
-  # take data starging from sdate
-  security <- security[Date >= sdate & Date <= edate,]
   security[, Mid := (High + Low + Close + Open) / 4]
   #security[, Mid := (High + Low) / 2]
   security[, MidMAF := SMA(Mid, n=mapricefs)]
@@ -263,6 +261,10 @@ mainOpenSecurity <- function(securityfile, mapricefs=20, mapricesl=50, dateforma
 
   security <- security[!is.na(val)]
   security[, Eff := cut(val, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
+
+  # Take data starting from sdate
+  security <- security[Date >= sdate & Date <= edate,]
+
   return(security)
 }
 
