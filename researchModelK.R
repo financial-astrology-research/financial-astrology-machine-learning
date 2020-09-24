@@ -83,8 +83,10 @@ table(
 selectCols2 <- selectCols[selectCols != "result"]
 futureAspects <- dailyAspects[Date >= as.Date("2020-08-20") & p.x == "MO",]
 futureAspectsFeatures <- futureAspects[, ..selectCols2]
+futureAspectsFeatures <- futureAspects[, lapply(.SD, sum), by=Date, .SDcols=aspectsCols]
 effect_p <- tree1 %>% predict(newdata = futureAspectsFeatures)
-futureAspects$effect_p <- mapvalues(effect_p, from = c("down", "up"), to = c("sell", "buy"))
-marketPrediction <- futureAspects[, c('Date', "effect_p")]
+#futureAspects$effect_p <- mapvalues(effect_p, from = c("sell", "buy"), to = c(0, 1))
+futureAspectsFeatures$effect_p <- effect_p
+marketPrediction <- futureAspectsFeatures[, c('Date', "effect_p")]
 setnames(marketPrediction, c('Date', 'Action'))
 fwrite(marketPrediction[Date <= Sys.Date() + 60], paste("~/Desktop/ml", symbol, "daily.csv", sep = "-"))
