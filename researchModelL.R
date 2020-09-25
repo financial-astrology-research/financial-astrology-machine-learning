@@ -241,8 +241,8 @@ aspectView <- aspectViewRaw[, ..selectCols]
 aspectView <- merge(securityData[, c('Date', 'diffPercent')], aspectView, by = "Date")
 
 modelSearch <- glmulti(
-  "diffPercent",
-  c(
+  y = "diffPercent",
+  xr = c(
     "sp.y", "sp.x", "dc.x", "dc.y", # R2 = 0.04 - SIGNIFICANT
     #"zx", "zy", "aspect", "spd", "spp", "acx", "acy", "agt",
     # aspectsX, # R2 = 0.40
@@ -258,14 +258,14 @@ modelSearch <- glmulti(
     #"ME.y", "VE.y", "SU.y", "MA.y", "JU.y", "NN.y", "SA.y", "UR.y"
     #"MO", "SU", "ME", "VE", "MA", "JU", "SA", "UR.y", "NE", "PL" # R2 = 0.38
   ),
-  exclude=c("sp.y", "sp.x", "dc.x", "dc.y"),
-  level = 2, marginality = F,
-  crit = "aicc", intercept = F,
-  # maxK = 0.5,
-  # minsize = 5, maxsize = 20,
-  # confsetsize = 100,
-  method = "g", popsize = 300, mutrate = 0.01, sexrate = 0.1, imm = 0.1, plotty = F,
   data = aspectView,
+  exclude=c("sp.y", "sp.x", "dc.x", "dc.y", "sp.y:"),
+  level = 2, marginality = F,intercept = F, crit = "aicc",
+  # minK = 0.2, maxK = 0.5,
+  minsize = 1, maxsize = 3,
+  confsetsize = 10,
+  method = "d", plotty = F,
+  popsize = 300, mutrate = 0.01, sexrate = 0.1, imm = 0.1,
 )
 
 plot(modelSearch, type = "s")
