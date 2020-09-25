@@ -222,7 +222,7 @@ print(finalCorrelations)
 
 modelFit <- lm(
   diffPercent ~
-      SA.x +
+    SA.x +
       dc.y +
       dc.x +
       sp.y,
@@ -236,27 +236,36 @@ modelFit %>% gvlma() %>% summary()
 aspectViewRaw$diffPredict <- predict(modelFit, aspectView)
 
 # Evaluate polarity effect on SU90 aspect.
-aspectViewRaw <- dailyAspects[p.x == "VE" & aspect == 90]
+aspectViewRaw <- dailyAspects[p.x != "MO" & aspect == 90]
 aspectView <- aspectViewRaw[, ..selectCols]
 aspectView <- merge(securityData[, c('Date', 'diffPercent')], aspectView, by = "Date")
 
 modelSearch <- glmulti(
   "diffPercent",
   c(
-    #"sp.y", "sp.x", "dc.x", "dc.y" # R2 = 0.04
+    "sp.y", "sp.x", "dc.x", "dc.y", # R2 = 0.04 - SIGNIFICANT
+    #"zx", "zy", "aspect", "spd", "spp", "acx", "acy", "agt",
     # aspectsX, # R2 = 0.40
-    # aspectsY # R2 = 0.24
-    # aspectsT # R2 = 0.26
-    # aspectsG # R2 = 0.29
-    "sp.x", "dc.x",
-    "a45.x", "a90.x", "a120.x", "a180.x",
-    "MO", "ME", "MA", "JU", "SA", "UR.y", "NE", "PL" # R2 = 0.38
+    # aspectsY, # R2 = 0.24
+    # aspectsT, # R2 = 0.26
+    # aspectsG, # R2 = 0.29
+    # "sp.x", "dc.x",
+    "a0.x", "a30.x", "a45.x", "a60.x", "a90.x", "a120.x", "a135.x", "a150.x", "a180.x", # SIGNIFICANT
+    # "a45.x", "a90.x", "a120.x", "a135.x", "a180.x", # REDUCED ASPECTS - SIGNIFICANT
+    "ME", "MA", "JU", "SA", "UR.y", "PL" # R2 = 0.38 - SIGNIFICANT
+    # "ME", "MA", "JU", "SA", "UR.y", "NE", "PL" # R2 = 0.38
+    # "ME.x", "VE.x", "SU.x", "MA.x", "JU.x", "NN.x", "SA.x", "UR.x"
+    #"ME.y", "VE.y", "SU.y", "MA.y", "JU.y", "NN.y", "SA.y", "UR.y"
+    #"MO", "SU", "ME", "VE", "MA", "JU", "SA", "UR.y", "NE", "PL" # R2 = 0.38
   ),
   exclude=c("sp.y", "sp.x", "dc.x", "dc.y"),
-  crit="aicc", intercept = F,
-  method="g", popsize = 200, mutrate = 0.01, sexrate = 0.1, imm = 0.1, plotty = F,
-  marginality=F,
-  data=aspectView,
+  level = 2, marginality = F,
+  crit = "aicc", intercept = F,
+  # maxK = 0.5,
+  # minsize = 5, maxsize = 20,
+  # confsetsize = 100,
+  method = "g", popsize = 300, mutrate = 0.01, sexrate = 0.1, imm = 0.1, plotty = F,
+  data = aspectView,
 )
 
 plot(modelSearch, type = "s")
@@ -273,4 +282,13 @@ modelFit <- lm(
 )
 
 modelFit %>% summary()
+modelFit %>% plot()
 modelFit %>% coefplot()
+
+# After linear regression variable importance analysis was confirmed that the relevant
+# aspect variables to determine effect size and polarity are:
+# "sp.y", "sp.x", "dc.x", "dc.y",
+# "a0.x", "a30.x", "a45.x", "a60.x", "a90.x", "a120.x", "a135.x", "a150.x", "a180.x",
+# "ME", "MA", "JU", "SA", "UR.y", "PL"
+# Is possible that a good way to generalize the aspect effect rules is creating a linear model
+# per each major aspect: a0, a60, a90, a120, a135, a150, a180.
