@@ -253,8 +253,10 @@ modelSearch <- glmulti(
     "MO", "ME", "MA", "JU", "SA", "UR.y", "NE", "PL" # R2 = 0.38
   ),
   exclude=c("sp.y", "sp.x", "dc.x", "dc.y"),
-  crit="aicc", popsize = 500,
-  data=aspectView, method="g", marginality=F
+  crit="aicc", intercept = F,
+  method="g", popsize = 200, mutrate = 0.01, sexrate = 0.1, imm = 0.1, plotty = F,
+  marginality=F,
+  data=aspectView,
 )
 
 plot(modelSearch, type = "s")
