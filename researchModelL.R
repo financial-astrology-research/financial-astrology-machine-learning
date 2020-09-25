@@ -13,6 +13,7 @@ library(rattle)
 library(tidyverse)
 library(gvlma)
 library(arm)
+library(glmulti)
 source("./indicatorPlots.r")
 
 dailyAspects <- prepareHourlyAspectsModelK()
@@ -28,12 +29,12 @@ aspectsX <- paste("a", aspects, ".x", sep = "")
 aspectsY <- paste("a", aspects, ".y", sep = "")
 aspectsG <- paste("a", aspects, ".g", sep = "")
 aspectsCols <- c(
-  aspectsX, aspectsY,
-  "sp.y", "sp.x", "dc.y", "dc.x", "spd", "spp", "acx", "acy", "agt",
+  aspectsX, aspectsY, aspectsT, aspectsG,
+  "sp.y", "sp.x", "dc.y", "dc.x",
   "ME.x", "VE.x", "SU.x", "MA.x", "JU.x", "NN.x", "SA.x", "UR.x",
-  "MO", "NE", "PL",
-  "ME.y", "VE.y", "SU.y", "MA.y", "JU.y", "NN.y", "SA.y", "UR.y",
-  "zx", "zy", "aspect"
+  "MO", "SU", "ME", "VE", "MA", "JU", "SA", "NE", "PL",
+  "ME.y", "VE.y", "SU.y", "MA.y", "JU.y", "NN.y", "SA.y", "UR.y"
+  #"zx", "zy", "aspect", "spd", "spp", "acx", "acy", "agt",
 )
 
 selectCols <- c("Date", aspectsCols)
@@ -208,3 +209,66 @@ modelFit %>% summary()
 modelFit %>% plot()
 modelFit %>% coefplot()
 modelFit %>% gvlma() %>% summary()
+
+# Evaluate polarity effect on generalized SU aspects.
+aspectViewRaw <- dailyAspects[p.x == "ME" & aspect == 180,]
+aspectView <- aspectViewRaw[, ..selectCols]
+aspectView <- merge(securityData[, c('Date', 'diffPercent')], aspectView, by = "Date")
+varCorrelations <- aspectView[, -c('Date')] %>%
+  cor() %>%
+  round(digits = 2)
+finalCorrelations <- sort(varCorrelations[, 1])
+print(finalCorrelations)
+
+modelFit <- lm(
+  diffPercent ~
+      SA.x +
+      dc.y +
+      dc.x +
+      sp.y,
+  data = aspectView
+)
+modelFit %>% summary()
+modelFit %>% plot()
+modelFit %>% coefplot()
+modelFit %>% gvlma() %>% summary()
+
+aspectViewRaw$diffPredict <- predict(modelFit, aspectView)
+
+# Evaluate polarity effect on SU90 aspect.
+aspectViewRaw <- dailyAspects[p.x == "VE" & aspect == 90]
+aspectView <- aspectViewRaw[, ..selectCols]
+aspectView <- merge(securityData[, c('Date', 'diffPercent')], aspectView, by = "Date")
+
+modelSearch <- glmulti(
+  "diffPercent",
+  c(
+    #"sp.y", "sp.x", "dc.x", "dc.y" # R2 = 0.04
+    # aspectsX, # R2 = 0.40
+    # aspectsY # R2 = 0.24
+    # aspectsT # R2 = 0.26
+    # aspectsG # R2 = 0.29
+    "sp.x", "dc.x",
+    "a45.x", "a90.x", "a120.x", "a180.x",
+    "MO", "ME", "MA", "JU", "SA", "UR.y", "NE", "PL" # R2 = 0.38
+  ),
+  exclude=c("sp.y", "sp.x", "dc.x", "dc.y"),
+  crit="aicc", popsize = 500,
+  data=aspectView, method="g", marginality=F
+)
+
+plot(modelSearch, type = "s")
+#plot(modelSearch)
+top <- weightable(modelSearch)
+top <- top[top$aic <= min(top$aic) + 2,]
+
+summary(modelSearch@objects[[1]])
+
+# Review the best fit.
+modelFit <- lm(
+  modelSearch@objects[[1]]$formula,
+  data = aspectView
+)
+
+modelFit %>% summary()
+modelFit %>% coefplot()
