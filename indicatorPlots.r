@@ -980,8 +980,8 @@ prepareHourlyAspectsModelK <- function() {
   # Inverse speed.
   dailyAspects <- dailyAspects[, spi.x := 1 - sp.x]
   dailyAspects <- dailyAspects[, spi.y := 1 - sp.y]
-  dailyAspects <- dailyAspects[, retx := sp.x < 0.25]
-  dailyAspects <- dailyAspects[, rety := sp.y < 0.25]
+  dailyAspects <- dailyAspects[, retx := ifelse(sp.x <= 0.10, 1, 0)]
+  dailyAspects <- dailyAspects[, rety := ifelse(sp.y <= 0.10, 1, 0)]
 
   # Speed x/y diff, product and ratio.
   dailyAspects <- dailyAspects[, spd := sp.x - sp.y]
