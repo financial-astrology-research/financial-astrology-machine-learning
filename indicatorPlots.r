@@ -977,24 +977,14 @@ prepareHourlyAspectsModelK <- function() {
   hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols)
 
-  # Inverse speed.
-  dailyAspects <- dailyAspects[, spi.x := 1 - sp.x]
-  dailyAspects <- dailyAspects[, spi.y := 1 - sp.y]
-  dailyAspects <- dailyAspects[, retx := ifelse(sp.x <= 0.10, 1, 0)]
-  dailyAspects <- dailyAspects[, rety := ifelse(sp.y <= 0.10, 1, 0)]
-
   # Speed x/y diff, product and ratio.
   dailyAspects <- dailyAspects[, spd := sp.x - sp.y]
-  dailyAspects <- dailyAspects[, spdi := sp.y - sp.x]
   dailyAspects <- dailyAspects[, spp := sp.x * sp.y]
   dailyAspects <- dailyAspects[, spr := (sp.x + 1) / (sp.y + 1)]
-  dailyAspects <- dailyAspects[, spri := (sp.y + 1) / (sp.x + 1)]
   # Declination x/y diff, product and ratio.
   dailyAspects <- dailyAspects[, dcd := dc.x - dc.y]
-  dailyAspects <- dailyAspects[, dcdi := dc.y - dc.x]
   dailyAspects <- dailyAspects[, dcp := dc.x * dc.y]
   dailyAspects <- dailyAspects[, dcr := (dc.x + 1) / (dc.y + 1)]
-  dailyAspects <- dailyAspects[, dcri := (dc.y + 1) / (dc.x + 1)]
 
   # Filter aspects within 2 degrees of orb for cumulative aspects count.
   dailyAspects <- dailyAspects[orb <= 1,]
@@ -1041,4 +1031,52 @@ predictSecurityModelH1A <- function(params, security, hourlyAspects) {
   # crossValidateModelReport("modelH1A", dailyAspectsIndex, security)
 
   return(medianFit)
+}
+
+# Aggregated hourly planets that filter partil aspects
+# and keep larger orbs cumulative effects.
+prepareHourlyAspectsModelL <- function() {
+  idCols <- c('Date', 'Hour')
+  setClassicAspectsSet5()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols)
+
+  # Inverse speed.
+  dailyAspects <- dailyAspects[, spi.x := 1 - sp.x]
+  dailyAspects <- dailyAspects[, spi.y := 1 - sp.y]
+  dailyAspects <- dailyAspects[, retx := ifelse(sp.x <= 0.10, 1, 0)]
+  dailyAspects <- dailyAspects[, rety := ifelse(sp.y <= 0.10, 1, 0)]
+
+  # Speed x/y diff, product and ratio.
+  dailyAspects <- dailyAspects[, spd := sp.x - sp.y]
+  dailyAspects <- dailyAspects[, spdi := sp.y - sp.x]
+  dailyAspects <- dailyAspects[, spp := sp.x * sp.y]
+  dailyAspects <- dailyAspects[, spr := (sp.x + 1) / (sp.y + 1)]
+  dailyAspects <- dailyAspects[, spri := (sp.y + 1) / (sp.x + 1)]
+  # Declination x/y diff, product and ratio.
+  dailyAspects <- dailyAspects[, dcd := dc.x - dc.y]
+  dailyAspects <- dailyAspects[, dcdi := dc.y - dc.x]
+  dailyAspects <- dailyAspects[, dcp := dc.x * dc.y]
+  dailyAspects <- dailyAspects[, dcr := (dc.x + 1) / (dc.y + 1)]
+  dailyAspects <- dailyAspects[, dcri := (dc.y + 1) / (dc.x + 1)]
+
+  # Filter aspects within 2 degrees of orb for cumulative aspects count.
+  dailyAspects <- dailyAspects[orb <= 1,]
+  dailyAspects <- dailyAspectsAddAspectsCount(dailyAspects)
+  dailyAspects <- dailyAspectsAddPlanetsActivation(dailyAspects)
+  # Add week day.
+  dailyAspects[, wd := as.numeric(format(Date, "%w")) + 1]
+  # Add zodiacal signs.
+  dailyAspects[, zx := ceiling((lon.x + 0.01) / 30)]
+  dailyAspects[, zy := ceiling((lon.y + 0.01) / 30)]
+
+  # Remove other redundant cols.
+  filterCols <- c('orbdir')
+  dailyAspects <- dailyAspects[, -..filterCols]
+
+  # Only leave partil aspects for the observations.
+  dailyAspects <- dailyAspects[orb <= 0.2,]
+
+  return(dailyAspects)
 }
