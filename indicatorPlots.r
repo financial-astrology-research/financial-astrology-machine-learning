@@ -1062,7 +1062,7 @@ prepareHourlyAspectsModelL <- function() {
   dailyAspects <- dailyAspects[, dcri := (dc.y + 1) / (dc.x + 1)]
 
   # Filter aspects within 2 degrees of orb for cumulative aspects count.
-  dailyAspects <- dailyAspects[orb <= 1,]
+  dailyAspects <- dailyAspects[orb <= 2,]
   dailyAspects <- dailyAspectsAddAspectsCount(dailyAspects)
   dailyAspects <- dailyAspectsAddPlanetsActivation(dailyAspects)
   # Add week day.

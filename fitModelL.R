@@ -12,7 +12,7 @@ library(arm)
 library(glmulti)
 source("./indicatorPlots.r")
 
-dailyAspects <- prepareHourlyAspectsModelK()
+dailyAspects <- prepareHourlyAspectsModelL()
 symbol <- "LINK-USD"
 securityData <- mainOpenSecurity(
   symbol, 14, 28, "%Y-%m-%d",
@@ -26,7 +26,7 @@ aspectsG <- paste("a", aspects, ".g", sep = "")
 aspectsAll <- c(aspectsT, aspectsX, aspectsY, aspectsG)
 planetsAll <- c(
   "ME.x", "VE.x", "SU.x", "MA.x", "JU.x", "NN.x", "SA.x", "UR.x",
-  "MO", "SU", "ME", "VE", "MA", "JU", "SA", "NE", "PL",
+  #"MO", "SU", "ME", "VE", "MA", "JU", "SA", "NE", "PL",
   "ME.y", "VE.y", "SU.y", "MA.y", "JU.y", "NN.y", "SA.y", "UR.y"
 )
 #dailyAspectsNorm <- dailyAspects[, c(planetsAll) := lapply(.SD, function(x) ifelse(x > 0, 1, 0)), .SDcols = planetsAll]
@@ -61,6 +61,7 @@ modelSearch <- glmulti(
     "spd", "spdi",
     "dcd", "dcdi",
     "retx", "rety"
+    #"MO", "ME"
     #"sp.x", "sp.y",
     #"spi.x", "spi.y"
     # "dc.y", "dc.x"
@@ -76,19 +77,9 @@ modelSearch <- glmulti(
   #minsize = 15,
   level = 1, marginality = F, intercept = T, crit = "bic",
   method = "g", plotty = F,
-  popsize = 1000
+  popsize = 200
   #mutrate = 0.01, sexrate = 0.1, imm = 0.1,
 )
-
-# aspectsT / minsize 10 = Adjusted R-squared:  0.41
-# aspectsG / minsize 10 = Adjusted R-squared:  0.25
-# aspectsX / minsize 10 = Adjusted R-squared:  0.34
-# aspectsY / minsize 10 = Adjusted R-squared:  0.32
-# aspectsY / aspectsY / minsize 10 = Adjusted R-squared: 0.49
-# 0.3501
-# 0.31
-# 0.42
-# 0.36
 
 plot(modelSearch, type = "s")
 summary(modelSearch@objects[[1]])
