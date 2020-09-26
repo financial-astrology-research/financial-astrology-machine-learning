@@ -46,7 +46,7 @@ selectCols <- c(
 )
 
 # Fit a90 aspects model.
-aspectViewRaw <- dailyAspects[p.x == "SU" & aspect == 120]
+aspectViewRaw <- dailyAspects[p.x == "SU" & aspect == 180]
 aspectView <- aspectViewRaw[, ..selectCols]
 aspectView <- merge(securityData[, c('Date', 'diffPercent')], aspectView, by = "Date")
 # trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.80, list = FALSE)
@@ -75,9 +75,9 @@ modelSearch <- glmulti(
   data = aspectView,
   #exclude=c("sp.y", "sp.x", "dc.x", "dc.y"),
   #minsize = 15,
-  level = 1, marginality = F, intercept = T, crit = "bic",
+  level = 1, marginality = F, intercept = T, crit = "aic",
   method = "g", plotty = F,
-  popsize = 200
+  popsize = 300
   #mutrate = 0.01, sexrate = 0.1, imm = 0.1,
 )
 
@@ -86,7 +86,7 @@ summary(modelSearch@objects[[1]])
 
 # Review the best fit.
 modelFit <- lm(
-  modelSearch@objects[[2]]$formula,
+  modelSearch@objects[[1]]$formula,
   data = aspectView
 )
 
@@ -109,3 +109,9 @@ with(aspectViewValidate, mean((diffPercent - diffPredict)^2)) %>% sqrt()
 # Is very likely that the explained variance could be explained using the effect decay
 # instead of simple boolean flag that account for aspect active or not.
 # The order of feature importance is: orb, aspects, speed diff, retrograde and declination diff.
+
+# orb2 BIC / MSE = a90: 0.061, a120: 0.045, a135: 0.076, a150: NA, a180: 0.149
+# orb2 AICC / MSE = a90: 0.065, a120: 0.050, a135: 0.076, a150: 0.058, a180: 0.139
+# orb2 AIC / MSE = a90: 0.042, a120: 0.055, a135: 0.082, a150: 0.058, a180: 0.164
+# orb1 = MSE
+# TODO: Add aplicative / separative binary variable to the model.
