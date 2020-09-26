@@ -37,6 +37,7 @@ selectCols <- c(
   planetsAll,
   "sp.x", "spi.x", "sp.y", "spi.y",
   "dc.y", "dc.x",
+  "retx", "rety",
   "zx", "zy",
   "spd", "spdi", "spp", "spr", "spri",
   "dcd", "dcdi", "dcp", "dcr", "dcri",
@@ -45,7 +46,7 @@ selectCols <- c(
 )
 
 # Fit a90 aspects model.
-aspectViewRaw <- dailyAspects[p.x == "SU" & aspect == 90]
+aspectViewRaw <- dailyAspects[p.x == "SU" & aspect == 120]
 aspectView <- aspectViewRaw[, ..selectCols]
 aspectView <- merge(securityData[, c('Date', 'diffPercent')], aspectView, by = "Date")
 # trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.80, list = FALSE)
@@ -53,25 +54,29 @@ aspectView <- merge(securityData[, c('Date', 'diffPercent')], aspectView, by = "
 modelSearch <- glmulti(
   y = "diffPercent",
   xr = c(
+    aspectsT,
     #aspectsX,
     #aspectsY,
-    aspectsT,
     "orb",
-    "spd", "spdi", "spp", "spr", "spri",
-    "dcd", "dcdi", "dcp", "dcr", "dcri"
+    "spd", "spdi",
+    "dcd", "dcdi",
+    "retx", "rety"
     #"sp.x", "sp.y",
     #"spi.x", "spi.y"
     # "dc.y", "dc.x"
-    #"zx", "zy", "wd"
-    #"MO", "SU", "ME", "VE", "MA", "JU", "SA", "NE", "NN.x", "NN.y", "PL"
-    #"MO", "SU", "ME", "VE", "MA", "JU", "SA", "NE", "PL"
+    # "zx", "zy", "wd"
+    # Adding planets to the model increase R2 but overfit the model and unstabilize predictions.
+    # "MO", "SU", "ME", "VE", "MA", "JU", "SA", "NE", "NN.x", "NN.y", "PL"
+    # "MO", "SU", "ME", "VE", "MA", "JU", "SA", "NE", "PL"
+    # "ME.x", "VE.x", "SU.x", "MA.x", "JU.x", "NN.x", "SA.x", "UR.x"
+    # "ME.y", "VE.y", "SU.y", "MA.y", "JU.y", "NN.y", "SA.y", "UR.y"
   ),
   data = aspectView,
   #exclude=c("sp.y", "sp.x", "dc.x", "dc.y"),
   #minsize = 15,
   level = 1, marginality = F, intercept = T, crit = "bic",
   method = "g", plotty = F,
-  popsize = 500
+  popsize = 1000
   #mutrate = 0.01, sexrate = 0.1, imm = 0.1,
 )
 
@@ -106,3 +111,10 @@ aspectViewValidate <- merge(securityDataTest[, c('Date', 'diffPercent')], aspect
 aspectViewValidate[, c('Date', 'diffPercent', 'diffPredict')]
 cor(aspectViewValidate$diffPercent, aspectViewValidate$diffPredict) %>% print()
 with(aspectViewValidate, mean((diffPercent - diffPredict)^2)) %>% sqrt()
+
+# CONCLUSION: The about 30% of the variance of aspect polarity is explained by
+# the difference of cumulative aspects from X/Y former planets,
+# the difference on speed and declination, retrograde motion and aspect orb.
+# Is very likely that the explained variance could be explained using the effect decay
+# instead of simple boolean flag that account for aspect active or not.
+# The order of feature importance is: orb, aspects, speed diff, retrograde and declination diff.
