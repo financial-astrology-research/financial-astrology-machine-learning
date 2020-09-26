@@ -57,9 +57,12 @@ modelSearch <- glmulti(
     aspectsT,
     #aspectsX,
     #aspectsY,
-    "orb", "apl", "sep",
+    "orb",
+    #"apl", "sep",
     "spd", "spdi",
     "dcd", "dcdi",
+    #"dcp", "dcr", "dcri",
+    #"dcr", "dcri",
     "retx", "rety",
     "MO"
     #"sp.x", "sp.y",
@@ -110,8 +113,15 @@ with(aspectViewValidate, mean((diffPercent - diffPredict)^2)) %>% sqrt()
 # instead of simple boolean flag that account for aspect active or not.
 # The order of feature importance is: orb, aspects, speed diff, retrograde and declination diff.
 
-# orb 0.2-2 BIC / MSE = a90: 0.061, a120: 0.045, a135: 0.076, a150: NA, a180: 0.149
-# orb 0.2-2 AIC / MSE = a90: 0.042, a120: 0.055, a135: 0.082, a150: 0.058, a180: 0.164
-# orb 0.2-2 AICC / MSE = a90: 0.065, a120: 0.050, a135: 0.076, a150: 0.058, a180: 0.139
-# orb 0.2-1 AICC / MSE = a90: 0.019, a120: 0.060, a135: 0.085, a150: 0.054, a180: 0.213
-# orb 0.1-2 AICC / MSE = a90: 0.012, a120: 0.051, a135: 0.073, a150: 0.058, a180: 0.077
+# Specific SU90 aspect test
+# orb 0.2-2 BIC / MSE = 0.061, a120: 0.045, a135: 0.076, a150: NA, a180: 0.149
+# orb 0.2-2 AIC / MSE = 0.042, a120: 0.055, a135: 0.082, a150: 0.058, a180: 0.164
+# orb 0.2-2 AICC / MSE = 0.065, a120: 0.050, a135: 0.076, a150: 0.058, a180: 0.139
+# orb 0.2-1 AICC / MSE = 0.019, a120: 0.060, a135: 0.085, a150: 0.054, a180: 0.213
+# orb 0.1-2 AICC / MSE = 0.012, a120: 0.051, a135: 0.073, a150: 0.058, a180: 0.077
+
+# Specific aspect test
+# SU120 - Using spd and dcd = Cor: 0.11 MSE: 0.051
+# SU120 - Not using spd and dcd = Cor: 0.54 MSE: 0.041
+# SU120 - Not using spd and dcd and using MO = Cor: 0.62 MSE: 0.039
+# SU90 - Not using spd and dcd and using MO = Cor: -0.95 MSE: 0.064
