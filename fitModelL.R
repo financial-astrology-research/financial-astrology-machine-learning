@@ -26,7 +26,7 @@ aspectsG <- paste("a", aspects, ".g", sep = "")
 aspectsAll <- c(aspectsT, aspectsX, aspectsY, aspectsG)
 planetsAll <- c(
   "ME.x", "VE.x", "SU.x", "MA.x", "JU.x", "NN.x", "SA.x", "UR.x",
-  #"MO", "SU", "ME", "VE", "MA", "JU", "SA", "NE", "PL",
+  "MO", "SU", "ME", "VE", "MA", "JU", "SA", "NE", "PL",
   "ME.y", "VE.y", "SU.y", "MA.y", "JU.y", "NN.y", "SA.y", "UR.y"
 )
 #dailyAspectsNorm <- dailyAspects[, c(planetsAll) := lapply(.SD, function(x) ifelse(x > 0, 1, 0)), .SDcols = planetsAll]
@@ -42,11 +42,11 @@ selectCols <- c(
   "spd", "spdi", "spp", "spr", "spri",
   "dcd", "dcdi", "dcp", "dcr", "dcri",
   "acx", "acy", "agt",
-  "orb", "wd"
+  "orb", "apl", "sep", "wd"
 )
 
 # Fit a90 aspects model.
-aspectViewRaw <- dailyAspects[p.x == "SU" & aspect == 180]
+aspectViewRaw <- dailyAspects[p.x == "SU" & aspect == 120]
 aspectView <- aspectViewRaw[, ..selectCols]
 aspectView <- merge(securityData[, c('Date', 'diffPercent')], aspectView, by = "Date")
 # trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.80, list = FALSE)
@@ -57,11 +57,11 @@ modelSearch <- glmulti(
     aspectsT,
     #aspectsX,
     #aspectsY,
-    "orb",
+    "orb", "apl", "sep",
     "spd", "spdi",
     "dcd", "dcdi",
-    "retx", "rety"
-    #"MO", "ME"
+    "retx", "rety",
+    "MO"
     #"sp.x", "sp.y",
     #"spi.x", "spi.y"
     # "dc.y", "dc.x"
@@ -75,7 +75,7 @@ modelSearch <- glmulti(
   data = aspectView,
   #exclude=c("sp.y", "sp.x", "dc.x", "dc.y"),
   #minsize = 15,
-  level = 1, marginality = F, intercept = T, crit = "aic",
+  level = 1, marginality = F, intercept = T, crit = "aicc",
   method = "g", plotty = F,
   popsize = 300
   #mutrate = 0.01, sexrate = 0.1, imm = 0.1,
@@ -110,8 +110,8 @@ with(aspectViewValidate, mean((diffPercent - diffPredict)^2)) %>% sqrt()
 # instead of simple boolean flag that account for aspect active or not.
 # The order of feature importance is: orb, aspects, speed diff, retrograde and declination diff.
 
-# orb2 BIC / MSE = a90: 0.061, a120: 0.045, a135: 0.076, a150: NA, a180: 0.149
-# orb2 AICC / MSE = a90: 0.065, a120: 0.050, a135: 0.076, a150: 0.058, a180: 0.139
-# orb2 AIC / MSE = a90: 0.042, a120: 0.055, a135: 0.082, a150: 0.058, a180: 0.164
-# orb1 = MSE
-# TODO: Add aplicative / separative binary variable to the model.
+# orb 0.2-2 BIC / MSE = a90: 0.061, a120: 0.045, a135: 0.076, a150: NA, a180: 0.149
+# orb 0.2-2 AIC / MSE = a90: 0.042, a120: 0.055, a135: 0.082, a150: 0.058, a180: 0.164
+# orb 0.2-2 AICC / MSE = a90: 0.065, a120: 0.050, a135: 0.076, a150: 0.058, a180: 0.139
+# orb 0.2-1 AICC / MSE = a90: 0.019, a120: 0.060, a135: 0.085, a150: 0.054, a180: 0.213
+# orb 0.1-2 AICC / MSE = a90: 0.012, a120: 0.051, a135: 0.073, a150: 0.058, a180: 0.077

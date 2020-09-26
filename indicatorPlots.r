@@ -1043,23 +1043,25 @@ prepareHourlyAspectsModelL <- function() {
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols)
 
   # Inverse speed.
-  dailyAspects <- dailyAspects[, spi.x := 1 - sp.x]
-  dailyAspects <- dailyAspects[, spi.y := 1 - sp.y]
-  dailyAspects <- dailyAspects[, retx := ifelse(sp.x <= 0.10, 1, 0)]
-  dailyAspects <- dailyAspects[, rety := ifelse(sp.y <= 0.10, 1, 0)]
+  dailyAspects[, spi.x := 1 - sp.x]
+  dailyAspects[, spi.y := 1 - sp.y]
+  dailyAspects[, retx := ifelse(sp.x <= 0.10, 1, 0)]
+  dailyAspects[, rety := ifelse(sp.y <= 0.10, 1, 0)]
+  dailyAspects[, apl := ifelse(type == "A", 1, 0)]
+  dailyAspects[, sep := ifelse(type == "S", 1, 0)]
 
   # Speed x/y diff, product and ratio.
-  dailyAspects <- dailyAspects[, spd := sp.x - sp.y]
-  dailyAspects <- dailyAspects[, spdi := sp.y - sp.x]
-  dailyAspects <- dailyAspects[, spp := sp.x * sp.y]
-  dailyAspects <- dailyAspects[, spr := (sp.x + 1) / (sp.y + 1)]
-  dailyAspects <- dailyAspects[, spri := (sp.y + 1) / (sp.x + 1)]
+  dailyAspects[, spd := sp.x - sp.y]
+  dailyAspects[, spdi := sp.y - sp.x]
+  dailyAspects[, spp := sp.x * sp.y]
+  dailyAspects[, spr := (sp.x + 1) / (sp.y + 1)]
+  dailyAspects[, spri := (sp.y + 1) / (sp.x + 1)]
   # Declination x/y diff, product and ratio.
-  dailyAspects <- dailyAspects[, dcd := dc.x - dc.y]
-  dailyAspects <- dailyAspects[, dcdi := dc.y - dc.x]
-  dailyAspects <- dailyAspects[, dcp := dc.x * dc.y]
-  dailyAspects <- dailyAspects[, dcr := (dc.x + 1) / (dc.y + 1)]
-  dailyAspects <- dailyAspects[, dcri := (dc.y + 1) / (dc.x + 1)]
+  dailyAspects[, dcd := dc.x - dc.y]
+  dailyAspects[, dcdi := dc.y - dc.x]
+  dailyAspects[, dcp := dc.x * dc.y]
+  dailyAspects[, dcr := (dc.x + 1) / (dc.y + 1)]
+  dailyAspects[, dcri := (dc.y + 1) / (dc.x + 1)]
 
   # Filter aspects within 2 degrees of orb for cumulative aspects count.
   dailyAspects <- dailyAspects[orb <= 2,]
@@ -1076,7 +1078,7 @@ prepareHourlyAspectsModelL <- function() {
   dailyAspects <- dailyAspects[, -..filterCols]
 
   # Only leave partil aspects for the observations.
-  dailyAspects <- dailyAspects[orb <= 0.2,]
+  dailyAspects <- dailyAspects[orb <= 0.1,]
 
   return(dailyAspects)
 }
