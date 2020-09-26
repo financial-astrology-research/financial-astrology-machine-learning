@@ -318,15 +318,15 @@ dailyAspectsAddAspectsCount <- function(dailyAspects) {
   #dailyAspects[, c(aspColsT) := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols = aspColsT]
 
   # Aggregate X/Y aspects count by type.
-  dailyAspects[, a0 := a0.x + a0.y]
-  dailyAspects[, a30 := a30.x + a30.y]
-  dailyAspects[, a45 := a45.x + a45.y]
-  dailyAspects[, a60 := a60.x + a60.y]
-  dailyAspects[, a90 := a90.x + a90.y]
-  dailyAspects[, a120 := a120.x + a120.y]
-  dailyAspects[, a135 := a135.x + a135.y]
-  dailyAspects[, a150 := a150.x + a150.y]
-  dailyAspects[, a180 := a180.x + a180.y]
+  dailyAspects[, a0 := a0.x - a0.y]
+  dailyAspects[, a30 := a30.x - a30.y]
+  dailyAspects[, a45 := a45.x - a45.y]
+  dailyAspects[, a60 := a60.x - a60.y]
+  dailyAspects[, a90 := a90.x - a90.y]
+  dailyAspects[, a120 := a120.x - a120.y]
+  dailyAspects[, a135 := a135.x - a135.y]
+  dailyAspects[, a150 := a150.x - a150.y]
+  dailyAspects[, a180 := a180.x - a180.y]
 
   # Total aspect cumulative and daily totals count.
   dailyAspects[, acx := a0.x +
@@ -977,14 +977,24 @@ prepareHourlyAspectsModelK <- function() {
   hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols)
 
+  # Inverse speed.
+  dailyAspects <- dailyAspects[, spi.x := 1 - sp.x]
+  dailyAspects <- dailyAspects[, spi.y := 1 - sp.y]
+  dailyAspects <- dailyAspects[, retx := sp.x < 0.25]
+  dailyAspects <- dailyAspects[, rety := sp.y < 0.25]
+
   # Speed x/y diff, product and ratio.
   dailyAspects <- dailyAspects[, spd := sp.x - sp.y]
+  dailyAspects <- dailyAspects[, spdi := sp.y - sp.x]
   dailyAspects <- dailyAspects[, spp := sp.x * sp.y]
-  dailyAspects <- dailyAspects[, spr := sp.x / sp.y]
+  dailyAspects <- dailyAspects[, spr := (sp.x + 1) / (sp.y + 1)]
+  dailyAspects <- dailyAspects[, spri := (sp.y + 1) / (sp.x + 1)]
   # Declination x/y diff, product and ratio.
   dailyAspects <- dailyAspects[, dcd := dc.x - dc.y]
+  dailyAspects <- dailyAspects[, dcdi := dc.y - dc.x]
   dailyAspects <- dailyAspects[, dcp := dc.x * dc.y]
-  dailyAspects <- dailyAspects[, dcr := dc.x / dc.y]
+  dailyAspects <- dailyAspects[, dcr := (dc.x + 1) / (dc.y + 1)]
+  dailyAspects <- dailyAspects[, dcri := (dc.y + 1) / (dc.x + 1)]
 
   # Filter aspects within 2 degrees of orb for cumulative aspects count.
   dailyAspects <- dailyAspects[orb <= 1,]
