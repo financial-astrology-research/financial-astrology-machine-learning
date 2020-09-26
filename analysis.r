@@ -207,6 +207,9 @@ mainOpenPlanets <- function(planetsfile, selectColNames, cusorbs, calcasps=T) {
     planets <- processPlanetsAspects(planets, orbsmatrix)
   }
 
+  planets[, c(planetsSpCols) := lapply(.SD, function(x) scales::rescale(x, to=c(0, 1))), .SDcols=planetsSpCols]
+  planets[, c(planetsDecCols) := lapply(.SD, function(x) scales::rescale(x, to=c(0, 1))), .SDcols=planetsDecCols]
+
   return(planets)
 }
 
