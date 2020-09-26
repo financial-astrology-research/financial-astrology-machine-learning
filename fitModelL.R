@@ -63,8 +63,8 @@ modelSearch <- glmulti(
     "dcd", "dcdi",
     #"dcp", "dcr", "dcri",
     #"dcr", "dcri",
-    "retx", "rety",
-    "MO"
+    "retx", "rety"
+    #"MO"
     #"sp.x", "sp.y",
     #"spi.x", "spi.y"
     # "dc.y", "dc.x"
