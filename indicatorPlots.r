@@ -1249,7 +1249,7 @@ prepareHourlyAspectsModelLB <- function() {
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols)
-  dailyAspects <- dailyAspectsAddEnergy3(dailyAspects, 0.4)
+  dailyAspects <- dailyAspectsAddEnergy(dailyAspects, 0.6)
 
   # Inverse speed.
   dailyAspects[, spi.x := 1 - sp.x]
@@ -1293,7 +1293,7 @@ prepareHourlyAspectsModelLB <- function() {
   dailyAspects[aspect == 180, ast180 := 1]
 
   # Filter aspects within 2 degrees of orb for cumulative aspects count.
-  dailyAspects <- dailyAspects[orb <= 3,]
+  dailyAspects <- dailyAspects[orb <= 4,]
   dailyAspects <- dailyAspectsAddAspectsCumulativeEnergy(dailyAspects)
 
   # Remove other redundant cols.
