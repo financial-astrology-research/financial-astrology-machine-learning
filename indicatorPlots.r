@@ -584,7 +584,7 @@ predictSecurityFit <- function(dailyAspectsIndex, securityTest) {
 }
 
 predictSecurityModelReport <- function(dailyAspectsIndex, securityTest) {
-  dailyAspectsIndexProjected <- dailyAspectsIndex[Date > todayDate - 8,][0:60]
+  dailyAspectsIndexProjected <- dailyAspectsIndex[Date > todayDate - 60,][0:120]
   modelTest <- merge(dailyAspectsIndex, securityTest[, c('Date', 'Mid', 'diffPercent')], by = c('Date'))
 
   #cat("Today aspects:", format(todayDate, "%Y-%m-%d"), "\n")
@@ -628,7 +628,7 @@ predictSecurityModelReport <- function(dailyAspectsIndex, securityTest) {
   p5 <- ggplot(data = dailyAspectsIndexProjected) +
     geom_line(aes(x = Date, y = effect), colour = "white", alpha = 0.8) +
     geom_line(aes(x = Date, y = effectMA), colour = "yellow", alpha = 0.8) +
-    scale_x_date(date_breaks = '3 days', date_labels = "%Y-%m-%d") +
+    scale_x_date(date_breaks = '7 days', date_labels = "%Y-%m-%d") +
     theme_black()
 
   pgridTop <- plot_grid(p1, p3, p2, p4)
@@ -1104,7 +1104,7 @@ predictSecurityModelH1A <- function(params, security, hourlyAspects) {
   hourlyAspectsIteration <- dailyAspectsAddEffectM3(hourlyAspectsIteration)
   dailyAspectsIndex <- dailyAspectsEffectIndex(hourlyAspectsIteration)
   medianFit <- crossValidateModelOptimization("modelH2A", dailyAspectsIndex, security)
-  # crossValidateModelReport("modelH1A", dailyAspectsIndex, security)
+  crossValidateModelReport("modelH1A", dailyAspectsIndex, security)
 
   return(medianFit)
 }
