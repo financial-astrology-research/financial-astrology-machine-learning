@@ -12,7 +12,7 @@ library(arm)
 library(glmulti)
 source("./indicatorPlots.r")
 
-dailyAspects <- prepareHourlyAspectsModelL()
+dailyAspects <- prepareHourlyAspectsModelLA()
 symbol <- "LINK-USD"
 securityData <- mainOpenSecurity(
   symbol, 14, 28, "%Y-%m-%d",
@@ -51,7 +51,7 @@ selectCols <- c(
 )
 
 # Fit a90 aspects model.
-aspectViewRaw <- dailyAspects[p.x %in% c('SU')]
+aspectViewRaw <- dailyAspects[p.x %in% c('SU') & aspect %in% c('0', '90', '120', '150', '180')]
 aspectView <- aspectViewRaw[, ..selectCols]
 aspectView <- merge(securityData[, c('Date', 'diffPercent')], aspectView, by = "Date")
 hist(aspectView$diffPercent)
@@ -60,13 +60,13 @@ hist(aspectView$diffPercent)
 modelSearch <- glmulti(
   y = "diffPercent",
   xr = c(
-  #aspectsT,
+  #aspectsT
   aspectsD,
   #aspectsCombined,
   aspectType,
   #aspectsX,
-  #aspectsY,
-  #"orb",
+  #aspectsY
+  "orb"
   #"apl", "sep",
   #"spd", "spdi",
   #"dcd", "dcdi",
@@ -115,3 +115,8 @@ aspectViewValidate[, c('Date', 'diffPercent', 'diffPredict')]
 plot(aspectViewValidate$diffPercent, aspectViewValidate$diffPredict)
 cor(aspectViewValidate$diffPercent, aspectViewValidate$diffPredict) %>% print()
 with(aspectViewValidate, mean((diffPercent - diffPredict)^2)) %>% sqrt()
+
+# CONCLUSION: Generalized SU aspects models have demonstrated that price change effect variance
+# is explained at R2 = 0.097 and similar results are found for ME, MA, JU. The only exception
+# was VE that none of the aspects can explain the variance so I'm concluding that there is no
+# influence of VE on the explored security.
