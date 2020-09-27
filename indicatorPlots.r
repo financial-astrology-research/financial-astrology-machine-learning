@@ -457,6 +457,20 @@ dailyAspectsAddEnergy2 <- function(dailyAspects, speedDecay = 0.6, aspectsEnergy
   return(dailyAspects)
 }
 
+# Energy proportional to speed.
+dailyAspectsAddEnergy3 <- function(dailyAspects, speedDecay = 0.6) {
+  aspectsEnergyIndex <- matrix(
+    aspectsEnergy, nrow = 1, ncol = length(aspectsEnergy),
+    byrow = T, dimnames = list(c('energy'), aspects)
+  )
+
+  # Calculate max and proportional energy.
+  dailyAspects[, enmax := aspectsEnergyIndex['energy', as.character(aspect)]]
+  dailyAspects[, ennow := energyDecay(enmax, orb, speedDecay) * (1 - sp.x) * (1 - sp.y)]
+
+  return(dailyAspects)
+}
+
 dailyAspectsAddCumulativeEnergy <- function(dailyAspects) {
   # Merge daily security prices with aspects.
   # dailyAspectsPriceResearch <- merge(dailyAspects, securityTrain[, c('Date', 'diffPercent')], by = c('Date'))
@@ -1235,7 +1249,7 @@ prepareHourlyAspectsModelLB <- function() {
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols)
-  dailyAspects <- dailyAspectsAddEnergy(dailyAspects, 0.3)
+  dailyAspects <- dailyAspectsAddEnergy3(dailyAspects, 0.4)
 
   # Inverse speed.
   dailyAspects[, spi.x := 1 - sp.x]
@@ -1279,7 +1293,7 @@ prepareHourlyAspectsModelLB <- function() {
   dailyAspects[aspect == 180, ast180 := 1]
 
   # Filter aspects within 2 degrees of orb for cumulative aspects count.
-  dailyAspects <- dailyAspects[orb <= 2,]
+  dailyAspects <- dailyAspects[orb <= 3,]
   dailyAspects <- dailyAspectsAddAspectsCumulativeEnergy(dailyAspects)
 
   # Remove other redundant cols.
