@@ -41,10 +41,10 @@ selectCols <- c(
 )
 
 # Fit a90 aspects model.
-aspectViewRaw <- dailyAspects[p.x %in% c('SU') & aspect %in% c(0, 90, 120, 150, 180)]
+aspectViewRaw <- dailyAspects[p.x %in% c('JU') & aspect %in% c(0, 90, 120, 150, 180)]
 aspectView <- aspectViewRaw[, ..selectCols]
-aspectView <- merge(securityData[, c('Date', 'diffPercent')], aspectView, by = "Date")
-hist(aspectView$diffPercent)
+aspectViewTrain <- merge(securityData[, c('Date', 'diffPercent')], aspectView, by = "Date")
+hist(aspectViewTrain$diffPercent)
 # trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.80, list = FALSE)
 
 modelSearch <- glmulti(
@@ -63,7 +63,7 @@ modelSearch <- glmulti(
     #"spi.x", "spi.y",
     #"dc.y", "dc.x"
   ),
-  data = aspectView,
+  data = aspectViewTrain,
   #exclude=c("sp.y", "sp.x", "dc.x", "dc.y"),
   #minsize = 15,
   level = 1, marginality = F, intercept = T, crit = "aicc",
@@ -78,7 +78,7 @@ print(modelSearch@objects[[1]]$formula)
 # Review the best fit.
 modelFit <- lm(
   modelSearch@objects[[1]]$formula,
-  data = aspectView
+  data = aspectViewTrain
 )
 
 modelFit %>% summary()
@@ -89,6 +89,12 @@ modelFit %>% coefplot()
 securityDataTest <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2020-07-01")
 aspectViewValidate <- aspectViewRaw[, ..selectCols]
 aspectViewValidate$diffPredict <- predict(modelFit, aspectViewValidate)
+aspectViewValidate$diffPredictSmooth <- SMA(aspectViewValidate$diffPredict, 3)
+# Dsiplay projected prediction in chart
+ggplot(data = aspectViewValidate[Date >= Sys.Date() - 30,]) +
+  geom_line(aes(x = Date, y = diffPredictSmooth), colour = "black", alpha = 0.7) +
+  scale_x_date(date_breaks = "7 days", date_labels = "%Y-%m-%d") +
+  theme(axis.text.x = element_text(angle = 90, size = 10), axis.title.x = element_blank(), axis.title.y = element_blank())
 aspectViewValidate <- merge(securityDataTest[, c('Date', 'diffPercent')], aspectViewValidate, by = "Date")
 aspectViewValidate[, c('Date', 'diffPercent', 'diffPredict')]
 plot(aspectViewValidate$diffPercent, aspectViewValidate$diffPredict)
