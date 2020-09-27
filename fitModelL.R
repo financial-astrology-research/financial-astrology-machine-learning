@@ -20,10 +20,11 @@ securityData <- mainOpenSecurity(
 )
 
 aspectsT <- paste("a", aspects, sep = "")
+aspectsD <- paste("a", aspects, ".d", sep = "")
 aspectsX <- paste("a", aspects, ".x", sep = "")
 aspectsY <- paste("a", aspects, ".y", sep = "")
 aspectsG <- paste("a", aspects, ".g", sep = "")
-aspectsAll <- c(aspectsT, aspectsX, aspectsY, aspectsG)
+aspectsAll <- c(aspectsT, aspectsD, aspectsX, aspectsY, aspectsG)
 planetsAll <- c(
   "ME.x", "VE.x", "SU.x", "MA.x", "JU.x", "NN.x", "SA.x", "UR.x",
   "MO", "SU", "ME", "VE", "MA", "JU", "SA", "NE", "PL",
@@ -54,7 +55,7 @@ aspectView <- merge(securityData[, c('Date', 'diffPercent')], aspectView, by = "
 modelSearch <- glmulti(
   y = "diffPercent",
   xr = c(
-    aspectsT,
+    aspectsD,
     #aspectsX,
     #aspectsY,
     "orb",
