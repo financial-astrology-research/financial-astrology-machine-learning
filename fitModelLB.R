@@ -41,7 +41,7 @@ selectCols <- c(
 )
 
 # Fit a90 aspects model.
-aspectViewRaw <- dailyAspects[p.x %in% c('VE') & aspect %in% c(0, 90, 120, 150, 180)]
+aspectViewRaw <- dailyAspects[p.x %in% c('ME') & aspect %in% c(0, 90, 120, 150, 180)]
 aspectView <- aspectViewRaw[, ..selectCols]
 aspectView <- merge(securityData[, c('Date', 'diffPercent')], aspectView, by = "Date")
 hist(aspectView$diffPercent)
@@ -50,9 +50,9 @@ hist(aspectView$diffPercent)
 modelSearch <- glmulti(
   y = "diffPercent",
   xr = c(
-    aspectsD
+    aspectsD,
     #aspectsT
-    #aspectType,
+    #aspectType
     #aspectsX,
     #aspectsY
     #"apl", "sep",
@@ -103,3 +103,5 @@ with(aspectViewValidate, mean((diffPercent - diffPredict)^2)) %>% sqrt()
 # the other variables speed, retrograde, declination and aspect type perfomed very bad.
 # Seems that different data organization is needed where single observation per day
 # with cumulative energy for each planet / aspect could be analyzed.
+# Removed a135 aspect don't caused lost of model fit, seems is not relevant.
+# Attempt to remove a30 caused that ME aspects don't fit anymore.
