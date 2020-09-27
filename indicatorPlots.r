@@ -1056,8 +1056,8 @@ prepareHourlyAspectsModelL <- function() {
   # Inverse speed.
   dailyAspects[, spi.x := 1 - sp.x]
   dailyAspects[, spi.y := 1 - sp.y]
-  dailyAspects[, retx := ifelse(sp.x <= 0.05, 1, 0)]
-  dailyAspects[, rety := ifelse(sp.y <= 0.05, 1, 0)]
+  dailyAspects[, retx := ifelse(sp.x <= 0.10, 1, 0)]
+  dailyAspects[, rety := ifelse(sp.y <= 0.10, 1, 0)]
   dailyAspects[, apl := ifelse(type == "A", 1, 0)]
   dailyAspects[, sep := ifelse(type == "S", 1, 0)]
 
@@ -1074,10 +1074,43 @@ prepareHourlyAspectsModelL <- function() {
   dailyAspects[, dcr := (dc.x + 1) / (dc.y + 1)]
   dailyAspects[, dcri := (dc.y + 1) / (dc.x + 1)]
 
+  dailyAspects$ast0 <- 0
+  dailyAspects$ast30 <- 0
+  dailyAspects$ast45 <- 0
+  dailyAspects$ast60 <- 0
+  dailyAspects$ast90 <- 0
+  dailyAspects$ast120 <- 0
+  dailyAspects$ast135 <- 0
+  dailyAspects$ast150 <- 0
+  dailyAspects$ast180 <- 0
+
+  dailyAspects[aspect == 0, ast0 := 1]
+  dailyAspects[aspect == 30, ast30 := 1]
+  dailyAspects[aspect == 45, ast45 := 1]
+  dailyAspects[aspect == 60, ast60 := 1]
+  dailyAspects[aspect == 90, ast90 := 1]
+  dailyAspects[aspect == 120, ast120 := 1]
+  dailyAspects[aspect == 135, ast135 := 1]
+  dailyAspects[aspect == 150, ast150 := 1]
+  dailyAspects[aspect == 180, ast180 := 1]
+
   # Filter aspects within 2 degrees of orb for cumulative aspects count.
   dailyAspects <- dailyAspects[orb <= 2,]
   dailyAspects <- dailyAspectsAddAspectsCount(dailyAspects)
   dailyAspects <- dailyAspectsAddPlanetsActivation(dailyAspects)
+
+  # Aggregated counts.
+  dailyAspects[, asc1 := a45 + a90]
+  dailyAspects[, asc2 := a30 + a90]
+  dailyAspects[, asc3 := a45 + a90 + a135]
+  dailyAspects[, asc4 := a30 + a60 + a120]
+  dailyAspects[, asc5 := a30 + a60]
+  dailyAspects[, asc6 := a45.d + a90.d]
+  dailyAspects[, asc7 := a60.d + a120.d]
+  dailyAspects[, asc8 := a45.d + a135.d]
+  dailyAspects[, asc9 := a30.d + a60.d + a120.d]
+  dailyAspects[, asc10 := a30.d + a90.d]
+
   # Add week day.
   dailyAspects[, wd := as.numeric(format(Date, "%w")) + 1]
   # Add zodiacal signs.
