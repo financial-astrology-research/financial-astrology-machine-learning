@@ -41,7 +41,7 @@ selectCols <- c(
 )
 
 # Fit a90 aspects model.
-aspectViewRaw <- dailyAspects[p.x %in% c('MA') & aspect %in% c(0, 90, 120, 150, 180)]
+aspectViewRaw <- dailyAspects[p.x %in% c('VE') & aspect %in% c(0, 90, 120, 150, 180)]
 aspectView <- aspectViewRaw[, ..selectCols]
 aspectView <- merge(securityData[, c('Date', 'diffPercent')], aspectView, by = "Date")
 hist(aspectView$diffPercent)

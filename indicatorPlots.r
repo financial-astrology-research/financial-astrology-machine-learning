@@ -413,7 +413,6 @@ dailyAspectsAddAspectsCumulativeEnergy <- function(dailyAspects) {
   dailyAspects[, a60 := a60.x + a60.y]
   dailyAspects[, a90 := a90.x + a90.y]
   dailyAspects[, a120 := a120.x + a120.y]
-  dailyAspects[, a135 := a135.x + a135.y]
   dailyAspects[, a150 := a150.x + a150.y]
   dailyAspects[, a180 := a180.x + a180.y]
 
@@ -424,7 +423,6 @@ dailyAspectsAddAspectsCumulativeEnergy <- function(dailyAspects) {
   dailyAspects[, a60.d := a60.x - a60.y]
   dailyAspects[, a90.d := a90.x - a90.y]
   dailyAspects[, a120.d := a120.x - a120.y]
-  dailyAspects[, a135.d := a135.x - a135.y]
   dailyAspects[, a150.d := a150.x - a150.y]
   dailyAspects[, a180.d := a180.x - a180.y]
 
@@ -1278,7 +1276,6 @@ prepareHourlyAspectsModelLB <- function() {
   dailyAspects$ast60 <- 0
   dailyAspects$ast90 <- 0
   dailyAspects$ast120 <- 0
-  dailyAspects$ast135 <- 0
   dailyAspects$ast150 <- 0
   dailyAspects$ast180 <- 0
 
@@ -1288,7 +1285,6 @@ prepareHourlyAspectsModelLB <- function() {
   dailyAspects[aspect == 60, ast60 := 1]
   dailyAspects[aspect == 90, ast90 := 1]
   dailyAspects[aspect == 120, ast120 := 1]
-  dailyAspects[aspect == 135, ast135 := 1]
   dailyAspects[aspect == 150, ast150 := 1]
   dailyAspects[aspect == 180, ast180 := 1]
 
