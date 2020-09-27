@@ -41,7 +41,7 @@ selectCols <- c(
 )
 
 # Fit a90 aspects model.
-aspectViewRaw <- dailyAspects[p.x %in% c('SU') & aspect %in% c(0, 60, 90, 120, 150, 180)]
+aspectViewRaw <- dailyAspects[p.x %in% c('MA') & aspect %in% c(0, 90, 120, 150, 180)]
 aspectView <- aspectViewRaw[, ..selectCols]
 aspectView <- merge(securityData[, c('Date', 'diffPercent')], aspectView, by = "Date")
 hist(aspectView$diffPercent)
@@ -56,13 +56,11 @@ modelSearch <- glmulti(
     #aspectsX,
     #aspectsY
     #"apl", "sep",
-    #"spd", "spdi",
-    #"dcd", "dcdi",
-    #"dcp", "dcr", "dcri",
-    #"dcr", "dcri",
+    #"spd", "spdi", "spr", "spri", "spp",
+    #"dcd", "dcdi", "dcp", "dcr", "dcri"
     #"retx", "rety"
     #"sp.x", "sp.y",
-    #"spi.x", "spi.y"
+    #"spi.x", "spi.y",
     #"dc.y", "dc.x"
   ),
   data = aspectView,
@@ -98,3 +96,10 @@ cor(aspectViewValidate$diffPercent, aspectViewValidate$diffPredict) %>% print()
 with(aspectViewValidate, mean((diffPercent - diffPredict)^2)) %>% sqrt()
 
 # CONCLUSION:
+# Cumulative energy difference can explain only R2 0.05-0.08 variance on ME, SU, MA
+# don't fit at all for VE nor MO (which is expected) but the predicted results has a good
+# correlation ME 0.30, SU 0.40 and MA 0.99 on test predicted data.
+# The speed as part of energy calculation fit well on SU and MA but deviated the results from ME
+# the other variables speed, retrograde, declination and aspect type perfomed very bad.
+# Seems that different data organization is needed where single observation per day
+# with cumulative energy for each planet / aspect could be analyzed.
