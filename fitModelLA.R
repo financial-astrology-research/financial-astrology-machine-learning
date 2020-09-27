@@ -116,7 +116,16 @@ plot(aspectViewValidate$diffPercent, aspectViewValidate$diffPredict)
 cor(aspectViewValidate$diffPercent, aspectViewValidate$diffPredict) %>% print()
 with(aspectViewValidate, mean((diffPercent - diffPredict)^2)) %>% sqrt()
 
-# CONCLUSION: Generalized SU aspects models have demonstrated that price change effect variance
-# is explained at R2 = 0.097 and similar results are found for ME, MA, JU. The only exception
-# was VE that none of the aspects can explain the variance so I'm concluding that there is no
-# influence of VE on the explored security.
+# CONCLUSION:
+# - Generalized SU aspects models have demonstrated that price change effect variance
+#   is explained at R2 = 0.097 and similar results are found for ME, MA, JU. The only exception
+#   was VE that none of the aspects can explain the variance so I'm concluding that there is no
+#   influence of VE on the explored security.
+# - When removed NN resulted in decreased prediction accuracy of 0.01 and correlation
+#   decrease of 0.22.
+# - MO aspects don't fit due the fact that during a day there are too many that make imposible
+#   differentiate between multiples aspects effect using daily security price data.
+# - Only major aspects 0, 90, 120, 150 and 180 have strong effect in order to identify the effect signal,
+#   however the minor ones contribute indirectly to the force of the primary aspects.
+# - Part of the variance can be explained for major aspects isolated by planet: SU, ME, MA, JU.
+# - When a single aspect is isolated i.e. a90 for all planets except MO, VE, variance cannot be explained.
