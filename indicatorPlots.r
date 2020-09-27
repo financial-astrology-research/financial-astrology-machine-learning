@@ -317,16 +317,27 @@ dailyAspectsAddAspectsCount <- function(dailyAspects) {
   aspColsT <- paste(aspCols, 'g', sep = ".")
   #dailyAspects[, c(aspColsT) := lapply(.SD, function(x) ifelse(is.na(x), 0, x)), .SDcols = aspColsT]
 
-  # Aggregate X/Y aspects count by type.
-  dailyAspects[, a0 := a0.x - a0.y]
-  dailyAspects[, a30 := a30.x - a30.y]
-  dailyAspects[, a45 := a45.x - a45.y]
-  dailyAspects[, a60 := a60.x - a60.y]
-  dailyAspects[, a90 := a90.x - a90.y]
-  dailyAspects[, a120 := a120.x - a120.y]
-  dailyAspects[, a135 := a135.x - a135.y]
-  dailyAspects[, a150 := a150.x - a150.y]
-  dailyAspects[, a180 := a180.x - a180.y]
+  # aggregate x/y aspects count by type.
+  dailyAspects[, a0 := a0.x + a0.y]
+  dailyAspects[, a30 := a30.x + a30.y]
+  dailyAspects[, a45 := a45.x + a45.y]
+  dailyAspects[, a60 := a60.x + a60.y]
+  dailyAspects[, a90 := a90.x + a90.y]
+  dailyAspects[, a120 := a120.x + a120.y]
+  dailyAspects[, a135 := a135.x + a135.y]
+  dailyAspects[, a150 := a150.x + a150.y]
+  dailyAspects[, a180 := a180.x + a180.y]
+
+  # aggregate x/y aspects count by type.
+  dailyAspects[, a0.d := a0.x - a0.y]
+  dailyAspects[, a30.d := a30.x - a30.y]
+  dailyAspects[, a45.d := a45.x - a45.y]
+  dailyAspects[, a60.d := a60.x - a60.y]
+  dailyAspects[, a90.d := a90.x - a90.y]
+  dailyAspects[, a120.d := a120.x - a120.y]
+  dailyAspects[, a135.d := a135.x - a135.y]
+  dailyAspects[, a150.d := a150.x - a150.y]
+  dailyAspects[, a180.d := a180.x - a180.y]
 
   # Total aspect cumulative and daily totals count.
   dailyAspects[, acx := a0.x +
@@ -1045,8 +1056,8 @@ prepareHourlyAspectsModelL <- function() {
   # Inverse speed.
   dailyAspects[, spi.x := 1 - sp.x]
   dailyAspects[, spi.y := 1 - sp.y]
-  dailyAspects[, retx := ifelse(sp.x <= 0.10, 1, 0)]
-  dailyAspects[, rety := ifelse(sp.y <= 0.10, 1, 0)]
+  dailyAspects[, retx := ifelse(sp.x <= 0.05, 1, 0)]
+  dailyAspects[, rety := ifelse(sp.y <= 0.05, 1, 0)]
   dailyAspects[, apl := ifelse(type == "A", 1, 0)]
   dailyAspects[, sep := ifelse(type == "S", 1, 0)]
 
