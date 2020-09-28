@@ -405,12 +405,12 @@ dailyPlanetAspectsCumulativeEnergyTable <- function(dailyAspects) {
 
 dailyAspectsAddAspectsCumulativeEnergy <- function(dailyAspects) {
   aspCols <- paste("a", aspects, sep = "")
-  dailyAspectsPlanetCumulativeEnergy <- dailyPlanetAspectsCumulativeEnergyTable(dailyAspects)
+  dailyPlanetAspectsCumulativeEnergy <- dailyPlanetAspectsCumulativeEnergyTable(dailyAspects)
   # Merge aspects cumulative energy once per each former planets.
-  setnames(dailyAspectsPlanetCumulativeEnergy, c('Date', 'p.x', paste(aspCols, 'x', sep = ".")))
-  dailyAspects <- merge(dailyAspects, dailyAspectsPlanetCumulativeEnergy, by = c("Date", "p.x"))
-  setnames(dailyAspectsPlanetCumulativeEnergy, c('Date', 'p.y', paste(aspCols, 'y', sep = ".")))
-  dailyAspects <- merge(dailyAspects, dailyAspectsPlanetCumulativeEnergy, by = c("Date", "p.y"))
+  setnames(dailyPlanetAspectsCumulativeEnergy, c('Date', 'p.x', paste(aspCols, 'x', sep = ".")))
+  dailyAspects <- merge(dailyAspects, dailyPlanetAspectsCumulativeEnergy, by = c("Date", "p.x"))
+  setnames(dailyPlanetAspectsCumulativeEnergy, c('Date', 'p.y', paste(aspCols, 'y', sep = ".")))
+  dailyAspects <- merge(dailyAspects, dailyPlanetAspectsCumulativeEnergy, by = c("Date", "p.y"))
 
   # sum x/y aspects energy by type.
   dailyAspects[, a0 := a0.x + a0.y]
@@ -1306,4 +1306,26 @@ prepareHourlyAspectsModelLB <- function() {
   dailyAspects <- dailyAspects[orb <= 0.1,]
 
   return(dailyAspects)
+}
+
+prepareHourlyAspectsModelLC <- function() {
+  idCols <- c('Date', 'Hour')
+  setClassicAspectsSet6()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols)
+  dailyAspects <- dailyAspectsAddEnergy(dailyAspects, 0.6)
+  # Filter aspects within 2 degrees of orb for cumulative aspects count.
+  dailyAspects <- dailyAspects[orb <= 4,]
+  dailyPlanetAspectsCumulativeEnergy <- dailyPlanetAspectsCumulativeEnergyTable(dailyAspects)
+
+  aspCols <- paste("a", aspects, sep = "")
+  dailyAspectsPlanetCumulativeEnergyWide <- data.table::dcast(
+    dailyPlanetAspectsCumulativeEnergy,
+    Date ~ planet,
+    value.var = aspCols, fill = 0
+  )
+  setDT(dailyAspectsPlanetCumulativeEnergyWide)
+
+  return(dailyAspectsPlanetCumulativeEnergyWide)
 }
