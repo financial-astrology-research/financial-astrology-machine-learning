@@ -378,7 +378,7 @@ dailyAspectsAddAspectsCount <- function(dailyAspects) {
   return(dailyAspects)
 }
 
-dailyAspectsAddAspectsCumulativeEnergy <- function(dailyAspects) {
+dailyPlanetAspectsCumulativeEnergyTable <- function(dailyAspects) {
   aspCols <- paste("a", aspects, sep = "")
   dailyPlanetAspects <- melt(
     dailyAspects, id.var = c('Date', 'p.x', 'p.y', 'aspect', 'orb', 'ennow'),
@@ -400,11 +400,17 @@ dailyAspectsAddAspectsCumulativeEnergy <- function(dailyAspects) {
   )
   setDT(dailyAspectsPlanetCumEnergyWide)
 
+  return(dailyAspectsPlanetCumEnergyWide)
+}
+
+dailyAspectsAddAspectsCumulativeEnergy <- function(dailyAspects) {
+  aspCols <- paste("a", aspects, sep = "")
+  dailyAspectsPlanetCumulativeEnergy <- dailyPlanetAspectsCumulativeEnergyTable(dailyAspects)
   # Merge aspects cumulative energy once per each former planets.
-  setnames(dailyAspectsPlanetCumEnergyWide, c('Date', 'p.x', paste(aspCols, 'x', sep = ".")))
-  dailyAspects <- merge(dailyAspects, dailyAspectsPlanetCumEnergyWide, by = c("Date", "p.x"))
-  setnames(dailyAspectsPlanetCumEnergyWide, c('Date', 'p.y', paste(aspCols, 'y', sep = ".")))
-  dailyAspects <- merge(dailyAspects, dailyAspectsPlanetCumEnergyWide, by = c("Date", "p.y"))
+  setnames(dailyAspectsPlanetCumulativeEnergy, c('Date', 'p.x', paste(aspCols, 'x', sep = ".")))
+  dailyAspects <- merge(dailyAspects, dailyAspectsPlanetCumulativeEnergy, by = c("Date", "p.x"))
+  setnames(dailyAspectsPlanetCumulativeEnergy, c('Date', 'p.y', paste(aspCols, 'y', sep = ".")))
+  dailyAspects <- merge(dailyAspects, dailyAspectsPlanetCumulativeEnergy, by = c("Date", "p.y"))
 
   # sum x/y aspects energy by type.
   dailyAspects[, a0 := a0.x + a0.y]
