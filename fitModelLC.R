@@ -21,6 +21,12 @@ securityData <- mainOpenSecurity(
   "2010-01-01", "2020-06-30"
 )
 
+# Filter the extreme outliers.
+securityData <- securityData[zdiffPercent < 3 & zdiffPercent > -3,]
+cat(paste("Initial total days: ", nrow(securityData)))
+hist(securityData$zdiffPercent)
+cat(paste("Total days after filtering: ", nrow(securityData)))
+
 aspectView <- merge( securityData[, c('Date', 'zdiffPercent')],
   dailyAspectPlanetCumulativeEnergy, by = "Date"
 )
@@ -121,3 +127,5 @@ with(aspectViewValidate, mean((zdiffPercent - diffPredict)^2)) %>% sqrt()
 # - Filtering p.x former planet aspects to different subsets don't resulted in any relevant improvement.
 # - Normalizing and centering diffPrice with zcores (scale) helped to increase test data prediction correlation
 #   from 0.14 to 0.21 due the high skew of pricess diff cause issues.
+# - Filtering the most extreme diff price observations don't improved the test data price diff correlation
+#   it was reduced from 0.21 to 0.20 using zcore +/- 3 as the filter threshold.
