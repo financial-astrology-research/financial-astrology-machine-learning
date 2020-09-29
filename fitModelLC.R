@@ -78,7 +78,7 @@ modelSearch <- glmulti(
   #minsize = 15,
   level = 1, marginality = F, intercept = T, crit = "aicc",
   method = "g", plotty = F,
-  popsize = 300
+  popsize = 200
   #mutrate = 0.01, sexrate = 0.1, imm = 0.1,
 )
 
