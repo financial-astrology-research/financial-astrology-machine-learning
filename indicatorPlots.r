@@ -1314,9 +1314,9 @@ prepareHourlyAspectsModelLC <- function() {
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols)
-  dailyAspects <- dailyAspectsAddEnergy(dailyAspects, 0.6)
   # Filter aspects within 2 degrees of orb for cumulative aspects count.
-  dailyAspects <- dailyAspects[orb <= 4,]
+  dailyAspects <- dailyAspects[p.x %in% c('VE', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL') & orb <= 4,]
+  dailyAspects <- dailyAspectsAddEnergy(dailyAspects, 0.6)
   dailyPlanetAspectsCumulativeEnergy <- dailyPlanetAspectsCumulativeEnergyTable(dailyAspects)
 
   aspCols <- paste("a", aspects, sep = "")

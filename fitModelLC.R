@@ -40,15 +40,15 @@ sellVarNames <- names(
   finalCorrelations[finalCorrelations < -0.02]
 )
 
-aspectView[, buy := rowSums(.SD), .SDcols=buyVarNames]
-aspectView[, sell := rowSums(.SD), .SDcols=sellVarNames]
-aspectView[, buypow := buy - sell]
-aspectView[, sellpow := sell - buy]
-
-dailyAspectPlanetCumulativeEnergy[, buy := rowSums(.SD), .SDcols=buyVarNames]
-dailyAspectPlanetCumulativeEnergy[, sell := rowSums(.SD), .SDcols=sellVarNames]
-dailyAspectPlanetCumulativeEnergy[, buypow := buy - sell]
-dailyAspectPlanetCumulativeEnergy[, sellpow := sell - buy]
+#aspectView[, buy := rowSums(.SD), .SDcols=buyVarNames]
+#aspectView[, sell := rowSums(.SD), .SDcols=sellVarNames]
+#aspectView[, buypow := buy - sell]
+#aspectView[, sellpow := sell - buy]
+#
+#dailyAspectPlanetCumulativeEnergy[, buy := rowSums(.SD), .SDcols=buyVarNames]
+#dailyAspectPlanetCumulativeEnergy[, sell := rowSums(.SD), .SDcols=sellVarNames]
+#dailyAspectPlanetCumulativeEnergy[, buypow := buy - sell]
+#dailyAspectPlanetCumulativeEnergy[, sellpow := sell - buy]
 
 varCorrelations <- aspectView[, -c('Date')] %>%
   cor() %>%
@@ -57,10 +57,9 @@ finalCorrelations <- sort(varCorrelations[, 1])
 print(finalCorrelations)
 
 totalCols <- count(finalCorrelations)
-selectCols <- c(
-  names(aspectView)[c(1, seq(3, 10), seq(totalCols-10, totalCols-1))],
-  c("buypow", "sellpow")
-)
+selectCols <- unique(c(
+  "Date", names(finalCorrelations)[c(seq(1, 15), seq(totalCols-15, totalCols-1))]
+))
 #selectCols <- c("Date", "buy", "sell", "buypow", "sellpow")
 modelSearch <- glmulti(
   y = "diffPercent",
@@ -91,9 +90,9 @@ modelFit %>% coefplot()
 securityDataTest <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2020-07-01")
 aspectViewValidate <- dailyAspectPlanetCumulativeEnergy[, ..selectCols]
 aspectViewValidate$diffPredict <- predict(modelFit, aspectViewValidate)
-aspectViewValidate$diffPredictSmooth <- SMA(aspectViewValidate$diffPredict, 7)
+aspectViewValidate$diffPredictSmooth <- SMA(aspectViewValidate$diffPredict, 3)
 # Dsiplay projected prediction in chart
-ggplot(data = aspectViewValidate[Date >= Sys.Date() - 60,]) +
+ggplot(data = aspectViewValidate[Date >= Sys.Date() - 80,]) +
   geom_line(aes(x = Date, y = diffPredictSmooth), colour = "black", alpha = 0.7) +
   scale_x_date(date_breaks = "7 days", date_labels = "%Y-%m-%d") +
   theme(axis.text.x = element_text(angle = 90, size = 10), axis.title.x = element_blank(), axis.title.y = element_blank())
