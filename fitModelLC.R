@@ -56,8 +56,9 @@ varCorrelations <- aspectView[, -c('Date')] %>%
 finalCorrelations <- sort(varCorrelations[, 1])
 print(finalCorrelations)
 
+totalCols <- count(finalCorrelations)
 selectCols <- c(
-  names(aspectView)[c(1, seq(3, 17), seq(80, 90))],
+  names(aspectView)[c(1, seq(3, 10), seq(totalCols-10, totalCols-1))],
   c("buypow", "sellpow")
 )
 #selectCols <- c("Date", "buy", "sell", "buypow", "sellpow")
