@@ -21,11 +21,11 @@ securityData <- mainOpenSecurity(
   "2010-01-01", "2020-06-30"
 )
 
-aspectView <- merge( securityData[, c('Date', 'diffPercent')],
+aspectView <- merge( securityData[, c('Date', 'zdiffPercent')],
   dailyAspectPlanetCumulativeEnergy, by = "Date"
 )
 
-#aspectView[, diffPercent := abs(diffPercent)]
+#aspectView[, zdiffPercent := abs(zdiffPercent)]
 varCorrelations <- aspectView[, -c('Date')] %>%
   cor() %>%
   round(digits = 2)
@@ -40,14 +40,16 @@ sellVarNames <- names(
   finalCorrelations[finalCorrelations < -0.02]
 )
 
-aspectView[, buy := rowSums(.SD), .SDcols=buyVarNames]
-aspectView[, sell := rowSums(.SD), .SDcols=sellVarNames]
-aspectView[, buypow := buy - sell]
-aspectView[, sellpow := sell - buy]
-dailyAspectPlanetCumulativeEnergy[, buy := rowSums(.SD), .SDcols=buyVarNames]
-dailyAspectPlanetCumulativeEnergy[, sell := rowSums(.SD), .SDcols=sellVarNames]
-dailyAspectPlanetCumulativeEnergy[, buypow := buy - sell]
-dailyAspectPlanetCumulativeEnergy[, sellpow := sell - buy]
+#aspectView[, buy := rowSums(.SD), .SDcols=buyVarNames]
+#aspectView[, sell := rowSums(.SD), .SDcols=sellVarNames]
+#aspectView[, buypow := buy - sell]
+#aspectView[, sellpow := sell - buy]
+#dailyAspectPlanetCumulativeEnergy[, buy := rowSums(.SD), .SDcols=buyVarNames]
+#dailyAspectPlanetCumulativeEnergy[, sell := rowSums(.SD), .SDcols=sellVarNames]
+#dailyAspectPlanetCumulativeEnergy[, buypow := buy - sell]
+#dailyAspectPlanetCumulativeEnergy[, sellpow := sell - buy]
+#plot(aspectView$buypow, aspectView$zdiffPercent)
+#plot(aspectView$sellpow, aspectView$zdiffPercent)
 
 varCorrelations <- aspectView[, -c('Date')] %>%
   cor() %>%
@@ -61,7 +63,7 @@ selectCols <- unique(c(
 ))
 #selectCols <- c("Date", "buy", "sell", "buypow", "sellpow")
 modelSearch <- glmulti(
-  y = "diffPercent",
+  y = "zdiffPercent",
   xr = selectCols[-1],
   data = aspectView,
   #exclude=c("sp.y", "sp.x", "dc.x", "dc.y"),
@@ -95,25 +97,27 @@ ggplot(data = aspectViewValidate[Date >= Sys.Date() - 80,]) +
   geom_line(aes(x = Date, y = diffPredictSmooth), colour = "black", alpha = 0.7) +
   scale_x_date(date_breaks = "7 days", date_labels = "%Y-%m-%d") +
   theme(axis.text.x = element_text(angle = 90, size = 10), axis.title.x = element_blank(), axis.title.y = element_blank())
-aspectViewValidate <- merge(securityDataTest[, c('Date', 'diffPercent')], aspectViewValidate, by = "Date")
-aspectViewValidate[, c('Date', 'diffPercent', 'diffPredict')]
-plot(aspectViewValidate$diffPercent, aspectViewValidate$diffPredict)
-cor(aspectViewValidate$diffPercent, aspectViewValidate$diffPredict) %>% print()
-with(aspectViewValidate, mean((diffPercent - diffPredict)^2)) %>% sqrt()
+aspectViewValidate <- merge(securityDataTest[, c('Date', 'zdiffPercent')], aspectViewValidate, by = "Date")
+aspectViewValidate[, c('Date', 'zdiffPercent', 'diffPredict')]
+plot(aspectViewValidate$zdiffPercent, aspectViewValidate$diffPredict)
+cor(aspectViewValidate$zdiffPercent, aspectViewValidate$diffPredict) %>% print()
+with(aspectViewValidate, mean((zdiffPercent - diffPredict)^2)) %>% sqrt()
 #plot(aspectViewValidate$a180_SU, type = "l")
 #fwrite(aspectView, paste("~/Desktop/", symbol, "cumenergy.csv", sep = "-"))
 
 # CONCLUSIONS:
 # - The individual planet/aspect variables correlate as high as +/- 0.10 with price diff.
 # - Aggregating positive correlated column variables with higher correlation of 0.02 results in
-#   new variable "buy" correlated around 0.24 with price diff.
+#   new variable "buy" correlated around 0.22 with price diff.
 # - The opposite happens when aggregating negative correlated variables in new "sell" variable.
 # - Calculating the diff or buy and sell results in buypower and opposite calculation results in sellpower
-#   this variables has a 0.29 correlation with price diff.
+#   this variables has a 0.27 correlation with price diff.
 # - Unfortunately when modeling using the aspect/planet energy variables and the buy/sell aggregated ones
 #   results in very poor variance explained of only R2 = 0.10 and very noisy fit with 0.03 correlation
 #   on test data prediction.
 # - Trying to adjust the orb and energy decay speed of used aspects don't provide relevant improvements.
 # - Filtering the fast aspects MO and ME improves the prediction correlation to 0.14 and keep explained
 #   variance near to R2 = 0.10 but still the fit is very poor.
-# - Trying to filter p.x former planet aspects to different subsets don't resulted in any relevant improvement.
+# - Filtering p.x former planet aspects to different subsets don't resulted in any relevant improvement.
+# - Normalizing and centering diffPrice with zcores (scale) helped to increase test data prediction correlation
+#   from 0.14 to 0.21 due the high skew of pricess diff cause issues.
