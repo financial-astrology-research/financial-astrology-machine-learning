@@ -65,9 +65,9 @@ print(finalCorrelations)
 
 totalCols <- count(finalCorrelations)
 selectCols <- unique(c(
-  "Date", names(finalCorrelations)[c(seq(1, 15), seq(totalCols-15, totalCols-1))]
+  "Date", names(finalCorrelations)[c(seq(1, 10), seq(totalCols-10, totalCols-1))]
 ))
-#selectCols <- c("Date", "buy", "sell", "buypow", "sellpow")
+
 modelSearch <- glmulti(
   y = "zdiffPercent",
   xr = selectCols[-1],
@@ -129,3 +129,14 @@ with(aspectViewValidate, mean((zdiffPercent - diffPredict)^2)) %>% sqrt()
 #   from 0.14 to 0.21 due the high skew of pricess diff cause issues.
 # - Filtering the most extreme diff price observations don't improved the test data price diff correlation
 #   it was reduced from 0.21 to 0.20 using zcore +/- 3 as the filter threshold.
+# - Reducing use of max of 20 most correlated varas improved test price diff predict correlation to 0.24
+#   but reduce the explained variance of the model to R2 = 0.075.
+
+# NEXT STEPS:
+# - Limit the target p.y (slow) planet aspects.
+# - Limit few p.x (fast) planets agains few p.x planets.
+# - Experiment different orbs.
+# - Experiment different planet weights.
+# - Explore logistic regression using price diff 5 quartiles.
+# - Aggregate energy by aspects and by planets using linear model.
+# - Experiment cumulative p.x - p.y cumulative aspect count differences similar as used in ModelLA.
