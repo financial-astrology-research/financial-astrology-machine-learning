@@ -40,15 +40,14 @@ sellVarNames <- names(
   finalCorrelations[finalCorrelations < -0.02]
 )
 
-#aspectView[, buy := rowSums(.SD), .SDcols=buyVarNames]
-#aspectView[, sell := rowSums(.SD), .SDcols=sellVarNames]
-#aspectView[, buypow := buy - sell]
-#aspectView[, sellpow := sell - buy]
-#
-#dailyAspectPlanetCumulativeEnergy[, buy := rowSums(.SD), .SDcols=buyVarNames]
-#dailyAspectPlanetCumulativeEnergy[, sell := rowSums(.SD), .SDcols=sellVarNames]
-#dailyAspectPlanetCumulativeEnergy[, buypow := buy - sell]
-#dailyAspectPlanetCumulativeEnergy[, sellpow := sell - buy]
+aspectView[, buy := rowSums(.SD), .SDcols=buyVarNames]
+aspectView[, sell := rowSums(.SD), .SDcols=sellVarNames]
+aspectView[, buypow := buy - sell]
+aspectView[, sellpow := sell - buy]
+dailyAspectPlanetCumulativeEnergy[, buy := rowSums(.SD), .SDcols=buyVarNames]
+dailyAspectPlanetCumulativeEnergy[, sell := rowSums(.SD), .SDcols=sellVarNames]
+dailyAspectPlanetCumulativeEnergy[, buypow := buy - sell]
+dailyAspectPlanetCumulativeEnergy[, sellpow := sell - buy]
 
 varCorrelations <- aspectView[, -c('Date')] %>%
   cor() %>%
