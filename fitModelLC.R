@@ -41,11 +41,11 @@ finalCorrelations <- sort(varCorrelations[, 1])
 print(finalCorrelations)
 
 buyVarNames <- names(
-  finalCorrelations[finalCorrelations > 0.02 & finalCorrelations < 0.9]
+  finalCorrelations[finalCorrelations > 0.03 & finalCorrelations < 0.9]
 )
 
 sellVarNames <- names(
-  finalCorrelations[finalCorrelations < -0.02]
+  finalCorrelations[finalCorrelations < -0.03]
 )
 
 #aspectView[, buy := rowSums(.SD), .SDcols=buyVarNames]
@@ -135,12 +135,17 @@ with(aspectViewValidate, mean((zdiffPercent - diffPredict)^2)) %>% sqrt()
 #   but reduce the explained variance of the model to R2 = 0.075.
 # - Replacing the filtering of extreme values by trimming to zscore +/- 3 decreased test predict correlation to 0.16.
 # - Filtering extreme price diff values zscore +/- 3 with trimming to 2.5 produces sames results as just filtering.
+# - Introducing again buy/sell power variables after zscore filter and normalization confirmed that this variables
+#   overfit the model and generalize worst, test data predictions correlation fall from 0.24 to 0.06.
 
 # NEXT STEPS:
 # - Limit the target p.y (slow) planet aspects.
 # - Limit few p.x (fast) planets agains few p.x planets.
 # - Experiment different orbs.
 # - Experiment different planet weights.
-# - Explore logistic regression using price diff 5 quartiles.
 # - Aggregate energy by aspects and by planets using linear model.
 # - Experiment cumulative p.x - p.y cumulative aspect count differences similar as used in ModelLA.
+# - Explore logistic regression using price diff 5 quartiles.
+# - Experiment decision tree (basic and RF).
+# - Experiment with k-nearest model.
+# - Experiment with basic single hidden layer neural network.
