@@ -137,6 +137,9 @@ with(aspectViewValidate, mean((zdiffPercent - diffPredict)^2)) %>% sqrt()
 # - Filtering extreme price diff values zscore +/- 3 with trimming to 2.5 produces sames results as just filtering.
 # - Introducing again buy/sell power variables after zscore filter and normalization confirmed that this variables
 #   overfit the model and generalize worst, test data predictions correlation fall from 0.24 to 0.06.
+# - Incrementing the used daily aspects orbs filter from 4 to 5 or 6 don't produce significant improvements.
+# - Decreasing the aspect energy speed decay from 0.6 to 0.3 caused test data prediction correlation fall from 0.24 to 0.07.
+# - Decreasing the aspect energy speed decay from 0.6 to 0.59 helps to increase explained variance a bit to 0.074.
 
 # NEXT STEPS:
 # - Limit the target p.y (slow) planet aspects.
