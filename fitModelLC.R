@@ -22,10 +22,12 @@ securityData <- mainOpenSecurity(
 )
 
 # Filter the extreme outliers.
+cat(paste("Original days rows: ", nrow(securityData)), "\n")
 securityData <- securityData[zdiffPercent < 3 & zdiffPercent > -3,]
-cat(paste("Initial total days: ", nrow(securityData)))
+securityData <- securityData[zdiffPercent > 2.5, zdiffPercent := 2.5]
+securityData <- securityData[zdiffPercent < -2.5, zdiffPercent := -2.5]
 hist(securityData$zdiffPercent)
-cat(paste("Total days after filtering: ", nrow(securityData)))
+cat(paste("Total days rows: ", nrow(securityData)), "\n")
 
 aspectView <- merge( securityData[, c('Date', 'zdiffPercent')],
   dailyAspectPlanetCumulativeEnergy, by = "Date"
@@ -131,6 +133,8 @@ with(aspectViewValidate, mean((zdiffPercent - diffPredict)^2)) %>% sqrt()
 #   it was reduced from 0.21 to 0.20 using zcore +/- 3 as the filter threshold.
 # - Reducing use of max of 20 most correlated varas improved test price diff predict correlation to 0.24
 #   but reduce the explained variance of the model to R2 = 0.075.
+# - Replacing the filtering of extreme values by trimming to zscore +/- 3 decreased test predict correlation to 0.16.
+# - Filtering extreme price diff values zscore +/- 3 with trimming to 2.5 produces sames results as just filtering.
 
 # NEXT STEPS:
 # - Limit the target p.y (slow) planet aspects.
