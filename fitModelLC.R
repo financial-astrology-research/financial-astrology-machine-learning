@@ -1,4 +1,4 @@
-# Title     : Single row price/aspects per day modeling.
+# Title     : Single row price/aspects (column aspect/planet cumulative energy) per day.
 # Created by: pablocc
 # Created on: 28/09/2020
 
@@ -102,3 +102,18 @@ cor(aspectViewValidate$diffPercent, aspectViewValidate$diffPredict) %>% print()
 with(aspectViewValidate, mean((diffPercent - diffPredict)^2)) %>% sqrt()
 #plot(aspectViewValidate$a180_SU, type = "l")
 #fwrite(aspectView, paste("~/Desktop/", symbol, "cumenergy.csv", sep = "-"))
+
+# CONCLUSIONS:
+# - The individual planet/aspect variables correlate as high as +/- 0.10 with price diff.
+# - Aggregating positive correlated column variables with higher correlation of 0.02 results in
+#   new variable "buy" correlated around 0.24 with price diff.
+# - The opposite happens when aggregating negative correlated variables in new "sell" variable.
+# - Calculating the diff or buy and sell results in buypower and opposite calculation results in sellpower
+#   this variables has a 0.29 correlation with price diff.
+# - Unfortunately when modeling using the aspect/planet energy variables and the buy/sell aggregated ones
+#   results in very poor variance explained of only R2 = 0.10 and very noisy fit with 0.03 correlation
+#   on test data prediction.
+# - Trying to adjust the orb and energy decay speed of used aspects don't provide relevant improvements.
+# - Filtering the fast aspects MO and ME improves the prediction correlation to 0.14 and keep explained
+#   variance near to R2 = 0.10 but still the fit is very poor.
+# - Trying to filter p.x former planet aspects to different subsets don't resulted in any relevant improvement.
