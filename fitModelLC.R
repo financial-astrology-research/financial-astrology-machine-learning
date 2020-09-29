@@ -65,7 +65,7 @@ print(finalCorrelations)
 
 totalCols <- count(finalCorrelations)
 selectCols <- unique(c(
-  "Date", names(finalCorrelations)[c(seq(1, 10), seq(totalCols-10, totalCols-1))]
+  "Date", names(finalCorrelations)[c(seq(1, 15), seq(totalCols-15, totalCols-1))]
 ))
 
 modelSearch <- glmulti(
@@ -139,6 +139,8 @@ with(aspectViewValidate, mean((zdiffPercent - diffPredict)^2)) %>% sqrt()
 # - Decreasing the aspect energy speed decay from 0.6 to 0.3 caused test data prediction correlation fall from 0.24 to 0.07.
 # - Decreasing the aspect energy speed decay from 0.6 to 0.59 helps to increase explained variance a bit to 0.074.
 # - Remove price diff zscore trimming +/- 2.5 don't produced any effect so keep without it.
+# - Increasing the max variables to model to 30 decrease test predict correlation to 0.20 but fit better the
+#   qqplot of the model and increase explained R2 to 0.087.
 
 # NEXT STEPS:
 # - Limit the target p.y (slow) planet aspects.
