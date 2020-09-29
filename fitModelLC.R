@@ -24,8 +24,6 @@ securityData <- mainOpenSecurity(
 # Filter the extreme outliers.
 cat(paste("Original days rows: ", nrow(securityData)), "\n")
 securityData <- securityData[zdiffPercent < 3 & zdiffPercent > -3,]
-securityData <- securityData[zdiffPercent > 2.5, zdiffPercent := 2.5]
-securityData <- securityData[zdiffPercent < -2.5, zdiffPercent := -2.5]
 hist(securityData$zdiffPercent)
 cat(paste("Total days rows: ", nrow(securityData)), "\n")
 
@@ -140,6 +138,7 @@ with(aspectViewValidate, mean((zdiffPercent - diffPredict)^2)) %>% sqrt()
 # - Incrementing the used daily aspects orbs filter from 4 to 5 or 6 don't produce significant improvements.
 # - Decreasing the aspect energy speed decay from 0.6 to 0.3 caused test data prediction correlation fall from 0.24 to 0.07.
 # - Decreasing the aspect energy speed decay from 0.6 to 0.59 helps to increase explained variance a bit to 0.074.
+# - Remove price diff zscore trimming +/- 2.5 don't produced any effect so keep without it.
 
 # NEXT STEPS:
 # - Limit the target p.y (slow) planet aspects.
