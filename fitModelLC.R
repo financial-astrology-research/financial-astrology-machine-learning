@@ -45,6 +45,11 @@ aspectView[, sell := rowSums(.SD), .SDcols=sellVarNames]
 aspectView[, buypow := buy - sell]
 aspectView[, sellpow := sell - buy]
 
+dailyAspectPlanetCumulativeEnergy[, buy := rowSums(.SD), .SDcols=buyVarNames]
+dailyAspectPlanetCumulativeEnergy[, sell := rowSums(.SD), .SDcols=sellVarNames]
+dailyAspectPlanetCumulativeEnergy[, buypow := buy - sell]
+dailyAspectPlanetCumulativeEnergy[, sellpow := sell - buy]
+
 varCorrelations <- aspectView[, -c('Date')] %>%
   cor() %>%
   round(digits = 2)
