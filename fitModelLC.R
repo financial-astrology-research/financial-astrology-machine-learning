@@ -15,84 +15,6 @@ source("./indicatorPlots.r")
 
 dailyAspectPlanetCumulativeEnergy <- prepareHourlyAspectsModelLC()
 
-dailyAspectPlanetCumulativeEnergy[,
-  sell := a180_SU
-    + a0_VE
-    + a45_NN
-    + a90_PL
-    + a60_NN
-    + a120_SU
-    + a45_NE
-    + a45_UR
-    + a90_SU
-    + a180_VE
-    + a0_NE
-    + a30_NN
-    + a30_SU
-    + a120_JU
-    + a30_MA
-    + a30_NE
-    + a45_JU
-    + a180_ME
-]
-
-dailyAspectPlanetCumulativeEnergy[,
-  sell2 := a0_MO
-    + a90_ME
-    + a90_MO
-    + a45_ME
-    + a120_MA
-    + a120_MO
-]
-
-dailyAspectPlanetCumulativeEnergy[,
-  buy := a60_NE
-    + a150_VE
-    + a150_NN
-    + a60_SU
-    + a45_SA
-    + a30_PL
-    + a180_SA
-    + a150_SU
-    + a120_NE
-    + a90_NN
-    + a0_SA
-    + a0_NN
-    + a90_VE
-    + a0_MA
-    + a150_MA
-    + a120_NN
-    + a90_UR
-    + a90_NE
-    + a45_SU
-    + a45_PL
-    + a0_PL
-]
-
-dailyAspectPlanetCumulativeEnergy[,
-  buy2 := a30_JU
-    + a180_NN
-    + a150_MO
-    + a60_SA
-    + a90_JU
-]
-
-dailyAspectPlanetCumulativeEnergy[,
-  buypow := buy - sell
-]
-
-dailyAspectPlanetCumulativeEnergy[,
-  buypow2 := buy2 - sell2
-]
-
-dailyAspectPlanetCumulativeEnergy[,
-  sellpow := sell - buy
-]
-
-dailyAspectPlanetCumulativeEnergy[,
-  sellpow2 := sell2 - buy2
-]
-
 symbol <- "LINK-USD"
 securityData <- mainOpenSecurity(
   symbol, 14, 28, "%Y-%m-%d",
@@ -104,6 +26,24 @@ aspectView <- merge( securityData[, c('Date', 'diffPercent')],
 )
 
 #aspectView[, diffPercent := abs(diffPercent)]
+varCorrelations <- aspectView[, -c('Date')] %>%
+  cor() %>%
+  round(digits = 2)
+finalCorrelations <- sort(varCorrelations[, 1])
+print(finalCorrelations)
+
+buyVarNames <- names(
+  finalCorrelations[finalCorrelations > 0.02 & finalCorrelations < 0.9]
+)
+
+sellVarNames <- names(
+  finalCorrelations[finalCorrelations < -0.02]
+)
+
+aspectView[, buy := rowSums(.SD), .SDcols=buyVarNames]
+aspectView[, sell := rowSums(.SD), .SDcols=sellVarNames]
+aspectView[, buypow := buy - sell]
+aspectView[, sellpow := sell - buy]
 
 varCorrelations <- aspectView[, -c('Date')] %>%
   cor() %>%
@@ -111,8 +51,11 @@ varCorrelations <- aspectView[, -c('Date')] %>%
 finalCorrelations <- sort(varCorrelations[, 1])
 print(finalCorrelations)
 
-#selectCols <- c("Date", "buy", "sell", "buy2", "sell2", "buypow", "sellpow")
-selectCols <- names(aspectView)[c(1, seq(3, 17), seq(80, 90))]
+selectCols <- c(
+  names(aspectView)[c(1, seq(3, 17), seq(80, 90))],
+  c("buypow", "sellpow")
+)
+#selectCols <- c("Date", "buy", "sell", "buypow", "sellpow")
 modelSearch <- glmulti(
   y = "diffPercent",
   xr = selectCols[-1],
