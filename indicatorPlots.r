@@ -1329,3 +1329,34 @@ prepareHourlyAspectsModelLC <- function() {
 
   return(dailyAspectsPlanetCumulativeEnergyWide)
 }
+
+dailyCombPlanetAspectsFactorsTable <- function() {
+  idCols <- c('Date', 'Hour')
+  # Limit orb to 2 degrees which is the maximum strength of the effect.
+  setClassicAspectsSet8()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols)
+
+  # Filter minor MO aspects that can overlap multiples to same target planet
+  # in the same day and should not be significant in effect.
+  dailyAspects$filter <- F
+  dailyAspects <- dailyAspects[p.x == "MO" & aspect == 30, filter := T]
+  dailyAspects <- dailyAspects[p.x == "MO" & aspect == 45, filter := T]
+  dailyAspects <- dailyAspects[p.x == "MO" & aspect == 135, filter := T]
+  dailyAspects <- dailyAspects[filter != T,]
+
+  # Convert numeric aspects to categorical (factors).
+  dailyAspects <- dailyAspects[, aspect := paste("a", aspect, sep="")]
+
+  # Arrange aspects factors as table wide format.
+  dailyAspectsWide <- dcast(
+    dailyAspects,
+    Date ~ origin,
+    value.var = "aspect",
+    fill = "none"
+  )
+  setDT(dailyAspectsWide)
+
+  return(dailyAspectsWide)
+}
