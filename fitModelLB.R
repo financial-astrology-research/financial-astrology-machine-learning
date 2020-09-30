@@ -41,9 +41,10 @@ selectCols <- c(
 )
 
 # Fit a90 aspects model.
-aspectViewRaw <- dailyAspects[p.x %in% c('JU') & aspect %in% c(0, 90, 120, 150, 180)]
+aspectViewRaw <- dailyAspects[p.x %in% c('SU') & aspect %in% c(0, 90, 120, 150, 180)]
 aspectView <- aspectViewRaw[, ..selectCols]
 aspectViewTrain <- merge(securityData[, c('Date', 'diffPercent')], aspectView, by = "Date")
+cat("Total aspects rows: ", nrow(aspectView), "\n")
 hist(aspectViewTrain$diffPercent)
 # trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.80, list = FALSE)
 

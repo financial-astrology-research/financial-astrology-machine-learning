@@ -1249,7 +1249,7 @@ prepareHourlyAspectsModelLA <- function() {
 
 prepareHourlyAspectsModelLB <- function() {
   idCols <- c('Date', 'Hour')
-  setClassicAspectsSet6()
+  setClassicAspectsSet7()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols)
