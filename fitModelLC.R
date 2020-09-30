@@ -141,6 +141,8 @@ with(aspectViewValidate, mean((zdiffPercent - diffPredict)^2)) %>% sqrt()
 # - Remove price diff zscore trimming +/- 2.5 don't produced any effect so keep without it.
 # - Increasing the max variables to model to 30 decrease test predict correlation to 0.20 but fit better the
 #   qqplot of the model and increase explained R2 to 0.087.
+# - Removing few target planets (JU, NE, PL) p.y in aspects don't caused any relevant improvement in the model
+#   however, removing others like (VE, MA, PL) cause a decrease in the test predictions correlation.
 
 # NEXT STEPS:
 # - Limit the target p.y (slow) planet aspects.
