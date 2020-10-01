@@ -29,18 +29,21 @@ aspectView <- merge(
 trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.80, list = FALSE)
 aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
-cutOff <- 0.50
 
 #factors = vars(
 # SUSA, VESA, MOME, VEMA, SUMA, SUUR, VEJU, SUJU, MASA, MEJU, MEPL, MESA,
 # MEUR, MEMA, MENN, VESU, VEUR, VENN, SUNN, MEVE, MENE, MOSA, MOUR, MONE, MONN),
 fitModel <- glm(
-  Eff ~ MOME + MOSA + MOUR + MEVE + MEMA + MESA + MEUR + MENE + MEPL + VESU + VEMA + VENE + SUNE,
+  Eff ~ MOME + MOSA + MOUR
+    + MEVE + MEMA + MESA + MEUR + MENE + MEPL
+    + VESU + VEMA + VENE
+    + SUNE + JUSA,
   data = aspectViewTrain,
   family = binomial(),
   control = list(maxit = 30)
 )
 
+cutOff <- 0.50
 # Train data predictions.
 fitModel %>% summary()
 trendPredictProb <- predict(fitModel, aspectView, type = "response")
