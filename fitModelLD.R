@@ -31,7 +31,6 @@ aspectView <- merge(
 control <- trainControl(
   method = "cv",
   number = 10,
-  repeats = 3,
   savePredictions = "final",
   classProbs = T
 )
