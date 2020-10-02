@@ -31,12 +31,13 @@ aspectView <- merge(
 control <- trainControl(
   method = "cv",
   number = 10,
+  repeats = 3,
   savePredictions = "final",
   classProbs = T
 )
 
 predictorCols <- c(
-  'MOME', 'MOSA', 'MOUR', 'MEVE', 'MEMA', 'MESA', 'MEUR', 'MENE', 'MEPL', 'VESU', 'VEMA', 'VENE', 'SUMA'
+  'MOME', 'MOSA', 'MOUR', 'MEVE', 'MEMA', 'MESA', 'MEUR', 'MENE', 'MEPL', 'VESU', 'VEMA', 'VENE'
 )
 
 logisticModelTrain <- function(aspectView, modelId) {
@@ -89,7 +90,7 @@ logisticModelTrain <- function(aspectView, modelId) {
     confusionMatrix(positive = "up") %>%
     print()
 
-  saveRDS(logisticModel, paste("./models/LINK_logistic_", modelId, ".rds", sep = ""))
+  saveRDS(logisticModel, paste("./models/", symbol, "_logistic_", modelId, ".rds", sep = ""))
 
   return(logisticModel)
 }
@@ -154,7 +155,7 @@ table(
   confusionMatrix(positive = "up") %>%
   print()
 
-saveRDS(topModel, paste("./models/LINK_logistic_ensamble", ".rds", sep = ""))
+saveRDS(topModel, paste("./models/", symbol, "_logistic_ensamble", ".rds", sep = ""))
 
 # Full data set prediction.
 dailyAspects$EffUpP1 <- predict(logisticModel1, dailyAspects, type = "prob")$up
