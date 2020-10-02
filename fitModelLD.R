@@ -27,69 +27,81 @@ aspectView <- merge(
   dailyAspects, by = "Date"
 )
 
-trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.90, list = FALSE)
-aspectViewTrain1 <- aspectView[trainIndex,]
-aspectViewValidate1 <- aspectView[-trainIndex,]
+logisticModelTrain <- function(aspectView, modelId) {
+  trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.90, list = FALSE)
+  aspectViewTrain <- aspectView[trainIndex,]
+  aspectViewValidate <- aspectView[-trainIndex,]
 
-control <- trainControl(
-  method = "cv",
-  number = 10,
-  savePredictions = "final",
-  classProbs = T
-)
+  control <- trainControl(
+    method = "cv",
+    number = 10,
+    savePredictions = "final",
+    classProbs = T
+  )
 
-#SUNE + JUSA
-predictorCols <- c('MOME', 'MOSA', 'MOUR', 'MEVE', 'MEMA', 'MESA', 'MEUR', 'MENE', 'MEPL', 'VESU', 'VEMA', 'VENE', 'SUMA')
-logisticModel1 <- train(
-  x = aspectViewTrain1[, ..predictorCols],
-  y = aspectViewTrain1$Eff,
-  method = "glm",
-  trControl = control,
-  tuneLength = 3
-)
+  #SUNE + JUSA
+  predictorCols <- c('MOME', 'MOSA', 'MOUR', 'MEVE', 'MEMA', 'MESA', 'MEUR', 'MENE', 'MEPL', 'VESU', 'VEMA', 'VENE', 'SUMA')
+  logisticModel <- train(
+    x = aspectViewTrain[, ..predictorCols],
+    y = aspectViewTrain$Eff,
+    method = "glm",
+    trControl = control,
+    tuneLength = 3
+  )
+
+  logisticModel %>% print()
+  #logisticModel1 %>% summary()
+
+  #trainPredictProb <- predict(logisticModel1, aspectViewTrain, type = "prob")
+  #aspectViewTrain$EffPred <- ifelse(trainPredictProb$up > trainPredictProb$down, "up", "down")
+  #table(
+  #  actualclass = as.character(aspectViewTrain$Eff),
+  #  predictedclass = as.character(aspectViewTrain$EffPred)
+  #) %>%
+  #  confusionMatrix(positive = "up") %>%
+  #  print()
+
+  # Validate data predictions.
+  validatePredictProb <- predict(logisticModel, aspectViewValidate, type = "prob")
+  aspectViewValidate$EffPred <- ifelse(validatePredictProb$up > validatePredictProb$down, "up", "down")
+
+  table(
+    actualclass = as.character(aspectViewValidate$Eff),
+    predictedclass = as.character(aspectViewValidate$EffPred)
+  ) %>%
+    confusionMatrix(positive = "up") %>%
+    print()
+
+  # Validate with reserved data.
+  securityDataTest <- mainOpenSecurity(symbol, 2, 4, "%Y-%m-%d", "2020-08-01")
+  aspectViewTest <- merge(
+    securityDataTest,
+    dailyAspects, by = "Date"
+  )
+  testPredictProb <- predict(logisticModel, aspectViewTest, type = "prob")
+  aspectViewTest$EffPred <- ifelse(testPredictProb$up > testPredictProb$down, "up", "down")
+
+  table(
+    actualclass = as.character(aspectViewTest$Eff),
+    predictedclass = as.character(aspectViewTest$EffPred)
+  ) %>%
+    confusionMatrix(positive = "up") %>%
+    print()
+
+  finalPredictProb <- predict(logisticModel, dailyAspects, type = "prob")
+  dailyAspects$EffPred <- ifelse(finalPredictProb$up > finalPredictProb$down, "up", "down")
+
+  #saveRDS(logisticModel1, "./models/LINK_logistic1_60acc.rds")
+  exportCols <- c('Date', predictorCols, "EffPred")
+  fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-", modelId, ".csv", sep = ""))
+
+  return(logisticModel)
+}
+
+logisticModel1 <- logisticModelTrain(aspectView, "1")
+logisticModel2 <- logisticModelTrain(aspectView, "2")
+logisticModel3 <- logisticModelTrain(aspectView, "3")
 
 logisticModel1 %>% print()
-#logisticModel1 %>% summary()
-
-#trainPredictProb <- predict(logisticModel1, aspectViewTrain, type = "prob")
-#aspectViewTrain$EffPred <- ifelse(trainPredictProb$up > trainPredictProb$down, "up", "down")
-#table(
-#  actualclass = as.character(aspectViewTrain$Eff),
-#  predictedclass = as.character(aspectViewTrain$EffPred)
-#) %>%
-#  confusionMatrix(positive = "up") %>%
-#  print()
-
-# Validate data predictions.
-validatePredictProb <- predict(logisticModel1, aspectViewValidate1, type = "prob")
-aspectViewValidate1$EffPred <- ifelse(validatePredictProb$up > validatePredictProb$down, "up", "down")
-
-table(
-  actualclass = as.character(aspectViewValidate1$Eff),
-  predictedclass = as.character(aspectViewValidate1$EffPred)
-) %>%
-  confusionMatrix(positive = "up") %>%
-  print()
-
-# Validate with reserved data.
-securityDataTest <- mainOpenSecurity(symbol, 2, 4, "%Y-%m-%d", "2020-08-01")
-aspectViewTest <- merge(
-  securityDataTest,
-  dailyAspects, by = "Date"
-)
-testPredictProb <- predict(logisticModel1, aspectViewTest, type = "prob")
-aspectViewTest$EffPred <- ifelse(testPredictProb$up > testPredictProb$down, "up", "down")
-
-table(
-  actualclass = as.character(aspectViewTest$Eff),
-  predictedclass = as.character(aspectViewTest$EffPred)
-) %>%
-  confusionMatrix(positive = "up") %>%
-  print()
-
-finalPredictProb <- predict(logisticModel1, dailyAspects, type = "prob")
-dailyAspects$EffPred <- ifelse(finalPredictProb$up > finalPredictProb$down, "up", "down")
-
-#saveRDS(logisticModel1, "./models/LINK_logistic1_60acc.rds")
-exportCols <- c('Date', predictorCols, "EffPred")
-fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict.csv", sep = ""))
+logisticModel2 %>% print()
+logisticModel3 %>% print()
