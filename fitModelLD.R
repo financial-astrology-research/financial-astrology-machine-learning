@@ -162,5 +162,10 @@ dailyAspects$EffUpP2 <- predict(logisticModel2, dailyAspects, type = "prob")$up
 dailyAspects$EffUpP3 <- predict(logisticModel3, dailyAspects, type = "prob")$up
 dailyAspects$EffPred <- predict(topModel, dailyAspects, type = "raw")
 
+# Round probabilities.
+dailyAspects[, EffUpP1 := round(EffUpP1, 3)]
+dailyAspects[, EffUpP2 := round(EffUpP2, 3)]
+dailyAspects[, EffUpP3 := round(EffUpP3, 3)]
+
 exportCols <- c('Date', predictorCols, probCols, "EffPred")
 fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-ensamble", ".csv", sep = ""))
