@@ -28,8 +28,8 @@ aspectView <- merge(
 )
 
 trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.90, list = FALSE)
-aspectViewTrain <- aspectView[trainIndex,]
-aspectViewValidate <- aspectView[-trainIndex,]
+aspectViewTrain1 <- aspectView[trainIndex,]
+aspectViewValidate1 <- aspectView[-trainIndex,]
 
 control <- trainControl(
   method = "cv",
@@ -37,11 +37,12 @@ control <- trainControl(
   savePredictions = "final",
   classProbs = T
 )
+
 #SUNE + JUSA
 predictorCols <- c('MOME', 'MOSA', 'MOUR', 'MEVE', 'MEMA', 'MESA', 'MEUR', 'MENE', 'MEPL', 'VESU', 'VEMA', 'VENE', 'SUMA')
 logisticModel1 <- train(
-  x = aspectViewTrain[, ..predictorCols],
-  y = aspectViewTrain$Eff,
+  x = aspectViewTrain1[, ..predictorCols],
+  y = aspectViewTrain1$Eff,
   method = "glm",
   trControl = control,
   tuneLength = 3
@@ -60,12 +61,12 @@ logisticModel1 %>% print()
 #  print()
 
 # Validate data predictions.
-validatePredictProb <- predict(logisticModel1, aspectViewValidate, type = "prob")
-aspectViewValidate$EffPred <- ifelse(validatePredictProb$up > validatePredictProb$down, "up", "down")
+validatePredictProb <- predict(logisticModel1, aspectViewValidate1, type = "prob")
+aspectViewValidate1$EffPred <- ifelse(validatePredictProb$up > validatePredictProb$down, "up", "down")
 
 table(
-  actualclass = as.character(aspectViewValidate$Eff),
-  predictedclass = as.character(aspectViewValidate$EffPred)
+  actualclass = as.character(aspectViewValidate1$Eff),
+  predictedclass = as.character(aspectViewValidate1$EffPred)
 ) %>%
   confusionMatrix(positive = "up") %>%
   print()
