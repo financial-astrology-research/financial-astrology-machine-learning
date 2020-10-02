@@ -5,6 +5,7 @@
 library(boot)
 library(caret)
 library(psych)
+library(gbm)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
@@ -27,20 +28,23 @@ aspectView <- merge(
   dailyAspects, by = "Date"
 )
 
+control <- trainControl(
+  method = "cv",
+  number = 10,
+  savePredictions = "final",
+  classProbs = T
+)
+
+predictorCols <- c(
+  'MOME', 'MOSA', 'MOUR', 'MEVE', 'MEMA', 'MESA', 'MEUR', 'MENE', 'MEPL', 'VESU', 'VEMA', 'VENE', 'SUMA'
+)
+
 logisticModelTrain <- function(aspectView, modelId) {
   trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.90, list = FALSE)
   aspectViewTrain <- aspectView[trainIndex,]
   aspectViewValidate <- aspectView[-trainIndex,]
 
-  control <- trainControl(
-    method = "cv",
-    number = 10,
-    savePredictions = "final",
-    classProbs = T
-  )
-
   #SUNE + JUSA
-  predictorCols <- c('MOME', 'MOSA', 'MOUR', 'MEVE', 'MEMA', 'MESA', 'MEUR', 'MENE', 'MEPL', 'VESU', 'VEMA', 'VENE', 'SUMA')
   logisticModel <- train(
     x = aspectViewTrain[, ..predictorCols],
     y = aspectViewTrain$Eff,
@@ -52,18 +56,16 @@ logisticModelTrain <- function(aspectView, modelId) {
   logisticModel %>% print()
   #logisticModel1 %>% summary()
 
-  #trainPredictProb <- predict(logisticModel1, aspectViewTrain, type = "prob")
-  #aspectViewTrain$EffPred <- ifelse(trainPredictProb$up > trainPredictProb$down, "up", "down")
-  #table(
-  #  actualclass = as.character(aspectViewTrain$Eff),
-  #  predictedclass = as.character(aspectViewTrain$EffPred)
-  #) %>%
-  #  confusionMatrix(positive = "up") %>%
-  #  print()
+  aspectViewTrain$EffPred <- predict(logisticModel, aspectViewTrain, type = "raw")
+  table(
+    actualclass = as.character(aspectViewTrain$Eff),
+    predictedclass = as.character(aspectViewTrain$EffPred)
+  ) %>%
+    confusionMatrix(positive = "up") %>%
+    print()
 
   # Validate data predictions.
-  validatePredictProb <- predict(logisticModel, aspectViewValidate, type = "prob")
-  aspectViewValidate$EffPred <- ifelse(validatePredictProb$up > validatePredictProb$down, "up", "down")
+  aspectViewValidate$EffPred <- predict(logisticModel, aspectViewValidate, type = "raw")
 
   table(
     actualclass = as.character(aspectViewValidate$Eff),
@@ -78,8 +80,7 @@ logisticModelTrain <- function(aspectView, modelId) {
     securityDataTest,
     dailyAspects, by = "Date"
   )
-  testPredictProb <- predict(logisticModel, aspectViewTest, type = "prob")
-  aspectViewTest$EffPred <- ifelse(testPredictProb$up > testPredictProb$down, "up", "down")
+  aspectViewTest$EffPred <- predict(logisticModel, aspectViewTest, type = "raw")
 
   table(
     actualclass = as.character(aspectViewTest$Eff),
@@ -88,12 +89,7 @@ logisticModelTrain <- function(aspectView, modelId) {
     confusionMatrix(positive = "up") %>%
     print()
 
-  finalPredictProb <- predict(logisticModel, dailyAspects, type = "prob")
-  dailyAspects$EffPred <- ifelse(finalPredictProb$up > finalPredictProb$down, "up", "down")
-
-  #saveRDS(logisticModel1, "./models/LINK_logistic1_60acc.rds")
-  exportCols <- c('Date', predictorCols, "EffPred")
-  fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-", modelId, ".csv", sep = ""))
+  saveRDS(topModel, paste("./models/LINK_logistic_", modelId, ".rds", sep = ""))
 
   return(logisticModel)
 }
@@ -105,3 +101,66 @@ logisticModel3 <- logisticModelTrain(aspectView, "3")
 logisticModel1 %>% print()
 logisticModel2 %>% print()
 logisticModel3 %>% print()
+
+# Predict outcomes for all weak learner models.
+aspectView$EffUpP1 <- predict(logisticModel1, aspectView, type = "prob")$up
+aspectView$EffUpP2 <- predict(logisticModel2, aspectView, type = "prob")$up
+aspectView$EffUpP3 <- predict(logisticModel3, aspectView, type = "prob")$up
+
+# Train ensamble model.
+trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.90, list = FALSE)
+aspectViewTrain <- aspectView[trainIndex,]
+aspectViewValidate <- aspectView[-trainIndex,]
+
+probCols <- c('EffUpP1', 'EffUpP2', 'EffUpP3')
+topModel <- train(
+  x = aspectViewTrain[, ..probCols],
+  y = aspectViewTrain$Eff,
+  method = "gbm",
+  trControl = control,
+  tuneLength = 3
+)
+
+topModel %>% summary()
+
+# Validate data predictions.
+aspectViewValidate$EffPred <- predict(topModel, aspectViewValidate, type = "raw")
+
+table(
+  actualclass = as.character(aspectViewValidate$Eff),
+  predictedclass = as.character(aspectViewValidate$EffPred)
+) %>%
+  confusionMatrix(positive = "up") %>%
+  print()
+
+# Validate with reserved data.
+securityDataTest <- mainOpenSecurity(symbol, 2, 4, "%Y-%m-%d", "2020-08-01")
+aspectViewTest <- merge(
+  securityDataTest,
+  dailyAspects, by = "Date"
+)
+
+# Predict outcomes for all weak learner models.
+aspectViewTest$EffUpP1 <- predict(logisticModel1, aspectViewTest, type = "prob")$up
+aspectViewTest$EffUpP2 <- predict(logisticModel2, aspectViewTest, type = "prob")$up
+aspectViewTest$EffUpP3 <- predict(logisticModel3, aspectViewTest, type = "prob")$up
+# Final ensamble prediction.
+aspectViewTest$EffPred <- predict(topModel, aspectViewTest, type = "raw")
+
+table(
+  actualclass = as.character(aspectViewTest$Eff),
+  predictedclass = as.character(aspectViewTest$EffPred)
+) %>%
+  confusionMatrix(positive = "up") %>%
+  print()
+
+saveRDS(topModel, paste("./models/LINK_logistic_ensamble", ".rds", sep = ""))
+
+# Full data set prediction.
+dailyAspects$EffUpP1 <- predict(logisticModel1, dailyAspects, type = "prob")$up
+dailyAspects$EffUpP2 <- predict(logisticModel2, dailyAspects, type = "prob")$up
+dailyAspects$EffUpP3 <- predict(logisticModel3, dailyAspects, type = "prob")$up
+dailyAspects$EffPred <- predict(topModel, dailyAspects, type = "raw")
+
+exportCols <- c('Date', predictorCols, probCols, "EffPred")
+fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-ensamble", ".csv", sep = ""))
