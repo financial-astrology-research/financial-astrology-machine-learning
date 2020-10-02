@@ -30,35 +30,37 @@ trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.80, list = FALSE
 aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
 
-#factors = vars(
-# SUSA, VESA, MOME, VEMA, SUMA, SUUR, VEJU, SUJU, MASA, MEJU, MEPL, MESA,
-# MEUR, MEMA, MENN, VESU, VEUR, VENN, SUNN, MEVE, MENE, MOSA, MOUR, MONE, MONN),
-fitModel <- glm(
-  Eff ~ MOME + MOSA + MOUR
-    + MEVE + MEMA + MESA + MEUR + MENE + MEPL
-    + VESU + VEMA + VENE
-    + SUNE + JUSA,
-  data = aspectViewTrain,
-  family = binomial(),
-  control = list(maxit = 30)
+control <- trainControl(
+  method = "cv",
+  number = 10,
+  savePredictions = "final",
+  classProbs = T
 )
 
-cutOff <- 0.50
-# Train data predictions.
-fitModel %>% summary()
-trendPredictProb <- predict(fitModel, aspectView, type = "response")
-aspectView$EffPred <- ifelse(trendPredictProb > cutOff, "up", "down")
+logisticModel1 <- train(
+  formula(Eff ~ MOME + MOSA + MOUR + MEVE + MEMA + MESA + MEUR + MENE + MEPL + VESU + VEMA + VENE),
+  data = aspectViewTrain,
+  method = "glm",
+  trControl = control,
+  tuneLength = 3
+)
+
+logisticModel1 %>% print()
+logisticModel1 %>% summary()
+
+trainPredictProb <- predict(logisticModel1, aspectViewTrain, type = "prob")
+aspectViewTrain$EffPred <- ifelse(trainPredictProb$up > trainPredictProb$down, "up", "down")
 
 table(
-  actualclass = as.character(aspectView$Eff),
-  predictedclass = as.character(aspectView$EffPred)
+  actualclass = as.character(aspectViewTrain$Eff),
+  predictedclass = as.character(aspectViewTrain$EffPred)
 ) %>%
   confusionMatrix(positive = "up") %>%
   print()
 
 # Validate data predictions.
-testTrendPredictProb <- predict(fitModel, aspectViewValidate, type = "response")
-aspectViewValidate$EffPred <- ifelse(testTrendPredictProb > cutOff, "up", "down")
+validatePredictProb <- predict(logisticModel1, aspectViewValidate, type = "prob")
+aspectViewValidate$EffPred <- ifelse(validatePredictProb$up > validatePredictProb$down, "up", "down")
 
 table(
   actualclass = as.character(aspectViewValidate$Eff),
@@ -74,8 +76,8 @@ aspectViewTest <- merge(
   securityDataTest,
   dailyAspects, by = "Date"
 )
-testTrendPredictProb <- predict(fitModel, aspectViewTest)
-aspectViewTest$EffPred <- ifelse(testTrendPredictProb > cutOff, "up", "down")
+testPredictProb <- predict(logisticModel1, aspectViewTest, type = "prob")
+aspectViewTest$EffPred <- ifelse(testPredictProb$up > testPredictProb$down, "up", "down")
 
 table(
   actualclass = as.character(aspectViewTest$Eff),
@@ -84,7 +86,14 @@ table(
   confusionMatrix(positive = "up") %>%
   print()
 
+finalPredictProb <- predict(logisticModel1, dailyAspects, type = "prob")
+dailyAspects$EffPred <- ifelse(finalPredictProb$up > finalPredictProb$down, "up", "down")
+
+#saveRDS(logisticModel1, "./models/LINK_logistic1_60acc.rds")
+
 fwrite(
   aspectView,
   paste("~/Desktop/", symbol, "-planets-comb-aspects-factors-ma3-6-2orb.csv", sep = "")
 )
+
+#fwrite(dailyAspects, paste("~/Desktop/", symbol, "-predict.csv", sep = ""))
