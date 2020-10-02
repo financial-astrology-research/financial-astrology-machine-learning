@@ -89,7 +89,7 @@ logisticModelTrain <- function(aspectView, modelId) {
     confusionMatrix(positive = "up") %>%
     print()
 
-  saveRDS(topModel, paste("./models/LINK_logistic_", modelId, ".rds", sep = ""))
+  saveRDS(logisticModel, paste("./models/LINK_logistic_", modelId, ".rds", sep = ""))
 
   return(logisticModel)
 }
@@ -163,9 +163,9 @@ dailyAspects$EffUpP3 <- predict(logisticModel3, dailyAspects, type = "prob")$up
 dailyAspects$EffPred <- predict(topModel, dailyAspects, type = "raw")
 
 # Round probabilities.
-dailyAspects[, EffUpP1 := round(EffUpP1, 3)]
-dailyAspects[, EffUpP2 := round(EffUpP2, 3)]
-dailyAspects[, EffUpP3 := round(EffUpP3, 3)]
+dailyAspects[, EffUpP1 := format(EffUpP1, format="f", big.mark = ",", digits = 3)]
+dailyAspects[, EffUpP2 := format(EffUpP2, format="f", big.mark = ",", digits = 3)]
+dailyAspects[, EffUpP3 := format(EffUpP3, format="f", big.mark = ",", digits = 3)]
 
 exportCols <- c('Date', predictorCols, probCols, "EffPred")
 fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-ensamble", ".csv", sep = ""))
