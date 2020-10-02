@@ -27,20 +27,21 @@ aspectView <- merge(
   dailyAspects, by = "Date"
 )
 
-trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.80, list = FALSE)
+trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.90, list = FALSE)
 aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
 
 control <- trainControl(
   method = "cv",
-  number = 5,
+  number = 10,
   savePredictions = "final",
   classProbs = T
 )
 #SUNE + JUSA
+predictorCols <- c('MOME', 'MOSA', 'MOUR', 'MEVE', 'MEMA', 'MESA', 'MEUR', 'MENE', 'MEPL', 'VESU', 'VEMA', 'VENE', 'SUMA')
 logisticModel1 <- train(
-  formula(Eff ~ MOME + MOSA + MOUR + MEVE + MEMA + MESA + MEUR + MENE + MEPL + VESU + VEMA + VENE + SUMA),
-  data = aspectViewTrain,
+  x = aspectViewTrain[, ..predictorCols],
+  y = aspectViewTrain$Eff,
   method = "glm",
   trControl = control,
   tuneLength = 3
@@ -89,10 +90,5 @@ finalPredictProb <- predict(logisticModel1, dailyAspects, type = "prob")
 dailyAspects$EffPred <- ifelse(finalPredictProb$up > finalPredictProb$down, "up", "down")
 
 #saveRDS(logisticModel1, "./models/LINK_logistic1_60acc.rds")
-
-fwrite(
-  aspectView,
-  paste("~/Desktop/", symbol, "-planets-comb-aspects-factors-ma3-6-2orb.csv", sep = "")
-)
-
-#fwrite(dailyAspects, paste("~/Desktop/", symbol, "-predict.csv", sep = ""))
+exportCols <- c('Date', predictorCols, "EffPred")
+fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict.csv", sep = ""))
