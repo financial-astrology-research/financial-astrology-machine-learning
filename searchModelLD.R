@@ -34,15 +34,17 @@ aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
 
 selectCols <- c(
+  'Eff',
   'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU', 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN',
-  'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
+  'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN',
+  'SUMA', 'SUJU', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
 )
 
 modelSearch <- glmulti(
   y = "Eff",
-  xr = selectCols,
+  xr = selectCols[-1],
   #exclude=c("sp.y", "sp.x", "dc.x", "dc.y"),
-  data = aspectView,
+  data = aspectViewTrain[, ..selectCols],
   fitfunction = "glm",
   family = binomial,
   level = 1,
