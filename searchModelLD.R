@@ -34,18 +34,21 @@ aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
 
 selectCols <- c(
-  'Eff',
-  'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU', 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN',
-  'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN',
-  'SUMA', 'SUJU', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
+  'Eff', 'diffPercent'
+  ,'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU'
+  ,'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
+  ,'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
+  ,'SUMA', 'SUJU', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
+  ,'MAJU', 'MASA', 'MAUR', 'MANE', 'MAPL'
+  ,'JUSA'
 )
 
 modelSearch <- glmulti(
   y = "Eff",
-  xr = selectCols[-1],
+  xr = selectCols[c(-1, -2)],
   #exclude=c("sp.y", "sp.x", "dc.x", "dc.y"),
   data = aspectViewTrain[, ..selectCols],
-  fitfunction = "glm",
+  fitfunction = glm,
   family = binomial,
   level = 1,
   marginality = F,
@@ -54,7 +57,7 @@ modelSearch <- glmulti(
   confsetsize = 10,
   method = "g",
   plotty = F,
-  popsize = 200
+  popsize = 100
   #mutrate = 0.01, sexrate = 0.1, imm = 0.1,
 )
 
@@ -64,13 +67,17 @@ print(modelSearch@formulas)
 control <- trainControl(
   method = "cv",
   number = 10,
+  repeats = 3,
   savePredictions = "final",
   classProbs = T
 )
 
 # BAT predictors
-#'MEVE', 'MEUR', 'MENE', 'MEPL', 'VESU', 'VENE')
-predictorCols <- c('MOME', 'MOVE', 'MENE', 'MEPL', 'VESU')
+# 'MEVE', 'MEUR', 'MENE', 'MEPL', 'VESU', 'VENE'
+# Eff~1+MOVE+MEVE+MESU+MENE+SUMA+SUPL
+# MOME+MOVE+MEVE
+#'MOME', 'MOVE', 'MENE', 'MEPL', 'VESU'
+predictorCols <- c('MOME', 'MOVE', 'MEVE', 'MESU', 'MENE', 'SUPL')
 
 #SUNE + JUSA
 logisticModel <- train(
