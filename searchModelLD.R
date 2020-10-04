@@ -7,6 +7,7 @@ library(caret)
 library(psych)
 library(gbm)
 library(glmulti)
+library(metafor)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
@@ -33,21 +34,11 @@ trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.80, list = FALSE
 aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
 
-control <- trainControl(
-  method = "repeatedcv",
-  number = 10,
-  repeats = 3,
-  search = "random",
-  savePredictions = "final",
-  classProbs = T,
-  allowParallel = T
-)
-
 selectCols <- c(
   'Eff', 'diffPercent'
   , 'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU'
   , 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
-  , 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
+  #, 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
   #, 'SUMA', 'SUJU', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
   #,'MAJU', 'MASA', 'MAUR', 'MANE', 'MAPL'
   #,'JUSA'
@@ -72,39 +63,60 @@ modelSearch <- glmulti(
 )
 
 plot(modelSearch, type = "s")
-print(modelSearch@formulas)
 
-useFormula <- modelSearch@formulas[[10]]
-
-logisticModel <- train(
-  useFormula,
-  data = aspectViewTrain,
-  method = "glm",
-  trControl = control,
-  tuneLength = 3
+control <- trainControl(
+  method = "repeatedcv",
+  number = 10,
+  repeats = 3,
+  search = "random",
+  savePredictions = "final",
+  classProbs = T,
+  allowParallel = T
 )
 
-logisticModel %>% print()
-#logisticModel1 %>% summary()
+testLogisticModelFormula <- function(useFormula) {
+  cat("Test Formula: ", as.character(useFormula), "\n")
+  logisticModel <- train(
+    useFormula,
+    data = aspectViewTrain,
+    method = "glm",
+    trControl = control,
+    tuneLength = 3
+  )
 
-aspectViewTrain$EffPred <- predict(logisticModel, aspectViewTrain, type = "raw")
-table(
-  actualclass = as.character(aspectViewTrain$Eff),
-  predictedclass = as.character(aspectViewTrain$EffPred)
-) %>%
-  confusionMatrix(positive = "up") %>%
-  print()
+  logisticModel %>% print()
+  #logisticModel1 %>% summary()
 
-# Validate data predictions.
-aspectViewValidate$EffPred <- predict(logisticModel, aspectViewValidate, type = "raw")
+  aspectViewTrain$EffPred <- predict(logisticModel, aspectViewTrain, type = "raw")
+  testResult <- table(
+    actualclass = as.character(aspectViewTrain$Eff),
+    predictedclass = as.character(aspectViewTrain$EffPred)
+  ) %>%
+    confusionMatrix(positive = "up")
 
-table(
-  actualclass = as.character(aspectViewValidate$Eff),
-  predictedclass = as.character(aspectViewValidate$EffPred)
-) %>%
-  confusionMatrix(positive = "up") %>%
-  print()
+  print(cbind(
+    testResult$overall['Accuracy'], testResult$overall['AccuracyLower'], testResult$overall['AccuracyUpper']
+  ))
 
+  # Validate data predictions.
+  aspectViewValidate$EffPred <- predict(logisticModel, aspectViewValidate, type = "raw")
+
+  testResult <- table(
+    actualclass = as.character(aspectViewValidate$Eff),
+    predictedclass = as.character(aspectViewValidate$EffPred)
+  ) %>%
+    confusionMatrix(positive = "up")
+
+  print(cbind(
+    testResult$overall['Accuracy'], testResult$overall['AccuracyLower'], testResult$overall['AccuracyUpper']
+  ))
+}
+
+for (j in 1:count(modelSearch@formulas)) {
+  testLogisticModelFormula(modelSearch@formulas[[j]])
+}
+
+useFormula <- modelSearch@formulas[[1]]
 rfModel = train(
   useFormula,
   data = aspectViewTrain,
@@ -119,12 +131,14 @@ rfModel = train(
 rfModel %>% print()
 
 aspectViewTrain$EffPred <- predict(rfModel, aspectViewTrain, type = "raw")
-table(
+testResult <- table(
   actualclass = as.character(aspectViewTrain$Eff),
   predictedclass = as.character(aspectViewTrain$EffPred)
 ) %>%
-  confusionMatrix(positive = "up") %>%
-  print()
+  confusionMatrix(positive = "up")
+print(cbind(
+  testResult$overall['Accuracy'], testResult$overall['AccuracyLower'], testResult$overall['AccuracyUpper']
+))
 
 # Validate data predictions.
 aspectViewValidate$EffPred <- predict(rfModel, aspectViewValidate, type = "raw")
