@@ -76,14 +76,8 @@ control <- trainControl(
 
 # BAT predictors
 # 'MEVE', 'MEUR', 'MENE', 'MEPL', 'VESU', 'VENE'
-# Eff~1+MOVE+MEVE+MESU+MENE+SUMA+SUPL
 # MOME+MOVE+MEVE
-# MOME', 'MOVE', 'MENE', 'MEPL', 'VESU'
-# MOME+MOVE+MOSU+MEVE+MENE+SUMA+SUPL+MASA+MANE+MAPL
-# Eff~1+MOME+MOVE+MEVE+MESU+MENE+SUMA+SUPL+MASA+MANE+MAPL
-# Eff~1+MOME+MOVE+MEVE+MESU+SUMA+SUPL+MASA+MANE+MAPL+JUSA
-# Eff~1+MOME+MOVE+MEVE+MESU+MENE+SUMA+SUPL
-predictorCols <- c('Eff', 'MOME', 'MOVE', 'MEVE', 'MESU', 'SUMA', 'SUPL')
+predictorCols <- c('Eff', 'MEVE', 'MEUR', 'MENE', 'MEPL', 'VESU', 'VENE')
 
 logisticModel <- train(
   formula(Eff ~ .),
@@ -114,22 +108,13 @@ table(
   confusionMatrix(positive = "up") %>%
   print()
 
-
-control <- trainControl(
-  method = "repeatedcv",
-  number = 10,
-  repeats = 1,
-  search = "random",
-  allowParallel = T
-)
-
 rfModel = train(
   formula(Eff ~ .),
   data = aspectViewTrain[, ..predictorCols],
   method = "rf",
   metric = "Accuracy",
   tuneLength = 3,
-  #ntree = 100,
+  ntree = 50,
   trControl = control,
   importance = F
 )
