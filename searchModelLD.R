@@ -38,8 +38,8 @@ selectCols <- c(
   'Eff', 'diffPercent'
   , 'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU'
   , 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
-  #, 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
-  #, 'SUMA', 'SUJU', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
+  , 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
+  #, 'SUMA', 'SUJU', 'SUSA', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
   #,'MAJU', 'MASA', 'MAUR', 'MANE', 'MAPL'
   #,'JUSA'
 )
@@ -55,7 +55,7 @@ modelSearch <- glmulti(
   marginality = F,
   intercept = T,
   crit = "aicc",
-  confsetsize = 10,
+  confsetsize = 15,
   method = "g",
   plotty = F,
   popsize = 200,
@@ -116,65 +116,65 @@ for (j in 1:count(modelSearch@formulas)) {
   testLogisticModelFormula(modelSearch@formulas[[j]])
 }
 
-useFormula <- modelSearch@formulas[[1]]
-rfModel = train(
-  useFormula,
-  data = aspectViewTrain,
-  method = "rf",
-  metric = "Accuracy",
-  tuneLength = 3,
-  ntree = 50,
-  trControl = control,
-  importance = F
-)
-
-rfModel %>% print()
-
-aspectViewTrain$EffPred <- predict(rfModel, aspectViewTrain, type = "raw")
-testResult <- table(
-  actualclass = as.character(aspectViewTrain$Eff),
-  predictedclass = as.character(aspectViewTrain$EffPred)
-) %>%
-  confusionMatrix(positive = "up")
-print(cbind(
-  testResult$overall['Accuracy'], testResult$overall['AccuracyLower'], testResult$overall['AccuracyUpper']
-))
-
-# Validate data predictions.
-aspectViewValidate$EffPred <- predict(rfModel, aspectViewValidate, type = "raw")
-
-table(
-  actualclass = as.character(aspectViewValidate$Eff),
-  predictedclass = as.character(aspectViewValidate$EffPred)
-) %>%
-  confusionMatrix(positive = "up") %>%
-  print()
-
-knnModel <- train(
-  useFormula,
-  data = aspectViewTrain,
-  method = "knn",
-  trControl = control,
-  tuneLength = 3
-)
-
-knnModel %>% print()
-#logisticModel1 %>% summary()
-
-aspectViewTrain$EffPred <- predict(knnModel, aspectViewTrain, type = "raw")
-table(
-  actualclass = as.character(aspectViewTrain$Eff),
-  predictedclass = as.character(aspectViewTrain$EffPred)
-) %>%
-  confusionMatrix(positive = "up") %>%
-  print()
-
-# Validate data predictions.
-aspectViewValidate$EffPred <- predict(knnModel, aspectViewValidate, type = "raw")
-
-table(
-  actualclass = as.character(aspectViewValidate$Eff),
-  predictedclass = as.character(aspectViewValidate$EffPred)
-) %>%
-  confusionMatrix(positive = "up") %>%
-  print()
+#useFormula <- modelSearch@formulas[[1]]
+#rfModel = train(
+#  useFormula,
+#  data = aspectViewTrain,
+#  method = "rf",
+#  metric = "Accuracy",
+#  tuneLength = 3,
+#  ntree = 50,
+#  trControl = control,
+#  importance = F
+#)
+#
+#rfModel %>% print()
+#
+#aspectViewTrain$EffPred <- predict(rfModel, aspectViewTrain, type = "raw")
+#testResult <- table(
+#  actualclass = as.character(aspectViewTrain$Eff),
+#  predictedclass = as.character(aspectViewTrain$EffPred)
+#) %>%
+#  confusionMatrix(positive = "up")
+#print(cbind(
+#  testResult$overall['Accuracy'], testResult$overall['AccuracyLower'], testResult$overall['AccuracyUpper']
+#))
+#
+## Validate data predictions.
+#aspectViewValidate$EffPred <- predict(rfModel, aspectViewValidate, type = "raw")
+#
+#table(
+#  actualclass = as.character(aspectViewValidate$Eff),
+#  predictedclass = as.character(aspectViewValidate$EffPred)
+#) %>%
+#  confusionMatrix(positive = "up") %>%
+#  print()
+#
+#knnModel <- train(
+#  useFormula,
+#  data = aspectViewTrain,
+#  method = "knn",
+#  trControl = control,
+#  tuneLength = 3
+#)
+#
+#knnModel %>% print()
+##logisticModel1 %>% summary()
+#
+#aspectViewTrain$EffPred <- predict(knnModel, aspectViewTrain, type = "raw")
+#table(
+#  actualclass = as.character(aspectViewTrain$Eff),
+#  predictedclass = as.character(aspectViewTrain$EffPred)
+#) %>%
+#  confusionMatrix(positive = "up") %>%
+#  print()
+#
+## Validate data predictions.
+#aspectViewValidate$EffPred <- predict(knnModel, aspectViewValidate, type = "raw")
+#
+#table(
+#  actualclass = as.character(aspectViewValidate$Eff),
+#  predictedclass = as.character(aspectViewValidate$EffPred)
+#) %>%
+#  confusionMatrix(positive = "up") %>%
+#  print()
