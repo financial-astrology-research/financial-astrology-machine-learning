@@ -35,12 +35,12 @@ aspectViewValidate <- aspectView[-trainIndex,]
 
 selectCols <- c(
   'Eff', 'diffPercent'
-  ,'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU'
-  ,'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
-  ,'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
-  ,'SUMA', 'SUJU', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
-  ,'MAJU', 'MASA', 'MAUR', 'MANE', 'MAPL'
-  ,'JUSA'
+  , 'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU'
+  , 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
+  , 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
+  , 'SUMA', 'SUJU', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
+  #,'MAJU', 'MASA', 'MAUR', 'MANE', 'MAPL'
+  #,'JUSA'
 )
 
 modelSearch <- glmulti(
@@ -65,24 +65,29 @@ plot(modelSearch, type = "s")
 print(modelSearch@formulas)
 
 control <- trainControl(
-  method = "cv",
+  method = "repeatedcv",
   number = 10,
   repeats = 3,
+  search = "random",
   savePredictions = "final",
-  classProbs = T
+  classProbs = T,
+  allowParallel = T
 )
 
 # BAT predictors
 # 'MEVE', 'MEUR', 'MENE', 'MEPL', 'VESU', 'VENE'
 # Eff~1+MOVE+MEVE+MESU+MENE+SUMA+SUPL
 # MOME+MOVE+MEVE
-#'MOME', 'MOVE', 'MENE', 'MEPL', 'VESU'
-predictorCols <- c('MOME', 'MOVE', 'MEVE', 'MESU', 'MENE', 'SUPL')
+# MOME', 'MOVE', 'MENE', 'MEPL', 'VESU'
+# MOME+MOVE+MOSU+MEVE+MENE+SUMA+SUPL+MASA+MANE+MAPL
+# Eff~1+MOME+MOVE+MEVE+MESU+MENE+SUMA+SUPL+MASA+MANE+MAPL
+# Eff~1+MOME+MOVE+MEVE+MESU+SUMA+SUPL+MASA+MANE+MAPL+JUSA
+# Eff~1+MOME+MOVE+MEVE+MESU+MENE+SUMA+SUPL
+predictorCols <- c('Eff', 'MOME', 'MOVE', 'MEVE', 'MESU', 'SUMA', 'SUPL')
 
-#SUNE + JUSA
 logisticModel <- train(
-  x = aspectViewTrain[, ..predictorCols],
-  y = aspectViewTrain$Eff,
+  formula(Eff ~ .),
+  data = aspectViewTrain[, ..predictorCols],
   method = "glm",
   trControl = control,
   tuneLength = 3
@@ -101,6 +106,75 @@ table(
 
 # Validate data predictions.
 aspectViewValidate$EffPred <- predict(logisticModel, aspectViewValidate, type = "raw")
+
+table(
+  actualclass = as.character(aspectViewValidate$Eff),
+  predictedclass = as.character(aspectViewValidate$EffPred)
+) %>%
+  confusionMatrix(positive = "up") %>%
+  print()
+
+
+control <- trainControl(
+  method = "repeatedcv",
+  number = 10,
+  repeats = 1,
+  search = "random",
+  allowParallel = T
+)
+
+rfModel = train(
+  formula(Eff ~ .),
+  data = aspectViewTrain[, ..predictorCols],
+  method = "rf",
+  metric = "Accuracy",
+  tuneLength = 3,
+  #ntree = 100,
+  trControl = control,
+  importance = F
+)
+
+rfModel %>% print()
+
+aspectViewTrain$EffPred <- predict(rfModel, aspectViewTrain, type = "raw")
+table(
+  actualclass = as.character(aspectViewTrain$Eff),
+  predictedclass = as.character(aspectViewTrain$EffPred)
+) %>%
+  confusionMatrix(positive = "up") %>%
+  print()
+
+# Validate data predictions.
+aspectViewValidate$EffPred <- predict(rfModel, aspectViewValidate, type = "raw")
+
+table(
+  actualclass = as.character(aspectViewValidate$Eff),
+  predictedclass = as.character(aspectViewValidate$EffPred)
+) %>%
+  confusionMatrix(positive = "up") %>%
+  print()
+
+knnModel <- train(
+  formula(Eff ~ .),
+  data = aspectViewTrain[, ..predictorCols],
+  method = "knn",
+  trControl = control,
+  tuneLength = 3
+)
+
+knnModel %>% print()
+#logisticModel1 %>% summary()
+
+aspectViewTrain$EffPred <- predict(knnModel, aspectViewTrain, type = "raw")
+table(
+  actualclass = as.character(aspectViewTrain$Eff),
+  predictedclass = as.character(aspectViewTrain$EffPred)
+) %>%
+  confusionMatrix(positive = "up") %>%
+  print()
+
+# Validate data predictions.
+aspectViewValidate$EffPred <- predict(knnModel, aspectViewValidate, type = "raw")
 
 table(
   actualclass = as.character(aspectViewValidate$Eff),
