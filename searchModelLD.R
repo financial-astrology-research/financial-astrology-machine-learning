@@ -33,6 +33,16 @@ trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.80, list = FALSE
 aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
 
+control <- trainControl(
+  method = "repeatedcv",
+  number = 10,
+  repeats = 3,
+  search = "random",
+  savePredictions = "final",
+  classProbs = T,
+  allowParallel = T
+)
+
 selectCols <- c(
   'Eff', 'diffPercent'
   , 'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU'
@@ -57,27 +67,13 @@ modelSearch <- glmulti(
   confsetsize = 10,
   method = "g",
   plotty = F,
-  popsize = 200
+  popsize = 200,
   #mutrate = 0.01, sexrate = 0.1, imm = 0.1,
 )
 
 plot(modelSearch, type = "s")
 print(modelSearch@formulas)
 
-control <- trainControl(
-  method = "repeatedcv",
-  number = 10,
-  repeats = 3,
-  search = "random",
-  savePredictions = "final",
-  classProbs = T,
-  allowParallel = T
-)
-
-# BAT predictors
-# 'MEVE', 'MEUR', 'MENE', 'MEPL', 'VESU', 'VENE'
-# MOME+MOVE+MEVE
-predictorCols <- c('Eff', 'MEVE', 'MEUR', 'MENE', 'MEPL', 'VESU', 'VENE')
 useFormula <- modelSearch@formulas[[10]]
 
 logisticModel <- train(
