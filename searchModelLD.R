@@ -29,7 +29,7 @@ aspectView <- merge(
   dailyAspects, by = "Date"
 )
 
-trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.90, list = FALSE)
+trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.80, list = FALSE)
 aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
 
@@ -38,7 +38,7 @@ selectCols <- c(
   , 'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU'
   , 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
   , 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
-  , 'SUMA', 'SUJU', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
+  #, 'SUMA', 'SUJU', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
   #,'MAJU', 'MASA', 'MAUR', 'MANE', 'MAPL'
   #,'JUSA'
 )
@@ -57,7 +57,7 @@ modelSearch <- glmulti(
   confsetsize = 10,
   method = "g",
   plotty = F,
-  popsize = 100
+  popsize = 200
   #mutrate = 0.01, sexrate = 0.1, imm = 0.1,
 )
 
@@ -78,10 +78,11 @@ control <- trainControl(
 # 'MEVE', 'MEUR', 'MENE', 'MEPL', 'VESU', 'VENE'
 # MOME+MOVE+MEVE
 predictorCols <- c('Eff', 'MEVE', 'MEUR', 'MENE', 'MEPL', 'VESU', 'VENE')
+useFormula <- modelSearch@formulas[[10]]
 
 logisticModel <- train(
-  formula(Eff ~ .),
-  data = aspectViewTrain[, ..predictorCols],
+  useFormula,
+  data = aspectViewTrain,
   method = "glm",
   trControl = control,
   tuneLength = 3
@@ -109,8 +110,8 @@ table(
   print()
 
 rfModel = train(
-  formula(Eff ~ .),
-  data = aspectViewTrain[, ..predictorCols],
+  useFormula,
+  data = aspectViewTrain,
   method = "rf",
   metric = "Accuracy",
   tuneLength = 3,
@@ -140,8 +141,8 @@ table(
   print()
 
 knnModel <- train(
-  formula(Eff ~ .),
-  data = aspectViewTrain[, ..predictorCols],
+  useFormula,
+  data = aspectViewTrain,
   method = "knn",
   trControl = control,
   tuneLength = 3
