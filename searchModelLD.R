@@ -105,14 +105,11 @@ testLogisticModelFormula <- function(useFormula) {
   ) %>%
     confusionMatrix(positive = "up")
 
-  trainAccuracy <- as.numeric(trainResult$overall['Accuracy'])
   testAccuracy <- as.numeric(testResult$overall['Accuracy'])
   balanceAccuracyDiff <- abs(testResult$overall['AccuracyLower'] - testResult$overall['AccuracyUpper'])
 
   cat("Accuracy=", testAccuracy, "\tAccuracy Diff=", balanceAccuracyDiff, "\n", sep="")
-  if (trainAccuracy >= 0.6 &
-    testAccuracy >= 0.6 &
-    balanceAccuracyDiff <= 0.10) {
+  if (testAccuracy >= 0.6 & balanceAccuracyDiff <= 0.10) {
     logisticModel %>% print()
 
     print(cbind(
