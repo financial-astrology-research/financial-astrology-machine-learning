@@ -13,7 +13,7 @@ source("./indicatorPlots.r")
 
 dailyAspects <- dailyCombPlanetAspectsFactorsTable()
 
-symbol <- "BAT-USD"
+symbol <- "LINK-USD"
 securityData <- mainOpenSecurity(
   symbol, 2, 4, "%Y-%m-%d",
   "2010-01-01", "2020-06-30"
@@ -39,6 +39,7 @@ selectCols <- c(
   , 'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU'
   , 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
   , 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
+  , 'VESU', 'VEMA', 'VEJU', 'VESA', 'VEUR', 'VENE', 'VEPL'
   #, 'SUMA', 'SUJU', 'SUSA', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
   #,'MAJU', 'MASA', 'MAUR', 'MANE', 'MAPL'
   #,'JUSA'
@@ -54,8 +55,8 @@ modelSearch <- glmulti(
   level = 1,
   marginality = F,
   intercept = T,
-  crit = "aicc",
-  confsetsize = 15,
+  crit = "aic",
+  confsetsize = 20,
   method = "g",
   plotty = F,
   popsize = 200,
@@ -75,7 +76,6 @@ control <- trainControl(
 )
 
 testLogisticModelFormula <- function(useFormula) {
-  cat("Test Formula: ", as.character(useFormula), "\n")
   logisticModel <- train(
     useFormula,
     data = aspectViewTrain,
@@ -84,19 +84,14 @@ testLogisticModelFormula <- function(useFormula) {
     tuneLength = 3
   )
 
-  logisticModel %>% print()
   #logisticModel1 %>% summary()
 
   aspectViewTrain$EffPred <- predict(logisticModel, aspectViewTrain, type = "raw")
-  testResult <- table(
+  trainResult <- table(
     actualclass = as.character(aspectViewTrain$Eff),
     predictedclass = as.character(aspectViewTrain$EffPred)
   ) %>%
     confusionMatrix(positive = "up")
-
-  print(cbind(
-    testResult$overall['Accuracy'], testResult$overall['AccuracyLower'], testResult$overall['AccuracyUpper']
-  ))
 
   # Validate data predictions.
   aspectViewValidate$EffPred <- predict(logisticModel, aspectViewValidate, type = "raw")
@@ -107,15 +102,37 @@ testLogisticModelFormula <- function(useFormula) {
   ) %>%
     confusionMatrix(positive = "up")
 
-  print(cbind(
-    testResult$overall['Accuracy'], testResult$overall['AccuracyLower'], testResult$overall['AccuracyUpper']
-  ))
+  trainAccuracy <- as.numeric(trainResult$overall['Accuracy'])
+  testAccuracy <- as.numeric(testResult$overall['Accuracy'])
+
+  if (trainAccuracy >= 0.6 & testAccuracy >= 0.6) {
+    cat("Test Formula: ", as.character(useFormula), "\n")
+    logisticModel %>% print()
+
+    print(cbind(
+      trainResult$overall['Accuracy'], trainResult$overall['AccuracyLower'], trainResult$overall['AccuracyUpper']
+    ))
+
+    print(cbind(
+      testResult$overall['Accuracy'], testResult$overall['AccuracyLower'], testResult$overall['AccuracyUpper']
+    ))
+
+    return(TRUE)
+  }
+
+  return(FALSE)
 }
 
+bestFormulas <- c()
 for (j in 1:count(modelSearch@formulas)) {
-  testLogisticModelFormula(modelSearch@formulas[[j]])
+  selectFormula <- testLogisticModelFormula(modelSearch@formulas[[j]])
+  if (selectFormula) {
+    bestFormulas <- c(bestFormulas, modelSearch@formulas[[j]])
+  }
 }
 
+cat("Best ", count(bestFormulas), " model formulas\n")
+print(bestFormulas)
 #useFormula <- modelSearch@formulas[[1]]
 #rfModel = train(
 #  useFormula,
