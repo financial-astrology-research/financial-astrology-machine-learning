@@ -135,6 +135,62 @@ for (j in 1:length(modelSearch@formulas)) {
 }
 
 cat("\n\n Selected # ", count(bestModels), " models that pass criteria.\n")
+
+for (idx in 1:length(bestModels)) {
+  trainEffUpProb <- predict(bestModels[[idx]], aspectViewTrain, type = "prob")$up
+  fieldName <- paste('pup', idx, sep="")
+  aspectViewTrain[, c(fieldName) := trainEffUpProb]
+  testEffUpProb <- predict(bestModels[[idx]], aspectViewValidate, type = "prob")$up
+  aspectViewValidate[, c(fieldName) := testEffUpProb]
+}
+
+probCols <- paste('pup', seq(1, length(bestModels)), sep = "")
+ensambleModel <- train(
+  x = aspectViewTrain[, ..probCols],
+  y = aspectViewTrain$Eff,
+  method = "gbm",
+  trControl = control,
+  tuneLength = 3
+)
+
+ensambleModel %>% summary()
+
+# Validate data predictions.
+aspectViewValidate$EffPred <- predict(ensambleModel, aspectViewValidate, type = "raw")
+
+table(
+  actualclass = as.character(aspectViewValidate$Eff),
+  predictedclass = as.character(aspectViewValidate$EffPred)
+) %>%
+  confusionMatrix(positive = "up") %>%
+  print()
+
+
+# Validate with reserved data.
+securityDataTest <- mainOpenSecurity(symbol, 2, 4, "%Y-%m-%d", "2020-08-01")
+aspectViewTest <- merge(
+  securityDataTest,
+  dailyAspects,
+  by = "Date"
+)
+
+for (idx in 1:length(bestModels)) {
+  testEffUpProb <- predict(bestModels[[idx]], aspectViewTest, type = "prob")$up
+  fieldName <- paste('pup', idx, sep="")
+  aspectViewTest[, c(fieldName) := testEffUpProb]
+}
+
+# Final ensamble prediction.
+aspectViewTest$EffPred <- predict(ensambleModel, aspectViewTest, type = "raw")
+
+table(
+  actualclass = as.character(aspectViewTest$Eff),
+  predictedclass = as.character(aspectViewTest$EffPred)
+) %>%
+  confusionMatrix(positive = "up") %>%
+  print()
+
+
 #useFormula <- modelSearch@formulas[[1]]
 #rfModel = train(
 #  useFormula,
