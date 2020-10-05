@@ -36,12 +36,11 @@ aspectViewValidate <- aspectView[-trainIndex,]
 
 selectCols <- c(
   'Eff'
-  , 'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU'
-  , 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
+  #, 'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU'
+  #, 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
   , 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
-  , 'VESU', 'VEMA', 'VEJU', 'VESA', 'VEUR', 'VENE', 'VEPL'
-  , 'SUMA', 'SUJU', 'SUSA'
-  # ,'SUUR', 'SUNE', 'SUPL', 'SUNN'
+  , 'VESU', 'VEMA', 'VEJU', 'VESA', 'VEUR', 'VENE', 'VEPL', 'VENN'
+  , 'SUMA', 'SUJU', 'SUSA' ,'SUUR', 'SUNE', 'SUPL', 'SUNN'
   #,'MAJU', 'MASA', 'MAUR', 'MANE', 'MAPL'
   #,'JUSA'
 )
@@ -120,22 +119,22 @@ testLogisticModelFormula <- function(useFormula) {
       testResult$overall['Accuracy'], testResult$overall['AccuracyLower'], testResult$overall['AccuracyUpper']
     ))
 
-    return(TRUE)
+    return(logisticModel)
   }
 
   return(FALSE)
 }
 
-bestFormulas <- c()
-for (j in 1:count(modelSearch@formulas)) {
-  selectFormula <- testLogisticModelFormula(modelSearch@formulas[[j]])
-  if (selectFormula) {
-    bestFormulas <- c(bestFormulas, modelSearch@formulas[[j]])
+bestModels <- list()
+for (j in 1:length(modelSearch@formulas)) {
+  selectModel <- testLogisticModelFormula(modelSearch@formulas[[j]])
+  if (is.object(selectModel)) {
+    cat("\nSelected model with formula: ", as.character(modelSearch@formulas[[j]]))
+    bestModels[[length(bestModels)+1]] <- selectModel
   }
 }
 
-cat("\n\nBest ", count(bestFormulas), " model formulas: \n")
-print(bestFormulas)
+cat("\n\n Selected # ", count(bestModels), " models that pass criteria.\n")
 #useFormula <- modelSearch@formulas[[1]]
 #rfModel = train(
 #  useFormula,
