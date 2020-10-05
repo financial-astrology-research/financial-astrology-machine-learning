@@ -8,13 +8,12 @@ library(psych)
 library(gbm)
 library(glmulti)
 library(metafor)
-library(bestglm)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
 dailyAspects <- dailyCombPlanetAspectsFactorsTable()
 
-symbol <- "LINK-USD"
+symbol <- "BAT-USD"
 securityData <- mainOpenSecurity(
   symbol, 2, 4, "%Y-%m-%d",
   "2010-01-01", "2020-06-30"
@@ -36,19 +35,20 @@ aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
 
 selectCols <- c(
-  'Eff', 'diffPercent'
+  'Eff'
   , 'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU'
   , 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
   , 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
   , 'VESU', 'VEMA', 'VEJU', 'VESA', 'VEUR', 'VENE', 'VEPL'
-  #, 'SUMA', 'SUJU', 'SUSA', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
+  , 'SUMA', 'SUJU', 'SUSA'
+  # ,'SUUR', 'SUNE', 'SUPL', 'SUNN'
   #,'MAJU', 'MASA', 'MAUR', 'MANE', 'MAPL'
   #,'JUSA'
 )
 
 modelSearch <- glmulti(
   y = "Eff",
-  xr = selectCols[c(-1, -2)],
+  xr = selectCols[c(-1)],
   #exclude=c("sp.y", "sp.x", "dc.x", "dc.y"),
   data = aspectViewTrain[, ..selectCols],
   fitfunction = glm,
@@ -198,3 +198,7 @@ print(bestFormulas)
 #) %>%
 #  confusionMatrix(positive = "up") %>%
 #  print()
+
+# Experiment bestglm model search.
+#Xy <- aspectViewTrain[, ..selectCols]
+#bestglm(Xy, family=binomial, IC = "BICq")
