@@ -106,9 +106,11 @@ testLogisticModelFormula <- function(useFormula) {
 
   trainAccuracy <- as.numeric(trainResult$overall['Accuracy'])
   testAccuracy <- as.numeric(testResult$overall['Accuracy'])
+  balanceAccuracyDiff <- abs(testResult$overall['AccuracyLower'] - testResult$overall['AccuracyUpper'])
 
-  if (trainAccuracy >= 0.6 & testAccuracy >= 0.6) {
+  if (trainAccuracy >= 0.6 & testAccuracy >= 0.6 & balanceAccuracyDiff <= 0.10) {
     cat("Test Formula: ", as.character(useFormula), "\n")
+    cat("Balance Accuracy Diff: ", balanceAccuracyDiff, "\n")
     logisticModel %>% print()
 
     print(cbind(
