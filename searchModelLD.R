@@ -8,6 +8,7 @@ library(psych)
 library(gbm)
 library(glmulti)
 library(metafor)
+library(bestglm)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
@@ -52,15 +53,15 @@ modelSearch <- glmulti(
   data = aspectViewTrain[, ..selectCols],
   fitfunction = glm,
   family = binomial,
-  #maxit = 30,
+  maxit = 30,
   level = 1,
   marginality = F,
   intercept = T,
   crit = "aic",
-  confsetsize = 30,
+  confsetsize = 50,
   method = "g",
   plotty = F,
-  popsize = 300,
+  popsize = 200,
   conseq = 2
   #mutrate = 0.01, sexrate = 0.1, imm = 0.1,
 )
@@ -133,7 +134,7 @@ for (j in 1:count(modelSearch@formulas)) {
   }
 }
 
-cat("Best ", count(bestFormulas), " model formulas: \n")
+cat("\n\nBest ", count(bestFormulas), " model formulas: \n")
 print(bestFormulas)
 #useFormula <- modelSearch@formulas[[1]]
 #rfModel = train(
