@@ -52,14 +52,16 @@ modelSearch <- glmulti(
   data = aspectViewTrain[, ..selectCols],
   fitfunction = glm,
   family = binomial,
+  #maxit = 30,
   level = 1,
   marginality = F,
   intercept = T,
   crit = "aic",
-  confsetsize = 20,
+  confsetsize = 30,
   method = "g",
   plotty = F,
-  popsize = 200,
+  popsize = 300,
+  conseq = 2
   #mutrate = 0.01, sexrate = 0.1, imm = 0.1,
 )
 
@@ -131,7 +133,7 @@ for (j in 1:count(modelSearch@formulas)) {
   }
 }
 
-cat("Best ", count(bestFormulas), " model formulas\n")
+cat("Best ", count(bestFormulas), " model formulas: \n")
 print(bestFormulas)
 #useFormula <- modelSearch@formulas[[1]]
 #rfModel = train(
