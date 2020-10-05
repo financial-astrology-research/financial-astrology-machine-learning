@@ -36,11 +36,11 @@ aspectViewValidate <- aspectView[-trainIndex,]
 
 selectCols <- c(
   'Eff'
-  #, 'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU'
-  #, 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
+  , 'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU'
+  , 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
   , 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
   , 'VESU', 'VEMA', 'VEJU', 'VESA', 'VEUR', 'VENE', 'VEPL', 'VENN'
-  , 'SUMA', 'SUJU', 'SUSA' ,'SUUR', 'SUNE', 'SUPL', 'SUNN'
+  #, 'SUMA', 'SUJU', 'SUSA', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
   #,'MAJU', 'MASA', 'MAUR', 'MANE', 'MAPL'
   #,'JUSA'
 )
@@ -78,6 +78,7 @@ control <- trainControl(
 )
 
 testLogisticModelFormula <- function(useFormula) {
+  cat("\nEvaluating model formula: ", as.character(useFormula), "\n")
   logisticModel <- train(
     useFormula,
     data = aspectViewTrain,
@@ -108,9 +109,10 @@ testLogisticModelFormula <- function(useFormula) {
   testAccuracy <- as.numeric(testResult$overall['Accuracy'])
   balanceAccuracyDiff <- abs(testResult$overall['AccuracyLower'] - testResult$overall['AccuracyUpper'])
 
-  if (trainAccuracy >= 0.6 & testAccuracy >= 0.6 & balanceAccuracyDiff <= 0.10) {
-    cat("Test Formula: ", as.character(useFormula), "\n")
-    cat("Balance Accuracy Diff: ", balanceAccuracyDiff, "\n")
+  cat("Accuracy=", testAccuracy, "\tAccuracy Diff=", balanceAccuracyDiff, "\n", sep="")
+  if (trainAccuracy >= 0.6 &
+    testAccuracy >= 0.6 &
+    balanceAccuracyDiff <= 0.10) {
     logisticModel %>% print()
 
     print(cbind(
@@ -132,130 +134,132 @@ for (j in 1:length(modelSearch@formulas)) {
   selectModel <- testLogisticModelFormula(modelSearch@formulas[[j]])
   if (is.object(selectModel)) {
     cat("\nSelected model with formula: ", as.character(modelSearch@formulas[[j]]))
-    bestModels[[length(bestModels)+1]] <- selectModel
+    bestModels[[length(bestModels) + 1]] <- selectModel
   }
 }
 
-cat("\n\n Selected # ", count(bestModels), " models that pass criteria.\n")
+selectModelsCount <- length(bestModels)
+cat("\n\n Selected # ", selectModelsCount, " models that pass criteria.\n")
 
-for (idx in 1:length(bestModels)) {
-  trainEffUpProb <- predict(bestModels[[idx]], aspectViewTrain, type = "prob")$up
-  fieldName <- paste('pup', idx, sep="")
-  aspectViewTrain[, c(fieldName) := trainEffUpProb]
-  testEffUpProb <- predict(bestModels[[idx]], aspectViewValidate, type = "prob")$up
-  aspectViewValidate[, c(fieldName) := testEffUpProb]
+if (selectModelsCount >= 2) {
+  for (idx in 1:selectModelsCount) {
+    trainEffUpProb <- predict(bestModels[[idx]], aspectViewTrain, type = "prob")$up
+    fieldName <- paste('pup', idx, sep = "")
+    aspectViewTrain[, c(fieldName) := trainEffUpProb]
+    testEffUpProb <- predict(bestModels[[idx]], aspectViewValidate, type = "prob")$up
+    aspectViewValidate[, c(fieldName) := testEffUpProb]
+  }
+
+  probCols <- paste('pup', seq(1, length(bestModels)), sep = "")
+  ensambleModel <- train(
+    x = aspectViewTrain[, ..probCols],
+    y = aspectViewTrain$Eff,
+    method = "gbm",
+    trControl = control,
+    tuneLength = 3
+  )
+
+  ensambleModel %>% summary()
+
+  # Validate data predictions.
+  aspectViewValidate$EffPred <- predict(ensambleModel, aspectViewValidate, type = "raw")
+
+  table(
+    actualclass = as.character(aspectViewValidate$Eff),
+    predictedclass = as.character(aspectViewValidate$EffPred)
+  ) %>%
+    confusionMatrix(positive = "up") %>%
+    print()
+
+
+  # Validate with reserved data.
+  securityDataTest <- mainOpenSecurity(symbol, 2, 4, "%Y-%m-%d", "2020-08-01")
+  aspectViewTest <- merge(
+    securityDataTest,
+    dailyAspects,
+    by = "Date"
+  )
+
+  for (idx in 1:length(bestModels)) {
+    testEffUpProb <- predict(bestModels[[idx]], aspectViewTest, type = "prob")$up
+    fieldName <- paste('pup', idx, sep = "")
+    aspectViewTest[, c(fieldName) := testEffUpProb]
+  }
+
+  # Final ensamble prediction.
+  aspectViewTest$EffPred <- predict(ensambleModel, aspectViewTest, type = "raw")
+
+  table(
+    actualclass = as.character(aspectViewTest$Eff),
+    predictedclass = as.character(aspectViewTest$EffPred)
+  ) %>%
+    confusionMatrix(positive = "up") %>%
+    print()
+
+  #useFormula <- modelSearch@formulas[[1]]
+  #rfModel = train(
+  #  useFormula,
+  #  data = aspectViewTrain,
+  #  method = "rf",
+  #  metric = "Accuracy",
+  #  tuneLength = 3,
+  #  ntree = 50,
+  #  trControl = control,
+  #  importance = F
+  #)
+  #
+  #rfModel %>% print()
+  #
+  #aspectViewTrain$EffPred <- predict(rfModel, aspectViewTrain, type = "raw")
+  #testResult <- table(
+  #  actualclass = as.character(aspectViewTrain$Eff),
+  #  predictedclass = as.character(aspectViewTrain$EffPred)
+  #) %>%
+  #  confusionMatrix(positive = "up")
+  #print(cbind(
+  #  testResult$overall['Accuracy'], testResult$overall['AccuracyLower'], testResult$overall['AccuracyUpper']
+  #))
+  #
+  ## Validate data predictions.
+  #aspectViewValidate$EffPred <- predict(rfModel, aspectViewValidate, type = "raw")
+  #
+  #table(
+  #  actualclass = as.character(aspectViewValidate$Eff),
+  #  predictedclass = as.character(aspectViewValidate$EffPred)
+  #) %>%
+  #  confusionMatrix(positive = "up") %>%
+  #  print()
+  #
+  #knnModel <- train(
+  #  useFormula,
+  #  data = aspectViewTrain,
+  #  method = "knn",
+  #  trControl = control,
+  #  tuneLength = 3
+  #)
+  #
+  #knnModel %>% print()
+  ##logisticModel1 %>% summary()
+  #
+  #aspectViewTrain$EffPred <- predict(knnModel, aspectViewTrain, type = "raw")
+  #table(
+  #  actualclass = as.character(aspectViewTrain$Eff),
+  #  predictedclass = as.character(aspectViewTrain$EffPred)
+  #) %>%
+  #  confusionMatrix(positive = "up") %>%
+  #  print()
+  #
+  ## Validate data predictions.
+  #aspectViewValidate$EffPred <- predict(knnModel, aspectViewValidate, type = "raw")
+  #
+  #table(
+  #  actualclass = as.character(aspectViewValidate$Eff),
+  #  predictedclass = as.character(aspectViewValidate$EffPred)
+  #) %>%
+  #  confusionMatrix(positive = "up") %>%
+  #  print()
+
+  # Experiment bestglm model search.
+  #Xy <- aspectViewTrain[, ..selectCols]
+  #bestglm(Xy, family=binomial, IC = "BICq")
 }
-
-probCols <- paste('pup', seq(1, length(bestModels)), sep = "")
-ensambleModel <- train(
-  x = aspectViewTrain[, ..probCols],
-  y = aspectViewTrain$Eff,
-  method = "gbm",
-  trControl = control,
-  tuneLength = 3
-)
-
-ensambleModel %>% summary()
-
-# Validate data predictions.
-aspectViewValidate$EffPred <- predict(ensambleModel, aspectViewValidate, type = "raw")
-
-table(
-  actualclass = as.character(aspectViewValidate$Eff),
-  predictedclass = as.character(aspectViewValidate$EffPred)
-) %>%
-  confusionMatrix(positive = "up") %>%
-  print()
-
-
-# Validate with reserved data.
-securityDataTest <- mainOpenSecurity(symbol, 2, 4, "%Y-%m-%d", "2020-08-01")
-aspectViewTest <- merge(
-  securityDataTest,
-  dailyAspects,
-  by = "Date"
-)
-
-for (idx in 1:length(bestModels)) {
-  testEffUpProb <- predict(bestModels[[idx]], aspectViewTest, type = "prob")$up
-  fieldName <- paste('pup', idx, sep="")
-  aspectViewTest[, c(fieldName) := testEffUpProb]
-}
-
-# Final ensamble prediction.
-aspectViewTest$EffPred <- predict(ensambleModel, aspectViewTest, type = "raw")
-
-table(
-  actualclass = as.character(aspectViewTest$Eff),
-  predictedclass = as.character(aspectViewTest$EffPred)
-) %>%
-  confusionMatrix(positive = "up") %>%
-  print()
-
-
-#useFormula <- modelSearch@formulas[[1]]
-#rfModel = train(
-#  useFormula,
-#  data = aspectViewTrain,
-#  method = "rf",
-#  metric = "Accuracy",
-#  tuneLength = 3,
-#  ntree = 50,
-#  trControl = control,
-#  importance = F
-#)
-#
-#rfModel %>% print()
-#
-#aspectViewTrain$EffPred <- predict(rfModel, aspectViewTrain, type = "raw")
-#testResult <- table(
-#  actualclass = as.character(aspectViewTrain$Eff),
-#  predictedclass = as.character(aspectViewTrain$EffPred)
-#) %>%
-#  confusionMatrix(positive = "up")
-#print(cbind(
-#  testResult$overall['Accuracy'], testResult$overall['AccuracyLower'], testResult$overall['AccuracyUpper']
-#))
-#
-## Validate data predictions.
-#aspectViewValidate$EffPred <- predict(rfModel, aspectViewValidate, type = "raw")
-#
-#table(
-#  actualclass = as.character(aspectViewValidate$Eff),
-#  predictedclass = as.character(aspectViewValidate$EffPred)
-#) %>%
-#  confusionMatrix(positive = "up") %>%
-#  print()
-#
-#knnModel <- train(
-#  useFormula,
-#  data = aspectViewTrain,
-#  method = "knn",
-#  trControl = control,
-#  tuneLength = 3
-#)
-#
-#knnModel %>% print()
-##logisticModel1 %>% summary()
-#
-#aspectViewTrain$EffPred <- predict(knnModel, aspectViewTrain, type = "raw")
-#table(
-#  actualclass = as.character(aspectViewTrain$Eff),
-#  predictedclass = as.character(aspectViewTrain$EffPred)
-#) %>%
-#  confusionMatrix(positive = "up") %>%
-#  print()
-#
-## Validate data predictions.
-#aspectViewValidate$EffPred <- predict(knnModel, aspectViewValidate, type = "raw")
-#
-#table(
-#  actualclass = as.character(aspectViewValidate$Eff),
-#  predictedclass = as.character(aspectViewValidate$EffPred)
-#) %>%
-#  confusionMatrix(positive = "up") %>%
-#  print()
-
-# Experiment bestglm model search.
-#Xy <- aspectViewTrain[, ..selectCols]
-#bestglm(Xy, family=binomial, IC = "BICq")
