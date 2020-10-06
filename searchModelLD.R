@@ -32,7 +32,7 @@ aspectView <- merge(
 
 trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.80, list = FALSE)
 aspectViewTrain <- aspectView[trainIndex,]
-aspectViewValidate <- aspectView[-trainIndex,]
+aspecTViewValidate <- aspectView[-trainIndex,]
 
 selectCols <- c(
   'Eff'
@@ -40,7 +40,7 @@ selectCols <- c(
   #, 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
   , 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
   , 'VESU', 'VEMA', 'VEJU', 'VESA', 'VEUR', 'VENE', 'VEPL', 'VENN'
-  , 'SUMA', 'SUJU', 'SUSA', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
+  #, 'SUMA', 'SUJU', 'SUSA', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
   #,'MAJU', 'MASA', 'MAUR', 'MANE', 'MAPL'
   #,'JUSA'
 )
@@ -67,11 +67,21 @@ modelSearch <- glmulti(
 
 plot(modelSearch, type = "s")
 
+#myTimeControl <- trainControl(method = "timeslice",
+#                              initialWindow = 36,
+#                              horizon = 12,
+#                              fixedWindow = TRUE)
+#
+#plsFitTime <- train(unemploy ~ pce + pop + psavert,
+#                    data = economics,
+#                    method = "pls",
+#                    preProc = c("center", "scale"),
+#                    trControl = myTimeControl)
+
 control <- trainControl(
-  method = "repeatedcv",
-  number = 10,
-  repeats = 3,
-  search = "random",
+  method = "timeslice",
+  initialWindow = 30,
+  horizon = 10,
   savePredictions = "final",
   classProbs = T,
   allowParallel = T
@@ -109,7 +119,7 @@ testLogisticModelFormula <- function(useFormula) {
   testAccuracy <- testResult$overall['Accuracy']
   imbalance <- abs(testResult$byClass['Pos Pred Value'] - testResult$byClass['Neg Pred Value'])
 
-  cat("Accuracy=", testAccuracy, "\tAccuracy Diff=", imbalance, "\n", sep="")
+  cat("Accuracy=", testAccuracy, "\tAccuracy Diff=", imbalance, "\n", sep = "")
   if (testAccuracy >= 0.6 & imbalance <= 0.1) {
     logisticModel %>% print()
     print(trainResult)
@@ -121,6 +131,38 @@ testLogisticModelFormula <- function(useFormula) {
   return(FALSE)
 }
 
+#  Reserved data for final test.
+securityDataTest <- mainOpenSecurity(symbol, 2, 4, "%Y-%m-%d", "2020-08-01")
+aspectViewTest <- merge(
+  securityDataTest,
+  dailyAspects,
+  by = "Date"
+)
+
+cat("--VALIDATE RAW MODELS--\n\n")
+for (j in 1:length(modelSearch@formulas)) {
+  # Validate test data accuracy.
+  currentModel <- modelSearch@objects[[j]]
+  validateEffProb <- predict(currentModel, aspectViewValidate, type = "response")
+  validateEffPred <- ifelse(validateEffProb > 0.5, "down", "up")
+
+  validateResult <- table(
+    actualclass = as.character(aspectViewValidate$Eff),
+    predictedclass = as.character(validateEffPred)
+  ) %>%
+    confusionMatrix(positive = "up")
+
+  validateAccuracy <- validateResult$overall['Accuracy']
+  validatePrevalence <- validateResult$byClass['Prevalence']
+  cat("Accuracy: ", validateAccuracy, "Prevalence: ", validatePrevalence, "\n")
+
+  if (validateAccuracy > 0.6 & validatePrevalence > 0.47 & validatePrevalence < 0.53) {
+    cat("\nCANDIDATE MODEL\n")
+    print(validateResult)
+  }
+}
+
+cat("--TRAIN BEST FORMULAS WITH TIME SLICES CONTROL--\n\n")
 bestModels <- list()
 for (j in 1:length(modelSearch@formulas)) {
   selectModel <- testLogisticModelFormula(modelSearch@formulas[[j]])
@@ -133,15 +175,7 @@ for (j in 1:length(modelSearch@formulas)) {
 selectModelsCount <- length(bestModels)
 cat("\nSELECTED #", selectModelsCount, " models that passed criteria.\n\n")
 
-if (selectModelsCount >= 2) {
-  # Validate with reserved data.
-  securityDataTest <- mainOpenSecurity(symbol, 2, 4, "%Y-%m-%d", "2020-08-01")
-  aspectViewTest <- merge(
-    securityDataTest,
-    dailyAspects,
-    by = "Date"
-  )
-
+if (selectModelsCount >= 100) {
   for (idx in 1:selectModelsCount) {
     # Outcome field name.
     fieldName <- paste('pup', idx, sep = "")
@@ -159,11 +193,11 @@ if (selectModelsCount >= 2) {
     aspectViewTest[, c(fieldName) := testEffUpProb]
 
     # Validate test data accuracy.
-    testEffPred <- predict(bestModels[[idx]], aspectViewTest, type = "raw")
+    validateEffPred <- predict(bestModels[[idx]], aspectViewTest, type = "raw")
 
     table(
       actualclass = as.character(aspectViewTest$Eff),
-      predictedclass = as.character(testEffPred)
+      predictedclass = as.character(validateEffPred)
     ) %>%
       confusionMatrix(positive = "up") %>%
       print()
