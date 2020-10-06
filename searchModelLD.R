@@ -106,20 +106,14 @@ testLogisticModelFormula <- function(useFormula) {
     confusionMatrix(positive = "up")
   #print(testResult)
 
-  testAccuracy <- as.numeric(testResult$overall['Accuracy'])
+  testAccuracy <- testResult$overall['Accuracy']
   imbalance <- abs(testResult$byClass['Pos Pred Value'] - testResult$byClass['Neg Pred Value'])
 
   cat("Accuracy=", testAccuracy, "\tAccuracy Diff=", imbalance, "\n", sep="")
   if (testAccuracy >= 0.6 & imbalance <= 0.10) {
     logisticModel %>% print()
-
-    print(cbind(
-      trainResult$overall['Accuracy'], trainResult$overall['AccuracyLower'], trainResult$overall['AccuracyUpper']
-    ))
-
-    print(cbind(
-      testResult$overall['Accuracy'], testResult$overall['AccuracyLower'], testResult$overall['AccuracyUpper']
-    ))
+    print(trainResult)
+    print(testResult)
 
     return(logisticModel)
   }
@@ -137,7 +131,7 @@ for (j in 1:length(modelSearch@formulas)) {
 }
 
 selectModelsCount <- length(bestModels)
-cat("\n\n Selected # ", selectModelsCount, " models that pass criteria.\n")
+cat("\nSELECTED #", selectModelsCount, " models that passed criteria.\n\n")
 
 if (selectModelsCount >= 2) {
   for (idx in 1:selectModelsCount) {
