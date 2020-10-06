@@ -318,6 +318,4 @@ trainBestModelsEnsamble <- function(bestModels) {
   #bestglm(Xy, family=binomial, IC = "BICq")
 }
 
-if (selectModelsCount >= 2) {
-  #trainBestModelsEnsamble(bestModels)
-}
+#trainBestModelsEnsamble(bestModels)
