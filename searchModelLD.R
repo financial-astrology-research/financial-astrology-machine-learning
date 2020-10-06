@@ -120,7 +120,9 @@ testLogisticModelFormula <- function(useFormula) {
   validatePrevalence <- validateResult$byClass['Prevalence']
   cat("Accuracy: ", validateAccuracy, "Prevalence: ", validatePrevalence, "\n")
 
-  if (validateAccuracy > 0.6 & validatePrevalence > 0.47 & validatePrevalence < 0.53) {
+  if (validateAccuracy > 0.6 &
+    validatePrevalence > 0.47 &
+    validatePrevalence < 0.53) {
     cat("\nCANDIDATE MODEL\n")
     logisticModel %>% print()
     print(trainResult)
@@ -156,9 +158,23 @@ for (j in 1:length(modelSearch@formulas)) {
   validatePrevalence <- validateResult$byClass['Prevalence']
   cat("Accuracy: ", validateAccuracy, "Prevalence: ", validatePrevalence, "\n")
 
-  if (validateAccuracy > 0.6 & validatePrevalence > 0.47 & validatePrevalence < 0.53) {
+  if (validateAccuracy > 0.6 &
+    validatePrevalence > 0.47 &
+    validatePrevalence < 0.53) {
     cat("\nCANDIDATE MODEL\n")
     print(validateResult)
+
+    testEffProb <- predict(currentModel, aspectViewTest, type = "response")
+    testEffPred <- ifelse(testEffProb > 0.5, "down", "up")
+    testResult <- table(
+      actualclass = as.character(aspectViewTest$Eff),
+      predictedclass = as.character(testEffPred)
+    ) %>%
+      confusionMatrix(positive = "up")
+
+    testAccuracy <- testResult$overall['Accuracy']
+    testPrevalence <- testResult$byClass['Prevalence']
+    cat("Accuracy: ", testAccuracy, "Prevalence: ", testPrevalence, "\n")
   }
 }
 
@@ -303,5 +319,5 @@ trainBestModelsEnsamble <- function(bestModels) {
 }
 
 if (selectModelsCount >= 2) {
-  trainBestModelsEnsamble(bestModels)
+  #trainBestModelsEnsamble(bestModels)
 }
