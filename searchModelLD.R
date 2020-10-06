@@ -40,7 +40,7 @@ selectCols <- c(
   #, 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
   , 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
   , 'VESU', 'VEMA', 'VEJU', 'VESA', 'VEUR', 'VENE', 'VEPL', 'VENN'
-  #, 'SUMA', 'SUJU', 'SUSA', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
+  , 'SUMA', 'SUJU', 'SUSA', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
   #,'MAJU', 'MASA', 'MAUR', 'MANE', 'MAPL'
   #,'JUSA'
 )
@@ -109,22 +109,22 @@ testLogisticModelFormula <- function(useFormula) {
   # Validate data predictions.
   aspectViewValidate$EffPred <- predict(logisticModel, aspectViewValidate, type = "raw")
 
-  testResult <- table(
+  validateResult <- table(
     actualclass = as.character(aspectViewValidate$Eff),
     predictedclass = as.character(aspectViewValidate$EffPred)
   ) %>%
     confusionMatrix(positive = "up")
   #print(testResult)
 
-  testAccuracy <- testResult$overall['Accuracy']
-  imbalance <- abs(testResult$byClass['Pos Pred Value'] - testResult$byClass['Neg Pred Value'])
+  validateAccuracy <- validateResult$overall['Accuracy']
+  validatePrevalence <- validateResult$byClass['Prevalence']
+  cat("Accuracy: ", validateAccuracy, "Prevalence: ", validatePrevalence, "\n")
 
-  cat("Accuracy=", testAccuracy, "\tAccuracy Diff=", imbalance, "\n", sep = "")
-  if (testAccuracy >= 0.6 & imbalance <= 0.1) {
+  if (validateAccuracy > 0.6 & validatePrevalence > 0.47 & validatePrevalence < 0.53) {
+    cat("\nCANDIDATE MODEL\n")
     logisticModel %>% print()
     print(trainResult)
-    print(testResult)
-
+    print(validateResult)
     return(logisticModel)
   }
 
@@ -175,8 +175,8 @@ for (j in 1:length(modelSearch@formulas)) {
 selectModelsCount <- length(bestModels)
 cat("\nSELECTED #", selectModelsCount, " models that passed criteria.\n\n")
 
-if (selectModelsCount >= 100) {
-  for (idx in 1:selectModelsCount) {
+trainBestModelsEnsamble <- function(bestModels) {
+  for (idx in 1:length(bestModels)) {
     # Outcome field name.
     fieldName <- paste('pup', idx, sep = "")
 
@@ -300,4 +300,8 @@ if (selectModelsCount >= 100) {
   # Experiment bestglm model search.
   #Xy <- aspectViewTrain[, ..selectCols]
   #bestglm(Xy, family=binomial, IC = "BICq")
+}
+
+if (selectModelsCount >= 2) {
+  trainBestModelsEnsamble(bestModels)
 }
