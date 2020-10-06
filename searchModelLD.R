@@ -36,11 +36,11 @@ aspectViewValidate <- aspectView[-trainIndex,]
 
 selectCols <- c(
   'Eff'
-  , 'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU'
-  , 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
-  #, 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
+  #, 'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU'
+  #, 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
+  , 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
   , 'VESU', 'VEMA', 'VEJU', 'VESA', 'VEUR', 'VENE', 'VEPL', 'VENN'
-  #, 'SUMA', 'SUJU', 'SUSA', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
+  , 'SUMA', 'SUJU', 'SUSA', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
   #,'MAJU', 'MASA', 'MAUR', 'MANE', 'MAPL'
   #,'JUSA'
 )
@@ -110,7 +110,7 @@ testLogisticModelFormula <- function(useFormula) {
   imbalance <- abs(testResult$byClass['Pos Pred Value'] - testResult$byClass['Neg Pred Value'])
 
   cat("Accuracy=", testAccuracy, "\tAccuracy Diff=", imbalance, "\n", sep="")
-  if (testAccuracy >= 0.6 & imbalance <= 0.10) {
+  if (testAccuracy >= 0.6 & imbalance <= 0.1) {
     logisticModel %>% print()
     print(trainResult)
     print(testResult)
@@ -134,12 +134,39 @@ selectModelsCount <- length(bestModels)
 cat("\nSELECTED #", selectModelsCount, " models that passed criteria.\n\n")
 
 if (selectModelsCount >= 2) {
+  # Validate with reserved data.
+  securityDataTest <- mainOpenSecurity(symbol, 2, 4, "%Y-%m-%d", "2020-08-01")
+  aspectViewTest <- merge(
+    securityDataTest,
+    dailyAspects,
+    by = "Date"
+  )
+
   for (idx in 1:selectModelsCount) {
-    trainEffUpProb <- predict(bestModels[[idx]], aspectViewTrain, type = "prob")$up
+    # Outcome field name.
     fieldName <- paste('pup', idx, sep = "")
+
+    # Train data.
+    trainEffUpProb <- predict(bestModels[[idx]], aspectViewTrain, type = "prob")$up
     aspectViewTrain[, c(fieldName) := trainEffUpProb]
-    testEffUpProb <- predict(bestModels[[idx]], aspectViewValidate, type = "prob")$up
-    aspectViewValidate[, c(fieldName) := testEffUpProb]
+
+    # Validate data.
+    validateEffUpProb <- predict(bestModels[[idx]], aspectViewValidate, type = "prob")$up
+    aspectViewValidate[, c(fieldName) := validateEffUpProb]
+
+    # Test data.
+    testEffUpProb <- predict(bestModels[[idx]], aspectViewTest, type = "prob")$up
+    aspectViewTest[, c(fieldName) := testEffUpProb]
+
+    # Validate test data accuracy.
+    testEffPred <- predict(bestModels[[idx]], aspectViewTest, type = "raw")
+
+    table(
+      actualclass = as.character(aspectViewTest$Eff),
+      predictedclass = as.character(testEffPred)
+    ) %>%
+      confusionMatrix(positive = "up") %>%
+      print()
   }
 
   probCols <- paste('pup', seq(1, length(bestModels)), sep = "")
@@ -162,21 +189,6 @@ if (selectModelsCount >= 2) {
   ) %>%
     confusionMatrix(positive = "up") %>%
     print()
-
-
-  # Validate with reserved data.
-  securityDataTest <- mainOpenSecurity(symbol, 2, 4, "%Y-%m-%d", "2020-08-01")
-  aspectViewTest <- merge(
-    securityDataTest,
-    dailyAspects,
-    by = "Date"
-  )
-
-  for (idx in 1:length(bestModels)) {
-    testEffUpProb <- predict(bestModels[[idx]], aspectViewTest, type = "prob")$up
-    fieldName <- paste('pup', idx, sep = "")
-    aspectViewTest[, c(fieldName) := testEffUpProb]
-  }
 
   # Final ensamble prediction.
   aspectViewTest$EffPred <- predict(ensambleModel, aspectViewTest, type = "raw")
