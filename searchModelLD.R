@@ -32,7 +32,7 @@ aspectView <- merge(
 
 trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.80, list = FALSE)
 aspectViewTrain <- aspectView[trainIndex,]
-aspecTViewValidate <- aspectView[-trainIndex,]
+aspectViewValidate <- aspectView[-trainIndex,]
 
 selectCols <- c(
   'Eff'
@@ -127,6 +127,18 @@ testLogisticModelFormula <- function(useFormula) {
     logisticModel %>% print()
     print(trainResult)
     print(validateResult)
+
+    cat("\nTEST SAMPLE VALIDATION\n")
+    # Validate test data accuracy.
+    testEffPred <- predict(logisticModel, aspectViewTest, type = "raw")
+
+    table(
+      actualclass = as.character(aspectViewTest$Eff),
+      predictedclass = as.character(testEffPred)
+    ) %>%
+      confusionMatrix(positive = "up") %>%
+      print()
+
     return(logisticModel)
   }
 
@@ -207,16 +219,6 @@ trainBestModelsEnsamble <- function(bestModels) {
     # Test data.
     testEffUpProb <- predict(bestModels[[idx]], aspectViewTest, type = "prob")$up
     aspectViewTest[, c(fieldName) := testEffUpProb]
-
-    # Validate test data accuracy.
-    validateEffPred <- predict(bestModels[[idx]], aspectViewTest, type = "raw")
-
-    table(
-      actualclass = as.character(aspectViewTest$Eff),
-      predictedclass = as.character(validateEffPred)
-    ) %>%
-      confusionMatrix(positive = "up") %>%
-      print()
   }
 
   probCols <- paste('pup', seq(1, length(bestModels)), sep = "")
