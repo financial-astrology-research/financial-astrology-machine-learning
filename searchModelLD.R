@@ -38,7 +38,7 @@ selectCols <- c(
   'Eff'
   , 'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU'
   , 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
-  , 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
+  #, 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
   , 'VESU', 'VEMA', 'VEJU', 'VESA', 'VEUR', 'VENE', 'VEPL', 'VENN'
   #, 'SUMA', 'SUJU', 'SUSA', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
   #,'MAJU', 'MASA', 'MAUR', 'MANE', 'MAPL'
@@ -104,12 +104,13 @@ testLogisticModelFormula <- function(useFormula) {
     predictedclass = as.character(aspectViewValidate$EffPred)
   ) %>%
     confusionMatrix(positive = "up")
+  #print(testResult)
 
   testAccuracy <- as.numeric(testResult$overall['Accuracy'])
-  balanceAccuracyDiff <- abs(testResult$overall['AccuracyLower'] - testResult$overall['AccuracyUpper'])
+  imbalance <- abs(testResult$byClass['Pos Pred Value'] - testResult$byClass['Neg Pred Value'])
 
-  cat("Accuracy=", testAccuracy, "\tAccuracy Diff=", balanceAccuracyDiff, "\n", sep="")
-  if (testAccuracy >= 0.6 & balanceAccuracyDiff <= 0.10) {
+  cat("Accuracy=", testAccuracy, "\tAccuracy Diff=", imbalance, "\n", sep="")
+  if (testAccuracy >= 0.6 & imbalance <= 0.10) {
     logisticModel %>% print()
 
     print(cbind(
