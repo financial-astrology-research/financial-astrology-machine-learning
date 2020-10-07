@@ -5,7 +5,6 @@
 library(boot)
 library(caret)
 library(psych)
-library(gbm)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
@@ -28,6 +27,7 @@ aspectView <- merge(
   dailyAspects, by = "Date"
 )
 
+# TODO: Experiment partition by price diff and increase to 0.80.
 trainIndex <- createDataPartition(aspectView$Actbin, p = 0.70, list = FALSE)
 aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
@@ -53,27 +53,31 @@ selectCols <- c(
 )
 
 control <- trainControl(
-  method = "cv", # 2 - fast
+  #method = "cv", # 2 - fast
   #method = "boot", # 2 - slow
   #method = "boot632", # 2 - slow
   #method = "optimism_boot", # 2 - very slow
   #method = "boot_all", # 2 - slow
-  #method = "LOOCV", # 2 - slow
-  #method = "LGOCV", # 2 - fast
+  #method = "LOOCV", # 2 - very slow
+  method = "LGOCV", # 2 - fast
   #method = "none", # 2 - very fast
   #method = "timeslice", # 2 - very slow
   #initialWindow = 30,
-  #horizon = 10,  number = 10,
-  number = 20,
+  #horizon = 10,
+  number = 10,
   savePredictions = "final",
   classProbs = T,
-  allowParallel = T
+  allowParallel = T,
+  verboseIter = T
 )
 
 fitModel <- train(
   formula(Actbin ~ .),
   data = aspectViewTrain[, ..selectCols],
-  method = "logreg",
+  # method = "logreg", # 0.54
+  # method = "adaboost", # 0.55
+  method = "cforest",
+  #mtry = 10,
   trControl = control,
   tuneLength = 3
 )
@@ -81,6 +85,7 @@ fitModel <- train(
 fitModel %>% summary()
 fitModel %>% print()
 fitModel %>% plot()
+fitModel %>% varImp()
 
 cat("--VALIDATE MODEL--\n\n")
 # Validate test data accuracy.
