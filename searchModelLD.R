@@ -11,7 +11,7 @@ library(metafor)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-dailyAspects <- dailyCombPlanetAspectsFactorsTable()
+dailyAspects <- dailyCombPlanetAspectsFactorsTable(orbLimit = 1)
 
 symbol <- "LINK-USD"
 securityData <- mainOpenSecurity(
@@ -36,11 +36,10 @@ aspectViewValidate <- aspectView[-trainIndex,]
 
 selectCols <- c(
   'Actbin'
-  #, 'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU'
-  #, 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
+  #, 'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU', 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
   , 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
-  , 'VESU', 'VEMA', 'VEJU', 'VESA', 'VEUR', 'VENE', 'VEPL', 'VENN'
-  #, 'SUMA', 'SUJU', 'SUSA', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
+  #, 'VESU', 'VEMA', 'VEJU', 'VESA', 'VEUR', 'VENE', 'VEPL', 'VENN'
+  , 'SUMA', 'SUJU', 'SUSA', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
   #,'MAJU', 'MASA', 'MAUR', 'MANE', 'MAPL'
   #,'JUSA'
 )
@@ -78,7 +77,7 @@ control <- trainControl(
 #method = "boot_all", # 2 - slow
 method = "cv", # 2 - fast
 number = 10,
-#method = "LOOCV", # 2 - slow
+#method = "LOOCV", # 2 - very slow
 #method = "LGOCV", # 2 - fast
 #method = "none", # 2 - very fast
 #method = "timeslice", # 2 - very slow
