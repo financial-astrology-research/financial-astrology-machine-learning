@@ -106,7 +106,7 @@ testLogisticModelFormula <- function(useFormula) {
     actualclass = as.character(aspectViewTrain$Actbin),
     predictedclass = as.character(aspectViewTrain$ActbinPred)
   ) %>%
-    confusionMatrix(positive = "up")
+    confusionMatrix(positive = "buy")
 
   # Validate data predictions.
   aspectViewValidate$ActbinPred <- predict(logisticModel, aspectViewValidate, type = "raw")
@@ -115,7 +115,7 @@ testLogisticModelFormula <- function(useFormula) {
     actualclass = as.character(aspectViewValidate$Actbin),
     predictedclass = as.character(aspectViewValidate$ActbinPred)
   ) %>%
-    confusionMatrix(positive = "up")
+    confusionMatrix(positive = "buy")
   #print(testResult)
 
   validateAccuracy <- validateResult$overall['Accuracy']
@@ -138,7 +138,7 @@ testLogisticModelFormula <- function(useFormula) {
       actualclass = as.character(aspectViewTest$Actbin),
       predictedclass = as.character(testActbinPred)
     ) %>%
-      confusionMatrix(positive = "up") %>%
+      confusionMatrix(positive = "buy") %>%
       print()
 
     return(logisticModel)
@@ -208,7 +208,7 @@ trainBestModelsEnsamble <- function(bestModels) {
     actualclass = as.character(aspectViewValidate$Actbin),
     predictedclass = as.character(aspectViewValidate$ActbinPred)
   ) %>%
-    confusionMatrix(positive = "up") %>%
+    confusionMatrix(positive = "buy") %>%
     print()
 
   # Final ensamble prediction.
@@ -218,7 +218,7 @@ trainBestModelsEnsamble <- function(bestModels) {
     actualclass = as.character(aspectViewTest$Actbin),
     predictedclass = as.character(aspectViewTest$ActbinPred)
   ) %>%
-    confusionMatrix(positive = "up") %>%
+    confusionMatrix(positive = "buy") %>%
     print()
 
   #useFormula <- modelSearch@formulas[[1]]
@@ -289,4 +289,4 @@ trainBestModelsEnsamble <- function(bestModels) {
   #bestglm(Xy, family=binomial, IC = "BICq")
 }
 
-trainBestModelsEnsamble(bestModels)
+#trainBestModelsEnsamble(bestModels)
