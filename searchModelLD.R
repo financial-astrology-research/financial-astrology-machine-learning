@@ -35,7 +35,7 @@ aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
 
 selectCols <- c(
-  'Eff'
+  'Actbin'
   #, 'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU'
   #, 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
   , 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
@@ -46,7 +46,7 @@ selectCols <- c(
 )
 
 modelSearch <- glmulti(
-  y = "Eff",
+  y = "Actbin",
   xr = selectCols[c(-1)],
   #exclude=c("sp.y", "sp.x", "dc.x", "dc.y"),
   data = aspectViewTrain[, ..selectCols],
@@ -67,11 +67,6 @@ modelSearch <- glmulti(
 
 plot(modelSearch, type = "s")
 
-#myTimeControl <- trainControl(method = "timeslice",
-#                              initialWindow = 36,
-#                              horizon = 12,
-#                              fixedWindow = TRUE)
-#
 #plsFitTime <- train(unemploy ~ pce + pop + psavert,
 #                    data = economics,
 #                    method = "pls",
@@ -108,19 +103,19 @@ testLogisticModelFormula <- function(useFormula) {
 
   #logisticModel1 %>% summary()
 
-  aspectViewTrain$EffPred <- predict(logisticModel, aspectViewTrain, type = "raw")
+  aspectViewTrain$ActbinPred <- predict(logisticModel, aspectViewTrain, type = "raw")
   trainResult <- table(
-    actualclass = as.character(aspectViewTrain$Eff),
-    predictedclass = as.character(aspectViewTrain$EffPred)
+    actualclass = as.character(aspectViewTrain$Actbin),
+    predictedclass = as.character(aspectViewTrain$ActbinPred)
   ) %>%
     confusionMatrix(positive = "up")
 
   # Validate data predictions.
-  aspectViewValidate$EffPred <- predict(logisticModel, aspectViewValidate, type = "raw")
+  aspectViewValidate$ActbinPred <- predict(logisticModel, aspectViewValidate, type = "raw")
 
   validateResult <- table(
-    actualclass = as.character(aspectViewValidate$Eff),
-    predictedclass = as.character(aspectViewValidate$EffPred)
+    actualclass = as.character(aspectViewValidate$Actbin),
+    predictedclass = as.character(aspectViewValidate$ActbinPred)
   ) %>%
     confusionMatrix(positive = "up")
   #print(testResult)
@@ -139,11 +134,11 @@ testLogisticModelFormula <- function(useFormula) {
 
     cat("\nTEST SAMPLE VALIDATION\n")
     # Validate test data accuracy.
-    testEffPred <- predict(logisticModel, aspectViewTest, type = "raw")
+    testActbinPred <- predict(logisticModel, aspectViewTest, type = "raw")
 
     table(
-      actualclass = as.character(aspectViewTest$Eff),
-      predictedclass = as.character(testEffPred)
+      actualclass = as.character(aspectViewTest$Actbin),
+      predictedclass = as.character(testActbinPred)
     ) %>%
       confusionMatrix(positive = "up") %>%
       print()
@@ -185,22 +180,22 @@ trainBestModelsEnsamble <- function(bestModels) {
     fieldName <- paste('pup', idx, sep = "")
 
     # Train data.
-    trainEffUpProb <- predict(bestModels[[idx]], aspectViewTrain, type = "prob")$up
-    aspectViewTrain[, c(fieldName) := trainEffUpProb]
+    trainActbinUpProb <- predict(bestModels[[idx]], aspectViewTrain, type = "prob")$up
+    aspectViewTrain[, c(fieldName) := trainActbinUpProb]
 
     # Validate data.
-    validateEffUpProb <- predict(bestModels[[idx]], aspectViewValidate, type = "prob")$up
-    aspectViewValidate[, c(fieldName) := validateEffUpProb]
+    validateActbinUpProb <- predict(bestModels[[idx]], aspectViewValidate, type = "prob")$up
+    aspectViewValidate[, c(fieldName) := validateActbinUpProb]
 
     # Test data.
-    testEffUpProb <- predict(bestModels[[idx]], aspectViewTest, type = "prob")$up
-    aspectViewTest[, c(fieldName) := testEffUpProb]
+    testActbinUpProb <- predict(bestModels[[idx]], aspectViewTest, type = "prob")$up
+    aspectViewTest[, c(fieldName) := testActbinUpProb]
   }
 
   probCols <- paste('pup', seq(1, length(bestModels)), sep = "")
   ensambleModel <- train(
     x = aspectViewTrain[, ..probCols],
-    y = aspectViewTrain$Eff,
+    y = aspectViewTrain$Actbin,
     method = "gbm",
     trControl = control,
     tuneLength = 3
@@ -209,21 +204,21 @@ trainBestModelsEnsamble <- function(bestModels) {
   ensambleModel %>% summary()
 
   # Validate data predictions.
-  aspectViewValidate$EffPred <- predict(ensambleModel, aspectViewValidate, type = "raw")
+  aspectViewValidate$ActbinPred <- predict(ensambleModel, aspectViewValidate, type = "raw")
 
   table(
-    actualclass = as.character(aspectViewValidate$Eff),
-    predictedclass = as.character(aspectViewValidate$EffPred)
+    actualclass = as.character(aspectViewValidate$Actbin),
+    predictedclass = as.character(aspectViewValidate$ActbinPred)
   ) %>%
     confusionMatrix(positive = "up") %>%
     print()
 
   # Final ensamble prediction.
-  aspectViewTest$EffPred <- predict(ensambleModel, aspectViewTest, type = "raw")
+  aspectViewTest$ActbinPred <- predict(ensambleModel, aspectViewTest, type = "raw")
 
   table(
-    actualclass = as.character(aspectViewTest$Eff),
-    predictedclass = as.character(aspectViewTest$EffPred)
+    actualclass = as.character(aspectViewTest$Actbin),
+    predictedclass = as.character(aspectViewTest$ActbinPred)
   ) %>%
     confusionMatrix(positive = "up") %>%
     print()
@@ -242,10 +237,10 @@ trainBestModelsEnsamble <- function(bestModels) {
   #
   #rfModel %>% print()
   #
-  #aspectViewTrain$EffPred <- predict(rfModel, aspectViewTrain, type = "raw")
+  #aspectViewTrain$ActbinPred <- predict(rfModel, aspectViewTrain, type = "raw")
   #testResult <- table(
-  #  actualclass = as.character(aspectViewTrain$Eff),
-  #  predictedclass = as.character(aspectViewTrain$EffPred)
+  #  actualclass = as.character(aspectViewTrain$Actbin),
+  #  predictedclass = as.character(aspectViewTrain$ActbinPred)
   #) %>%
   #  confusionMatrix(positive = "up")
   #print(cbind(
@@ -253,11 +248,11 @@ trainBestModelsEnsamble <- function(bestModels) {
   #))
   #
   ## Validate data predictions.
-  #aspectViewValidate$EffPred <- predict(rfModel, aspectViewValidate, type = "raw")
+  #aspectViewValidate$ActbinPred <- predict(rfModel, aspectViewValidate, type = "raw")
   #
   #table(
-  #  actualclass = as.character(aspectViewValidate$Eff),
-  #  predictedclass = as.character(aspectViewValidate$EffPred)
+  #  actualclass = as.character(aspectViewValidate$Actbin),
+  #  predictedclass = as.character(aspectViewValidate$ActbinPred)
   #) %>%
   #  confusionMatrix(positive = "up") %>%
   #  print()
@@ -273,20 +268,20 @@ trainBestModelsEnsamble <- function(bestModels) {
   #knnModel %>% print()
   ##logisticModel1 %>% summary()
   #
-  #aspectViewTrain$EffPred <- predict(knnModel, aspectViewTrain, type = "raw")
+  #aspectViewTrain$ActbinPred <- predict(knnModel, aspectViewTrain, type = "raw")
   #table(
-  #  actualclass = as.character(aspectViewTrain$Eff),
-  #  predictedclass = as.character(aspectViewTrain$EffPred)
+  #  actualclass = as.character(aspectViewTrain$Actbin),
+  #  predictedclass = as.character(aspectViewTrain$ActbinPred)
   #) %>%
   #  confusionMatrix(positive = "up") %>%
   #  print()
   #
   ## Validate data predictions.
-  #aspectViewValidate$EffPred <- predict(knnModel, aspectViewValidate, type = "raw")
+  #aspectViewValidate$ActbinPred <- predict(knnModel, aspectViewValidate, type = "raw")
   #
   #table(
-  #  actualclass = as.character(aspectViewValidate$Eff),
-  #  predictedclass = as.character(aspectViewValidate$EffPred)
+  #  actualclass = as.character(aspectViewValidate$Actbin),
+  #  predictedclass = as.character(aspectViewValidate$ActbinPred)
   #) %>%
   #  confusionMatrix(positive = "up") %>%
   #  print()

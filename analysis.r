@@ -267,6 +267,7 @@ mainOpenSecurity <- function(securityfile, mapricefs=20, mapricesl=50, dateforma
 
   security <- security[!is.na(val)]
   security[, Eff := cut(val, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
+  security[, Actbin := cut(diffPercent, c(-10000, 0, 10000), labels=c('sell', 'buy'), right=FALSE)]
 
   # Take data starting from sdate
   security <- security[Date >= sdate & Date <= edate,]
