@@ -55,10 +55,25 @@ setClassicAspectsSet5 <- function() {
 }
 
 setClassicAspectsSet6 <- function() {
+  aspects <<- c(0, 30, 45, 60, 90, 120, 135, 150, 180)
+  aspectsEnergy <<- c(2, 2, 2, 2, 2, 2, 2, 2, 2)
+  deforbs <<- c(12, 5, 7, 5, 10, 5, 7, 7, 12)
+  defpolarities <<- c(2, 1, 0, 1, 0, 1, 0, 0, 0)
+}
+
+setClassicAspectsSet7 <- function() {
   aspects <<- c(0, 30, 45, 60, 90, 120, 150, 180)
   aspectsEnergy <<- c(2, 2, 2, 2, 2, 2, 2, 2)
   deforbs <<- c(12, 5, 7, 5, 10, 5, 7, 12)
   defpolarities <<- c(2, 1, 0, 1, 0, 1, 0, 0)
+}
+
+# Limit orbs to 2 degrees which is the max strength.
+setClassicAspectsSet8 <- function() {
+  aspects <<- c(0, 30, 45, 60, 90, 120, 135, 150, 180)
+  aspectsEnergy <<- c(2, 2, 2, 2, 2, 2, 2, 2)
+  deforbs <<- c(3, 3, 3, 3, 3, 3, 3, 3, 3)
+  defpolarities <<- c(2, 1, 0, 1, 0, 1, 0, 0, 0)
 }
 
 setModernAspectsSet2 <- function() {

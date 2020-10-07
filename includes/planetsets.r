@@ -12,6 +12,7 @@ buildPlanetsColsNames <- function(planetsBaseCols) {
   planetsSpCols <<- paste(planetsBaseCols, 'SP', sep='')
   planetsSpGCols <<- paste(planetsSpCols, "G", sep="")
   planetsComb <<- combn(planetsBaseCols, 2, simplify=F)
+  planetsCombBase <<- as.character(lapply(planetsComb, function(x) paste(x[1], x[2], sep='')))
   planetsCombLon <<- as.character(lapply(planetsComb, function(x) paste(x[1], x[2], 'LON', sep='')))
   planetsCombAsp <<- as.character(lapply(planetsComb, function(x) paste(x[1], x[2], 'ASP', sep='')))
   planetsCombOrb <<- as.character(lapply(planetsComb, function(x) paste(x[1], x[2], 'ORB', sep='')))

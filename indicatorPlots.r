@@ -653,7 +653,7 @@ dailyAspectsNameCols <- function(dailyAspects) {
   return(dailyAspects)
 }
 
-dailyHourlyAspectsTablePrepare <- function(hourlyPlanets, idCols) {
+dailyHourlyAspectsTablePrepare <- function(hourlyPlanets, idCols, orbLimit = NULL) {
   hourlyPlanetsRange <- hourlyPlanets[Date >= as.Date("2017-01-01") & Date <= as.Date("2021-06-30")]
   # Melt aspects.
   hourlyAspects <- melt(
@@ -666,6 +666,11 @@ dailyHourlyAspectsTablePrepare <- function(hourlyPlanets, idCols) {
   setkey(hourlyAspects, 'Date', 'Hour')
 
   hourlyAspects <- dailyAspectsAddOrbs(hourlyAspects, hourlyPlanetsRange, idCols)
+
+  if (!is.null(orbLimit)) {
+    hourlyAspects <- hourlyAspects[orb <= orbLimit,]
+  }
+
   dailyAspects <- hourlyAspectsDateAggregate(hourlyAspects)
   dailyAspects <- dailyAspectsAddOrbsDir(dailyAspects)
   dailyAspects <- dailyAspectsAddLongitude(dailyAspects, hourlyPlanetsRange, idCols)
@@ -1330,13 +1335,12 @@ prepareHourlyAspectsModelLC <- function() {
   return(dailyAspectsPlanetCumulativeEnergyWide)
 }
 
-dailyCombPlanetAspectsFactorsTable <- function() {
+dailyCombPlanetAspectsFactorsTable <- function(orbLimit = 2) {
   idCols <- c('Date', 'Hour')
-  # Limit orb to 2 degrees which is the maximum strength of the effect.
   setClassicAspectsSet8()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
-  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols)
+  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
 
   # Filter minor MO aspects that can overlap multiples to same target planet
   # in the same day and should not be significant in effect.
@@ -1357,6 +1361,9 @@ dailyCombPlanetAspectsFactorsTable <- function() {
     fill = "none"
   )
   setDT(dailyAspectsWide)
+
+  aspectsCols <- names(dailyAspectsWide)[-1]
+  dailyAspectsWide[, c(aspectsCols) := lapply(.SD, as.factor), .SDcols=aspectsCols]
 
   return(dailyAspectsWide)
 }
