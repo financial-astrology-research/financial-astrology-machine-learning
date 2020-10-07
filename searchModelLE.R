@@ -28,54 +28,14 @@ aspectView <- merge(
   dailyAspects, by = "Date"
 )
 
-trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.70, list = FALSE)
+trainIndex <- createDataPartition(aspectView$Actbin, p = 0.70, list = FALSE)
 aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
 
-selectCols <- c(
-  'Eff'
-  #, 'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU'
-  #, 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
-  , 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
-  , 'VESU', 'VEMA', 'VEJU', 'VESA', 'VEUR', 'VENE', 'VEPL', 'VENN'
-  #, 'SUMA', 'SUJU', 'SUSA', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
-  #,'MAJU', 'MASA', 'MAUR', 'MANE', 'MAPL'
-  #,'JUSA'
-)
-
-control <- trainControl(
-# method = "boot",
-#method = "boot632",
-#method = "optimism_boot",
-#method = "boot_all", # none
-method = "cv", # none
-#method = "LOOCV",
-# method = "LGOCV",
-# method = "none",
-# method = "timeslice",
-# method = "adaptive_cv",
-# method = "adaptive_boot",
-# method = "adaptive_LGOCV",
-#initialWindow = 30,
-#horizon = 10,
-number = 10,
-savePredictions = "final",
-classProbs = T,
-allowParallel = T
-)
-
-fitModel <- train(
-  formula(Eff ~ .),
-  data = aspectViewTrain[, ..selectCols],
-  method = "glm",
-  trControl = control,
-  tuneLength = 3
-)
-
-#  Reserved data for final test.
+#  Reserved data for final test, skip a week to avoid timeserie memory.
 securityDataTest <- mainOpenSecurity(
   symbol, 2, 4,
-  "%Y-%m-%d", "2020-08-01"
+  "%Y-%m-%d", "2020-08-08"
 )
 
 aspectViewTest <- merge(
@@ -84,22 +44,59 @@ aspectViewTest <- merge(
   by = "Date"
 )
 
+selectCols <- c(
+  'Actbin'
+  , 'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU', 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
+  , 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
+  , 'VESU', 'VEMA', 'VEJU', 'VESA', 'VEUR', 'VENE', 'VEPL', 'VENN'
+  , 'SUMA', 'SUJU', 'SUSA', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
+)
+
+control <- trainControl(
+  #method = "cv", # 2 - fast
+  #method = "boot", # 2 - slow
+  #method = "boot632", # 2 - slow
+  #method = "optimism_boot", # 2 - very slow
+  #method = "boot_all", # 2 - slow
+  #method = "LOOCV", # 2 - slow
+  method = "LGOCV", # 2 - fast
+  #method = "none", # 2 - very fast
+  #method = "timeslice", # 2 - very slow
+  #initialWindow = 30,
+  #horizon = 10,  number = 10,
+  number = 10,
+  savePredictions = "final",
+  classProbs = T,
+  allowParallel = T
+)
+
+fitModel <- train(
+  formula(Actbin ~ .),
+  data = aspectViewTrain[, ..selectCols],
+  method = "binda",
+  trControl = control,
+  tuneLength = 3
+)
+
+fitModel %>% summary()
+fitModel %>% plot()
+
 cat("--VALIDATE MODEL--\n\n")
 # Validate test data accuracy.
-validateEffPred <- predict(fitModel, aspectViewValidate, type = "raw")
+validateActbinPred <- predict(fitModel, aspectViewValidate, type = "raw")
 validateResult <- table(
-  actualclass = as.character(aspectViewValidate$Eff),
-  predictedclass = as.character(validateEffPred)
+  actualclass = as.character(aspectViewValidate$Actbin),
+  predictedclass = as.character(validateActbinPred)
 ) %>%
-  confusionMatrix(positive = "up")
+  confusionMatrix(positive = "buy")
 print(validateResult)
 
 cat("--TEST MODEL--\n\n")
 # Validate test data accuracy.
-testEffPred <- predict(fitModel, aspectViewTest, type = "raw")
+testActbinPred <- predict(fitModel, aspectViewTest, type = "raw")
 testResult <- table(
-  actualclass = as.character(aspectViewTest$Eff),
-  predictedclass = as.character(testEffPred)
+  actualclass = as.character(aspectViewTest$Actbin),
+  predictedclass = as.character(testActbinPred)
 ) %>%
-  confusionMatrix(positive = "up")
+  confusionMatrix(positive = "buy")
 print(testResult)
