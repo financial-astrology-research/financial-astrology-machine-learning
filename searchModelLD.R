@@ -13,10 +13,10 @@ source("./indicatorPlots.r")
 
 dailyAspects <- dailyCombPlanetAspectsFactorsTable()
 
-symbol <- "BAT-USD"
+symbol <- "LINK-USD"
 securityData <- mainOpenSecurity(
-  symbol, 2, 4, "%Y-%m-%d",
-  "2010-01-01", "2020-06-30"
+  symbol, 2, 4,
+  "%Y-%m-%d", "2010-01-01", "2020-07-31"
 )
 
 # Filter the extreme outliers.
@@ -30,7 +30,7 @@ aspectView <- merge(
   dailyAspects, by = "Date"
 )
 
-trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.80, list = FALSE)
+trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.70, list = FALSE)
 aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
 
@@ -40,7 +40,7 @@ selectCols <- c(
   #, 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
   , 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
   , 'VESU', 'VEMA', 'VEJU', 'VESA', 'VEUR', 'VENE', 'VEPL', 'VENN'
-  , 'SUMA', 'SUJU', 'SUSA', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
+  #, 'SUMA', 'SUJU', 'SUSA', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
   #,'MAJU', 'MASA', 'MAUR', 'MANE', 'MAPL'
   #,'JUSA'
 )
@@ -79,12 +79,23 @@ plot(modelSearch, type = "s")
 #                    trControl = myTimeControl)
 
 control <- trainControl(
-  method = "timeslice",
-  initialWindow = 30,
-  horizon = 10,
-  savePredictions = "final",
-  classProbs = T,
-  allowParallel = T
+# method = "boot",
+#method = "boot632",
+#method = "optimism_boot",
+#method = "boot_all", # none
+#method = "cv", # none
+method = "LOOCV",
+# method = "LGOCV",
+# method = "none",
+# method = "timeslice",
+# method = "adaptive_cv",
+# method = "adaptive_boot",
+# method = "adaptive_LGOCV",
+#initialWindow = 30,
+#horizon = 10,
+savePredictions = "final",
+classProbs = T,
+allowParallel = T
 )
 
 testLogisticModelFormula <- function(useFormula) {
@@ -146,7 +157,11 @@ testLogisticModelFormula <- function(useFormula) {
 }
 
 #  Reserved data for final test.
-securityDataTest <- mainOpenSecurity(symbol, 2, 4, "%Y-%m-%d", "2020-08-01")
+securityDataTest <- mainOpenSecurity(
+  symbol, 2, 4,
+  "%Y-%m-%d", "2020-08-01"
+)
+
 aspectViewTest <- merge(
   securityDataTest,
   dailyAspects,
