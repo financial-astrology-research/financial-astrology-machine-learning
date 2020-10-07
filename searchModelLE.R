@@ -53,18 +53,18 @@ selectCols <- c(
 )
 
 control <- trainControl(
-  #method = "cv", # 2 - fast
+  method = "cv", # 2 - fast
   #method = "boot", # 2 - slow
   #method = "boot632", # 2 - slow
   #method = "optimism_boot", # 2 - very slow
   #method = "boot_all", # 2 - slow
   #method = "LOOCV", # 2 - slow
-  method = "LGOCV", # 2 - fast
+  #method = "LGOCV", # 2 - fast
   #method = "none", # 2 - very fast
   #method = "timeslice", # 2 - very slow
   #initialWindow = 30,
   #horizon = 10,  number = 10,
-  number = 10,
+  number = 20,
   savePredictions = "final",
   classProbs = T,
   allowParallel = T
@@ -73,12 +73,13 @@ control <- trainControl(
 fitModel <- train(
   formula(Actbin ~ .),
   data = aspectViewTrain[, ..selectCols],
-  method = "binda",
+  method = "logreg",
   trControl = control,
   tuneLength = 3
 )
 
 fitModel %>% summary()
+fitModel %>% print()
 fitModel %>% plot()
 
 cat("--VALIDATE MODEL--\n\n")
