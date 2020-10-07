@@ -79,7 +79,7 @@ plot(modelSearch, type = "s")
 #                    trControl = myTimeControl)
 
 control <- trainControl(
-#method = "boot", # 2 - fast
+method = "boot", # 2 - fast
 #method = "boot632", # 2 - slow
 #method = "optimism_boot", # 2 - very slow
 #method = "boot_all", # 2 - slow
@@ -87,9 +87,9 @@ control <- trainControl(
 #method = "LOOCV", # 2 - slow
 #method = "LGOCV", # 2 - fast
 #method = "none", # 2 - very fast
-method = "timeslice", # 2 - very slow
-initialWindow = 30,
-horizon = 10,
+#method = "timeslice", # 2 - very slow
+#initialWindow = 30,
+#horizon = 10,
 savePredictions = "final",
 classProbs = T,
 allowParallel = T
@@ -164,43 +164,6 @@ aspectViewTest <- merge(
   dailyAspects,
   by = "Date"
 )
-
-cat("--VALIDATE RAW MODELS--\n\n")
-for (j in 1:length(modelSearch@formulas)) {
-  # Validate test data accuracy.
-  currentModel <- modelSearch@objects[[j]]
-  validateEffProb <- predict(currentModel, aspectViewValidate, type = "response")
-  validateEffPred <- ifelse(validateEffProb > 0.5, "down", "up")
-
-  validateResult <- table(
-    actualclass = as.character(aspectViewValidate$Eff),
-    predictedclass = as.character(validateEffPred)
-  ) %>%
-    confusionMatrix(positive = "up")
-
-  validateAccuracy <- validateResult$overall['Accuracy']
-  validatePrevalence <- validateResult$byClass['Prevalence']
-  cat("Accuracy: ", validateAccuracy, "Prevalence: ", validatePrevalence, "\n")
-
-  if (validateAccuracy > 0.6 &
-    validatePrevalence > 0.47 &
-    validatePrevalence < 0.53) {
-    cat("\nCANDIDATE MODEL\n")
-    print(validateResult)
-
-    testEffProb <- predict(currentModel, aspectViewTest, type = "response")
-    testEffPred <- ifelse(testEffProb > 0.5, "down", "up")
-    testResult <- table(
-      actualclass = as.character(aspectViewTest$Eff),
-      predictedclass = as.character(testEffPred)
-    ) %>%
-      confusionMatrix(positive = "up")
-
-    testAccuracy <- testResult$overall['Accuracy']
-    testPrevalence <- testResult$byClass['Prevalence']
-    cat("Accuracy: ", testAccuracy, "Prevalence: ", testPrevalence, "\n")
-  }
-}
 
 cat("--TRAIN BEST FORMULAS WITH TIME SLICES CONTROL--\n\n")
 bestModels <- list()
@@ -332,4 +295,4 @@ trainBestModelsEnsamble <- function(bestModels) {
   #bestglm(Xy, family=binomial, IC = "BICq")
 }
 
-#trainBestModelsEnsamble(bestModels)
+trainBestModelsEnsamble(bestModels)
