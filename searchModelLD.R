@@ -79,11 +79,12 @@ plot(modelSearch, type = "s")
 #                    trControl = myTimeControl)
 
 control <- trainControl(
-method = "boot", # 2 - fast
+#method = "boot", # 2 - slow
 #method = "boot632", # 2 - slow
 #method = "optimism_boot", # 2 - very slow
 #method = "boot_all", # 2 - slow
-#method = "cv", # 2 - fast
+method = "cv", # 2 - fast
+number = 10,
 #method = "LOOCV", # 2 - slow
 #method = "LGOCV", # 2 - fast
 #method = "none", # 2 - very fast
