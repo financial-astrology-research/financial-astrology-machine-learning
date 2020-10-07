@@ -154,10 +154,10 @@ testLogisticModelFormula <- function(useFormula) {
   return(FALSE)
 }
 
-#  Reserved data for final test.
+#  Reserved data for final test, skip one week to avoid any timeseries memory.
 securityDataTest <- mainOpenSecurity(
   symbol, 2, 4,
-  "%Y-%m-%d", "2020-08-01"
+  "%Y-%m-%d", "2020-08-08"
 )
 
 aspectViewTest <- merge(
