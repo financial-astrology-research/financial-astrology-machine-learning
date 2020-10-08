@@ -61,11 +61,12 @@ control <- trainControl(
   #method = "boot_all", # 2 - slow
   #method = "LOOCV", # 2 - very slow
   method = "LGOCV", # 2 - fast
-  #method = "none", # 2 - very fast
+  # method = "none", # 2 - very fast
   #method = "timeslice", # 2 - very slow
   #initialWindow = 30,
   #horizon = 10,
-  number = 10,
+  search = "random",
+  number = 5,
   savePredictions = "final",
   classProbs = T,
   allowParallel = T,
@@ -195,9 +196,9 @@ fitModel <- train(
   # method = "xgbTree", # 0.45
   # method = "extraTrees", # N/A JAVA errors
   # TODO: Continue with 7.0.9 (Discrete Weighted Discriminant)
-  #mtry = 10,
   trControl = control,
-  tuneLength = 3
+  # tuneLength = 10,
+  tuneGrid = expand.grid(predFixed = c(70, 90, 120), minNode = c(3, 5, 9))
 )
 
 fitModel$finalModel %>% summary()
