@@ -74,34 +74,34 @@ control <- trainControl(
 fitModel <- train(
   formula(Actbin ~ .),
   data = aspectViewTrain[, ..selectCols],
-  # method = "AdaBag",
-  # method = "BstLm",
-  # method = "C5.0",
-  # method = "C5.0Cost",
-  # method = "C5.0Rules",
-  # method = "C5.0Tree",
-  # method = "Linda",
-  # method = "LogitBoost",
+  # method = "AdaBag", # 0.51
+  # method = "BstLm", # N/A predict error
+  # method = "C5.0", # 0.52
+  # method = "C5.0Cost", # 0.52
+  # method = "C5.0Rules", # 0.52
+  # method = "C5.0Tree", # 0.52
+  # method = "Linda", # 0.53
+  # method = "LogitBoost", # 0.50
   # method = "ORFlog", # 0.53
   # method = "ORFpls", # 0.50
   # method = "ORFridge", # 0.5
   # method = "ORFsvm", # N/A
-  # method = "PenalizedLDA",
-  # method = "QdaCov",
-  # method = "RFlda",
-  # method = "RRF",
+  # method = "PenalizedLDA", # Needs penalty function.
+  # method = "QdaCov", # N/A failed resample error.
+  # method = "RFlda", # 0.52
+  # method = "RRF", # 0.53
   # method = "RRFglobal",
   # method = "Rborist", # 0.60
-  # method = "ada",
+  # method = "ada", # 0.44
   # method = "adaboost", # 0.55
   # method = "amdai", # package N/A 3.6.3
-  # method = "avNNet",
-  # method = "awnb",
-  # method = "awtan",
-  # method = "bag",
-  # method = "bagEarth",
-  # method = "bagEarthGCV",
-  # method = "bagFDA",
+  # method = "avNNet", # 0.54
+  # method = "awnb", # N/A failed are factors not true error.
+  # method = "awtan", # N/A failed are factors not true error.
+  # method = "bag", # N/A needs bagControl function.
+  # method = "bagEarth", # 0.47
+  # method = "bagEarthGCV", # 0.46
+  method = "bagFDA",
   # method = "bartMachine",
   # method = "bayesglm",
   # method = "binda", # 0.52
@@ -193,13 +193,14 @@ fitModel <- train(
   # method = "xgbDART",
   # method = "xgbLinear",
   # method = "xgbTree",
-  method = "extraTrees",
+  # method = "extraTrees", # N/A JAVA errors
   # TODO: Continue with 7.0.9 (Discrete Weighted Discriminant)
   #mtry = 10,
   trControl = control,
   tuneLength = 3
 )
 
+fitModel$finalModel %>% summary()
 fitModel %>% summary()
 fitModel %>% print()
 fitModel %>% plot()
