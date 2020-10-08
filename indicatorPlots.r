@@ -1335,7 +1335,7 @@ prepareHourlyAspectsModelLC <- function() {
   return(dailyAspectsPlanetCumulativeEnergyWide)
 }
 
-dailyCombPlanetAspectsFactorsTable <- function(orbLimit = 2) {
+dailyCombPlanetAspectsFactorsTable <- function(orbLimit = 2, aspectFilter = c()) {
   idCols <- c('Date', 'Hour')
   setClassicAspectsSet8()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
@@ -1348,10 +1348,46 @@ dailyCombPlanetAspectsFactorsTable <- function(orbLimit = 2) {
   dailyAspects <- dailyAspects[p.x == "MO" & aspect == 30, filter := T]
   dailyAspects <- dailyAspects[p.x == "MO" & aspect == 45, filter := T]
   dailyAspects <- dailyAspects[p.x == "MO" & aspect == 135, filter := T]
+  dailyAspects <- dailyAspects[aspect %in% aspectFilter, filter := T]
   dailyAspects <- dailyAspects[filter != T,]
 
   # Convert numeric aspects to categorical (factors).
   dailyAspects <- dailyAspects[, aspect := paste("a", aspect, sep="")]
+
+  # Arrange aspects factors as table wide format.
+  dailyAspectsWide <- dcast(
+    dailyAspects,
+    Date ~ origin,
+    value.var = "aspect",
+    fill = "none"
+  )
+  setDT(dailyAspectsWide)
+
+  aspectsCols <- names(dailyAspectsWide)[-1]
+  dailyAspectsWide[, c(aspectsCols) := lapply(.SD, as.factor), .SDcols=aspectsCols]
+
+  return(dailyAspectsWide)
+}
+
+dailyCombPlanetAspectsFactorsTableLE <- function(orbLimit = 2, aspectFilter = c()) {
+  idCols <- c('Date', 'Hour')
+  setClassicAspectsSet8()
+  # Using modern aspects do not improved ModelLE accuracy and caused more frequent
+  # trained model binary classification imbalance.
+  # setModernAspectsSet5()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+
+  # Filter minor MO aspects that can overlap multiples to same target planet
+  # in the same day and should not be significant in effect.
+  dailyAspects$filter <- F
+  dailyAspects <- dailyAspects[p.x == "MO", filter := T]
+  dailyAspects <- dailyAspects[aspect %in% aspectFilter, filter := T]
+  dailyAspects <- dailyAspects[filter != T,]
+
+  # Convert numeric aspects to categorical (factors).
+  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep=""))]
 
   # Arrange aspects factors as table wide format.
   dailyAspectsWide <- dcast(

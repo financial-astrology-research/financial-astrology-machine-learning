@@ -9,7 +9,8 @@ source("./analysis.r")
 source("./indicatorPlots.r")
 
 aspectFilter <- c()
-dailyAspects <- dailyCombPlanetAspectsFactorsTable(orbLimit = 2, aspectFilter =  aspectFilter)
+# dailyAspects <- dailyCombPlanetAspectsFactorsTable(orbLimit = 2, aspectFilter =  aspectFilter)
+dailyAspects <- dailyCombPlanetAspectsFactorsTableLE(orbLimit = 2, aspectFilter =  aspectFilter)
 
 symbol <- "LINK-USD"
 securityData <- mainOpenSecurity(
@@ -47,10 +48,12 @@ aspectViewTest <- merge(
 
 selectCols <- c(
   'Actbin'
-  , 'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU', 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
-  , 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
-  , 'VESU', 'VEMA', 'VEJU', 'VESA', 'VEUR', 'VENE', 'VEPL', 'VENN'
-  , 'SUMA', 'SUJU', 'SUSA', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
+  #, 'MOME', 'MOVE', 'MOSU', 'MOMA'
+  # 'MOJU', 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
+  , 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL'
+  , 'VESU', 'VEMA', 'VEJU', 'VESA', 'VEUR', 'VENE', 'VEPL'
+  , 'SUMA', 'SUJU', 'SUSA', 'SUUR', 'SUNE', 'SUPL'
+  #, 'MAJU', 'MASA', 'MAUR', 'MANE', 'MAPL'
 )
 
 control <- trainControl(
@@ -58,15 +61,14 @@ control <- trainControl(
   #method = "boot", # 2 - slow
   #method = "boot632", # 2 - slow
   #method = "optimism_boot", # 2 - very slow
-  #method = "boot_all", # 2 - slow
+  method = "boot_all", # 2 - slow
   #method = "LOOCV", # 2 - very slow
-  method = "LGOCV", # 2 - fast
+  #method = "LGOCV", # 2 - fast
   # method = "none", # 2 - very fast
   #method = "timeslice", # 2 - very slow
   #initialWindow = 30,
   #horizon = 10,
-  search = "random",
-  number = 5,
+  number = 3,
   savePredictions = "final",
   classProbs = T,
   allowParallel = T,
@@ -198,7 +200,7 @@ fitModel <- train(
   # TODO: Continue with 7.0.9 (Discrete Weighted Discriminant)
   trControl = control,
   # tuneLength = 10,
-  tuneGrid = expand.grid(predFixed = c(70, 90, 120), minNode = c(3, 5, 9))
+  tuneGrid = expand.grid(predFixed = c(100, 120), minNode = 10)
 )
 
 fitModel$finalModel %>% summary()
