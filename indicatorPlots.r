@@ -1435,3 +1435,29 @@ dailyAspectsGeneralizedCount <- function(orbLimit = 2) {
 
   return(dailyAspectsCount)
 }
+
+dailyAspectsGeneralizedOrbsMean <- function(orbLimit = 2, pxFilter = c()) {
+  idCols <- c('Date', 'Hour')
+  setClassicAspectsSet8()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+
+  dailyAspects$filter <- F
+  dailyAspects[p.x %in% pxFilter, filter := T]
+  dailyAspects <- dailyAspects[filter != T,]
+
+  # Convert numeric aspects to categorical (factors).
+  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep=""))]
+  # Arrange aspects factors as table wide format.
+  dailyAspectsOrbsMean <- dcast(
+    dailyAspects,
+    Date ~ aspect,
+    fun.aggregate = mean,
+    value.var = "orb",
+    fill = 4
+  )
+  setDT(dailyAspectsOrbsMean)
+
+  return(dailyAspectsOrbsMean)
+}
