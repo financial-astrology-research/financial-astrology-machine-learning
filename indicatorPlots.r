@@ -1461,3 +1461,30 @@ dailyAspectsGeneralizedOrbsMean <- function(orbLimit = 2, pxFilter = c()) {
 
   return(dailyAspectsOrbsMean)
 }
+
+dailyAspectsGeneralizedEnergySum <- function(orbLimit = 2, pxFilter = c()) {
+  idCols <- c('Date', 'Hour')
+  setClassicAspectsSet8()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+  dailyAspects <- dailyAspectsAddEnergy(dailyAspects, 0.59)
+
+  dailyAspects$filter <- F
+  dailyAspects[p.x %in% pxFilter, filter := T]
+  dailyAspects <- dailyAspects[filter != T,]
+
+  # Convert numeric aspects to categorical (factors).
+  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep=""))]
+  # Arrange aspects factors as table wide format.
+  dailyAspectsEnergySum <- dcast(
+    dailyAspects,
+    Date ~ aspect,
+    fun.aggregate = sum,
+    value.var = "ennow",
+    fill = 0
+  )
+  setDT(dailyAspectsEnergySum)
+
+  return(dailyAspectsEnergySum)
+}

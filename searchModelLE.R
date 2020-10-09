@@ -9,10 +9,14 @@ source("./analysis.r")
 source("./indicatorPlots.r")
 
 aspectFilter <- c()
+pxFilter <- c()
 # dailyAspects <- dailyCombPlanetAspectsFactorsTable(orbLimit = 2, aspectFilter =  aspectFilter)
-dailyAspects <- dailyCombPlanetAspectsFactorsTableLE(orbLimit = 2, aspectFilter =  aspectFilter)
+# dailyAspects <- dailyCombPlanetAspectsFactorsTableLE(orbLimit = 2.5, aspectFilter =  aspectFilter)
+# dailyAspects <- dailyAspectsGeneralizedCount(orbLimit = 2.5)
+# dailyAspects <- dailyAspectsGeneralizedOrbsMean(orbLimit = 2, pxFilter = pxFilter)
+dailyAspects <- dailyAspectsGeneralizedEnergySum(orbLimit = 2, pxFilter = pxFilter)
 
-symbol <- "LINK-USD"
+symbol <- "BNB-USD"
 securityData <- mainOpenSecurity(
   symbol, 2, 4,
   "%Y-%m-%d", "2010-01-01", "2020-07-31"
@@ -25,7 +29,7 @@ hist(securityData$zdiffPercent)
 cat(paste("Total days rows: ", nrow(securityData)), "\n")
 
 aspectView <- merge(
-  securityData,
+  securityData[, c('Date', 'Actbin')],
   dailyAspects, by = "Date"
 )
 
@@ -46,29 +50,30 @@ aspectViewTest <- merge(
   by = "Date"
 )
 
-selectCols <- c(
-  'Actbin'
-  #, 'MOME', 'MOVE', 'MOSU', 'MOMA'
-  # 'MOJU', 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
-  , 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL'
-  , 'VESU', 'VEMA', 'VEJU', 'VESA', 'VEUR', 'VENE', 'VEPL'
-  , 'SUMA', 'SUJU', 'SUSA', 'SUUR', 'SUNE', 'SUPL'
-  #, 'MAJU', 'MASA', 'MAUR', 'MANE', 'MAPL'
-)
+#selectCols <- c(
+#  'Actbin'
+#  , 'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU', 'MOSA', 'MOUR', 'MONE', 'MOPL'
+#  , 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL'
+#  , 'VESU', 'VEMA', 'VEJU', 'VESA', 'VEUR', 'VENE', 'VEPL'
+#  #, 'SUMA', 'SUJU', 'SUSA', 'SUUR', 'SUNE', 'SUPL'
+#  #, 'MAJU', 'MASA', 'MAUR', 'MANE', 'MAPL'
+#)
+
+selectCols <- names(aspectViewTrain)[-1]
 
 control <- trainControl(
   #method = "cv", # 2 - fast
   #method = "boot", # 2 - slow
   #method = "boot632", # 2 - slow
   #method = "optimism_boot", # 2 - very slow
-  method = "boot_all", # 2 - slow
+  #method = "boot_all", # 2 - slow
   #method = "LOOCV", # 2 - very slow
-  #method = "LGOCV", # 2 - fast
-  # method = "none", # 2 - very fast
+  method = "LGOCV", # 2 - fast
+  #method = "none", # 2 - very fast
   #method = "timeslice", # 2 - very slow
   #initialWindow = 30,
   #horizon = 10,
-  number = 3,
+  number = 5,
   savePredictions = "final",
   classProbs = T,
   allowParallel = T,
@@ -95,7 +100,7 @@ fitModel <- train(
   # method = "RFlda", # 0.52
   # method = "RRF", # 0.53
   # method = "RRFglobal",
-  method = "Rborist", # 0.60
+  # method = "Rborist", # 0.60
   # method = "ada", # 0.44
   # method = "adaboost", # 0.55
   # method = "amdai", # package N/A 3.6.3
@@ -134,7 +139,7 @@ fitModel <- train(
   # method = "gbm_h2o", # N/A no active connection H20
   # method = "gcvEarth", # 0.50
   # method = "glmStepAIC", # N/A extremelly slow (stopped)
-  # method = "glmboost", # 0.52
+  method = "glmboost", # 0.52
   # method = "hda", # N/A extremelly slow (stopped)
   # method = "hdda",
   # method = "hdrda",
@@ -199,14 +204,21 @@ fitModel <- train(
   # method = "extraTrees", # N/A JAVA errors
   # TODO: Continue with 7.0.9 (Discrete Weighted Discriminant)
   trControl = control,
-  # tuneLength = 10,
-  tuneGrid = expand.grid(predFixed = c(100, 120), minNode = 10)
+  tuneLength = 3,
+  # tuneGrid = expand.grid(predFixed = 40, minNode = 15)
+  #tuneGrid = expand.grid(
+  #  num_iter = 50,
+  #  tree_depth = 5,
+  #  beta = 0.11,
+  #  lambda = 0.11,
+  #  loss_type = "e"
+  #)
 )
 
 fitModel$finalModel %>% summary()
 fitModel %>% summary()
 fitModel %>% print()
-fitModel %>% plot()
+#fitModel %>% plot()
 fitModel %>% varImp()
 
 cat("--VALIDATE MODEL--\n\n")
