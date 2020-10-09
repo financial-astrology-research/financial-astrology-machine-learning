@@ -1594,3 +1594,16 @@ dailyPlanetsSpeed <- function() {
 
   return(dailyPlanetsSpeed)
 }
+
+dailyPlanetsRetrograde <- function() {
+  dailyPlanetsSpeed <- dailyPlanetsSpeed()
+  dailyPlanetsSpeed[, MER := ifelse(MESP <= 0.20, 1, 0)]
+  dailyPlanetsSpeed[, MAR := ifelse(MESP <= 0.20, 1, 0)]
+  selCols <- c(
+    'Date',
+    'MER',
+    'MAR'
+  )
+
+  return(dailyPlanetsSpeed[, ..selCols])
+}
