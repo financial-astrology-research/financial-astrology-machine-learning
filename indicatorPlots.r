@@ -1582,3 +1582,15 @@ dailyAspectsPlanetCombGeneralizedEnergy <- function(orbLimit = 2) {
   return(dailyAspectsEnergy)
 }
 
+dailyPlanetsSpeed <- function() {
+  idCols <- c('Date', 'Hour')
+  setClassicAspectsSet8()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  dailyPlanetsSpeed <- hourlyPlanets[,
+    lapply(.SD, function(x) mean(x)),
+    by = Date, .SDcols=planetsSpCols
+  ]
+
+  return(dailyPlanetsSpeed)
+}
