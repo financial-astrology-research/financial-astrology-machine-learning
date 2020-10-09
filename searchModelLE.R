@@ -12,14 +12,15 @@ aspectFilter <- c()
 pxFilter <- c()
 # dailyAspects <- dailyCombPlanetAspectsFactorsTable(orbLimit = 2, aspectFilter =  aspectFilter)
 # dailyAspects <- dailyCombPlanetAspectsFactorsTableLE(orbLimit = 2.5, aspectFilter =  aspectFilter)
-# dailyAspects <- dailyAspectsGeneralizedCount(orbLimit = 2.5)
+dailyAspectsCount <- dailyAspectsGeneralizedCount(orbLimit = 2)
 # dailyAspects <- dailyAspectsGeneralizedOrbsMean(orbLimit = 2, pxFilter = pxFilter)
 # dailyAspects <- dailyAspectsGeneralizedEnergySum(orbLimit = 2, pxFilter = pxFilter)
 # dailyAspects <- dailyAspectsPlanetXGeneralizedCount(orbLimit = 2)
 # The planet receiver aspects count seems significant.
-# dailyAspects <- dailyAspectsPlanetYGeneralizedCount(orbLimit = 2)
-# dailyAspects <- dailyAspectsPlanetCombGeneralizedCount(orbLimit = 2)
-dailyAspects <- dailyAspectsPlanetCombGeneralizedEnergy(orbLimit = 2)
+dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(orbLimit = 2)
+# dailyAspectsCombCount <- dailyAspectsPlanetCombGeneralizedCount(orbLimit = 2)
+dailyAspects <- merge(dailyAspectsPlanetYCount, dailyAspectsCount, by = c('Date'))
+# dailyAspects <- dailyAspectsPlanetCombGeneralizedEnergy(orbLimit = 2)
 
 symbol <- "BNB-USD"
 securityData <- mainOpenSecurity(
@@ -132,7 +133,7 @@ fitModel <- train(
   # method = "ctree2", # 0.50
   # method = "cubist", # N/A only works for regression
   # method = "dda", # N/A not available for R 3.6.3
-  # method = "deepboost", # 0.54
+  method = "deepboost", # 0.54
   # method = "dwdLinear", # 0.53
   # method = "dwdPoly", # 0.53
   # method = "dwdRadial", # 0.54
@@ -144,7 +145,7 @@ fitModel <- train(
   # method = "gbm_h2o", # N/A no active connection H20
   # method = "gcvEarth", # 0.50
   # method = "glmStepAIC", # N/A extremelly slow (stopped)
-  method = "glmboost", # 0.52
+  # method = "glmboost", # 0.52
   # method = "hda", # N/A extremelly slow (stopped)
   # method = "hdda",
   # method = "hdrda",
