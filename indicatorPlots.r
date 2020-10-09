@@ -1488,3 +1488,49 @@ dailyAspectsGeneralizedEnergySum <- function(orbLimit = 2, pxFilter = c()) {
 
   return(dailyAspectsEnergySum)
 }
+
+# Count total aspects per planet Y (receiver).
+dailyAspectsPlanetYGeneralizedCount <- function(orbLimit = 2) {
+  idCols <- c('Date', 'Hour')
+  setClassicAspectsSet8()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+
+  # Convert numeric aspects to categorical (factors).
+  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep=""))]
+  # Arrange aspects factors as table wide format.
+  dailyAspectsCount <- dcast(
+    dailyAspects,
+    Date ~ p.y,
+    fun.aggregate = count,
+    value.var = "aspect",
+    fill = 0
+  )
+  setDT(dailyAspectsCount)
+
+  return(dailyAspectsCount)
+}
+
+# Count total aspects per planet X (emitter).
+dailyAspectsPlanetXGeneralizedCount <- function(orbLimit = 2) {
+  idCols <- c('Date', 'Hour')
+  setClassicAspectsSet8()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+
+  # Convert numeric aspects to categorical (factors).
+  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep=""))]
+  # Arrange aspects factors as table wide format.
+  dailyAspectsCount <- dcast(
+    dailyAspects,
+    Date ~ p.x,
+    fun.aggregate = count,
+    value.var = "aspect",
+    fill = 0
+  )
+  setDT(dailyAspectsCount)
+
+  return(dailyAspectsCount)
+}
