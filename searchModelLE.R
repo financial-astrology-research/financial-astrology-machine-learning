@@ -14,7 +14,12 @@ pxFilter <- c()
 # dailyAspects <- dailyCombPlanetAspectsFactorsTableLE(orbLimit = 2.5, aspectFilter =  aspectFilter)
 # dailyAspects <- dailyAspectsGeneralizedCount(orbLimit = 2.5)
 # dailyAspects <- dailyAspectsGeneralizedOrbsMean(orbLimit = 2, pxFilter = pxFilter)
-dailyAspects <- dailyAspectsGeneralizedEnergySum(orbLimit = 2, pxFilter = pxFilter)
+# dailyAspects <- dailyAspectsGeneralizedEnergySum(orbLimit = 2, pxFilter = pxFilter)
+# dailyAspects <- dailyAspectsPlanetXGeneralizedCount(orbLimit = 2)
+# The planet receiver aspects count seems significant.
+# dailyAspects <- dailyAspectsPlanetYGeneralizedCount(orbLimit = 2)
+# dailyAspects <- dailyAspectsPlanetCombGeneralizedCount(orbLimit = 2)
+dailyAspects <- dailyAspectsPlanetCombGeneralizedEnergy(orbLimit = 2)
 
 symbol <- "BNB-USD"
 securityData <- mainOpenSecurity(
