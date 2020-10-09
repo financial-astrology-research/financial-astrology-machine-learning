@@ -19,7 +19,9 @@ dailyAspectsPlanetXCount <- dailyAspectsPlanetXGeneralizedCount(orbLimit = 2)
 # The planet receiver aspects count seems significant.
 dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(orbLimit = 2)
 dailyAspectsCombCount <- dailyAspectsPlanetCombGeneralizedCount(orbLimit = 2)
+dailyPlanetsRetrograde <- dailyPlanetsRetrograde()
 dailyAspects <- merge(dailyAspectsPlanetYCount, dailyAspectsCount, by = c('Date'))
+# dailyAspects <- merge(dailyAspects, dailyPlanetsRetrograde, by = c('Date'))
 # dailyAspects <- merge(dailyAspects, dailyAspectsPlanetXCount, by = c('Date'))
 # dailyAspects <- dailyAspectsPlanetCombGeneralizedEnergy(orbLimit = 2)
 
@@ -80,7 +82,7 @@ control <- trainControl(
   #method = "timeslice", # 2 - very slow
   #initialWindow = 30,
   #horizon = 10,
-  number = 20,
+  number = 10,
   savePredictions = "final",
   classProbs = T,
   allowParallel = T,
@@ -211,7 +213,7 @@ fitModel <- train(
   # method = "extraTrees", # N/A JAVA errors
   # TODO: Continue with 7.0.9 (Discrete Weighted Discriminant)
   trControl = control,
-  tuneLength = 3,
+  # tuneLength = 3,
   # tuneGrid = expand.grid(predFixed = 40, minNode = 15)
   #tuneGrid = expand.grid(
   #  num_iter = 50,
@@ -220,6 +222,12 @@ fitModel <- train(
   #  lambda = 0.11,
   #  loss_type = "e"
   #)
+  tuneGrid = expand.grid(
+    size = seq(2, 16, by = 2),
+    decay = seq(0.1, 0.2, by = 0.05),
+    bag = T
+  ),
+  repeats = 30
 )
 
 fitModel$finalModel %>% summary()
@@ -247,3 +255,8 @@ testResult <- table(
 ) %>%
   confusionMatrix(positive = "buy")
 print(testResult)
+
+finalActbinPred <- predict(fitModel, dailyAspects, type = "raw")
+dailyAspects[, finalPred := finalActbinPred]
+
+# fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-avnnet.csv", sep = "-"))
