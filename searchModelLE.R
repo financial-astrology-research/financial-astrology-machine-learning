@@ -13,16 +13,17 @@ pxFilter <- c()
 # dailyAspects <- dailyCombPlanetAspectsFactorsTable(orbLimit = 2, aspectFilter =  aspectFilter)
 # dailyAspects <- dailyCombPlanetAspectsFactorsTableLE(orbLimit = 2.5, aspectFilter =  aspectFilter)
 dailyAspectsCount <- dailyAspectsGeneralizedCount(orbLimit = 2)
-# dailyAspects <- dailyAspectsGeneralizedOrbsMean(orbLimit = 2, pxFilter = pxFilter)
-# dailyAspects <- dailyAspectsGeneralizedEnergySum(orbLimit = 2, pxFilter = pxFilter)
-# dailyAspects <- dailyAspectsPlanetXGeneralizedCount(orbLimit = 2)
+dailyAspectsOrbMean <- dailyAspectsGeneralizedOrbsMean(orbLimit = 2, pxFilter = pxFilter)
+dailyAspectsEnergy <- dailyAspectsGeneralizedEnergySum(orbLimit = 2, pxFilter = pxFilter)
+dailyAspectsPlanetXCount <- dailyAspectsPlanetXGeneralizedCount(orbLimit = 2)
 # The planet receiver aspects count seems significant.
 dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(orbLimit = 2)
-# dailyAspectsCombCount <- dailyAspectsPlanetCombGeneralizedCount(orbLimit = 2)
+dailyAspectsCombCount <- dailyAspectsPlanetCombGeneralizedCount(orbLimit = 2)
 dailyAspects <- merge(dailyAspectsPlanetYCount, dailyAspectsCount, by = c('Date'))
+# dailyAspects <- merge(dailyAspects, dailyAspectsPlanetXCount, by = c('Date'))
 # dailyAspects <- dailyAspectsPlanetCombGeneralizedEnergy(orbLimit = 2)
 
-symbol <- "BNB-USD"
+symbol <- "LINK-USD"
 securityData <- mainOpenSecurity(
   symbol, 2, 4,
   "%Y-%m-%d", "2010-01-01", "2020-07-31"
@@ -79,7 +80,7 @@ control <- trainControl(
   #method = "timeslice", # 2 - very slow
   #initialWindow = 30,
   #horizon = 10,
-  number = 5,
+  number = 20,
   savePredictions = "final",
   classProbs = T,
   allowParallel = T,
@@ -110,7 +111,7 @@ fitModel <- train(
   # method = "ada", # 0.44
   # method = "adaboost", # 0.55
   # method = "amdai", # package N/A 3.6.3
-  # method = "avNNet", # 0.54
+  method = "avNNet", # 0.54
   # method = "awnb", # N/A failed are factors not true error.
   # method = "awtan", # N/A failed are factors not true error.
   # method = "bag", # N/A needs bagControl function.
@@ -133,7 +134,7 @@ fitModel <- train(
   # method = "ctree2", # 0.50
   # method = "cubist", # N/A only works for regression
   # method = "dda", # N/A not available for R 3.6.3
-  method = "deepboost", # 0.54
+  # method = "deepboost", # 0.54
   # method = "dwdLinear", # 0.53
   # method = "dwdPoly", # 0.53
   # method = "dwdRadial", # 0.54
