@@ -9,19 +9,19 @@ source("./analysis.r")
 source("./indicatorPlots.r")
 
 aspectFilter <- c()
-pxFilter <- c()
+pxFilter <- c('UR', 'NE', 'PL', 'NN')
 # dailyAspects <- dailyCombPlanetAspectsFactorsTable(orbLimit = 2, aspectFilter =  aspectFilter)
 # dailyAspects <- dailyCombPlanetAspectsFactorsTableLE(orbLimit = 2.5, aspectFilter =  aspectFilter)
-dailyAspectsCount <- dailyAspectsGeneralizedCount(orbLimit = 2)
-dailyAspectsOrbMean <- dailyAspectsGeneralizedOrbsMean(orbLimit = 2, pxFilter = pxFilter)
-dailyAspectsEnergy <- dailyAspectsGeneralizedEnergySum(orbLimit = 2, pxFilter = pxFilter)
-dailyAspectsPlanetXCount <- dailyAspectsPlanetXGeneralizedCount(orbLimit = 2)
+dailyAspectsCount <- dailyAspectsGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
+# dailyAspectsOrbMean <- dailyAspectsGeneralizedOrbsMean(orbLimit = 2, pxFilter = pxFilter)
+# dailyAspectsEnergy <- dailyAspectsGeneralizedEnergySum(orbLimit = 2, pxFilter = pxFilter)
+dailyAspectsPlanetXCount <- dailyAspectsPlanetXGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
 # The planet receiver aspects count seems significant.
-dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(orbLimit = 2)
-dailyAspectsCombCount <- dailyAspectsPlanetCombGeneralizedCount(orbLimit = 2)
+dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
+#dailyAspectsCombCount <- dailyAspectsPlanetCombGeneralizedCount(orbLimit = 2)
 dailyPlanetsRetrograde <- dailyPlanetsRetrograde()
 dailyAspects <- merge(dailyAspectsPlanetYCount, dailyAspectsCount, by = c('Date'))
-# dailyAspects <- merge(dailyAspects, dailyPlanetsRetrograde, by = c('Date'))
+dailyAspects <- merge(dailyAspects, dailyPlanetsRetrograde, by = c('Date'))
 # dailyAspects <- merge(dailyAspects, dailyAspectsPlanetXCount, by = c('Date'))
 # dailyAspects <- dailyAspectsPlanetCombGeneralizedEnergy(orbLimit = 2)
 
@@ -43,7 +43,7 @@ aspectView <- merge(
 )
 
 # TODO: Experiment partition by price diff and increase to 0.80.
-trainIndex <- createDataPartition(aspectView$Actbin, p = 0.70, list = FALSE)
+trainIndex <- createDataPartition(aspectView$Actbin, p = 0.80, list = FALSE)
 aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
 
@@ -73,11 +73,11 @@ selectCols <- names(aspectViewTrain)[-1]
 control <- trainControl(
   #method = "cv", # 2 - fast
   #method = "boot", # 2 - slow
-  #method = "boot632", # 2 - slow
+  method = "boot632", # 2 - slow
   #method = "optimism_boot", # 2 - very slow
   #method = "boot_all", # 2 - slow
   #method = "LOOCV", # 2 - very slow
-  method = "LGOCV", # 2 - fast
+  #method = "LGOCV", # 2 - fast
   #method = "none", # 2 - very fast
   #method = "timeslice", # 2 - very slow
   #initialWindow = 30,
@@ -223,11 +223,11 @@ fitModel <- train(
   #  loss_type = "e"
   #)
   tuneGrid = expand.grid(
-    size = seq(2, 16, by = 2),
-    decay = seq(0.1, 0.2, by = 0.05),
+    size = seq(3, 24, by = 3),
+    decay = 0.15,
     bag = T
   ),
-  repeats = 30
+  repeats = 5
 )
 
 fitModel$finalModel %>% summary()
@@ -259,4 +259,5 @@ print(testResult)
 finalActbinPred <- predict(fitModel, dailyAspects, type = "raw")
 dailyAspects[, finalPred := finalActbinPred]
 
-# fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-avnnet.csv", sep = "-"))
+#saveRDS(fitModel, paste("./models/", symbol, "_avnet", ".rds", sep=""))
+#fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-avnnet.csv", sep = "-"))
