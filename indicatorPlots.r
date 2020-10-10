@@ -1414,12 +1414,16 @@ dailyCombPlanetAspectsFactorsTableLE <- function(orbLimit = 2, aspectFilter = c(
   return(dailyAspectsWide)
 }
 
-dailyAspectsGeneralizedCount <- function(orbLimit = 2) {
+dailyAspectsGeneralizedCount <- function(orbLimit = 2, pxFilter = c()) {
   idCols <- c('Date', 'Hour')
   setClassicAspectsSet8()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+
+  dailyAspects$filter <- F
+  dailyAspects[p.x %in% pxFilter, filter := T]
+  dailyAspects <- dailyAspects[filter != T,]
 
   # Convert numeric aspects to categorical (factors).
   dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep=""))]
@@ -1490,12 +1494,16 @@ dailyAspectsGeneralizedEnergySum <- function(orbLimit = 2, pxFilter = c()) {
 }
 
 # Count total aspects per planet Y (receiver).
-dailyAspectsPlanetYGeneralizedCount <- function(orbLimit = 2) {
+dailyAspectsPlanetYGeneralizedCount <- function(orbLimit = 2, pxFilter = c()) {
   idCols <- c('Date', 'Hour')
   setClassicAspectsSet8()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+
+  dailyAspects$filter <- F
+  dailyAspects[p.x %in% pxFilter, filter := T]
+  dailyAspects <- dailyAspects[filter != T,]
 
   # Convert numeric aspects to categorical (factors).
   dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep=""))]
@@ -1513,12 +1521,16 @@ dailyAspectsPlanetYGeneralizedCount <- function(orbLimit = 2) {
 }
 
 # Count total aspects per planet X (emitter).
-dailyAspectsPlanetXGeneralizedCount <- function(orbLimit = 2) {
+dailyAspectsPlanetXGeneralizedCount <- function(orbLimit = 2, pxFilter = c()) {
   idCols <- c('Date', 'Hour')
   setClassicAspectsSet8()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+
+  dailyAspects$filter <- F
+  dailyAspects[p.x %in% pxFilter, filter := T]
+  dailyAspects <- dailyAspects[filter != T,]
 
   # Convert numeric aspects to categorical (factors).
   dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep=""))]
@@ -1597,12 +1609,15 @@ dailyPlanetsSpeed <- function() {
 
 dailyPlanetsRetrograde <- function() {
   dailyPlanetsSpeed <- dailyPlanetsSpeed()
-  dailyPlanetsSpeed[, MER := ifelse(MESP <= 0.20, 1, 0)]
-  dailyPlanetsSpeed[, MAR := ifelse(MESP <= 0.20, 1, 0)]
+  dailyPlanetsSpeed[, MESL := ifelse(MESP <= 0.20, 1, 0)]
+  dailyPlanetsSpeed[, VESL := ifelse(VESP <= 0.20, 1, 0)]
+  dailyPlanetsSpeed[, MASL := ifelse(MESP <= 0.20, 1, 0)]
+
   selCols <- c(
     'Date',
-    'MER',
-    'MAR'
+    'MESL',
+    'VESL',
+    'MASL'
   )
 
   return(dailyPlanetsSpeed[, ..selCols])
