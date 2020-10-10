@@ -1616,6 +1616,7 @@ dailyPlanetsRetrograde <- function() {
   dailyPlanetsSpeed[, MASL := ifelse(MASP <= 0.20, 1, 0)]
   dailyPlanetsSpeed[, SUSL := ifelse(SUSP <= 0.20, 1, 0)]
   dailyPlanetsSpeed[, JUSL := ifelse(JUSP <= 0.20, 1, 0)]
+  dailyPlanetsSpeed[, SASL := ifelse(SASP <= 0.20, 1, 0)]
 
   selCols <- c(
     'Date',
@@ -1623,7 +1624,8 @@ dailyPlanetsRetrograde <- function() {
     'VESL',
     # 'SUSL',
     'MASL',
-    'JUSL'
+    'JUSL',
+    'SASL'
   )
 
   return(dailyPlanetsSpeed[, ..selCols])

@@ -15,7 +15,7 @@ pxFilter <- c('JU', 'SA', 'UR', 'NE', 'PL', 'NN')
 dailyAspectsCount <- dailyAspectsGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
 # dailyAspectsOrbMean <- dailyAspectsGeneralizedOrbsMean(orbLimit = 2, pxFilter = pxFilter)
 # dailyAspectsEnergy <- dailyAspectsGeneralizedEnergySum(orbLimit = 2, pxFilter = pxFilter)
-dailyAspectsPlanetXCount <- dailyAspectsPlanetXGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
+# dailyAspectsPlanetXCount <- dailyAspectsPlanetXGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
 # The planet receiver aspects count seems significant.
 dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
 #dailyAspectsCombCount <- dailyAspectsPlanetCombGeneralizedCount(orbLimit = 2)
@@ -223,7 +223,7 @@ fitModel <- train(
   #  loss_type = "e"
   #)
   tuneGrid = expand.grid(
-    size = seq(3, 24, by = 3),
+    size = seq(3, 21, by = 3),
     decay = 0.15,
     bag = T
   ),
