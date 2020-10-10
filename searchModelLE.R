@@ -9,7 +9,7 @@ source("./analysis.r")
 source("./indicatorPlots.r")
 
 aspectFilter <- c()
-pxFilter <- c('UR', 'NE', 'PL', 'NN')
+pxFilter <- c('JU', 'SA', 'UR', 'NE', 'PL', 'NN')
 # dailyAspects <- dailyCombPlanetAspectsFactorsTable(orbLimit = 2, aspectFilter =  aspectFilter)
 # dailyAspects <- dailyCombPlanetAspectsFactorsTableLE(orbLimit = 2.5, aspectFilter =  aspectFilter)
 dailyAspectsCount <- dailyAspectsGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)

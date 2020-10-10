@@ -470,7 +470,9 @@ dailyAspectsAddEnergy3 <- function(dailyAspects, speedDecay = 0.6) {
 
   # Calculate max and proportional energy.
   dailyAspects[, enmax := aspectsEnergyIndex['energy', as.character(aspect)]]
-  dailyAspects[, ennow := energyDecay(enmax, orb, speedDecay) * (1 - sp.x) * (1 - sp.y)]
+  dailyAspects[, ennow := energyDecay(enmax, orb, speedDecay) *
+    (1 - sp.x) *
+    (1 - sp.y)]
 
   return(dailyAspects)
 }
@@ -1352,7 +1354,7 @@ dailyCombPlanetAspectsFactorsTable <- function(orbLimit = 2, aspectFilter = c())
   dailyAspects <- dailyAspects[filter != T,]
 
   # Convert numeric aspects to categorical (factors).
-  dailyAspects <- dailyAspects[, aspect := paste("a", aspect, sep="")]
+  dailyAspects <- dailyAspects[, aspect := paste("a", aspect, sep = "")]
 
   # Arrange aspects factors as table wide format.
   dailyAspectsWide <- dcast(
@@ -1364,7 +1366,7 @@ dailyCombPlanetAspectsFactorsTable <- function(orbLimit = 2, aspectFilter = c())
   setDT(dailyAspectsWide)
 
   aspectsCols <- names(dailyAspectsWide)[-1]
-  dailyAspectsWide[, c(aspectsCols) := lapply(.SD, as.factor), .SDcols=aspectsCols]
+  dailyAspectsWide[, c(aspectsCols) := lapply(.SD, as.factor), .SDcols = aspectsCols]
 
   return(dailyAspectsWide)
 }
@@ -1391,7 +1393,7 @@ dailyCombPlanetAspectsFactorsTableLE <- function(orbLimit = 2, aspectFilter = c(
   dailyAspects <- dailyAspects[filter != T,]
 
   # Convert numeric aspects to categorical (factors).
-  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep=""))]
+  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
 
   # Arrange aspects factors as table wide format.
   dailyAspectsWide <- dcast(
@@ -1403,10 +1405,10 @@ dailyCombPlanetAspectsFactorsTableLE <- function(orbLimit = 2, aspectFilter = c(
   setDT(dailyAspectsWide)
 
   aspectsCols <- names(dailyAspectsWide)[-1]
-  dailyAspectsWide[, c(aspectsCols) := lapply(.SD, as.factor), .SDcols=aspectsCols]
+  dailyAspectsWide[, c(aspectsCols) := lapply(.SD, as.factor), .SDcols = aspectsCols]
   dailyPlanetsSpeed <- hourlyPlanets[,
     lapply(.SD, function(x) ifelse(anyNA(x), 4, round(min(x)))),
-    by = Date, .SDcols=planetsSpCols
+    by = Date, .SDcols = planetsSpCols
   ]
 
   #dailyAspectsWide <- merge(dailyAspectsWide, dailyPlanetsSpeed, by = c('Date'))
@@ -1426,7 +1428,7 @@ dailyAspectsGeneralizedCount <- function(orbLimit = 2, pxFilter = c()) {
   dailyAspects <- dailyAspects[filter != T,]
 
   # Convert numeric aspects to categorical (factors).
-  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep=""))]
+  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
   # Arrange aspects factors as table wide format.
   dailyAspectsCount <- dcast(
     dailyAspects,
@@ -1452,7 +1454,7 @@ dailyAspectsGeneralizedOrbsMean <- function(orbLimit = 2, pxFilter = c()) {
   dailyAspects <- dailyAspects[filter != T,]
 
   # Convert numeric aspects to categorical (factors).
-  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep=""))]
+  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
   # Arrange aspects factors as table wide format.
   dailyAspectsOrbsMean <- dcast(
     dailyAspects,
@@ -1479,7 +1481,7 @@ dailyAspectsGeneralizedEnergySum <- function(orbLimit = 2, pxFilter = c()) {
   dailyAspects <- dailyAspects[filter != T,]
 
   # Convert numeric aspects to categorical (factors).
-  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep=""))]
+  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
   # Arrange aspects factors as table wide format.
   dailyAspectsEnergySum <- dcast(
     dailyAspects,
@@ -1506,7 +1508,7 @@ dailyAspectsPlanetYGeneralizedCount <- function(orbLimit = 2, pxFilter = c()) {
   dailyAspects <- dailyAspects[filter != T,]
 
   # Convert numeric aspects to categorical (factors).
-  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep=""))]
+  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
   # Arrange aspects factors as table wide format.
   dailyAspectsCount <- dcast(
     dailyAspects,
@@ -1533,7 +1535,7 @@ dailyAspectsPlanetXGeneralizedCount <- function(orbLimit = 2, pxFilter = c()) {
   dailyAspects <- dailyAspects[filter != T,]
 
   # Convert numeric aspects to categorical (factors).
-  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep=""))]
+  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
   # Arrange aspects factors as table wide format.
   dailyAspectsCount <- dcast(
     dailyAspects,
@@ -1556,7 +1558,7 @@ dailyAspectsPlanetCombGeneralizedCount <- function(orbLimit = 2) {
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
 
   # Convert numeric aspects to categorical (factors).
-  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep=""))]
+  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
   # Arrange aspects factors as table wide format.
   dailyAspectsCount <- dcast(
     dailyAspects,
@@ -1580,7 +1582,7 @@ dailyAspectsPlanetCombGeneralizedEnergy <- function(orbLimit = 2) {
   dailyAspects <- dailyAspectsAddEnergy(dailyAspects, 0.59)
 
   # Convert numeric aspects to categorical (factors).
-  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep=""))]
+  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
   # Arrange aspects factors as table wide format.
   dailyAspectsEnergy <- dcast(
     dailyAspects,
@@ -1601,7 +1603,7 @@ dailyPlanetsSpeed <- function() {
   hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   dailyPlanetsSpeed <- hourlyPlanets[,
     lapply(.SD, function(x) mean(x)),
-    by = Date, .SDcols=planetsSpCols
+    by = Date, .SDcols = planetsSpCols
   ]
 
   return(dailyPlanetsSpeed)
@@ -1611,13 +1613,17 @@ dailyPlanetsRetrograde <- function() {
   dailyPlanetsSpeed <- dailyPlanetsSpeed()
   dailyPlanetsSpeed[, MESL := ifelse(MESP <= 0.20, 1, 0)]
   dailyPlanetsSpeed[, VESL := ifelse(VESP <= 0.20, 1, 0)]
-  dailyPlanetsSpeed[, MASL := ifelse(MESP <= 0.20, 1, 0)]
+  dailyPlanetsSpeed[, MASL := ifelse(MASP <= 0.20, 1, 0)]
+  dailyPlanetsSpeed[, SUSL := ifelse(SUSP <= 0.20, 1, 0)]
+  dailyPlanetsSpeed[, JUSL := ifelse(JUSP <= 0.20, 1, 0)]
 
   selCols <- c(
     'Date',
     'MESL',
     'VESL',
-    'MASL'
+    # 'SUSL',
+    'MASL',
+    'JUSL'
   )
 
   return(dailyPlanetsSpeed[, ..selCols])
