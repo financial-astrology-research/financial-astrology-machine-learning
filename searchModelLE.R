@@ -15,14 +15,16 @@ pxFilter <- c('JU', 'SA', 'UR', 'NE', 'PL', 'NN')
 dailyAspectsCount <- dailyAspectsGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
 # dailyAspectsOrbMean <- dailyAspectsGeneralizedOrbsMean(orbLimit = 2, pxFilter = pxFilter)
 # dailyAspectsEnergy <- dailyAspectsGeneralizedEnergySum(orbLimit = 2, pxFilter = pxFilter)
-# dailyAspectsPlanetXCount <- dailyAspectsPlanetXGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
+dailyAspectsPlanetXCount <- dailyAspectsPlanetXGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
 # The planet receiver aspects count seems significant.
 dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
 #dailyAspectsCombCount <- dailyAspectsPlanetCombGeneralizedCount(orbLimit = 2)
-dailyPlanetsRetrograde <- dailyPlanetsRetrograde()
-dailyAspects <- merge(dailyAspectsPlanetYCount, dailyAspectsCount, by = c('Date'))
-dailyAspects <- merge(dailyAspects, dailyPlanetsRetrograde, by = c('Date'))
-# dailyAspects <- merge(dailyAspects, dailyAspectsPlanetXCount, by = c('Date'))
+dailyFastPlanetsSpeed <- dailyFastPlanetsRetrograde()
+dailySlowPlanetsSpeed <- dailySlowPlanetsRetrograde()
+dailyAspects <- merge(dailyAspectsCount, dailyAspectsPlanetYCount, by = c('Date'))
+dailyAspects <- merge(dailyAspects, dailyAspectsPlanetXCount, by = c('Date'))
+# dailyAspects <- merge(dailyAspects, dailyFastPlanetsSpeed, by = c('Date'))
+# dailyAspects <- merge(dailyAspects, dailySlowPlanetsSpeed, by = c('Date'))
 # dailyAspects <- dailyAspectsPlanetCombGeneralizedEnergy(orbLimit = 2)
 
 symbol <- "LINK-USD"
@@ -223,11 +225,11 @@ fitModel <- train(
   #  loss_type = "e"
   #)
   tuneGrid = expand.grid(
-    size = seq(3, 21, by = 3),
+    size = seq(3, 12, by = 3),
     decay = 0.15,
     bag = T
   ),
-  repeats = 50
+  repeats = 20
 )
 
 fitModel$finalModel %>% summary()
