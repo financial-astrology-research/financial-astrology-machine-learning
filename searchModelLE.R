@@ -227,7 +227,7 @@ fitModel <- train(
     decay = 0.15,
     bag = T
   ),
-  repeats = 5
+  repeats = 50
 )
 
 fitModel$finalModel %>% summary()
