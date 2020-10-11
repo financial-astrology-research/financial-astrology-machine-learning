@@ -9,22 +9,24 @@ source("./analysis.r")
 source("./indicatorPlots.r")
 
 aspectFilter <- c()
-pxFilter <- c('JU', 'SA', 'UR', 'NE', 'PL', 'NN')
+pxFilter <- c('MA', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN')
 # dailyAspects <- dailyCombPlanetAspectsFactorsTable(orbLimit = 2, aspectFilter =  aspectFilter)
 # dailyAspects <- dailyCombPlanetAspectsFactorsTableLE(orbLimit = 2.5, aspectFilter =  aspectFilter)
-dailyAspectsCount <- dailyAspectsGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
+dailyAspectsCount <- dailyAspectsGeneralizedCount(orbLimit = 2, pxFilter = c('MO', pxFilter))
 # dailyAspectsOrbMean <- dailyAspectsGeneralizedOrbsMean(orbLimit = 2, pxFilter = pxFilter)
 # dailyAspectsEnergy <- dailyAspectsGeneralizedEnergySum(orbLimit = 2, pxFilter = pxFilter)
 dailyAspectsPlanetXCount <- dailyAspectsPlanetXGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
 # The planet receiver aspects count seems significant.
 dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
-#dailyAspectsCombCount <- dailyAspectsPlanetCombGeneralizedCount(orbLimit = 2)
+#dailyAspectsCombCount <- dailyAspectsPlanetCombGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
 dailyFastPlanetsSpeed <- dailyFastPlanetsRetrograde()
 dailySlowPlanetsSpeed <- dailySlowPlanetsRetrograde()
+#dailyAspects <- merge(dailyAspectsCount, dailyAspectsCombCount, by = c('Date'))
 dailyAspects <- merge(dailyAspectsCount, dailyAspectsPlanetYCount, by = c('Date'))
 dailyAspects <- merge(dailyAspects, dailyAspectsPlanetXCount, by = c('Date'))
-# dailyAspects <- merge(dailyAspects, dailyFastPlanetsSpeed, by = c('Date'))
-# dailyAspects <- merge(dailyAspects, dailySlowPlanetsSpeed, by = c('Date'))
+#dailyAspects <- merge(dailyAspectsPlanetYCount, dailyAspectsPlanetXCount, by = c('Date'))
+#dailyAspects <- merge(dailyAspects, dailyFastPlanetsSpeed, by = c('Date'))
+#dailyAspects <- merge(dailyAspects, dailySlowPlanetsSpeed, by = c('Date'))
 # dailyAspects <- dailyAspectsPlanetCombGeneralizedEnergy(orbLimit = 2)
 
 symbol <- "LINK-USD"
@@ -76,7 +78,7 @@ control <- trainControl(
   #method = "cv", # 2 - fast
   #method = "boot", # 2 - slow
   method = "boot632", # 2 - slow
-  #method = "optimism_boot", # 2 - very slow
+  #method = "optimism_boot", # 2 - slow
   #method = "boot_all", # 2 - slow
   #method = "LOOCV", # 2 - very slow
   #method = "LGOCV", # 2 - fast
@@ -229,7 +231,8 @@ fitModel <- train(
     decay = 0.15,
     bag = T
   ),
-  repeats = 20
+  repeats = 100
+  #preProc = c("center", "scale")
 )
 
 fitModel$finalModel %>% summary()
