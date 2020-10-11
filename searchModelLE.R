@@ -228,10 +228,11 @@ fitModel <- train(
   #)
   tuneGrid = expand.grid(
     size = seq(3, 12, by = 3),
-    decay = 0.15,
+    decay = 0.1,
     bag = T
   ),
-  repeats = 100
+  maxit = 200,
+  repeats = 200
   #preProc = c("center", "scale")
 )
 
@@ -264,5 +265,5 @@ print(testResult)
 finalActbinPred <- predict(fitModel, dailyAspects, type = "raw")
 dailyAspects[, finalPred := finalActbinPred]
 
-#saveRDS(fitModel, paste("./models/", symbol, "_avnet", ".rds", sep=""))
-#fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-avnnet.csv", sep = "-"))
+#saveRDS(fitModel, paste("./models/", symbol, "_avnet4", ".rds", sep=""))
+#fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-avnnet4.csv", sep = "-"))
