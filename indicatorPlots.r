@@ -1617,7 +1617,7 @@ dailyFastPlanetsRetrograde <- function() {
   dailyPlanetsSpeed <- dailyPlanetsSpeed()
   dailyPlanetsSpeed[, MESL := ifelse(MESP <= 0.3, 1, 0)]
   dailyPlanetsSpeed[, VESL := ifelse(VESP <= 0.3, 1, 0)]
-  #dailyPlanetsSpeed[, MASL := ifelse(MASP <= 0.3, 1, 0)]
+  dailyPlanetsSpeed[, MASL := ifelse(MASP <= 0.3, 1, 0)]
 
   # Fast speed flag don't make any difference in modeling.
   #dailyPlanetsSpeed[, MEFS := ifelse(MESP >= 0.7, 1, 0)]

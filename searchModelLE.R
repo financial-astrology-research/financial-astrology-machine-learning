@@ -25,7 +25,7 @@ dailySlowPlanetsSpeed <- dailySlowPlanetsRetrograde()
 dailyAspects <- merge(dailyAspectsCount, dailyAspectsPlanetYCount, by = c('Date'))
 dailyAspects <- merge(dailyAspects, dailyAspectsPlanetXCount, by = c('Date'))
 #dailyAspects <- merge(dailyAspectsPlanetYCount, dailyAspectsPlanetXCount, by = c('Date'))
-#dailyAspects <- merge(dailyAspects, dailyFastPlanetsSpeed, by = c('Date'))
+dailyAspects <- merge(dailyAspects, dailyFastPlanetsSpeed, by = c('Date'))
 #dailyAspects <- merge(dailyAspects, dailySlowPlanetsSpeed, by = c('Date'))
 # dailyAspects <- dailyAspectsPlanetCombGeneralizedEnergy(orbLimit = 2)
 
@@ -63,17 +63,7 @@ aspectViewTest <- merge(
   by = "Date"
 )
 
-#selectCols <- c(
-#  'Actbin'
-#  , 'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU', 'MOSA', 'MOUR', 'MONE', 'MOPL'
-#  , 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL'
-#  , 'VESU', 'VEMA', 'VEJU', 'VESA', 'VEUR', 'VENE', 'VEPL'
-#  #, 'SUMA', 'SUJU', 'SUSA', 'SUUR', 'SUNE', 'SUPL'
-#  #, 'MAJU', 'MASA', 'MAUR', 'MANE', 'MAPL'
-#)
-
 selectCols <- names(aspectViewTrain)[-1]
-
 control <- trainControl(
   #method = "cv", # 2 - fast
   #method = "boot", # 2 - slow
@@ -234,7 +224,9 @@ fitModel <- train(
   #censored = T,
   #softmax = T,
   maxit = 150,
-  repeats = 200
+  repeats = 200,
+  metric = "Kappa",
+  # maximize = T
   #preProc = c("center", "scale")
 )
 
