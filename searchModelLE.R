@@ -227,11 +227,11 @@ fitModel <- train(
   #  loss_type = "e"
   #)
   tuneGrid = expand.grid(
-    size = seq(3, 12, by = 3),
-    decay = 0.1,
+    size = 12,
+    decay = 0.05,
     bag = T
   ),
-  maxit = 200,
+  maxit = 150,
   repeats = 200
   #preProc = c("center", "scale")
 )
