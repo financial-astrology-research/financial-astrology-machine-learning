@@ -15,7 +15,7 @@ pxFilter <- c('MA', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN')
 dailyAspectsCount <- dailyAspectsGeneralizedCount(orbLimit = 2, pxFilter = c('MO', pxFilter))
 # dailyAspectsOrbMean <- dailyAspectsGeneralizedOrbsMean(orbLimit = 2, pxFilter = pxFilter)
 # dailyAspectsEnergy <- dailyAspectsGeneralizedEnergySum(orbLimit = 2, pxFilter = pxFilter)
-dailyAspectsPlanetXCount <- dailyAspectsPlanetXGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
+dailyAspectsPlanetXCount <- dailyAspectsPlanetXGeneralizedCount(orbLimit = 2, pxFilter = c('MO', pxFilter))
 # The planet receiver aspects count seems significant.
 dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
 #dailyAspectsCombCount <- dailyAspectsPlanetCombGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
@@ -205,6 +205,8 @@ fitModel <- train(
   # method = "xgbLinear", # 0.52
   # method = "xgbTree", # 0.45
   # method = "extraTrees", # N/A JAVA errors
+  metric = "Kappa",
+  maximize = T,
   # TODO: Continue with 7.0.9 (Discrete Weighted Discriminant)
   trControl = control,
   # tuneLength = 3,
@@ -221,12 +223,10 @@ fitModel <- train(
     decay = 0.05,
     bag = T
   ),
+  maxit = 150,
+  repeats = 200
   #censored = T,
   #softmax = T,
-  maxit = 150,
-  repeats = 200,
-  metric = "Kappa",
-  # maximize = T
   #preProc = c("center", "scale")
 )
 
@@ -260,4 +260,4 @@ finalActbinPred <- predict(fitModel, dailyAspects, type = "raw")
 dailyAspects[, finalPred := finalActbinPred]
 
 #saveRDS(fitModel, paste("./models/", symbol, "_avnet4", ".rds", sep=""))
-#fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-avnnet5.csv", sep = "-"))
+#fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-avnnet6.csv", sep = "-"))
