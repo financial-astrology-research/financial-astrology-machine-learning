@@ -1617,21 +1617,15 @@ dailyFastPlanetsRetrograde <- function() {
   dailyPlanetsSpeed <- dailyPlanetsSpeed()
   dailyPlanetsSpeed[, MESL := ifelse(MESP <= 0.3, 1, 0)]
   dailyPlanetsSpeed[, VESL := ifelse(VESP <= 0.3, 1, 0)]
-  dailyPlanetsSpeed[, MASL := ifelse(MASP <= 0.3, 1, 0)]
-
-  # Fast speed flag don't make any difference in modeling.
-  #dailyPlanetsSpeed[, MEFS := ifelse(MESP >= 0.7, 1, 0)]
-  #dailyPlanetsSpeed[, VEFS := ifelse(VESP >= 0.7, 1, 0)]
-  #dailyPlanetsSpeed[, MAFS := ifelse(MASP >= 0.7, 1, 0)]
+  dailyPlanetsSpeed[, SUSL := ifelse(SUSP <= 0.3, 1, 0)]
+  dailyPlanetsSpeed[, MOSL := ifelse(MOSP <= 0.3, 1, 0)]
 
   selCols <- c(
     'Date',
     'MESL',
-    'VESL'
-    #'MASL'
-    #'MEFS',
-    #'VEFS',
-    #'MAFS'
+    'VESL',
+    #'SUSL'
+    #'MOSL'
   )
 
   return(dailyPlanetsSpeed[, ..selCols])
@@ -1639,18 +1633,20 @@ dailyFastPlanetsRetrograde <- function() {
 
 dailySlowPlanetsRetrograde <- function() {
   dailyPlanetsSpeed <- dailyPlanetsSpeed()
-  dailyPlanetsSpeed[, JUSL := ifelse(JUSP <= 0.30, 1, 0)]
-  dailyPlanetsSpeed[, SASL := ifelse(SASP <= 0.30, 1, 0)]
-  dailyPlanetsSpeed[, URSL := ifelse(URSP <= 0.30, 1, 0)]
-  dailyPlanetsSpeed[, NESL := ifelse(NESP <= 0.30, 1, 0)]
-  dailyPlanetsSpeed[, PLSL := ifelse(PLSP <= 0.30, 1, 0)]
+  dailyPlanetsSpeed[, MASL := ifelse(MASP <= 0.3, 1, 0)]
+  dailyPlanetsSpeed[, JUSL := ifelse(JUSP <= 0.3, 1, 0)]
+  dailyPlanetsSpeed[, SASL := ifelse(SASP <= 0.3, 1, 0)]
+  dailyPlanetsSpeed[, URSL := ifelse(URSP <= 0.3, 1, 0)]
+  dailyPlanetsSpeed[, NESL := ifelse(NESP <= 0.3, 1, 0)]
+  dailyPlanetsSpeed[, PLSL := ifelse(PLSP <= 0.3, 1, 0)]
 
   selCols <- c(
     'Date',
-    #'JUSL'
-    'SASL'
-    #'URSL',
-    #'NESL',
+    'MASL',
+    'JUSL',
+    #'SASL'
+    'URSL'
+    #'NESL'
     #'PLSL'
   )
 

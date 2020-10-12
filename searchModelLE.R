@@ -13,10 +13,7 @@ pxFilter <- c('MA', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN')
 # dailyAspects <- dailyCombPlanetAspectsFactorsTable(orbLimit = 2, aspectFilter =  aspectFilter)
 # dailyAspects <- dailyCombPlanetAspectsFactorsTableLE(orbLimit = 2.5, aspectFilter =  aspectFilter)
 dailyAspectsCount <- dailyAspectsGeneralizedCount(orbLimit = 2, pxFilter = c('MO', pxFilter))
-# dailyAspectsOrbMean <- dailyAspectsGeneralizedOrbsMean(orbLimit = 2, pxFilter = pxFilter)
-# dailyAspectsEnergy <- dailyAspectsGeneralizedEnergySum(orbLimit = 2, pxFilter = pxFilter)
 dailyAspectsPlanetXCount <- dailyAspectsPlanetXGeneralizedCount(orbLimit = 2, pxFilter = c('MO', pxFilter))
-# The planet receiver aspects count seems significant.
 dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
 #dailyAspectsCombCount <- dailyAspectsPlanetCombGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
 dailyFastPlanetsSpeed <- dailyFastPlanetsRetrograde()
@@ -24,9 +21,8 @@ dailySlowPlanetsSpeed <- dailySlowPlanetsRetrograde()
 #dailyAspects <- merge(dailyAspectsCount, dailyAspectsCombCount, by = c('Date'))
 dailyAspects <- merge(dailyAspectsCount, dailyAspectsPlanetYCount, by = c('Date'))
 dailyAspects <- merge(dailyAspects, dailyAspectsPlanetXCount, by = c('Date'))
-#dailyAspects <- merge(dailyAspectsPlanetYCount, dailyAspectsPlanetXCount, by = c('Date'))
 dailyAspects <- merge(dailyAspects, dailyFastPlanetsSpeed, by = c('Date'))
-#dailyAspects <- merge(dailyAspects, dailySlowPlanetsSpeed, by = c('Date'))
+dailyAspects <- merge(dailyAspects, dailySlowPlanetsSpeed, by = c('Date'))
 # dailyAspects <- dailyAspectsPlanetCombGeneralizedEnergy(orbLimit = 2)
 
 symbol <- "LINK-USD"
@@ -46,7 +42,6 @@ aspectView <- merge(
   dailyAspects, by = "Date"
 )
 
-# TODO: Experiment partition by price diff and increase to 0.80.
 trainIndex <- createDataPartition(aspectView$Actbin, p = 0.80, list = FALSE)
 aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
@@ -207,7 +202,6 @@ fitModel <- train(
   # method = "extraTrees", # N/A JAVA errors
   metric = "Kappa",
   maximize = T,
-  # TODO: Continue with 7.0.9 (Discrete Weighted Discriminant)
   trControl = control,
   # tuneLength = 3,
   # tuneGrid = expand.grid(predFixed = 40, minNode = 15)
@@ -260,4 +254,4 @@ finalActbinPred <- predict(fitModel, dailyAspects, type = "raw")
 dailyAspects[, finalPred := finalActbinPred]
 
 #saveRDS(fitModel, paste("./models/", symbol, "_avnet4", ".rds", sep=""))
-#fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-avnnet6.csv", sep = "-"))
+#fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-avnnet7.csv", sep = "-"))
