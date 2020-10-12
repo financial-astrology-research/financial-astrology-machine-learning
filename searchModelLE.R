@@ -58,6 +58,12 @@ aspectViewTest <- merge(
   by = "Date"
 )
 
+# create own function so we can use "sensitivity" as our metric to maximise:
+#Sensitivity.fc <- function (data, lev = levels(data$obs), model = NULL) {
+#  out <- c(twoClassSummary(data, lev = levels(data$obs), model = NULL))
+#  c(out, Sensitivity = out["Sens"])
+#}
+
 selectCols <- names(aspectViewTrain)[-1]
 control <- trainControl(
   #method = "cv", # 2 - fast
@@ -73,9 +79,13 @@ control <- trainControl(
   #horizon = 10,
   number = 10,
   savePredictions = "final",
+  returnResamp = "all",
+  #summaryFunction = twoClassSummary,
+  #selectionFunction = "tolerance",
   classProbs = T,
   allowParallel = T,
-  verboseIter = T
+  verboseIter = T,
+  trim = F
 )
 
 fitModel <- train(
@@ -200,6 +210,7 @@ fitModel <- train(
   # method = "xgbLinear", # 0.52
   # method = "xgbTree", # 0.45
   # method = "extraTrees", # N/A JAVA errors
+  #metric = "ROC",
   metric = "Kappa",
   maximize = T,
   trControl = control,
@@ -254,4 +265,4 @@ finalActbinPred <- predict(fitModel, dailyAspects, type = "raw")
 dailyAspects[, finalPred := finalActbinPred]
 
 #saveRDS(fitModel, paste("./models/", symbol, "_avnet4", ".rds", sep=""))
-#fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-avnnet7.csv", sep = "-"))
+#fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-avnnet8.csv", sep = "-"))
