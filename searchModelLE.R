@@ -17,7 +17,7 @@ dailyAspectsPlanetXCount <- dailyAspectsPlanetXGeneralizedCount(orbLimit = 2, px
 dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
 #dailyAspectsCombCount <- dailyAspectsPlanetCombGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
 dailyFastPlanetsSpeed <- dailyFastPlanetsRetrograde()
-dailySlowPlanetsSpeed <- dailySlowPlanetsRetrograde()
+#dailySlowPlanetsSpeed <- dailySlowPlanetsRetrograde()
 #dailyAspects <- merge(dailyAspectsCount, dailyAspectsCombCount, by = c('Date'))
 #dailyAspects <- merge(dailyAspectsCount, dailyAspectsPlanetYCount, by = c('Date'))
 #dailyAspects <- merge(dailyAspects, dailyAspectsPlanetXCount, by = c('Date'))

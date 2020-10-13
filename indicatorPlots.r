@@ -1615,15 +1615,15 @@ dailyPlanetsSpeed <- function() {
 
 dailyFastPlanetsRetrograde <- function() {
   dailyPlanetsSpeed <- dailyPlanetsSpeed()
-  dailyPlanetsSpeed[, MESL := ifelse(MESP <= 0.3, 1, 0)]
-  dailyPlanetsSpeed[, VESL := ifelse(VESP <= 0.3, 1, 0)]
-  dailyPlanetsSpeed[, SUSL := ifelse(SUSP <= 0.3, 1, 0)]
-  dailyPlanetsSpeed[, MOSL := ifelse(MOSP <= 0.3, 1, 0)]
+  dailyPlanetsSpeed[, MESL := ifelse(MESP <= 0.25, 1, 0)]
+  dailyPlanetsSpeed[, VESL := ifelse(VESP <= 0.25, 1, 0)]
+  dailyPlanetsSpeed[, SUSL := ifelse(SUSP <= 0.25, 1, 0)]
+  dailyPlanetsSpeed[, MOSL := ifelse(MOSP <= 0.25, 1, 0)]
 
   selCols <- c(
     'Date',
     'MESL',
-    'VESL',
+    'VESL'
     #'SUSL'
     #'MOSL'
   )
