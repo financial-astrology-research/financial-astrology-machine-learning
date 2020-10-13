@@ -228,7 +228,7 @@ fitModel <- train(
     decay = 0.05,
     bag = T
   ),
-  maxit = 150,
+  maxit = 250,
   repeats = 200
   #censored = T,
   #softmax = T,
@@ -265,4 +265,4 @@ finalActbinPred <- predict(fitModel, dailyAspects, type = "raw")
 dailyAspects[, finalPred := finalActbinPred]
 
 #saveRDS(fitModel, paste("./models/", symbol, "_avnet4", ".rds", sep=""))
-#fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-avnnet8.csv", sep = "-"))
+#fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-avnnet10.csv", sep = "-"))
