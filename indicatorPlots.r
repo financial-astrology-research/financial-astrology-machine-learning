@@ -1416,7 +1416,7 @@ dailyCombPlanetAspectsFactorsTableLE <- function(orbLimit = 2, aspectFilter = c(
   return(dailyAspectsWide)
 }
 
-dailyAspectsGeneralizedCount <- function(orbLimit = 2, pxFilter = c()) {
+dailyAspectsGeneralizedCount <- function(orbLimit = 2, pxFilter = c(), binFlag = F) {
   idCols <- c('Date', 'Hour')
   setClassicAspectsSet8()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
@@ -1438,6 +1438,15 @@ dailyAspectsGeneralizedCount <- function(orbLimit = 2, pxFilter = c()) {
     fill = 0
   )
   setDT(dailyAspectsCount)
+
+  # Convert counts to binary flags when setting is enabled.
+  if (binFlag) {
+    aspectCols <- names(dailyAspectsCount)[-1]
+    dailyAspectsCount[,
+      c(aspectCols) := lapply(.SD, function(x) ifelse(x > 1, 1, 0)),
+      .SDcols = aspectCols
+    ]
+  }
 
   return(dailyAspectsCount)
 }
@@ -1496,7 +1505,7 @@ dailyAspectsGeneralizedEnergySum <- function(orbLimit = 2, pxFilter = c()) {
 }
 
 # Count total aspects per planet Y (receiver).
-dailyAspectsPlanetYGeneralizedCount <- function(orbLimit = 2, pxFilter = c()) {
+dailyAspectsPlanetYGeneralizedCount <- function(orbLimit = 2, pxFilter = c(), binFlag = F) {
   idCols <- c('Date', 'Hour')
   setClassicAspectsSet8()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
@@ -1519,11 +1528,20 @@ dailyAspectsPlanetYGeneralizedCount <- function(orbLimit = 2, pxFilter = c()) {
   )
   setDT(dailyAspectsCount)
 
+  # Convert counts to binary flags when setting is enabled.
+  if (binFlag) {
+    planetsCols <- names(dailyAspectsCount)[-1]
+    dailyAspectsCount[,
+      c(planetsCols) := lapply(.SD, function(x) ifelse(x > 1, 1, 0)),
+      .SDcols = planetsCols
+    ]
+  }
+
   return(dailyAspectsCount)
 }
 
 # Count total aspects per planet X (emitter).
-dailyAspectsPlanetXGeneralizedCount <- function(orbLimit = 2, pxFilter = c()) {
+dailyAspectsPlanetXGeneralizedCount <- function(orbLimit = 2, pxFilter = c(), binFlag = F) {
   idCols <- c('Date', 'Hour')
   setClassicAspectsSet8()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
@@ -1545,6 +1563,15 @@ dailyAspectsPlanetXGeneralizedCount <- function(orbLimit = 2, pxFilter = c()) {
     fill = 0
   )
   setDT(dailyAspectsCount)
+
+  # Convert counts to binary flags when setting is enabled.
+  if (binFlag) {
+    planetsCols <- names(dailyAspectsCount)[-1]
+    dailyAspectsCount[,
+      c(planetsCols) := lapply(.SD, function(x) ifelse(x > 1, 1, 0)),
+      .SDcols = planetsCols
+    ]
+  }
 
   return(dailyAspectsCount)
 }
