@@ -19,10 +19,14 @@ dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(orbLimit = 2, px
 dailyFastPlanetsSpeed <- dailyFastPlanetsRetrograde()
 dailySlowPlanetsSpeed <- dailySlowPlanetsRetrograde()
 #dailyAspects <- merge(dailyAspectsCount, dailyAspectsCombCount, by = c('Date'))
-dailyAspects <- merge(dailyAspectsCount, dailyAspectsPlanetYCount, by = c('Date'))
+#dailyAspects <- merge(dailyAspectsCount, dailyAspectsPlanetYCount, by = c('Date'))
+#dailyAspects <- merge(dailyAspects, dailyAspectsPlanetXCount, by = c('Date'))
+dailyAspects <- dailyAspectsCount
+dailyAspects <- merge(dailyAspects, dailyAspectsPlanetYCount, by = c('Date'))
 dailyAspects <- merge(dailyAspects, dailyAspectsPlanetXCount, by = c('Date'))
 dailyAspects <- merge(dailyAspects, dailyFastPlanetsSpeed, by = c('Date'))
-dailyAspects <- merge(dailyAspects, dailySlowPlanetsSpeed, by = c('Date'))
+#dailyAspects <- merge(dailyAspects, dailyFastPlanetsSpeed, by = c('Date'))
+#dailyAspects <- merge(dailyAspects, dailySlowPlanetsSpeed, by = c('Date'))
 # dailyAspects <- dailyAspectsPlanetCombGeneralizedEnergy(orbLimit = 2)
 
 symbol <- "LINK-USD"
@@ -265,4 +269,4 @@ finalActbinPred <- predict(fitModel, dailyAspects, type = "raw")
 dailyAspects[, finalPred := finalActbinPred]
 
 #saveRDS(fitModel, paste("./models/", symbol, "_avnet4", ".rds", sep=""))
-#fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-avnnet10.csv", sep = "-"))
+#fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-avnnet13.csv", sep = "-"))
