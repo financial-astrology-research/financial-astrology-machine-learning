@@ -1433,7 +1433,7 @@ dailyAspectsGeneralizedCount <- function(orbLimit = 2, pxFilter = c(), binFlag =
   dailyAspectsCount <- dcast(
     dailyAspects,
     Date ~ aspect,
-    fun.aggregate = count,
+    fun.aggregate = SIT::count,
     value.var = "aspect",
     fill = 0
   )
@@ -1522,7 +1522,7 @@ dailyAspectsPlanetYGeneralizedCount <- function(orbLimit = 2, pxFilter = c(), bi
   dailyAspectsCount <- dcast(
     dailyAspects,
     Date ~ p.y,
-    fun.aggregate = count,
+    fun.aggregate = SIT::count,
     value.var = "aspect",
     fill = 0
   )
@@ -1558,7 +1558,7 @@ dailyAspectsPlanetXGeneralizedCount <- function(orbLimit = 2, pxFilter = c(), bi
   dailyAspectsCount <- dcast(
     dailyAspects,
     Date ~ p.x,
-    fun.aggregate = count,
+    fun.aggregate = SIT::count,
     value.var = "aspect",
     fill = 0
   )
@@ -1594,7 +1594,7 @@ dailyAspectsPlanetCombGeneralizedCount <- function(orbLimit = 2, pxFilter = c())
   dailyAspectsCount <- dcast(
     dailyAspects,
     Date ~ origin,
-    fun.aggregate = count,
+    fun.aggregate = SIT::count,
     value.var = "aspect",
     fill = 0
   )
