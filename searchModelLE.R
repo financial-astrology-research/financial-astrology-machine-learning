@@ -5,6 +5,7 @@
 library(boot)
 library(caret)
 library(psych)
+library(plyr)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
@@ -56,11 +57,11 @@ hist(securityData$zdiffPercent)
 cat(paste("Total days rows: ", nrow(securityData)), "\n")
 
 aspectView <- merge(
-  securityData[, c('Date', 'Actbin')],
+  securityData[, c('Date', 'Eff', 'Actbin')],
   dailyAspects, by = "Date"
 )
 
-trainIndex <- createDataPartition(aspectView$Actbin, p = 0.80, list = FALSE)
+trainIndex <- createDataPartition(aspectView$Eff, p = 0.80, list = FALSE)
 aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
 
@@ -82,7 +83,6 @@ aspectViewTest <- merge(
 #  c(out, Sensitivity = out["Sens"])
 #}
 
-selectCols <- names(aspectViewTrain)[-1]
 control <- trainControl(
   method = "boot632", # 2 - slow
   #method = "cv", # 2 - fast
@@ -106,8 +106,9 @@ control <- trainControl(
   trim = F
 )
 
+selectCols <- names(aspectViewTrain)[c(-1, -3)]
 fitModel <- train(
-  formula(Actbin ~ .),
+  formula(Eff ~ .),
   data = aspectViewTrain[, ..selectCols],
   # method = "AdaBag", # 0.51
   # method = "BstLm", # N/A predict error
@@ -262,6 +263,7 @@ fitModel %>% varImp()
 cat("--VALIDATE MODEL--\n\n")
 # Validate test data accuracy.
 validateActbinPred <- predict(fitModel, aspectViewValidate, type = "raw")
+validateActbinPred <- mapvalues(validateActbinPred, from = c("up", "down"), to = c("buy", "sell"))
 validateResult <- table(
   actualclass = as.character(aspectViewValidate$Actbin),
   predictedclass = as.character(validateActbinPred)
@@ -272,6 +274,7 @@ print(validateResult)
 cat("--TEST MODEL--\n\n")
 # Validate test data accuracy.
 testActbinPred <- predict(fitModel, aspectViewTest, type = "raw")
+testActbinPred <- mapvalues(testActbinPred, from = c("up", "down"), to = c("buy", "sell"))
 testResult <- table(
   actualclass = as.character(aspectViewTest$Actbin),
   predictedclass = as.character(testActbinPred)
@@ -280,6 +283,7 @@ testResult <- table(
 print(testResult)
 
 finalActbinPred <- predict(fitModel, dailyAspects, type = "raw")
+finalActbinPred <- mapvalues(finalActbinPred, from = c("up", "down"), to = c("buy", "sell"))
 dailyAspects[, finalPred := finalActbinPred]
 
 #saveRDS(fitModel, paste("./models/", symbol, "_avnet4", ".rds", sep=""))
