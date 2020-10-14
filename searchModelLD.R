@@ -11,7 +11,14 @@ library(metafor)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-dailyAspects <- dailyCombPlanetAspectsFactorsTable(orbLimit = 1)
+# CONCLUSIONS (for daily price move prediction)
+# - Orb=4: found modles with max 0.58 accuracy and medium imbalance.
+# - Orb=3: found models with max 0.59 accuracy and medium imbalance.
+# - Orb=2.5: found models with max 0.59 accuracy and low imbalance.
+# - Orb=2: found models with max 0.57 accuracy and low imbalance.
+# - Orb=1.5: took a lot to converge and resulted in high imbalance solutions.
+# - Orb=1: found models with max 0.55 accuracy and high imbalance.
+dailyAspects <- dailyCombPlanetAspectsFactorsTable(orbLimit = 2.5)
 
 symbol <- "LINK-USD"
 securityData <- mainOpenSecurity(
@@ -37,8 +44,8 @@ aspectViewValidate <- aspectView[-trainIndex,]
 selectCols <- c(
   'Actbin'
   #, 'MOME', 'MOVE', 'MOSU', 'MOMA', 'MOJU', 'MOSA', 'MOUR', 'MONE', 'MOPL', 'MONN'
-  , 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
-  #, 'VESU', 'VEMA', 'VEJU', 'VESA', 'VEUR', 'VENE', 'VEPL', 'VENN'
+  #, 'MEVE', 'MESU', 'MEMA', 'MEJU', 'MESA', 'MEUR', 'MENE', 'MEPL', 'MENN'
+  , 'VESU', 'VEMA', 'VEJU', 'VESA', 'VEUR', 'VENE', 'VEPL', 'VENN'
   , 'SUMA', 'SUJU', 'SUSA', 'SUUR', 'SUNE', 'SUPL', 'SUNN'
   #,'MAJU', 'MASA', 'MAUR', 'MANE', 'MAPL'
   #,'JUSA'
