@@ -13,23 +13,9 @@ aspectFilter <- c()
 pxFilter <- c('MA', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN')
 # dailyAspects <- dailyCombPlanetAspectsFactorsTable(orbLimit = 2, aspectFilter =  aspectFilter)
 # dailyAspects <- dailyCombPlanetAspectsFactorsTableLE(orbLimit = 2.5, aspectFilter =  aspectFilter)
-dailyAspectsCount <- dailyAspectsGeneralizedCount(
-  orbLimit = 2,
-  pxFilter = c('MO', pxFilter),
-  binFlag = F
-)
-
-dailyAspectsPlanetXCount <- dailyAspectsPlanetXGeneralizedCount(
-  orbLimit = 2,
-  pxFilter = c('MO', pxFilter),
-  binFlag = F
-)
-
-dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(
-  orbLimit = 2,
-  pxFilter = pxFilter,
-  binFlag = F
-)
+dailyAspectsCount <- dailyAspectsGeneralizedCount(orbLimit = 2, pxFilter = c('MO', pxFilter))
+dailyAspectsPlanetXCount <- dailyAspectsPlanetXGeneralizedCount(orbLimit = 2, pxFilter = c('MO', pxFilter))
+dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
 #dailyAspectsCombCount <- dailyAspectsPlanetCombGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
 dailyFastPlanetsSpeed <- dailyFastPlanetsRetrograde()
 #dailySlowPlanetsSpeed <- dailySlowPlanetsRetrograde()
@@ -84,9 +70,9 @@ aspectViewTest <- merge(
 #}
 
 control <- trainControl(
-  method = "boot632", # 2 - slow
   #method = "cv", # 2 - fast
   #method = "boot", # 2 - slow
+  method = "boot632", # 2 - slow
   #method = "optimism_boot", # 2 - slow
   #method = "boot_all", # 2 - slow
   #method = "LOOCV", # 2 - very slow
