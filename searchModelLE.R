@@ -229,11 +229,11 @@ fitModel <- train(
   #  loss_type = "e"
   #)
   tuneGrid = expand.grid(
-    size = 12,
-    decay = 0.05,
+    size = 9,
+    decay = 0.1,
     bag = T
   ),
-  maxit = 250,
+  maxit = 100,
   repeats = 200
   #censored = T,
   #softmax = T,
@@ -273,4 +273,4 @@ finalActbinPred <- predict(fitModel, dailyAspects, type = "raw")
 dailyAspects[, finalPred := finalActbinPred]
 
 #saveRDS(fitModel, paste("./models/", symbol, "_avnet4", ".rds", sep=""))
-#fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-avnnet13.csv", sep = "-"))
+#fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-avnnet15.csv", sep = "-"))
