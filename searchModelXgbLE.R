@@ -10,43 +10,42 @@ source("./analysis.r")
 source("./indicatorPlots.r")
 
 aspectFilter <- c()
-pxFilter <- c('MA', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN')
+pxFilter <- c('MO', 'SU', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN')
 #dailyAspects <- dailyCombPlanetAspectsFactorsTable(orbLimit = 2, aspectFilter =  aspectFilter)
-dailyAspects <- dailyCombPlanetAspectsFactorsTableLE(orbLimit = 2.5, aspectFilter =  aspectFilter)
+dailyAspects <- dailyCombPlanetAspectsFactorsTableLE(
+  orbLimit = 2.5,
+  aspectFilter =  aspectFilter,
+  pxFilter = pxFilter
+)
+
 #dailyAspectsCount <- dailyAspectsGeneralizedCount(
 #  orbLimit = 2,
 #  pxFilter = c('MO', pxFilter)
 #)
-#
+
 #dailyAspectsPlanetXCount <- dailyAspectsPlanetXGeneralizedCount(
-#  orbLimit = 2,
-#  pxFilter = c('MO', pxFilter)
-#)
-#
-#dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(
-#  orbLimit = 2,
+#  orbLimit = 2.5,
 #  pxFilter = pxFilter
 #)
-#
-##dailyFastPlanetsSpeed <- dailyFastPlanetsRetrograde()
-##dailySlowPlanetsSpeed <- dailySlowPlanetsRetrograde()
+
+#dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(
+#  orbLimit = 2.5,
+#  pxFilter = c('ME', 'VE', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN')
+#)
+
+dailyFastPlanetsSpeed <- dailyFastPlanetsRetrograde()
+#dailySlowPlanetsSpeed <- dailySlowPlanetsRetrograde()
 #dailyAspects <- dailyAspectsCount
 #dailyAspects <- merge(dailyAspects, dailyAspectsPlanetYCount, by = c('Date'))
 #dailyAspects <- merge(dailyAspects, dailyAspectsPlanetXCount, by = c('Date'))
-##dailyAspects <- merge(dailyAspects, dailyFastPlanetsSpeed, by = c('Date'))
-##dailyAspects <- merge(dailyAspects, dailySlowPlanetsSpeed, by = c('Date'))
+dailyAspects <- merge(dailyAspects, dailyFastPlanetsSpeed, by = c('Date'))
+#dailyAspects <- merge(dailyAspects, dailySlowPlanetsSpeed, by = c('Date'))
 
-symbol <- "BNB-USD"
+symbol <- "ADA-USD"
 securityData <- mainOpenSecurity(
   symbol, 2, 4,
   "%Y-%m-%d", "2010-01-01", "2020-07-31"
 )
-
-# Filter the extreme outliers.
-cat(paste("Original days rows: ", nrow(securityData)), "\n")
-securityData <- securityData[zdiffPercent < 3 & zdiffPercent > -3,]
-hist(securityData$zdiffPercent)
-cat(paste("Total days rows: ", nrow(securityData)), "\n")
 
 aspectView <- merge(
   securityData[, c('Date', 'Eff', 'Actbin')],
@@ -70,7 +69,7 @@ aspectViewTest <- merge(
 )
 
 control <- trainControl(
-  method = "boot632",
+  method = "cv",
   number = 10,
   savePredictions = "final",
   returnResamp = "all",
@@ -90,7 +89,7 @@ fitModel <- train(
   metric = "Kappa",
   maximize = T,
   trControl = control,
-  tuneLength = 3
+  tuneLength = 2
   #tuneGrid = expand.grid(
   #  nrounds = 100,
   #  lambda = 0,
@@ -133,4 +132,4 @@ finalActbinPred <- mapvalues(finalActbinPred, from = c("up", "down"), to = c("bu
 dailyAspects[, finalPred := finalActbinPred]
 
 #saveRDS(fitModel, paste("./models/", symbol, "_xgb1", ".rds", sep=""))
-#fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-xgb16.csv", sep = "-"))
+#fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-xgb1.csv", sep = "-"))
