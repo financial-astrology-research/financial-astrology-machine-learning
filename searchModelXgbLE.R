@@ -11,30 +11,30 @@ source("./indicatorPlots.r")
 
 aspectFilter <- c()
 pxFilter <- c('MA', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN')
-# dailyAspects <- dailyCombPlanetAspectsFactorsTable(orbLimit = 2, aspectFilter =  aspectFilter)
-# dailyAspects <- dailyCombPlanetAspectsFactorsTableLE(orbLimit = 2.5, aspectFilter =  aspectFilter)
-dailyAspectsCount <- dailyAspectsGeneralizedCount(
-  orbLimit = 2,
-  pxFilter = c('MO', pxFilter)
-)
-
-dailyAspectsPlanetXCount <- dailyAspectsPlanetXGeneralizedCount(
-  orbLimit = 2,
-  pxFilter = c('MO', pxFilter)
-)
-
-dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(
-  orbLimit = 2,
-  pxFilter = pxFilter
-)
-
-#dailyFastPlanetsSpeed <- dailyFastPlanetsRetrograde()
-#dailySlowPlanetsSpeed <- dailySlowPlanetsRetrograde()
-dailyAspects <- dailyAspectsCount
-dailyAspects <- merge(dailyAspects, dailyAspectsPlanetYCount, by = c('Date'))
-dailyAspects <- merge(dailyAspects, dailyAspectsPlanetXCount, by = c('Date'))
-#dailyAspects <- merge(dailyAspects, dailyFastPlanetsSpeed, by = c('Date'))
-#dailyAspects <- merge(dailyAspects, dailySlowPlanetsSpeed, by = c('Date'))
+#dailyAspects <- dailyCombPlanetAspectsFactorsTable(orbLimit = 2, aspectFilter =  aspectFilter)
+dailyAspects <- dailyCombPlanetAspectsFactorsTableLE(orbLimit = 2.5, aspectFilter =  aspectFilter)
+#dailyAspectsCount <- dailyAspectsGeneralizedCount(
+#  orbLimit = 2,
+#  pxFilter = c('MO', pxFilter)
+#)
+#
+#dailyAspectsPlanetXCount <- dailyAspectsPlanetXGeneralizedCount(
+#  orbLimit = 2,
+#  pxFilter = c('MO', pxFilter)
+#)
+#
+#dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(
+#  orbLimit = 2,
+#  pxFilter = pxFilter
+#)
+#
+##dailyFastPlanetsSpeed <- dailyFastPlanetsRetrograde()
+##dailySlowPlanetsSpeed <- dailySlowPlanetsRetrograde()
+#dailyAspects <- dailyAspectsCount
+#dailyAspects <- merge(dailyAspects, dailyAspectsPlanetYCount, by = c('Date'))
+#dailyAspects <- merge(dailyAspects, dailyAspectsPlanetXCount, by = c('Date'))
+##dailyAspects <- merge(dailyAspects, dailyFastPlanetsSpeed, by = c('Date'))
+##dailyAspects <- merge(dailyAspects, dailySlowPlanetsSpeed, by = c('Date'))
 
 symbol <- "BNB-USD"
 securityData <- mainOpenSecurity(
