@@ -13,24 +13,30 @@ aspectFilter <- c()
 pxFilter <- c('MA', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN')
 # dailyAspects <- dailyCombPlanetAspectsFactorsTable(orbLimit = 2, aspectFilter =  aspectFilter)
 # dailyAspects <- dailyCombPlanetAspectsFactorsTableLE(orbLimit = 2.5, aspectFilter =  aspectFilter)
-dailyAspectsCount <- dailyAspectsGeneralizedCount(orbLimit = 2, pxFilter = c('MO', pxFilter))
-dailyAspectsPlanetXCount <- dailyAspectsPlanetXGeneralizedCount(orbLimit = 2, pxFilter = c('MO', pxFilter))
-dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
-#dailyAspectsCombCount <- dailyAspectsPlanetCombGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
-dailyFastPlanetsSpeed <- dailyFastPlanetsRetrograde()
+dailyAspectsCount <- dailyAspectsGeneralizedCount(
+  orbLimit = 2,
+  pxFilter = c('MO', pxFilter)
+)
+
+dailyAspectsPlanetXCount <- dailyAspectsPlanetXGeneralizedCount(
+  orbLimit = 2,
+  pxFilter = c('MO', pxFilter)
+)
+
+dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(
+  orbLimit = 2,
+  pxFilter = pxFilter
+)
+
+#dailyFastPlanetsSpeed <- dailyFastPlanetsRetrograde()
 #dailySlowPlanetsSpeed <- dailySlowPlanetsRetrograde()
-#dailyAspects <- merge(dailyAspectsCount, dailyAspectsCombCount, by = c('Date'))
-#dailyAspects <- merge(dailyAspectsCount, dailyAspectsPlanetYCount, by = c('Date'))
-#dailyAspects <- merge(dailyAspects, dailyAspectsPlanetXCount, by = c('Date'))
 dailyAspects <- dailyAspectsCount
 dailyAspects <- merge(dailyAspects, dailyAspectsPlanetYCount, by = c('Date'))
 dailyAspects <- merge(dailyAspects, dailyAspectsPlanetXCount, by = c('Date'))
-dailyAspects <- merge(dailyAspects, dailyFastPlanetsSpeed, by = c('Date'))
 #dailyAspects <- merge(dailyAspects, dailyFastPlanetsSpeed, by = c('Date'))
 #dailyAspects <- merge(dailyAspects, dailySlowPlanetsSpeed, by = c('Date'))
-# dailyAspects <- dailyAspectsPlanetCombGeneralizedEnergy(orbLimit = 2)
 
-symbol <- "LINK-USD"
+symbol <- "BNB-USD"
 securityData <- mainOpenSecurity(
   symbol, 2, 4,
   "%Y-%m-%d", "2010-01-01", "2020-07-31"
@@ -47,7 +53,7 @@ aspectView <- merge(
   dailyAspects, by = "Date"
 )
 
-trainIndex <- createDataPartition(aspectView$Actbin, p = 0.80, list = FALSE)
+trainIndex <- createDataPartition(aspectView$Eff, p = 0.80, list = FALSE)
 aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
 
@@ -64,7 +70,7 @@ aspectViewTest <- merge(
 )
 
 control <- trainControl(
-  method = "boot632", # 2 - slow
+  method = "boot632",
   number = 10,
   savePredictions = "final",
   returnResamp = "all",
@@ -74,22 +80,22 @@ control <- trainControl(
   trim = F
 )
 
-selectCols <- names(aspectViewTrain)[c(-1, -2)]
+selectCols <- names(aspectViewTrain)[c(-1, -3)]
 fitModel <- train(
-  formula(Actbin ~ .),
+  formula(Eff ~ .),
   data = aspectViewTrain[, ..selectCols],
   #method = "xgbDART", # 0.51
-  #method = "xgbLinear", # 0.52
-  method = "xgbTree", # 0.45
+  method = "xgbLinear", # 0.52
+  #method = "xgbTree", # 0.45
   metric = "Kappa",
   maximize = T,
   trControl = control,
-  tuneLength = 3,
-  # tuneGrid = expand.grid(predFixed = 40, minNode = 15)
+  tuneLength = 3
   #tuneGrid = expand.grid(
-  #  size = 9,
-  #  decay = 0.1,
-  #  bag = T
+  #  nrounds = 100,
+  #  lambda = 0,
+  #  alpha = 0,
+  #  eta = 0.3
   #),
   #maxit = 100,
   #repeats = 200
@@ -103,7 +109,7 @@ fitModel %>% varImp()
 cat("--VALIDATE MODEL--\n\n")
 # Validate test data accuracy.
 validateActbinPred <- predict(fitModel, aspectViewValidate, type = "raw")
-#validateActbinPred <- mapvalues(validateActbinPred, from = c("up", "down"), to = c("buy", "sell"))
+validateActbinPred <- mapvalues(validateActbinPred, from = c("up", "down"), to = c("buy", "sell"))
 validateResult <- table(
   actualclass = as.character(aspectViewValidate$Actbin),
   predictedclass = as.character(validateActbinPred)
@@ -114,7 +120,7 @@ print(validateResult)
 cat("--TEST MODEL--\n\n")
 # Validate test data accuracy.
 testActbinPred <- predict(fitModel, aspectViewTest, type = "raw")
-#testActbinPred <- mapvalues(testActbinPred, from = c("up", "down"), to = c("buy", "sell"))
+testActbinPred <- mapvalues(testActbinPred, from = c("up", "down"), to = c("buy", "sell"))
 testResult <- table(
   actualclass = as.character(aspectViewTest$Actbin),
   predictedclass = as.character(testActbinPred)
@@ -123,7 +129,7 @@ testResult <- table(
 print(testResult)
 
 finalActbinPred <- predict(fitModel, dailyAspects, type = "raw")
-#finalActbinPred <- mapvalues(finalActbinPred, from = c("up", "down"), to = c("buy", "sell"))
+finalActbinPred <- mapvalues(finalActbinPred, from = c("up", "down"), to = c("buy", "sell"))
 dailyAspects[, finalPred := finalActbinPred]
 
 #saveRDS(fitModel, paste("./models/", symbol, "_xgb1", ".rds", sep=""))
