@@ -78,10 +78,10 @@ setClassicAspectsSet8 <- function() {
 
 # Limit orbs to 2 degrees which is the max strength.
 setModernMixAspectsSet1 <- function() {
-  aspects <<- c(0, 30, 45, 51, 60, 90, 120, 135, 150, 180)
-  aspectsEnergy <<- c(2, 2, 2, 2, 2, 2, 2, 2, 2, 2)
-  deforbs <<- c(3, 3, 3, 3, 3, 3, 3, 3, 3, 3)
-  defpolarities <<- c(2, 1, 0, 0, 1, 0, 1, 0, 0, 0)
+  aspects <<- c(0, 30, 45, 51, 60, 72, 90, 103, 120, 135, 150, 180)
+  aspectsEnergy <<- c(2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2)
+  deforbs <<- c(3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3)
+  defpolarities <<- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 }
 
 setModernAspectsSet2 <- function() {
