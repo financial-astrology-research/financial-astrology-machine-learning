@@ -10,7 +10,7 @@ source("./analysis.r")
 source("./indicatorPlots.r")
 
 aspectFilter <- c()
-pxFilter <- c('MO', 'ME', 'SU', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN')
+pxFilter <- c('MO', 'SU', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN')
 
 dailyAspectsCount <- dailyAspectsGeneralizedCount(
   orbLimit = 2,
@@ -25,7 +25,7 @@ dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(
 dailyAspects <- dailyAspectsCount
 dailyAspects <- merge(dailyAspects, dailyAspectsPlanetYCount, by = c('Date'))
 
-symbol <- "BNB-USD"
+symbol <- "ADA-USD"
 securityData <- mainOpenSecurity(
   symbol, 2, 4,
   "%Y-%m-%d", "2017-01-01", "2020-07-31"
@@ -54,8 +54,8 @@ aspectViewTest <- merge(
 )
 
 control <- trainControl(
-  method = "cv",
-  number = 20,
+  method = "boot",
+  number = 10,
   savePredictions = "final",
   returnResamp = "all",
   classProbs = T,
