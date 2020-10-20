@@ -25,7 +25,7 @@ dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(
 dailyAspects <- dailyAspectsCount
 dailyAspects <- merge(dailyAspects, dailyAspectsPlanetYCount, by = c('Date'))
 
-symbol <- "LINK-USD"
+symbol <- "BNB-USD"
 securityData <- mainOpenSecurity(
   symbol, 2, 4,
   "%Y-%m-%d", "2017-01-01", "2020-07-31"
@@ -36,6 +36,7 @@ aspectView <- merge(
   dailyAspects, by = "Date"
 )
 
+set.seed(3456)
 trainIndex <- createDataPartition(aspectView$Eff, p = 0.80, list = FALSE)
 aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
