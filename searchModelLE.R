@@ -30,7 +30,7 @@ dailyAspects <- merge(dailyAspects, dailyFastPlanetsSpeed, by = c('Date'))
 #dailyAspects <- merge(dailyAspects, dailySlowPlanetsSpeed, by = c('Date'))
 # dailyAspects <- dailyAspectsPlanetCombGeneralizedEnergy(orbLimit = 2)
 
-symbol <- "LINK-USD"
+symbol <- "BNB-USD"
 securityData <- mainOpenSecurity(
   symbol, 2, 4,
   "%Y-%m-%d", "2010-01-01", "2020-07-31"
@@ -230,10 +230,10 @@ fitModel <- train(
   #)
   tuneGrid = expand.grid(
     size = 9,
-    decay = 0.1,
+    decay = 0.05,
     bag = T
   ),
-  maxit = 100,
+  maxit = 150,
   repeats = 200
   #censored = T,
   #softmax = T,
