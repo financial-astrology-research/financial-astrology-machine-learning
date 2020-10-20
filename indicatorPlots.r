@@ -1504,7 +1504,7 @@ dailyAspectsGeneralizedEnergySum <- function(orbLimit = 2, pxFilter = c()) {
 }
 
 # Count total aspects per planet Y (receiver).
-dailyAspectsPlanetYGeneralizedCount <- function(orbLimit = 2, pxFilter = c(), binFlag = F) {
+dailyPlanetYActivationCount <- function(orbLimit = 2, pxFilter = c(), binFlag = F) {
   idCols <- c('Date', 'Hour')
   setModernMixAspectsSet1()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
@@ -1540,7 +1540,7 @@ dailyAspectsPlanetYGeneralizedCount <- function(orbLimit = 2, pxFilter = c(), bi
 }
 
 # Count total aspects per planet X (emitter).
-dailyAspectsPlanetXGeneralizedCount <- function(orbLimit = 2, pxFilter = c(), binFlag = F) {
+dailyPlanetXActivationCount <- function(orbLimit = 2, pxFilter = c(), binFlag = F) {
   idCols <- c('Date', 'Hour')
   setModernMixAspectsSet1()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()

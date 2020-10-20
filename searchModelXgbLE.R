@@ -10,14 +10,14 @@ source("./analysis.r")
 source("./indicatorPlots.r")
 
 aspectFilter <- c()
-pxFilter <- c('MO', 'ME', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN')
+pxFilter <- c('MO', 'ME', 'VE', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN')
 
 dailyAspectsCount <- dailyAspectsGeneralizedCount(
   orbLimit = 2,
   pxFilter = pxFilter,
 )
 
-dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(
+dailyAspectsPlanetYCount <- dailyPlanetYActivationCount(
   orbLimit = 2,
   pxFilter = pxFilter,
 )
@@ -25,7 +25,7 @@ dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(
 dailyAspects <- dailyAspectsCount
 dailyAspects <- merge(dailyAspects, dailyAspectsPlanetYCount, by = c('Date'))
 
-symbol <- "ADA-USD"
+symbol <- "ZRX-USD"
 securityData <- mainOpenSecurity(
   symbol, 2, 4,
   "%Y-%m-%d", "2017-01-01", "2020-07-31"
