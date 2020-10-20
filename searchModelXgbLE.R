@@ -10,41 +10,35 @@ source("./analysis.r")
 source("./indicatorPlots.r")
 
 aspectFilter <- c()
-pxFilter <- c('MO', 'SU', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN')
+pxFilter <- c('MO', 'SU', 'ME', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN')
 #dailyAspects <- dailyCombPlanetAspectsFactorsTable(orbLimit = 2, aspectFilter =  aspectFilter)
-dailyAspects <- dailyCombPlanetAspectsFactorsTableLE(
-  orbLimit = 2.5,
-  aspectFilter =  aspectFilter,
-  pxFilter = pxFilter
-)
-
-#dailyAspectsCount <- dailyAspectsGeneralizedCount(
-#  orbLimit = 2,
-#  pxFilter = c('MO', pxFilter)
-#)
-
-#dailyAspectsPlanetXCount <- dailyAspectsPlanetXGeneralizedCount(
+#dailyAspects <- dailyCombPlanetAspectsFactorsTableLE(
 #  orbLimit = 2.5,
+#  aspectFilter =  aspectFilter,
 #  pxFilter = pxFilter
 #)
 
-#dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(
-#  orbLimit = 2.5,
-#  pxFilter = c('ME', 'VE', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN')
-#)
+dailyAspectsCount <- dailyAspectsGeneralizedCount(
+  orbLimit = 2,
+  pxFilter = pxFilter,
+)
+
+dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(
+  orbLimit = 2,
+  pxFilter = pxFilter,
+)
 
 dailyFastPlanetsSpeed <- dailyFastPlanetsRetrograde()
 #dailySlowPlanetsSpeed <- dailySlowPlanetsRetrograde()
-#dailyAspects <- dailyAspectsCount
-#dailyAspects <- merge(dailyAspects, dailyAspectsPlanetYCount, by = c('Date'))
-#dailyAspects <- merge(dailyAspects, dailyAspectsPlanetXCount, by = c('Date'))
-dailyAspects <- merge(dailyAspects, dailyFastPlanetsSpeed, by = c('Date'))
+dailyAspects <- dailyAspectsCount
+dailyAspects <- merge(dailyAspects, dailyAspectsPlanetYCount, by = c('Date'))
+#dailyAspects <- merge(dailyAspects, dailyFastPlanetsSpeed, by = c('Date'))
 #dailyAspects <- merge(dailyAspects, dailySlowPlanetsSpeed, by = c('Date'))
 
-symbol <- "ADA-USD"
+symbol <- "BAT-USD"
 securityData <- mainOpenSecurity(
   symbol, 2, 4,
-  "%Y-%m-%d", "2010-01-01", "2020-07-31"
+  "%Y-%m-%d", "2017-01-01", "2020-07-31"
 )
 
 aspectView <- merge(
@@ -132,4 +126,4 @@ finalActbinPred <- mapvalues(finalActbinPred, from = c("up", "down"), to = c("bu
 dailyAspects[, finalPred := finalActbinPred]
 
 #saveRDS(fitModel, paste("./models/", symbol, "_xgb1", ".rds", sep=""))
-#fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-xgb1.csv", sep = "-"))
+#fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-xgb2.csv", sep = "-"))
