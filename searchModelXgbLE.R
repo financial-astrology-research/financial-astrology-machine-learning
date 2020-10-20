@@ -10,7 +10,7 @@ source("./analysis.r")
 source("./indicatorPlots.r")
 
 aspectFilter <- c()
-pxFilter <- c('MO', 'SU', 'ME', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN')
+pxFilter <- c('MO', 'ME', 'SU', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN')
 
 dailyAspectsCount <- dailyAspectsGeneralizedCount(
   orbLimit = 2,
@@ -25,7 +25,7 @@ dailyAspectsPlanetYCount <- dailyAspectsPlanetYGeneralizedCount(
 dailyAspects <- dailyAspectsCount
 dailyAspects <- merge(dailyAspects, dailyAspectsPlanetYCount, by = c('Date'))
 
-symbol <- "ADA-USD"
+symbol <- "LINK-USD"
 securityData <- mainOpenSecurity(
   symbol, 2, 4,
   "%Y-%m-%d", "2017-01-01", "2020-07-31"
@@ -36,7 +36,7 @@ aspectView <- merge(
   dailyAspects, by = "Date"
 )
 
-trainIndex <- createDataPartition(aspectView$Actbin, p = 0.90, list = FALSE)
+trainIndex <- createDataPartition(aspectView$Eff, p = 0.80, list = FALSE)
 aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
 
@@ -63,9 +63,9 @@ control <- trainControl(
   trim = F
 )
 
-selectCols <- names(aspectViewTrain)[c(-1, -2)]
+selectCols <- names(aspectViewTrain)[c(-1, -3)]
 fitModel <- train(
-  formula(Actbin ~ .),
+  formula(Eff ~ .),
   data = aspectViewTrain[, ..selectCols],
   #method = "xgbDART", # 0.51
   method = "xgbLinear", # 0.52
@@ -80,8 +80,6 @@ fitModel <- train(
   #  alpha = 0,
   #  eta = 0.3
   #),
-  #maxit = 100,
-  #repeats = 200
 )
 
 fitModel$finalModel %>% summary()
@@ -92,7 +90,7 @@ fitModel %>% varImp()
 cat("--VALIDATE MODEL--\n\n")
 # Validate test data accuracy.
 validateActbinPred <- predict(fitModel, aspectViewValidate, type = "raw")
-#validateActbinPred <- mapvalues(validateActbinPred, from = c("up", "down"), to = c("buy", "sell"))
+validateActbinPred <- mapvalues(validateActbinPred, from = c("up", "down"), to = c("buy", "sell"))
 validateResult <- table(
   actualclass = as.character(aspectViewValidate$Actbin),
   predictedclass = as.character(validateActbinPred)
@@ -103,7 +101,7 @@ print(validateResult)
 cat("--TEST MODEL--\n\n")
 # Validate test data accuracy.
 testActbinPred <- predict(fitModel, aspectViewTest, type = "raw")
-#testActbinPred <- mapvalues(testActbinPred, from = c("up", "down"), to = c("buy", "sell"))
+testActbinPred <- mapvalues(testActbinPred, from = c("up", "down"), to = c("buy", "sell"))
 testResult <- table(
   actualclass = as.character(aspectViewTest$Actbin),
   predictedclass = as.character(testActbinPred)
@@ -112,7 +110,7 @@ testResult <- table(
 print(testResult)
 
 finalActbinPred <- predict(fitModel, dailyAspects, type = "raw")
-#finalActbinPred <- mapvalues(finalActbinPred, from = c("up", "down"), to = c("buy", "sell"))
+finalActbinPred <- mapvalues(finalActbinPred, from = c("up", "down"), to = c("buy", "sell"))
 dailyAspects[, finalPred := finalActbinPred]
 
 #saveRDS(fitModel, paste("./models/", symbol, "_xgb1", ".rds", sep=""))
