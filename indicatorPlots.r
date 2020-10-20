@@ -1678,3 +1678,69 @@ dailySlowPlanetsRetrograde <- function() {
 
   return(dailyPlanetsSpeed[, ..selCols])
 }
+
+dailyPlanetXAspectsGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), binFlag = F) {
+  idCols <- c('Date', 'Hour')
+  setModernMixAspectsSet1()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+
+  dailyAspects$filter <- F
+  dailyAspects[p.x %ni% pxSelect, filter := T]
+  dailyAspects <- dailyAspects[filter != T,]
+
+  # Arrange aspects factors as table wide format.
+  dailyAspectsCount <- dcast(
+    dailyAspects,
+    Date ~ p.x + aspect,
+    fun.aggregate = SIT::count,
+    value.var = "aspect",
+    fill = 0
+  )
+  setDT(dailyAspectsCount)
+
+  # Convert counts to binary flags when setting is enabled.
+  if (binFlag) {
+    aspectCols <- names(dailyAspectsCount)[-1]
+    dailyAspectsCount[,
+      c(aspectCols) := lapply(.SD, function(x) ifelse(x > 1, 1, 0)),
+      .SDcols = aspectCols
+    ]
+  }
+
+  return(dailyAspectsCount)
+}
+
+dailyPlanetYAspectsGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), binFlag = F) {
+  idCols <- c('Date', 'Hour')
+  setModernMixAspectsSet1()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+
+  dailyAspects$filter <- F
+  dailyAspects[p.x %ni% pxSelect, filter := T]
+  dailyAspects <- dailyAspects[filter != T,]
+
+  # Arrange aspects factors as table wide format.
+  dailyAspectsCount <- dcast(
+    dailyAspects,
+    Date ~ p.y + aspect,
+    fun.aggregate = SIT::count,
+    value.var = "aspect",
+    fill = 0
+  )
+  setDT(dailyAspectsCount)
+
+  # Convert counts to binary flags when setting is enabled.
+  if (binFlag) {
+    aspectCols <- names(dailyAspectsCount)[-1]
+    dailyAspectsCount[,
+      c(aspectCols) := lapply(.SD, function(x) ifelse(x > 1, 1, 0)),
+      .SDcols = aspectCols
+    ]
+  }
+
+  return(dailyAspectsCount)
+}
