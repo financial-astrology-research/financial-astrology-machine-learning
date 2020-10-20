@@ -1371,7 +1371,7 @@ dailyCombPlanetAspectsFactorsTable <- function(orbLimit = 2, aspectFilter = c())
   return(dailyAspectsWide)
 }
 
-dailyCombPlanetAspectsFactorsTableLE <- function(orbLimit = 2, aspectFilter = c()) {
+dailyCombPlanetAspectsFactorsTableLE <- function(orbLimit = 2, aspectFilter = c(), pxFilter = c()) {
   idCols <- c('Date', 'Hour')
   setClassicAspectsSet8()
   # Using modern aspects do not improved ModelLE accuracy and caused more frequent
@@ -1384,12 +1384,11 @@ dailyCombPlanetAspectsFactorsTableLE <- function(orbLimit = 2, aspectFilter = c(
   # Filter minor MO aspects that can overlap multiples to same target planet
   # in the same day and should not be significant in effect.
   dailyAspects$filter <- F
-  dailyAspects <- dailyAspects[p.x == "MO" & aspect == 30, filter := T]
-  dailyAspects <- dailyAspects[p.x == "MO" & aspect == 45, filter := T]
-  dailyAspects <- dailyAspects[p.x == "MO" & aspect == 135, filter := T]
-  dailyAspects <- dailyAspects[p.x %in% c("SU", "MA", "JU", "SA", "UR", "NE", "PL", "NN"), filter := T]
-  dailyAspects <- dailyAspects[p.y %in% c("NN"), filter := T]
-  dailyAspects <- dailyAspects[aspect %in% aspectFilter, filter := T]
+  dailyAspects[p.x == "MO" & aspect == 30, filter := T]
+  dailyAspects[p.x == "MO" & aspect == 45, filter := T]
+  dailyAspects[p.x == "MO" & aspect == 135, filter := T]
+  dailyAspects[p.x %in% pxFilter, filter := T]
+  dailyAspects[aspect %in% aspectFilter, filter := T]
   dailyAspects <- dailyAspects[filter != T,]
 
   # Convert numeric aspects to categorical (factors).
@@ -1418,7 +1417,7 @@ dailyCombPlanetAspectsFactorsTableLE <- function(orbLimit = 2, aspectFilter = c(
 
 dailyAspectsGeneralizedCount <- function(orbLimit = 2, pxFilter = c(), binFlag = F) {
   idCols <- c('Date', 'Hour')
-  setClassicAspectsSet8()
+  setModernMixAspectsSet1()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
@@ -1507,7 +1506,7 @@ dailyAspectsGeneralizedEnergySum <- function(orbLimit = 2, pxFilter = c()) {
 # Count total aspects per planet Y (receiver).
 dailyAspectsPlanetYGeneralizedCount <- function(orbLimit = 2, pxFilter = c(), binFlag = F) {
   idCols <- c('Date', 'Hour')
-  setClassicAspectsSet8()
+  setModernMixAspectsSet1()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
@@ -1543,7 +1542,7 @@ dailyAspectsPlanetYGeneralizedCount <- function(orbLimit = 2, pxFilter = c(), bi
 # Count total aspects per planet X (emitter).
 dailyAspectsPlanetXGeneralizedCount <- function(orbLimit = 2, pxFilter = c(), binFlag = F) {
   idCols <- c('Date', 'Hour')
-  setClassicAspectsSet8()
+  setModernMixAspectsSet1()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
@@ -1579,7 +1578,7 @@ dailyAspectsPlanetXGeneralizedCount <- function(orbLimit = 2, pxFilter = c(), bi
 # Count total aspects per planet combination.
 dailyAspectsPlanetCombGeneralizedCount <- function(orbLimit = 2, pxFilter = c()) {
   idCols <- c('Date', 'Hour')
-  setClassicAspectsSet8()
+  setModernMixAspectsSet1()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
@@ -1629,7 +1628,7 @@ dailyAspectsPlanetCombGeneralizedEnergy <- function(orbLimit = 2) {
 
 dailyPlanetsSpeed <- function() {
   idCols <- c('Date', 'Hour')
-  setClassicAspectsSet8()
+  setModernMixAspectsSet1()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   dailyPlanetsSpeed <- hourlyPlanets[,
@@ -1651,7 +1650,7 @@ dailyFastPlanetsRetrograde <- function() {
     'Date',
     'MESL',
     'VESL'
-    #'SUSL'
+    #'SUSL',
     #'MOSL'
   )
 
@@ -1660,18 +1659,18 @@ dailyFastPlanetsRetrograde <- function() {
 
 dailySlowPlanetsRetrograde <- function() {
   dailyPlanetsSpeed <- dailyPlanetsSpeed()
-  dailyPlanetsSpeed[, MASL := ifelse(MASP <= 0.3, 1, 0)]
-  dailyPlanetsSpeed[, JUSL := ifelse(JUSP <= 0.3, 1, 0)]
-  dailyPlanetsSpeed[, SASL := ifelse(SASP <= 0.3, 1, 0)]
-  dailyPlanetsSpeed[, URSL := ifelse(URSP <= 0.3, 1, 0)]
-  dailyPlanetsSpeed[, NESL := ifelse(NESP <= 0.3, 1, 0)]
-  dailyPlanetsSpeed[, PLSL := ifelse(PLSP <= 0.3, 1, 0)]
+  dailyPlanetsSpeed[, MASL := ifelse(MASP <= 0.25, 1, 0)]
+  dailyPlanetsSpeed[, JUSL := ifelse(JUSP <= 0.25, 1, 0)]
+  dailyPlanetsSpeed[, SASL := ifelse(SASP <= 0.25, 1, 0)]
+  dailyPlanetsSpeed[, URSL := ifelse(URSP <= 0.25, 1, 0)]
+  dailyPlanetsSpeed[, NESL := ifelse(NESP <= 0.25, 1, 0)]
+  dailyPlanetsSpeed[, PLSL := ifelse(PLSP <= 0.25, 1, 0)]
 
   selCols <- c(
     'Date',
     'MASL',
     'JUSL',
-    #'SASL'
+    'SASL',
     'URSL'
     #'NESL'
     #'PLSL'
