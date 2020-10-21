@@ -9,8 +9,21 @@ library(plyr)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
+symbol <- "BNB-USD"
 aspectFilter <- c()
-pxFilter <- c('MA', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN')
+pxFilter <- c(
+  #'ME',
+  #'VE',
+  #'SU',
+  'MA',
+  'JU',
+  'SA',
+  'UR',
+  'NE',
+  'PL',
+  'NN'
+)
+
 # dailyAspects <- dailyCombPlanetAspectsFactorsTable(orbLimit = 2, aspectFilter =  aspectFilter)
 # dailyAspects <- dailyCombPlanetAspectsFactorsTableLE(orbLimit = 2.5, aspectFilter =  aspectFilter)
 dailyAspectsCount <- dailyAspectsGeneralizedCount(orbLimit = 2, pxFilter = c('MO', pxFilter))
@@ -18,7 +31,7 @@ dailyAspectsPlanetXCount <- dailyPlanetXActivationCount(orbLimit = 2, pxFilter =
 dailyAspectsPlanetYCount <- dailyPlanetYActivationCount(orbLimit = 2, pxFilter = pxFilter)
 #dailyAspectsCombCount <- dailyAspectsPlanetCombGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
 dailyFastPlanetsSpeed <- dailyFastPlanetsRetrograde()
-#dailySlowPlanetsSpeed <- dailySlowPlanetsRetrograde()
+dailySlowPlanetsSpeed <- dailySlowPlanetsRetrograde()
 #dailyAspects <- merge(dailyAspectsCount, dailyAspectsCombCount, by = c('Date'))
 #dailyAspects <- merge(dailyAspectsCount, dailyAspectsPlanetYCount, by = c('Date'))
 #dailyAspects <- merge(dailyAspects, dailyAspectsPlanetXCount, by = c('Date'))
@@ -26,11 +39,9 @@ dailyAspects <- dailyAspectsCount
 dailyAspects <- merge(dailyAspects, dailyAspectsPlanetYCount, by = c('Date'))
 dailyAspects <- merge(dailyAspects, dailyAspectsPlanetXCount, by = c('Date'))
 dailyAspects <- merge(dailyAspects, dailyFastPlanetsSpeed, by = c('Date'))
-#dailyAspects <- merge(dailyAspects, dailyFastPlanetsSpeed, by = c('Date'))
-#dailyAspects <- merge(dailyAspects, dailySlowPlanetsSpeed, by = c('Date'))
+dailyAspects <- merge(dailyAspects, dailySlowPlanetsSpeed, by = c('Date'))
 # dailyAspects <- dailyAspectsPlanetCombGeneralizedEnergy(orbLimit = 2)
 
-symbol <- "BNB-USD"
 securityData <- mainOpenSecurity(
   symbol, 2, 4,
   "%Y-%m-%d", "2010-01-01", "2020-07-31"
@@ -72,7 +83,7 @@ aspectViewTest <- merge(
 control <- trainControl(
   #method = "cv", # 2 - fast
   #method = "boot", # 2 - slow
-  method = "boot632", # 2 - slow
+  method = "cv", # 2 - slow
   #method = "optimism_boot", # 2 - slow
   #method = "boot_all", # 2 - slow
   #method = "LOOCV", # 2 - very slow
@@ -81,7 +92,7 @@ control <- trainControl(
   #method = "timeslice", # 2 - very slow
   #initialWindow = 30,
   #horizon = 10,
-  number = 10,
+  number = 25,
   savePredictions = "final",
   returnResamp = "all",
   #summaryFunction = twoClassSummary,
@@ -229,12 +240,12 @@ fitModel <- train(
   #  loss_type = "e"
   #)
   tuneGrid = expand.grid(
-    size = 9,
+    size = 8,
     decay = 0.05,
     bag = T
   ),
-  maxit = 150,
-  repeats = 200
+  maxit = 100,
+  repeats = 50
   #censored = T,
   #softmax = T,
   #preProc = c("center", "scale")
@@ -273,4 +284,4 @@ finalActbinPred <- predict(fitModel, dailyAspects, type = "raw")
 dailyAspects[, finalPred := finalActbinPred]
 
 #saveRDS(fitModel, paste("./models/", symbol, "_avnet4", ".rds", sep=""))
-#fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-avnnet15.csv", sep = "-"))
+fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-avnnet.csv", sep = "-"))
