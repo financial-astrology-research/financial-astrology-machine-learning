@@ -15,7 +15,7 @@ pxFilter <- c(
   #'ME',
   #'VE',
   #'SU',
-  'MA',
+  #'MA',
   'JU',
   'SA',
   'UR',
@@ -92,7 +92,7 @@ control <- trainControl(
   #method = "timeslice", # 2 - very slow
   #initialWindow = 30,
   #horizon = 10,
-  number = 25,
+  number = 20,
   savePredictions = "final",
   returnResamp = "all",
   #summaryFunction = twoClassSummary,
@@ -240,7 +240,7 @@ fitModel <- train(
   #  loss_type = "e"
   #)
   tuneGrid = expand.grid(
-    size = 8,
+    size = 7,
     decay = 0.05,
     bag = T
   ),
