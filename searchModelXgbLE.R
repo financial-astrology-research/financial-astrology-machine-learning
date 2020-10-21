@@ -1,4 +1,4 @@
-# Title     : Search a XGB model fit for aspect / planet activation counts.
+# Title     : Search a XGB model fit for aspect / planetY activation counts.
 # Created by: pablocc
 # Created on: 07/10/2020
 
@@ -9,8 +9,20 @@ library(plyr)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-aspectFilter <- c()
-pxFilter <- c('MO', 'ME', 'SU', 'MA', 'JU', 'SA', 'UR', 'NE', 'PL', 'NN')
+symbol <- "ETH-USD"
+pxFilter <- c(
+  'MO',
+  'ME',
+  #'VE',
+  'SU',
+  #'MA',
+  'JU',
+  'SA',
+  'UR',
+  'NE',
+  'PL',
+  'NN'
+)
 
 dailyAspectsCount <- dailyAspectsGeneralizedCount(
   orbLimit = 2,
@@ -25,7 +37,6 @@ dailyAspectsPlanetYCount <- dailyPlanetYActivationCount(
 dailyAspects <- dailyAspectsCount
 dailyAspects <- merge(dailyAspects, dailyAspectsPlanetYCount, by = c('Date'))
 
-symbol <- "BAT-USD"
 securityData <- mainOpenSecurity(
   symbol, 2, 4,
   "%Y-%m-%d", "2017-01-01", "2020-07-31"
@@ -168,10 +179,10 @@ dailyAspects$EffUpP4 <- predict(fitModel4, dailyAspects, type = "prob")$up
 dailyAspects$EffPred <- predict(ensambleModel, dailyAspects, type = "raw")
 
 # Round probabilities.
-dailyAspects[, EffUpP1 := format(EffUpP1, format="f", big.mark = ",", digits = 3)]
-dailyAspects[, EffUpP2 := format(EffUpP2, format="f", big.mark = ",", digits = 3)]
-dailyAspects[, EffUpP3 := format(EffUpP3, format="f", big.mark = ",", digits = 3)]
-dailyAspects[, EffUpP4 := format(EffUpP4, format="f", big.mark = ",", digits = 3)]
+dailyAspects[, EffUpP1 := format(EffUpP1, format = "f", big.mark = ",", digits = 3)]
+dailyAspects[, EffUpP2 := format(EffUpP2, format = "f", big.mark = ",", digits = 3)]
+dailyAspects[, EffUpP3 := format(EffUpP3, format = "f", big.mark = ",", digits = 3)]
+dailyAspects[, EffUpP4 := format(EffUpP4, format = "f", big.mark = ",", digits = 3)]
 
 fwrite(dailyAspects, paste("~/Desktop/", symbol, "-predict-xgblinear-ensamble", ".csv", sep = ""))
 
