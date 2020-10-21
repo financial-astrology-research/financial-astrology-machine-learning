@@ -11,11 +11,11 @@ source("./indicatorPlots.r")
 
 symbol <- "BNB-USD"
 pxSelect <- c(
-  'MO',
-  'ME',
+  #'MO',
+  #'ME',
   'VE',
-  'SU'
-  #'MA'
+  #'SU'
+  'MA'
 )
 
 dailyAspects <- dailyPlanetYAspectsGeneralizedCount(
