@@ -9,7 +9,7 @@ library(plyr)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "ADA-USD"
+symbol <- "BAT-USD"
 aspectFilter <- c()
 pxFilter <- c(
   #'ME',
