@@ -9,7 +9,7 @@ library(plyr)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "BNB-USD"
+symbol <- "ADA-USD"
 aspectFilter <- c()
 pxFilter <- c(
   #'ME',
@@ -240,7 +240,7 @@ fitModel <- train(
   #  loss_type = "e"
   #)
   tuneGrid = expand.grid(
-    size = 6,
+    size = 8,
     decay = 0.05,
     bag = T
   ),
