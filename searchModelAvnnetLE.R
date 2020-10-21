@@ -92,7 +92,7 @@ control <- trainControl(
   #method = "timeslice", # 2 - very slow
   #initialWindow = 30,
   #horizon = 10,
-  number = 20,
+  number = 25,
   savePredictions = "final",
   returnResamp = "all",
   #summaryFunction = twoClassSummary,
