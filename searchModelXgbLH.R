@@ -13,8 +13,8 @@ symbol <- "BAT-USD"
 pxSelect <- c(
   'ME',
   'VE',
-  'SU',
-  'MA'
+  'SU'
+  #'MA'
 )
 
 pySelect <- c(
