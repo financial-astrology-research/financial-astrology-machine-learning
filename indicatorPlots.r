@@ -1400,7 +1400,7 @@ dailyCombPlanetAspectsFactorsTableLE <- function(orbLimit = 2, aspectFilter = c(
     dailyAspects,
     Date ~ origin,
     value.var = "aspect",
-    fill = NA
+    fill = ""
   )
   setDT(dailyAspectsWide)
 
