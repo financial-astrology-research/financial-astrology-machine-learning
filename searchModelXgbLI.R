@@ -1,4 +1,4 @@
-# Title     : Search XGB linear model using daily aspects factors table and SL / FS retrograde.
+# Title     : Search XGB linear model using daily aspects (classic) factors table and SL / FS retrograde.
 # Created by: pablocc
 # Created on: 22/10/2020
 
