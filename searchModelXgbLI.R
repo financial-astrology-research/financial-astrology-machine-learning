@@ -12,11 +12,11 @@ source("./indicatorPlots.r")
 symbol <- "BAT-USD"
 aspectFilter <- c()
 pxSelect <- c(
-  #'MO',
+  'MO',
   'ME',
   'VE',
-  'SU',
-  #'MA'
+  'MA'
+  #'SU'
 )
 
 pySelect <- c(
@@ -29,7 +29,7 @@ pySelect <- c(
 )
 
 dailyAspects <- dailyCombPlanetAspectsFactorsTableLE(
-  orbLimit = 3,
+  orbLimit = 4,
   aspectFilter =  aspectFilter,
   pxSelect = pxSelect,
   pySelect = pySelect
