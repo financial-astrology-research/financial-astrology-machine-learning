@@ -10,28 +10,19 @@ source("./analysis.r")
 source("./indicatorPlots.r")
 
 symbol <- "ETH-USD"
-pxFilter <- c(
-  'MO',
-  'ME',
-  #'VE',
-  'SU',
-  #'MA',
-  'JU',
-  'SA',
-  'UR',
-  'NE',
-  'PL',
-  'NN'
+pxSelect <- c(
+  'VE',
+  'MA'
 )
 
 dailyAspectsCount <- dailyAspectsGeneralizedCount(
   orbLimit = 2,
-  pxFilter = pxFilter,
+  pxSelect = pxSelect,
 )
 
 dailyAspectsPlanetYCount <- dailyPlanetYActivationCount(
   orbLimit = 2,
-  pxFilter = pxFilter,
+  pxSelect = pxSelect,
 )
 
 dailyAspects <- dailyAspectsCount

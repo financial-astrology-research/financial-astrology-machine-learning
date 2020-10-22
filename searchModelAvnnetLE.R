@@ -11,25 +11,19 @@ source("./indicatorPlots.r")
 
 symbol <- "BAT-USD"
 aspectFilter <- c()
-pxFilter <- c(
-  #'ME',
-  #'VE',
-  #'SU',
-  #'MA',
-  'JU',
-  'SA',
-  'UR',
-  'NE',
-  'PL',
-  'NN'
+pxSelect <- c(
+  'ME',
+  'VE',
+  'SU',
+  'MA'
 )
 
 # dailyAspects <- dailyCombPlanetAspectsFactorsTable(orbLimit = 2, aspectFilter =  aspectFilter)
 # dailyAspects <- dailyCombPlanetAspectsFactorsTableLE(orbLimit = 2.5, aspectFilter =  aspectFilter)
-dailyAspectsCount <- dailyAspectsGeneralizedCount(orbLimit = 2, pxFilter = c('MO', pxFilter))
-dailyAspectsPlanetXCount <- dailyPlanetXActivationCount(orbLimit = 2, pxFilter = c('MO', pxFilter))
-dailyAspectsPlanetYCount <- dailyPlanetYActivationCount(orbLimit = 2, pxFilter = pxFilter)
-#dailyAspectsCombCount <- dailyAspectsPlanetCombGeneralizedCount(orbLimit = 2, pxFilter = pxFilter)
+dailyAspectsCount <- dailyAspectsGeneralizedCount(orbLimit = 2, pxSelect = c('MO', pxSelect))
+dailyAspectsPlanetXCount <- dailyPlanetXActivationCount(orbLimit = 2, pxSelect = c('MO', pxSelect))
+dailyAspectsPlanetYCount <- dailyPlanetYActivationCount(orbLimit = 2, pxSelect = pxSelect)
+#dailyAspectsCombCount <- dailyAspectsPlanetCombGeneralizedCount(orbLimit = 2, pxSelect = pxSelect)
 dailyFastPlanetsSpeed <- dailyFastPlanetsRetrograde()
 dailySlowPlanetsSpeed <- dailySlowPlanetsRetrograde()
 #dailyAspects <- merge(dailyAspectsCount, dailyAspectsCombCount, by = c('Date'))
