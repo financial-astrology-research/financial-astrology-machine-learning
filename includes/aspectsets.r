@@ -80,7 +80,7 @@ setClassicAspectsSet8 <- function() {
 setModernMixAspectsSet1 <- function() {
   aspects <<- c(0, 30, 45, 51, 60, 72, 90, 103, 120, 135, 144, 150, 180)
   aspectsEnergy <<- c(2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2)
-  deforbs <<- c(3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3)
+  deforbs <<- c(4, 2, 2, 2, 2, 2, 4, 2, 4, 2, 2, 2, 4)
   defpolarities <<- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 }
 
