@@ -1650,8 +1650,8 @@ dailyFastPlanetsRetrograde <- function() {
     'Date',
     'MESL',
     'VESL'
-    #'SUSL',
-    #'MOSL'
+      #'SUSL',
+      #'MOSL'
   )
 
   return(dailyPlanetsSpeed[, ..selCols])
@@ -1672,14 +1672,14 @@ dailySlowPlanetsRetrograde <- function() {
     'JUSL',
     'SASL',
     'URSL'
-    #'NESL'
-    #'PLSL'
+      #'NESL'
+      #'PLSL'
   )
 
   return(dailyPlanetsSpeed[, ..selCols])
 }
 
-dailyPlanetXAspectsGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), binFlag = F) {
+dailyPlanetXAspectsGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), pySelect = c(), binFlag = F) {
   idCols <- c('Date', 'Hour')
   setModernMixAspectsSet1()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
@@ -1688,6 +1688,7 @@ dailyPlanetXAspectsGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), bi
 
   dailyAspects$filter <- F
   dailyAspects[p.x %ni% pxSelect, filter := T]
+  dailyAspects[p.y %ni% pySelect, filter := T]
   dailyAspects <- dailyAspects[filter != T,]
 
   # Arrange aspects factors as table wide format.
@@ -1712,7 +1713,7 @@ dailyPlanetXAspectsGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), bi
   return(dailyAspectsCount)
 }
 
-dailyPlanetYAspectsGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), binFlag = F) {
+dailyPlanetYAspectsGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), pySelect = c(), binFlag = F) {
   idCols <- c('Date', 'Hour')
   setModernMixAspectsSet1()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
@@ -1721,6 +1722,7 @@ dailyPlanetYAspectsGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), bi
 
   dailyAspects$filter <- F
   dailyAspects[p.x %ni% pxSelect, filter := T]
+  dailyAspects[p.y %ni% pySelect, filter := T]
   dailyAspects <- dailyAspects[filter != T,]
 
   # Arrange aspects factors as table wide format.
