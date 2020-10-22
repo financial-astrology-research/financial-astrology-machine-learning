@@ -9,23 +9,23 @@ library(plyr)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "BNB-USD"
+symbol <- "BAT-USD"
 pxSelect <- c(
-  #'MO',
-  'ME',
+  'MO',
+  #'ME',
   'VE',
   #'SU'
-  'MA'
+  #'MA'
 )
 
 pySelect <- c(
-  #'JU',
+  'JU',
   'SA',
-  #'SU',
+  'SU',
   #'NN',
   'UR',
   #'NE',
-  'PL'
+  #'PL'
 )
 
 dailyAspects <- dailyPlanetYAspectsGeneralizedCount(
