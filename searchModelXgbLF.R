@@ -18,9 +18,20 @@ pxSelect <- c(
   #'MA'
 )
 
+pySelect <- c(
+  'JU',
+  'SA',
+  #'SU',
+  #'NN',
+  'UR',
+  #'NE',
+  'PL'
+)
+
 dailyAspects <- dailyPlanetXAspectsGeneralizedCount(
   orbLimit = 2,
-  pxSelect = pxSelect
+  pxSelect = pxSelect,
+  pySelect = pySelect
 )
 
 #dailyAspects <- merge(dailyAspects, dailyAspectsPlanetYCount, by = c('Date'))
