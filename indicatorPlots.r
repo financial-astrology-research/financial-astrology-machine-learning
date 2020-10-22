@@ -1371,7 +1371,7 @@ dailyCombPlanetAspectsFactorsTable <- function(orbLimit = 2, aspectFilter = c())
   return(dailyAspectsWide)
 }
 
-dailyCombPlanetAspectsFactorsTableLE <- function(orbLimit = 2, aspectFilter = c(), pxSelect = c(), pySelect = c()) {
+dailyCombPlanetAspectsFactorsTableLI <- function(orbLimit = 2, aspectFilter = c(), pxSelect = c(), pySelect = c()) {
   idCols <- c('Date', 'Hour')
   setClassicAspectsSet8()
   # Using modern aspects do not improved ModelLE accuracy and caused more frequent
