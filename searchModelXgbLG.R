@@ -12,15 +12,26 @@ source("./indicatorPlots.r")
 symbol <- "BNB-USD"
 pxSelect <- c(
   #'MO',
-  #'ME',
+  'ME',
   'VE',
   #'SU'
   'MA'
 )
 
+pySelect <- c(
+  #'JU',
+  'SA',
+  #'SU',
+  #'NN',
+  'UR',
+  #'NE',
+  'PL'
+)
+
 dailyAspects <- dailyPlanetYAspectsGeneralizedCount(
   orbLimit = 2,
-  pxSelect = pxSelect
+  pxSelect = pxSelect,
+  pySelect = pySelect
 )
 
 #dailyAspects <- merge(dailyAspects, dailyAspectsPlanetYCount, by = c('Date'))
