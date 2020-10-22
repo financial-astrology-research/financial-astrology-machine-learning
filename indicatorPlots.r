@@ -1415,7 +1415,7 @@ dailyCombPlanetAspectsFactorsTableLE <- function(orbLimit = 2, aspectFilter = c(
   return(dailyAspectsWide)
 }
 
-dailyAspectsGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), binFlag = F) {
+dailyAspectsGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), pySelect = c(), binFlag = F) {
   idCols <- c('Date', 'Hour')
   setModernMixAspectsSet1()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
@@ -1424,6 +1424,7 @@ dailyAspectsGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), binFlag =
 
   dailyAspects$filter <- F
   dailyAspects[p.x %ni% pxSelect, filter := T]
+  dailyAspects[p.y %ni% pySelect, filter := T]
   dailyAspects <- dailyAspects[filter != T,]
 
   # Convert numeric aspects to categorical (factors).
@@ -1576,7 +1577,7 @@ dailyPlanetXActivationCount <- function(orbLimit = 2, pxSelect = c(), binFlag = 
 }
 
 # Count total aspects per planet combination.
-dailyAspectsPlanetCombGeneralizedCount <- function(orbLimit = 2, pxSelect = c()) {
+dailyAspectsPlanetCombGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), pySelect = c()) {
   idCols <- c('Date', 'Hour')
   setModernMixAspectsSet1()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
@@ -1585,6 +1586,7 @@ dailyAspectsPlanetCombGeneralizedCount <- function(orbLimit = 2, pxSelect = c())
 
   dailyAspects$filter <- F
   dailyAspects[p.x %ni% pxSelect, filter := T]
+  dailyAspects[p.y %ni% pySelect, filter := T]
   dailyAspects <- dailyAspects[filter != T,]
 
   # Convert numeric aspects to categorical (factors).

@@ -11,31 +11,31 @@ source("./indicatorPlots.r")
 
 symbol <- "BAT-USD"
 pxSelect <- c(
-  #'MO',
   'ME',
   'VE',
-  #'SU'
-  #'MA'
+  'SU',
+  'MA'
 )
 
 pySelect <- c(
   'JU',
   'SA',
-  'SU',
   #'NN',
-  'UR'
-  #'NE',
-  #'PL'
+  'UR',
+  'NE',
+  'PL'
 )
 
 dailyAspectsCount <- dailyAspectsGeneralizedCount(
   orbLimit = 2,
-  pxSelect = pxSelect
+  pxSelect = pxSelect,
+  pySelect = pySelect
 )
 
 dailyAspectsCombCount <- dailyAspectsPlanetCombGeneralizedCount(
   orbLimit = 2,
-  pxSelect = c('MO', pxSelect)
+  pxSelect = c('MO', pxSelect),
+  pySelect = pySelect
 )
 
 dailyAspects <- merge(dailyAspectsCount, dailyAspectsCombCount, by = c('Date'))
