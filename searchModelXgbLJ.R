@@ -119,13 +119,11 @@ trainXgbLinearModel <- function() {
 fitModel1 <- trainXgbLinearModel()
 fitModel2 <- trainXgbLinearModel()
 fitModel3 <- trainXgbLinearModel()
-fitModel4 <- trainXgbLinearModel()
 
 # Predict outcomes for all weak learner models.
 aspectView$EffUpP1 <- predict(fitModel1, aspectView, type = "prob")$up
 aspectView$EffUpP2 <- predict(fitModel2, aspectView, type = "prob")$up
 aspectView$EffUpP3 <- predict(fitModel3, aspectView, type = "prob")$up
-aspectView$EffUpP4 <- predict(fitModel4, aspectView, type = "prob")$up
 
 ensambleControl <- trainControl(
   method = "boot",
@@ -138,7 +136,7 @@ ensambleControl <- trainControl(
 )
 
 # Train ensamble model.
-probCols <- c('EffUpP1', 'EffUpP2', 'EffUpP3', 'EffUpP4')
+probCols <- c('EffUpP1', 'EffUpP2', 'EffUpP3')
 ensambleModel <- train(
   x = aspectView[, ..probCols],
   y = aspectView$Actbin,
@@ -151,7 +149,6 @@ ensambleModel <- train(
 aspectViewTest$EffUpP1 <- predict(fitModel1, aspectViewTest, type = "prob")$up
 aspectViewTest$EffUpP2 <- predict(fitModel2, aspectViewTest, type = "prob")$up
 aspectViewTest$EffUpP3 <- predict(fitModel3, aspectViewTest, type = "prob")$up
-aspectViewTest$EffUpP4 <- predict(fitModel4, aspectViewTest, type = "prob")$up
 
 # Final ensamble prediction.
 aspectViewTest$ActionPred <- predict(ensambleModel, aspectViewTest, type = "raw")
@@ -167,14 +164,12 @@ table(
 dailyAspects$EffUpP1 <- predict(fitModel1, dailyAspects, type = "prob")$up
 dailyAspects$EffUpP2 <- predict(fitModel2, dailyAspects, type = "prob")$up
 dailyAspects$EffUpP3 <- predict(fitModel3, dailyAspects, type = "prob")$up
-dailyAspects$EffUpP4 <- predict(fitModel4, dailyAspects, type = "prob")$up
 dailyAspects$EffPred <- predict(ensambleModel, dailyAspects, type = "raw")
 
 # Round probabilities.
 dailyAspects[, EffUpP1 := format(EffUpP1, format = "f", big.mark = ",", digits = 3)]
 dailyAspects[, EffUpP2 := format(EffUpP2, format = "f", big.mark = ",", digits = 3)]
 dailyAspects[, EffUpP3 := format(EffUpP3, format = "f", big.mark = ",", digits = 3)]
-dailyAspects[, EffUpP4 := format(EffUpP4, format = "f", big.mark = ",", digits = 3)]
 
 fwrite(dailyAspects, paste("~/Desktop/", symbol, "-predict-xgblinearLI-ensamble", ".csv", sep = ""))
 
