@@ -29,7 +29,7 @@ pySelect <- c(
 )
 
 dailyAspects <- dailyCombPlanetAspectsFactorsTableLJ(
-  orbLimit = 4,
+  orbLimit = 6,
   aspectFilter =  aspectFilter,
   pxSelect = pxSelect,
   pySelect = pySelect
