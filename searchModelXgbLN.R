@@ -9,18 +9,18 @@ library(plyr)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "BAT-USD"
+symbol <- "ADA-USD"
 pxSelect <- c(
   #'MO',
   'ME',
-  'VE',
-  #'MA',
-  'SU'
+  'VE'
+  #'MA'
+  #'SU'
 )
 
 pySelect <- c(
   #'SU',
-  'MA',
+  #'MA',
   'JU',
   'SA',
   #'NN',
@@ -30,19 +30,19 @@ pySelect <- c(
 )
 
 dailyAspects <- dailyAspectsGeneralizedCount(
-  orbLimit = 6,
+  orbLimit = 4,
   pxSelect = pxSelect,
   pySelect = pySelect
 )
 
 dailyAspectsPlanetYCount <- dailyPlanetYActivationCount(
-  orbLimit = 6,
+  orbLimit = 4,
   pxSelect = pxSelect,
   pySelect = pySelect
 )
 
 dailyAspectsPlanetXCount <- dailyPlanetXActivationCount(
-  orbLimit = 6,
+  orbLimit = 4,
   pxSelect = pxSelect,
   pySelect = pySelect
 )
