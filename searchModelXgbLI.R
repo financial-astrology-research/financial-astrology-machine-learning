@@ -12,22 +12,22 @@ source("./indicatorPlots.r")
 symbol <- "BNB-USD"
 aspectFilter <- c()
 pxSelect <- c(
-  'MO',
-  'ME',
-  'VE'
-  #'SU'
-  #'MA'
+  #'MO',
+  #'ME',
+  'VE',
+  'SU',
+  'MA'
 )
 
 pySelect <- c(
   #'SU',
-  #'MA',
-  'JU',
+  'MA',
+  #'JU',
   'SA',
   #'NN',
-  'UR',
-  'NE',
-  'PL'
+  'UR'
+  #'NE'
+  #'PL'
 )
 
 dailyAspects <- dailyCombPlanetAspectsFactorsTableLI(
