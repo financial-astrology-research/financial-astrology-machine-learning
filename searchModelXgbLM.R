@@ -9,7 +9,7 @@ library(plyr)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "BTC-USD"
+symbol <- "DASH-USD"
 pxSelect <- c(
   #'MO',
   'ME',
@@ -21,7 +21,7 @@ pxSelect <- c(
 pySelect <- c(
   #'SU',
   'MA',
-  #'JU',
+  'JU',
   'SA',
   'NN',
   'UR'
