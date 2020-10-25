@@ -9,7 +9,7 @@ library(plyr)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "EOS-USD"
+symbol <- "BAT-USD"
 pxSelect <- c(
   #'MO',
   'ME',
@@ -22,20 +22,17 @@ pySelect <- c(
   #'MA',
   'JU',
   'SA',
-  'NN'
-  #'UR'
+  'NN',
+  'UR'
   #'NE'
   #'PL'
 )
 
 dailyAspects <- dailyAspectsGeneralizedCount(
-  orbLimit = 4,
+  orbLimit = 6,
   pxSelect = pxSelect,
   pySelect = pySelect
 )
-
-#dailyFastPlanetsSpeed <- dailyFastPlanetsRetrograde()
-#dailyAspects <- merge(dailyFastPlanetsSpeed, dailySlowPlanetsSpeed, by = c('Date'))
 
 securityData <- mainOpenSecurity(
   symbol, 2, 4,
@@ -171,7 +168,7 @@ dailyAspects[, EffUpP1 := format(EffUpP1, format = "f", big.mark = ",", digits =
 dailyAspects[, EffUpP2 := format(EffUpP2, format = "f", big.mark = ",", digits = 3)]
 dailyAspects[, EffUpP3 := format(EffUpP3, format = "f", big.mark = ",", digits = 3)]
 
-fwrite(dailyAspects, paste("~/Desktop/", symbol, "-predict-xgblinearLI-ensamble", ".csv", sep = ""))
+fwrite(dailyAspects, paste("~/Desktop/", symbol, "-predict-xgblinearLM-ensamble", ".csv", sep = ""))
 
 #saveRDS(fitModel, paste("./models/", symbol, "_xgb1", ".rds", sep=""))
 #fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-xgb3.csv", sep = "-"))
