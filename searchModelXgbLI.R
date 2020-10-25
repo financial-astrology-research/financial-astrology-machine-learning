@@ -9,23 +9,25 @@ library(plyr)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "BAT-USD"
+symbol <- "LINK-USD"
 aspectFilter <- c()
 pxSelect <- c(
   'MO',
   'ME',
   'VE',
-  'MA'
+  #'MA',
   #'SU'
 )
 
 pySelect <- c(
+  #'SU',
+  #'MA',
   'JU',
   'SA',
-  'NN',
-  'UR',
-  #'NE',
-  'PL'
+  #'NN',
+  'UR'
+  #'NE'
+  #'PL'
 )
 
 dailyAspects <- dailyCombPlanetAspectsFactorsTableLI(

@@ -9,13 +9,13 @@ library(plyr)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "BAT-USD"
+symbol <- "LINK-USD"
 aspectFilter <- c()
 pxSelect <- c(
   'MO',
   'ME',
-  'VE',
-  'MA'
+  'VE'
+  #'MA'
   #'SU'
 )
 
