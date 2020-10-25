@@ -72,7 +72,7 @@ setClassicAspectsSet7 <- function() {
 setClassicAspectsSet8 <- function() {
   aspects <<- c(0, 30, 45, 60, 90, 120, 135, 150, 180)
   aspectsEnergy <<- c(3, 3, 3, 3, 3, 3, 3, 3, 3)
-  deforbs <<- c(4, 4, 4, 4, 4, 4, 4, 4, 4)
+  deforbs <<- c(6, 4, 4, 4, 4, 4, 4, 4, 6)
   defpolarities <<- c(2, 1, 0, 1, 0, 1, 0, 0, 0)
 }
 
