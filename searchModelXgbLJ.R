@@ -9,7 +9,7 @@ library(plyr)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "LINK-USD"
+symbol <- "ADA-USD"
 aspectFilter <- c()
 pxSelect <- c(
   'MO',
@@ -22,9 +22,9 @@ pxSelect <- c(
 pySelect <- c(
   'JU',
   'SA',
-  'NN',
+  #'NN',
   'UR',
-  #'NE',
+  'NE',
   'PL'
 )
 
