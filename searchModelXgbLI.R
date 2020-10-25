@@ -9,29 +9,29 @@ library(plyr)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "BNB-USD"
+symbol <- "BTC-USD"
 aspectFilter <- c()
 pxSelect <- c(
   #'MO',
-  #'ME',
-  'VE',
-  'SU',
-  'MA'
+  'ME',
+  'VE'
+  #'SU',
+  #'MA'
 )
 
 pySelect <- c(
   #'SU',
   'MA',
-  #'JU',
+  'JU',
   'SA',
-  #'NN',
+  'NN',
   'UR'
   #'NE'
   #'PL'
 )
 
 dailyAspects <- dailyCombPlanetAspectsFactorsTableLI(
-  orbLimit = 6,
+  orbLimit = 4,
   aspectFilter =  aspectFilter,
   pxSelect = pxSelect,
   pySelect = pySelect
