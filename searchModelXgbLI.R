@@ -9,24 +9,24 @@ library(plyr)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "BTC-USD"
+symbol <- "EOS-USD"
 aspectFilter <- c()
 pxSelect <- c(
   #'MO',
-  'ME',
-  'VE'
-  #'SU',
+  #'ME',
+  'VE',
+  'SU'
   #'MA'
 )
 
 pySelect <- c(
   #'SU',
-  'MA',
+  #'MA',
   'JU',
   'SA',
   'NN',
-  'UR'
-  #'NE'
+  'UR',
+  'NE'
   #'PL'
 )
 
