@@ -1417,7 +1417,7 @@ dailyCombPlanetAspectsFactorsTableLJ <- function(orbLimit = 2, aspectFilter = c(
   # Filter minor MO aspects that can overlap multiples to same target planet
   # in the same day and should not be significant in effect.
   dailyAspects$filter <- F
-  dailyAspects[p.x == "MO" & aspect %in% c(45, 51, 72, 103, 135, 144), filter := T]
+  dailyAspects[p.x == "MO" & aspect %in% c(15, 45, 75, 103, 135, 165), filter := T]
   dailyAspects[p.x %ni% pxSelect, filter := T]
   dailyAspects[p.y %ni% pySelect, filter := T]
   dailyAspects[aspect %in% aspectFilter, filter := T]
