@@ -1,6 +1,10 @@
-# Title     : Search XGB linear model using daily aspects (classic) factors table and SL / FS retrograde.
+# Title     : Search XGB linear model using daily SL / FS retrograde.
 # Created by: pablocc
 # Created on: 25/10/2020
+
+# CONCLUSION:
+# The retrograde planets features don't provide generalizable predictive power,
+# in best case scenario fit 55% accuracy on fit data and 49% on test data.
 
 library(boot)
 library(caret)
@@ -9,38 +13,10 @@ library(plyr)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "EOS-USD"
-aspectFilter <- c()
-pxSelect <- c(
-  #'MO',
-  #'ME',
-  'VE',
-  #'SU',
-  'MA'
-)
-
-pySelect <- c(
-  #'SU',
-  #'MA',
-  'JU',
-  'SA',
-  'NN',
-  'UR'
-  #'NE'
-  #'PL'
-)
-
-dailyAspects <- dailyCombPlanetAspectsFactorsTableLI(
-  orbLimit = 4,
-  aspectFilter =  aspectFilter,
-  pxSelect = pxSelect,
-  pySelect = pySelect
-)
-
+symbol <- "BTC-USD"
 dailyFastPlanetsSpeed <- dailyFastPlanetsRetrograde()
-#dailySlowPlanetsSpeed <- dailySlowPlanetsRetrograde()
-dailyAspects <- merge(dailyAspects, dailyFastPlanetsSpeed, by = c('Date'))
-#dailyAspects <- merge(dailyAspects, dailySlowPlanetsSpeed, by = c('Date'))
+dailySlowPlanetsSpeed <- dailySlowPlanetsRetrograde()
+dailyAspects <- merge(dailyFastPlanetsSpeed, dailySlowPlanetsSpeed, by = c('Date'))
 
 securityData <- mainOpenSecurity(
   symbol, 2, 4,
