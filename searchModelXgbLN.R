@@ -9,7 +9,7 @@ library(plyr)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "ADA-USD"
+symbol <- "BNB-USD"
 pxSelect <- c(
   #'MO',
   'ME',
@@ -23,7 +23,7 @@ pySelect <- c(
   #'MA',
   'JU',
   'SA',
-  #'NN',
+  'NN',
   'UR',
   #'NE'
   'PL'
