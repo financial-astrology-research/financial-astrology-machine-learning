@@ -9,7 +9,7 @@ library(plyr)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "LINK-USD"
+symbol <- "BTC-USD"
 pxSelect <- c(
   #'MO',
   'ME',
