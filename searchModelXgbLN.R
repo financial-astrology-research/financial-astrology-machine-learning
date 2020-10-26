@@ -9,7 +9,7 @@ library(plyr)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "BNB-USD"
+symbol <- "EOS-USD"
 pxSelect <- c(
   #'MO',
   'ME',
@@ -88,7 +88,7 @@ aspectViewTest <- merge(
   by = "Date"
 )
 
-trainIndex <- createDataPartition(aspectView$Eff, p = 0.80, list = FALSE)
+trainIndex <- createDataPartition(aspectView$Eff, p = 0.90, list = FALSE)
 aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
 
