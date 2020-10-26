@@ -13,38 +13,54 @@ symbol <- "BNB-USD"
 pxSelect <- c(
   #'MO',
   'ME',
-  'VE'
-  #'MA'
-  #'SU'
+  'VE',
+  #'SU',
+  'MA'
 )
 
 pySelect <- c(
   #'SU',
-  #'MA',
+  'MA',
   'JU',
   'SA',
-  'NN',
+  #'NN',
   'UR',
-  #'NE'
+  'NE',
   'PL'
 )
 
+aspectFilter <- c(
+  #0,
+  30,
+  45,
+  #60,
+  #90,
+  103,
+  #120,
+  #135,
+  150
+  #180
+)
+
 dailyAspects <- dailyAspectsGeneralizedCount(
-  orbLimit = 4,
+  orbLimit = 6,
   pxSelect = pxSelect,
-  pySelect = pySelect
+  pySelect = pySelect,
+  aspectFilter = aspectFilter
 )
 
 dailyAspectsPlanetYCount <- dailyPlanetYActivationCount(
-  orbLimit = 4,
+  orbLimit = 6,
   pxSelect = pxSelect,
-  pySelect = pySelect
+  pySelect = pySelect,
+  aspectFilter = aspectFilter
 )
 
 dailyAspectsPlanetXCount <- dailyPlanetXActivationCount(
-  orbLimit = 4,
+  orbLimit = 6,
   pxSelect = pxSelect,
-  pySelect = pySelect
+  pySelect = pySelect,
+  aspectFilter = aspectFilter
 )
 
 dailyAspects <- merge(dailyAspects, dailyAspectsPlanetYCount, by = c('Date'))
@@ -107,10 +123,10 @@ trainXgbLinearModel <- function() {
     #),
   )
 
-  fitModel$finalModel %>% summary()
-  fitModel %>% summary()
+  fitModel$finalModel %>% summary() %>% print()
+  fitModel %>% summary() %>% print()
   fitModel %>% print()
-  fitModel %>% varImp()
+  fitModel %>% varImp() %>% print()
 
   cat("--VALIDATE MODEL--\n\n")
   # Validate test data accuracy.
