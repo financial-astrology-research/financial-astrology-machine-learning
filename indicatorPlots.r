@@ -1441,7 +1441,7 @@ dailyCombPlanetAspectsFactorsTableLJ <- function(orbLimit = 2, aspectFilter = c(
   return(dailyAspectsWide)
 }
 
-dailyAspectsGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), pySelect = c(), binFlag = F) {
+dailyAspectsGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), pySelect = c(), aspectFilter = c(), binFlag = F) {
   idCols <- c('Date', 'Hour')
   setModernMixAspectsSet1()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
@@ -1451,6 +1451,7 @@ dailyAspectsGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), pySelect 
   dailyAspects$filter <- F
   dailyAspects[p.x %ni% pxSelect, filter := T]
   dailyAspects[p.y %ni% pySelect, filter := T]
+  dailyAspects[aspect %in% aspectFilter, filter := T]
   dailyAspects <- dailyAspects[filter != T,]
 
   # Convert numeric aspects to categorical (factors).
@@ -1531,7 +1532,7 @@ dailyAspectsGeneralizedEnergySum <- function(orbLimit = 2, pxFilter = c()) {
 }
 
 # Count total aspects per planet Y (receiver).
-dailyPlanetYActivationCount <- function(orbLimit = 2, pxSelect = c(), binFlag = F) {
+dailyPlanetYActivationCount <- function(orbLimit = 2, pxSelect = c(), pySelect = c(), aspectFilter = c(), binFlag = F) {
   idCols <- c('Date', 'Hour')
   setModernMixAspectsSet1()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
@@ -1540,6 +1541,8 @@ dailyPlanetYActivationCount <- function(orbLimit = 2, pxSelect = c(), binFlag = 
 
   dailyAspects$filter <- F
   dailyAspects[p.x %ni% pxSelect, filter := T]
+  dailyAspects[p.y %ni% pySelect, filter := T]
+  dailyAspects[aspect %in% aspectFilter, filter := T]
   dailyAspects <- dailyAspects[filter != T,]
 
   # Convert numeric aspects to categorical (factors).
@@ -1567,7 +1570,7 @@ dailyPlanetYActivationCount <- function(orbLimit = 2, pxSelect = c(), binFlag = 
 }
 
 # Count total aspects per planet X (emitter).
-dailyPlanetXActivationCount <- function(orbLimit = 2, pxSelect = c(), binFlag = F) {
+dailyPlanetXActivationCount <- function(orbLimit = 2, pxSelect = c(), pySelect = c(), aspectFilter = c(), binFlag = F) {
   idCols <- c('Date', 'Hour')
   setModernMixAspectsSet1()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
@@ -1576,6 +1579,8 @@ dailyPlanetXActivationCount <- function(orbLimit = 2, pxSelect = c(), binFlag = 
 
   dailyAspects$filter <- F
   dailyAspects[p.x %ni% pxSelect, filter := T]
+  dailyAspects[p.y %ni% pySelect, filter := T]
+  dailyAspects[aspect %in% aspectFilter, filter := T]
   dailyAspects <- dailyAspects[filter != T,]
 
   # Convert numeric aspects to categorical (factors).
@@ -1678,8 +1683,8 @@ dailyFastPlanetsRetrograde <- function() {
     'Date',
     'MESL',
     'VESL'
-      #'SUSL',
-      #'MOSL'
+    #'SUSL',
+    #'MOSL'
   )
 
   return(dailyPlanetsSpeed[, ..selCols])
