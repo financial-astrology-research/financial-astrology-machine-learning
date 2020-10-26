@@ -10,7 +10,7 @@ library(plyr)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "EOS-USD"
+symbol <- "LINK-USD"
 pxSelect <- c(
   #'MO',
   'ME',
@@ -75,7 +75,8 @@ securityData <- mainOpenSecurity(
   "%Y-%m-%d", "2017-01-01", "2020-08-30"
 )
 
-securityData[, Actbin := cut(abs(zdiffPercent), c(0, 0.4, 10), c('neutral', 'trend'))]
+zscoreTrendCut <- 0.5
+securityData[, Actbin := cut(abs(zdiffPercent), c(0, zscoreTrendCut, 10), c('neutral', 'trend'))]
 plot(securityData$Actbin)
 
 aspectView <- merge(
@@ -89,7 +90,7 @@ securityDataTest <- mainOpenSecurity(
   "%Y-%m-%d", "2020-09-15"
 )
 
-securityDataTest[, Actbin := cut(abs(zdiffPercent), c(0, 0.4, 10), c('neutral', 'trend'))]
+securityDataTest[, Actbin := cut(abs(zdiffPercent), c(0, zscoreTrendCut, 10), c('neutral', 'trend'))]
 #plot(securityDataTest$Actbin)
 
 aspectViewTest <- merge(
@@ -115,7 +116,7 @@ trainXgbLinearModel <- function() {
     classProbs = T,
     allowParallel = T,
     verboseIter = T,
-    summaryFunction = customSummary,
+    #summaryFunction = customSummary,
     trim = F
   )
 
@@ -126,7 +127,7 @@ trainXgbLinearModel <- function() {
     #method = "xgbDART", # 0.51
     method = "xgbLinear", # 0.52
     #method = "xgbTree", # 0.45
-    metric = "Sens",
+    metric = "Kappa",
     maximize = T,
     trControl = control,
     tuneLength = 2
