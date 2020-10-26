@@ -14,12 +14,12 @@ pxSelect <- c(
   #'MO',
   'ME',
   'VE',
-  #'SU',
+  'SU',
   'MA'
 )
 
 pySelect <- c(
-  #'SU',
+  'SU',
   'MA',
   'JU',
   'SA',
@@ -30,8 +30,8 @@ pySelect <- c(
 )
 
 aspectFilter <- c(
-  #0,
-  30,
+  #0
+  #30,
   45,
   #60,
   #90,
@@ -68,7 +68,7 @@ dailyAspects <- merge(dailyAspects, dailyAspectsPlanetXCount, by = c('Date'))
 
 securityData <- mainOpenSecurity(
   symbol, 2, 4,
-  "%Y-%m-%d", "2017-01-01", "2020-07-31"
+  "%Y-%m-%d", "2017-01-01", "2020-08-30"
 )
 
 aspectView <- merge(
@@ -79,7 +79,7 @@ aspectView <- merge(
 #  Reserved data for final test, skip a week to avoid timeserie memory.
 securityDataTest <- mainOpenSecurity(
   symbol, 2, 4,
-  "%Y-%m-%d", "2020-08-08"
+  "%Y-%m-%d", "2020-09-15"
 )
 
 aspectViewTest <- merge(
