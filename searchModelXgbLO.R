@@ -3,6 +3,9 @@
 # Created by: pablocc
 # Created on: 07/10/2020
 
+# CONCLUSION:
+# This model is not able to fit to predict trending days, the accuracy is less than 50%.
+
 library(boot)
 library(caret)
 library(psych)
@@ -10,7 +13,7 @@ library(plyr)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "LINK-USD"
+symbol <- "BAT-USD"
 pxSelect <- c(
   #'MO',
   'ME',
