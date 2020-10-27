@@ -1607,6 +1607,35 @@ dailyPlanetXActivationCount <- function(orbLimit = 2, pxSelect = c(), pySelect =
   return(dailyAspectsCount)
 }
 
+# Daily planet Y aspects mean orb.
+dailyPlanetYAspectMeanOrb <- function(orbLimit = 2, pxSelect = c(), pySelect = c(), aspectFilter = c()) {
+  idCols <- c('Date', 'Hour')
+  setModernMixAspectsSet1()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+
+  dailyAspects$filter <- F
+  dailyAspects[p.x %ni% pxSelect, filter := T]
+  dailyAspects[p.y %ni% pySelect, filter := T]
+  dailyAspects[aspect %in% aspectFilter, filter := T]
+  dailyAspects <- dailyAspects[filter != T,]
+
+  # Convert numeric aspects to categorical (factors).
+  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
+  # Arrange mean orb as table wide format.
+  dailyAspectsOrb <- dcast(
+    dailyAspects,
+    Date ~ p.y,
+    fun.aggregate = function(x) { round(mean(x), 1) },
+    value.var = "orb",
+    fill = 0
+  )
+  setDT(dailyAspectsOrb)
+
+  return(dailyAspectsOrb)
+}
+
 # Count total aspects per planet combination.
 dailyAspectsPlanetCombGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), pySelect = c()) {
   idCols <- c('Date', 'Hour')
