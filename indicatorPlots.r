@@ -1547,6 +1547,7 @@ dailyPlanetYActivationCount <- function(orbLimit = 2, pxSelect = c(), pySelect =
 
   # Convert numeric aspects to categorical (factors).
   dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
+  dailyAspects <- dailyAspects[, p.y := as.character(paste(p.y, "Y", sep = ""))]
   # Arrange aspects factors as table wide format.
   dailyAspectsCount <- dcast(
     dailyAspects,
@@ -1585,6 +1586,7 @@ dailyPlanetXActivationCount <- function(orbLimit = 2, pxSelect = c(), pySelect =
 
   # Convert numeric aspects to categorical (factors).
   dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
+  dailyAspects <- dailyAspects[, p.x := as.character(paste(p.x, "X", sep = ""))]
   # Arrange aspects factors as table wide format.
   dailyAspectsCount <- dcast(
     dailyAspects,
@@ -1623,6 +1625,7 @@ dailyPlanetYAspectMeanOrb <- function(orbLimit = 2, pxSelect = c(), pySelect = c
 
   # Convert numeric aspects to categorical (factors).
   dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
+  dailyAspects <- dailyAspects[, p.y := as.character(paste(p.y, "D", sep = ""))]
   # Arrange mean orb as table wide format.
   dailyAspectsOrb <- dcast(
     dailyAspects,
@@ -1686,6 +1689,19 @@ dailyAspectsPlanetCombGeneralizedEnergy <- function(orbLimit = 2) {
   setDT(dailyAspectsEnergy)
 
   return(dailyAspectsEnergy)
+}
+
+dailyPlanetsDeclination <- function() {
+  idCols <- c('Date', 'Hour')
+  setModernMixAspectsSet1()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  dailyPlanetsDeclination <- hourlyPlanets[,
+    lapply(.SD, function(x) mean(x)),
+    by = Date, .SDcols = planetsDecCols
+  ]
+
+  return(dailyPlanetsDeclination)
 }
 
 dailyPlanetsSpeed <- function() {
