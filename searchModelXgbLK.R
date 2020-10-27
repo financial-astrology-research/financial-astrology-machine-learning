@@ -47,6 +47,22 @@ securityData <- mainOpenSecurity(
   "%Y-%m-%d", "2017-01-01", "2020-07-31"
 )
 
+#idCols <- c('Date', 'Hour')
+#dailyAspectsRaw <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, 6)
+#dailyAspectsRaw <- dailyAspectsRaw[p.y %in% c("MA", "SA", "NE", "UR", "PL"),]
+##dailyAspectsRaw <- dailyAspectsRaw[p.x %in% c("SU", "VE", "MA", "JU", "SA", "NE", "UR", "PL"),]
+##dailyAspectsRaw <- dailyAspectsRaw[aspect %ni% c(30, 45, 103),]
+#dailyAspectsStats <- dailyAspectsRaw[, data.table(mean(orb), count(origin)), by=Date]
+#dailyAspectsStatsPrice <- merge(
+#  securityData[, data.table(Date, abs(zdiffPercent))],
+#  dailyAspectsStats, by = "Date"
+#)
+#setnames(dailyAspectsStatsPrice, c('Date', 'Change', 'MeanOrb', 'AspCount'))
+#dailyAspectsStatsPrice[, Weight := AspCount / MeanOrb]
+##dailyAspectsStatsPrice[Date > as.Date("2020-09-01") & Date < as.Date("2020-09-22"),]
+##with(dailyAspectsStatsPrice[Date > as.Date("2020-09-01") & Date < as.Date("2020-09-22"),], plot(Change, Weight))
+#with(dailyAspectsStatsPrice, plot(Change, Weight))
+
 aspectView <- merge(
   securityData[, c('Date', 'Eff', 'Actbin')],
   dailyAspects, by = "Date"
