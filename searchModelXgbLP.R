@@ -13,7 +13,7 @@ source("./indicatorPlots.r")
 
 symbol <- "BNB-USD"
 pxSelect <- c(
-  #'MO',
+  'MO',
   'ME',
   'VE',
   'SU',
@@ -46,6 +46,8 @@ aspectFilter <- c(
   #180
 )
 
+dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+
 dailyAspects <- dailyCombPlanetAspectsFactorsTableLI(
   orbLimit = 5,
   aspectFilter =  aspectFilter,
@@ -53,13 +55,16 @@ dailyAspects <- dailyCombPlanetAspectsFactorsTableLI(
   pySelect = pySelect
 )
 
+dailyFastPlanetsSpeed <- dailyFastPlanetsRetrograde()
+dailyAspects <- merge(dailyAspects, dailyFastPlanetsSpeed, by = c('Date'))
+
 securityData <- mainOpenSecurity(
   symbol, 2, 4,
   "%Y-%m-%d", "2017-01-01", "2020-08-30"
 )
 
-zscoreTrendCut <- 0.8
-securityData[, Actbin := cut(abs(zdiffPercent), c(0, zscoreTrendCut, 10), c('neutral', 'trend'))]
+zscoreTrendCut <- 0.5
+securityData[, Actbin := cut(abs(zdiffPercent), c(0, zscoreTrendCut, 50), c('neutral', 'trend'))]
 plot(securityData$Actbin)
 
 aspectView <- merge(
@@ -73,7 +78,7 @@ securityDataTest <- mainOpenSecurity(
   "%Y-%m-%d", "2020-09-15"
 )
 
-securityDataTest[, Actbin := cut(abs(zdiffPercent), c(0, zscoreTrendCut, 10), c('neutral', 'trend'))]
+securityDataTest[, Actbin := cut(abs(zdiffPercent), c(0, zscoreTrendCut, 50), c('neutral', 'trend'))]
 #plot(securityDataTest$Actbin)
 
 aspectViewTest <- merge(
