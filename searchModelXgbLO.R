@@ -13,7 +13,7 @@ library(plyr)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "BAT-USD"
+symbol <- "LINK-USD"
 pxSelect <- c(
   #'MO',
   'ME',
@@ -53,7 +53,7 @@ aspectFilter <- c(
   #180
 )
 
-orbLimit <- 6
+orbLimit <- 12
 dailyAspectsCount <- dailyAspectsGeneralizedCount(
   orbLimit = orbLimit,
   pxSelect = pxSelect,
@@ -199,3 +199,4 @@ print(testResult)
 #fwrite(dailyAspects, paste("~/Desktop/", symbol, "-predict-xgblinearLO-ensamble", ".csv", sep = ""))
 #saveRDS(fitModel, paste("./models/", symbol, "_xgb1", ".rds", sep=""))
 #fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-xgb3.csv", sep = "-"))
+##
