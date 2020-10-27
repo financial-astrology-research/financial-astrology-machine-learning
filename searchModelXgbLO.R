@@ -15,17 +15,20 @@ source("./indicatorPlots.r")
 
 symbol <- "BAT-USD"
 pxSelect <- c(
-  'MO',
+  #'MO',
   'ME',
   'VE',
   'SU',
   'MA',
   'JU',
-  'SA'
+  'SA',
+  'UR',
+  'NE',
+  'NN',
+  'PL'
 )
 
 pySelect <- c(
-  'ME',
   'VE',
   'SU',
   'MA',
@@ -38,50 +41,56 @@ pySelect <- c(
 )
 
 aspectFilter <- c(
-#0
-#30,
-#45,
-#60,
-#90,
-103
-#120
-#135
-#150
-#180
+  #0,
+  #30,
+  #45,
+  #60,
+  #90,
+  103
+  #120
+  #135
+  #150
+  #180
 )
 
+orbLimit <- 6
 dailyAspectsCount <- dailyAspectsGeneralizedCount(
-  orbLimit = 5,
-  pxSelect = pxSelect,
-  pySelect = pySelect,
-  aspectFilter = aspectFilter
-)
-
-dailyAspectsPlanetYCount <- dailyPlanetYActivationCount(
-  orbLimit = 5,
+  orbLimit = orbLimit,
   pxSelect = pxSelect,
   pySelect = pySelect,
   aspectFilter = aspectFilter
 )
 
 dailyAspectsPlanetXCount <- dailyPlanetXActivationCount(
-  orbLimit = 5,
+  orbLimit = orbLimit,
   pxSelect = pxSelect,
+  pySelect = pySelect,
+  aspectFilter = aspectFilter
+)
+
+dailyAspectsPlanetYCount <- dailyPlanetYActivationCount(
+  orbLimit = orbLimit,
+  pxSelect = c("MO", pxSelect),
   pySelect = pySelect,
   aspectFilter = aspectFilter
 )
 
 dailyAspectsPlanetYOrb <- dailyPlanetYAspectMeanOrb(
-  orbLimit = 5,
-  pxSelect = pxSelect,
+  orbLimit = orbLimit,
+  pxSelect = c("MO", pxSelect),
   pySelect = pySelect,
   aspectFilter = aspectFilter
 )
+
+dailyPlanetSpeed <- dailyPlanetsSpeed()
+dailyPlanetDeclination <- dailyPlanetsDeclination()
 
 dailyAspects <- dailyAspectsCount
 dailyAspects <- merge(dailyAspects, dailyAspectsPlanetYCount, by = c('Date'))
 dailyAspects <- merge(dailyAspects, dailyAspectsPlanetXCount, by = c('Date'))
 dailyAspects <- merge(dailyAspects, dailyAspectsPlanetYOrb, by = c('Date'))
+dailyAspects <- merge(dailyAspects, dailyPlanetSpeed, by = c('Date'))
+dailyAspects <- merge(dailyAspects, dailyPlanetDeclination, by = c('Date'))
 
 securityData <- mainOpenSecurity(
   symbol, 2, 4,
@@ -90,10 +99,10 @@ securityData <- mainOpenSecurity(
 
 securityData[, zdiffPercent := round(abs(zdiffPercent), 1)]
 securityData[zdiffPercent > 3, zdiffPercent := 3]
-summary(securityData$zdiffPercent)
+#summary(securityData$zdiffPercent)
 hist(securityData$zdiffPercent)
 securityData[,
-  category := cut(zdiffPercent, c(-1, 0.5, 1, 100), c("flat", "low", "high"))
+  category := cut(zdiffPercent, c(-1, 0.6, 100), c("low", "high"))
 ]
 plot(securityData$category)
 
@@ -101,6 +110,11 @@ aspectView <- merge(
   securityData[, c('Date', 'category')],
   dailyAspects, by = "Date"
 )
+
+groupsSummary <- describeBy(aspectView, aspectView$category)
+print(groupsSummary$low)
+print(groupsSummary$high)
+print(groupsSummary$high - groupsSummary$low)
 
 #  Reserved data for final test, skip a week to avoid timeserie memory.
 securityDataTest <- mainOpenSecurity(
@@ -112,7 +126,7 @@ securityDataTest[, zdiffPercent := abs(zdiffPercent)]
 securityDataTest[zdiffPercent > 3, zdiffPercent := 3]
 hist(securityDataTest$zdiffPercent)
 securityDataTest[,
-  category := cut(zdiffPercent, c(-1, 0.5, 1, 100), c("flat", "low", "high"))
+  category := cut(zdiffPercent, c(-1, 0.6, 100), c("low", "high"))
 ]
 plot(securityDataTest$category)
 
@@ -132,7 +146,7 @@ customSummary <- function(data, lev = levels(data$obs), model = NULL) {
 
 control <- trainControl(
   method = "cv",
-  number = 10,
+  number = 5,
   savePredictions = "all",
   returnResamp = "all",
   allowParallel = T,
@@ -147,12 +161,14 @@ fitModel <- train(
   data = aspectViewTrain[, ..selectCols],
   #method = "xgbDART", # 0.51
   #method = "xgbLinear", # 0.52
-  method = "xgbTree", # 0.45
+  #method = "xgbTree", # 0.45
+  method = "kknn",
   #method = "gamLoess",
   metric = "Kappa",
   maximize = T,
   trControl = control,
-  tuneLength = 2
+  #preProc = c("scale"),
+  tuneLength = 7
 )
 
 fitModel %>% print()
