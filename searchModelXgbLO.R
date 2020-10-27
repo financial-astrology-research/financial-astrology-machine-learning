@@ -13,7 +13,7 @@ library(plyr)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "LINK-USD"
+symbol <- "ADA-USD"
 pxSelect <- c(
   #'MO',
   'ME',
@@ -100,7 +100,7 @@ securityData <- mainOpenSecurity(
 #summary(securityData$zdiffPercent)
 hist(securityData$diffPercent)
 securityData[,
-  category := cut(zdiffPercent, c(-100, 0.03, 100), c("low", "high"))
+  category := cut(zdiffPercent, c(-100, 0.02, 100), c("low", "high"))
 ]
 plot(securityData$category)
 
@@ -122,7 +122,7 @@ securityDataTest <- mainOpenSecurity(
 
 hist(securityDataTest$diffPercent)
 securityDataTest[,
-  category := cut(diffPercent, c(-100, 0.03, 100), c("low", "high"))
+  category := cut(diffPercent, c(-100, 0.02, 100), c("low", "high"))
 ]
 plot(securityDataTest$category)
 
@@ -163,7 +163,7 @@ fitModel <- train(
   metric = "Kappa",
   maximize = T,
   trControl = control,
-  #preProc = c("scale"),
+  preProc = c("scale"),
   tuneLength = 7
 )
 
