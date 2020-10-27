@@ -146,7 +146,7 @@ customSummary <- function(data, lev = levels(data$obs), model = NULL) {
 
 control <- trainControl(
   method = "cv",
-  number = 5,
+  number = 10,
   savePredictions = "all",
   returnResamp = "all",
   allowParallel = T,
