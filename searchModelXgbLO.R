@@ -97,12 +97,10 @@ securityData <- mainOpenSecurity(
   "%Y-%m-%d", "2017-01-01", "2020-08-30"
 )
 
-securityData[, zdiffPercent := round(abs(zdiffPercent), 1)]
-securityData[zdiffPercent > 3, zdiffPercent := 3]
 #summary(securityData$zdiffPercent)
-hist(securityData$zdiffPercent)
+hist(securityData$diffPercent)
 securityData[,
-  category := cut(zdiffPercent, c(-1, 0.6, 100), c("low", "high"))
+  category := cut(zdiffPercent, c(-100, 0.03, 100), c("low", "high"))
 ]
 plot(securityData$category)
 
@@ -122,11 +120,9 @@ securityDataTest <- mainOpenSecurity(
   "%Y-%m-%d", "2020-09-15"
 )
 
-securityDataTest[, zdiffPercent := abs(zdiffPercent)]
-securityDataTest[zdiffPercent > 3, zdiffPercent := 3]
-hist(securityDataTest$zdiffPercent)
+hist(securityDataTest$diffPercent)
 securityDataTest[,
-  category := cut(zdiffPercent, c(-1, 0.6, 100), c("low", "high"))
+  category := cut(diffPercent, c(-100, 0.03, 100), c("low", "high"))
 ]
 plot(securityDataTest$category)
 
