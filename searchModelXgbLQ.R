@@ -34,11 +34,16 @@ aspectFilter <- c()
 
 #dailyAspects <- dailyCombPlanetAspectsFactorsTable()
 dailyAspects <- dailyCombPlanetAspectsFactorsTableLI(
-  orbLimit = 2,
+  orbLimit = 3,
   aspectFilter =  aspectFilter,
   pxSelect = pxSelect,
   pySelect = pySelect
 )
+
+#dailyPlanetsSpeed <- dailyPlanetsSpeed()
+#dailyPlanetDeclination <- dailyPlanetsDeclination()
+#dailyAspects <- merge(dailyAspects, dailyPlanetDeclination, by = "Date")
+#dailyAspects <- merge(dailyAspects, dailyPlanetSpeed, by = "Date")
 
 symbol <- "ADA-USD"
 securityData <- mainOpenSecurity(
@@ -66,7 +71,7 @@ control <- trainControl(
 )
 
 #selectCols <- c(
-#  'Eff',
+#  'diffPercent', 'Eff',
 #  'MOME', 'MOSA', 'MOUR',
 #  'MEVE', 'MEMA', 'MESA', 'MEUR', 'MENE', 'MEPL',
 #  'VESU', 'VEMA', 'VENE', 'VEPL'
@@ -82,13 +87,13 @@ logisticModelTrain <- function(aspectView, modelId) {
   logisticModel <- train(
     formula(Eff ~ .),
     data = aspectViewTrain[, ..selectCols],
-    method = "kknn",
+    method = "glm",
     trControl = control,
-    tuneGrid = expand.grid(
-      kmax = c(10, 13, 16),
-      distance = 2,
-      kernel = "optimal"
-    )
+    #tuneGrid = expand.grid(
+    #  kmax = c(10, 12, 14),
+    #  distance = 2,
+    #  kernel = "optimal"
+    #)
   )
 
 
@@ -204,4 +209,4 @@ dailyAspects[, EffUpP2 := format(EffUpP2, format="f", big.mark = ",", digits = 3
 dailyAspects[, EffUpP3 := format(EffUpP3, format="f", big.mark = ",", digits = 3)]
 
 exportCols <- c('Date', selectCols, probCols, "EffPred")
-fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-glm-ensambleLQ", ".csv", sep = ""))
+fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-kknn-ensambleLQ", ".csv", sep = ""))
