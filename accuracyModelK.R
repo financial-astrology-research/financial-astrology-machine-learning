@@ -21,12 +21,14 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "LINK-USD-predict-xgblinearLI-ensamble" # 0.59
 #indicatorFile <- "LINK-USD-predict-xgblinearLJ-ensamble" # 0.56
 #indicatorFile <- "LINK-USD-predict-xgblinearLM-ensamble" # 0.43
+indicatorFile <- "LINK-USD-predict-kknn-ensambleLQ" # 0.56
 
 #indicatorFile <- "ADA-USD-predict-ensamble" # 0.67
 #indicatorFile <- "ADA-USD-predict-xgblinear-ensamble" # 0.61
 #indicatorFile <- "ADA-USD-predict-xgblinearLI-ensamble" # 0.64
 #indicatorFile <- "ADA-USD-predict-xgblinearLJ-ensamble" # 0.67
 #indicatorFile <- "ADA-USD-predict-xgblinearLM-ensamble" # 0.49
+#indicatorFile <- "ADA-USD-predict-kknn-ensambleLQ" # 0.76
 
 #indicatorFile <- "BAT-USD-predict-ensamble" # 0.56
 #indicatorFile <- "BAT-USD-predict-xgblinear-ensamble" # 0.52
@@ -65,7 +67,7 @@ dailyIndicator <- merge(securityDataTest[, c('Date', 'Eff', 'Actbin')], dailyInd
 
 table(
   actualclass = as.character(dailyIndicator$Actbin),
-  predictedclass = as.character(dailyIndicator$Action)
+  predictedclass = as.character(dailyIndicator$EffPred)
 ) %>%
   confusionMatrix() %>%
   print()
