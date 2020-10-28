@@ -1,4 +1,4 @@
-# Title     : Daily aspects factors orb2 XGB logistic regression model with CV control.
+# Title     : Daily aspects factors orb3 logistic/knn model with CV control.
 # Created by: pablocc
 # Created on: 02/10/2020
 
@@ -10,7 +10,7 @@ source("./analysis.r")
 source("./indicatorPlots.r")
 
 pxSelect <- c(
-  #'MO',
+  'MO',
   'ME',
   'VE'
   #'SU',
@@ -18,8 +18,8 @@ pxSelect <- c(
 )
 
 pySelect <- c(
-  #'ME',
-  #'VE',
+  'ME',
+  'VE',
   'SU',
   'MA',
   #'JU',
@@ -45,7 +45,7 @@ dailyAspects <- dailyCombPlanetAspectsFactorsTableLI(
 #dailyAspects <- merge(dailyAspects, dailyPlanetDeclination, by = "Date")
 #dailyAspects <- merge(dailyAspects, dailyPlanetSpeed, by = "Date")
 
-symbol <- "ADA-USD"
+symbol <- "LINK-USD"
 securityData <- mainOpenSecurity(
   symbol, 2, 4, "%Y-%m-%d",
   "2010-01-01", "2020-06-30"
@@ -71,11 +71,17 @@ control <- trainControl(
 )
 
 #selectCols <- c(
-#  'diffPercent', 'Eff',
+#  'Eff',
 #  'MOME', 'MOSA', 'MOUR',
 #  'MEVE', 'MEMA', 'MESA', 'MEUR', 'MENE', 'MEPL',
 #  'VESU', 'VEMA', 'VENE', 'VEPL'
 #)
+
+#selectCols <- c(
+#  'Eff',
+#  "MEMA", "MESA", "MOME", "MOUR", "MOVE", "VEMA", "VENE", "VEPL", "VESA", "VESU"
+#)
+
 selectCols <- names(aspectView)[c(-1, -2)]
 
 logisticModelTrain <- function(aspectView, modelId) {
@@ -87,8 +93,10 @@ logisticModelTrain <- function(aspectView, modelId) {
   logisticModel <- train(
     formula(Eff ~ .),
     data = aspectViewTrain[, ..selectCols],
-    method = "glm",
+    #method = "glm",
+    method = "kknn",
     trControl = control,
+    tuneLength = 5,
     #tuneGrid = expand.grid(
     #  kmax = c(10, 12, 14),
     #  distance = 2,
@@ -128,6 +136,8 @@ logisticModelTrain <- function(aspectView, modelId) {
 }
 
 logisticModel1 <- logisticModelTrain(aspectView, "1")
+#impFeatures <- as.data.frame(varImp(logisticModel1)$importance)
+#impFeaturesNames <- rownames(subset(impFeatures, up > 20))
 logisticModel2 <- logisticModelTrain(aspectView, "2")
 logisticModel3 <- logisticModelTrain(aspectView, "3")
 
@@ -208,5 +218,5 @@ dailyAspects[, EffUpP1 := format(EffUpP1, format="f", big.mark = ",", digits = 3
 dailyAspects[, EffUpP2 := format(EffUpP2, format="f", big.mark = ",", digits = 3)]
 dailyAspects[, EffUpP3 := format(EffUpP3, format="f", big.mark = ",", digits = 3)]
 
-exportCols <- c('Date', selectCols, probCols, "EffPred")
+exportCols <- c('Date', selectCols[-1], probCols, "EffPred")
 fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-kknn-ensambleLQ", ".csv", sep = ""))
