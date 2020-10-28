@@ -45,7 +45,7 @@ dailyAspects <- dailyCombPlanetAspectsFactorsTableLI(
 #dailyAspects <- merge(dailyAspects, dailyPlanetDeclination, by = "Date")
 #dailyAspects <- merge(dailyAspects, dailyPlanetSpeed, by = "Date")
 
-symbol <- "LINK-USD"
+symbol <- "ADA-USD"
 securityData <- mainOpenSecurity(
   symbol, 2, 4, "%Y-%m-%d",
   "2010-01-01", "2020-06-30"
@@ -211,7 +211,8 @@ table(
 dailyAspects$EffUpP1 <- predict(logisticModel1, dailyAspects, type = "prob")$up
 dailyAspects$EffUpP2 <- predict(logisticModel2, dailyAspects, type = "prob")$up
 dailyAspects$EffUpP3 <- predict(logisticModel3, dailyAspects, type = "prob")$up
-dailyAspects$EffPred <- predict(topModel, dailyAspects, type = "raw")
+EffPred <- predict(topModel, dailyAspects, type = "raw")
+dailyAspects$EffPred <- mapvalues(EffPred, from = c("up", "down"), to = c("buy", "sell"))
 
 # Round probabilities.
 dailyAspects[, EffUpP1 := format(EffUpP1, format="f", big.mark = ",", digits = 3)]
