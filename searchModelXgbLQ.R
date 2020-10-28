@@ -10,7 +10,7 @@ source("./analysis.r")
 source("./indicatorPlots.r")
 
 pxSelect <- c(
-  'MO',
+  #'MO',
   'ME',
   'VE'
   #'SU',
@@ -18,13 +18,13 @@ pxSelect <- c(
 )
 
 pySelect <- c(
-  'ME',
-  'VE',
+  #'ME',
+  #'VE',
   'SU',
   'MA',
-  'JU',
+  #'JU',
   'SA',
-  'NN',
+  #'NN',
   'UR',
   'NE',
   'PL'
@@ -53,24 +53,25 @@ hist(securityData$zdiffPercent)
 cat(paste("Total days rows: ", nrow(securityData)), "\n")
 
 aspectView <- merge(
-  securityData,
+  securityData[, c('Date', 'diffPercent', 'Eff')],
   dailyAspects, by = "Date"
 )
 
 control <- trainControl(
   method = "cv",
-  number = 20,
+  number = 10,
   savePredictions = "final",
   classProbs = T,
   verboseIter = T
 )
 
-selectCols <- c(
-  'Eff',
-  'MOME', 'MOSA', 'MOUR',
-  'MEVE', 'MEMA', 'MESA', 'MEUR', 'MENE', 'MEPL',
-  'VESU', 'VEMA', 'VENE', 'VEPL'
-)
+#selectCols <- c(
+#  'Eff',
+#  'MOME', 'MOSA', 'MOUR',
+#  'MEVE', 'MEMA', 'MESA', 'MEUR', 'MENE', 'MEPL',
+#  'VESU', 'VEMA', 'VENE', 'VEPL'
+#)
+selectCols <- names(aspectView)[c(-1, -2)]
 
 logisticModelTrain <- function(aspectView, modelId) {
   trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.90, list = FALSE)
@@ -81,21 +82,15 @@ logisticModelTrain <- function(aspectView, modelId) {
   logisticModel <- train(
     formula(Eff ~ .),
     data = aspectViewTrain[, ..selectCols],
-    method = "glm",
+    method = "kknn",
     trControl = control,
-    tuneLength = 2
+    tuneGrid = expand.grid(
+      kmax = c(10, 13, 16),
+      distance = 2,
+      kernel = "optimal"
+    )
   )
 
-  logisticModel %>% print()
-  logisticModel %>% summary() %>% print()
-
-  aspectViewTrain$EffPred <- predict(logisticModel, aspectViewTrain, type = "raw")
-  table(
-    actualclass = as.character(aspectViewTrain$Eff),
-    predictedclass = as.character(aspectViewTrain$EffPred)
-  ) %>%
-    confusionMatrix(positive = "up") %>%
-    print()
 
   # Validate data predictions.
   aspectViewValidate$EffPred <- predict(logisticModel, aspectViewValidate, type = "raw")
@@ -132,8 +127,16 @@ logisticModel2 <- logisticModelTrain(aspectView, "2")
 logisticModel3 <- logisticModelTrain(aspectView, "3")
 
 logisticModel1 %>% print()
+logisticModel1 %>% varImp()
+logisticModel1 %>% summary() %>% print()
+
 logisticModel2 %>% print()
+logisticModel1 %>% varImp()
+logisticModel2 %>% summary() %>% print()
+
 logisticModel3 %>% print()
+logisticModel1 %>% varImp()
+logisticModel3 %>% summary() %>% print()
 
 # Predict outcomes for all weak learner models.
 aspectView$EffUpP1 <- predict(logisticModel1, aspectView, type = "prob")$up
@@ -201,4 +204,4 @@ dailyAspects[, EffUpP2 := format(EffUpP2, format="f", big.mark = ",", digits = 3
 dailyAspects[, EffUpP3 := format(EffUpP3, format="f", big.mark = ",", digits = 3)]
 
 exportCols <- c('Date', selectCols, probCols, "EffPred")
-fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-ensambleLD", ".csv", sep = ""))
+fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-glm-ensambleLQ", ".csv", sep = ""))
