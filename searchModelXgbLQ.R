@@ -34,7 +34,7 @@ aspectFilter <- c()
 
 #dailyAspects <- dailyCombPlanetAspectsFactorsTable()
 dailyAspects <- dailyCombPlanetAspectsFactorsTableLI(
-  orbLimit = 3,
+  orbLimit = 2,
   aspectFilter =  aspectFilter,
   pxSelect = pxSelect,
   pySelect = pySelect
@@ -45,7 +45,7 @@ dailyAspects <- dailyCombPlanetAspectsFactorsTableLI(
 #dailyAspects <- merge(dailyAspects, dailyPlanetDeclination, by = "Date")
 #dailyAspects <- merge(dailyAspects, dailyPlanetSpeed, by = "Date")
 
-symbol <- "ADA-USD"
+symbol <- "LINK-USD"
 securityData <- mainOpenSecurity(
   symbol, 2, 4, "%Y-%m-%d",
   "2010-01-01", "2020-06-30"
@@ -64,7 +64,7 @@ aspectView <- merge(
 
 control <- trainControl(
   method = "cv",
-  number = 10,
+  number = 20,
   savePredictions = "final",
   classProbs = T,
   verboseIter = T
@@ -94,7 +94,7 @@ logisticModelTrain <- function(aspectView, modelId) {
     formula(Eff ~ .),
     data = aspectViewTrain[, ..selectCols],
     #method = "glm",
-    method = "kknn",
+    method = "glm",
     trControl = control,
     tuneLength = 5,
     #tuneGrid = expand.grid(
