@@ -1,4 +1,6 @@
-# Title     : Daily aspects factors orb3 logistic/knn model with CV control.
+# Title     : Daily aspects factors GLM logistic model with CV control with aspects factors.
+# Purpose   : Based on LD model this attempts to add more aspects combinations with the expectation
+#             to generalize the different strong correlations for different securities.
 # Created by: pablocc
 # Created on: 02/10/2020
 
