@@ -14,7 +14,7 @@ library(gbm)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "ZRX-USD"
+symbol <- "ADA-USD"
 pxSelect <- c(
   'MO',
   'ME',
@@ -135,11 +135,11 @@ logisticModel1 %>% varImp()
 logisticModel1 %>% summary() %>% print()
 
 logisticModel2 %>% print()
-logisticModel1 %>% varImp()
+logisticModel2 %>% varImp()
 logisticModel2 %>% summary() %>% print()
 
 logisticModel3 %>% print()
-logisticModel1 %>% varImp()
+logisticModel3 %>% varImp()
 logisticModel3 %>% summary() %>% print()
 
 # Predict outcomes for all weak learner models.
