@@ -11,6 +11,7 @@ library(gbm)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
+symbol <- "ZRX-USD"
 pxSelect <- c(
   'MO',
   'ME',
@@ -32,12 +33,9 @@ pySelect <- c(
   'PL'
 )
 
-aspectFilter <- c()
-
 #dailyAspects <- dailyCombPlanetAspectsFactorsTable()
 dailyAspects <- dailyCombPlanetAspectsFactorsTableLI(
   orbLimit = 2,
-  aspectFilter =  aspectFilter,
   pxSelect = pxSelect,
   pySelect = pySelect
 )
@@ -47,7 +45,6 @@ dailyAspects <- dailyCombPlanetAspectsFactorsTableLI(
 #dailyAspects <- merge(dailyAspects, dailyPlanetDeclination, by = "Date")
 #dailyAspects <- merge(dailyAspects, dailyPlanetSpeed, by = "Date")
 
-symbol <- "LINK-USD"
 securityData <- mainOpenSecurity(
   symbol, 2, 4, "%Y-%m-%d",
   "2010-01-01", "2020-06-30"
