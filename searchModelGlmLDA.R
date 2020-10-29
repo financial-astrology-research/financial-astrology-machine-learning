@@ -1,8 +1,9 @@
 # Title     : Daily aspects factors GLM logistic model with CV control with aspects factors.
-# Purpose   : Based on ModelLD this attempts to add more aspects combinations with the expectation
-#             to generalize the different strong correlations for different securities.
-# Created by: pablocc
-# Created on: 02/10/2020
+# Purpose   : Based on ModelLD this model has some variations:
+#             1) Add planets from fast planets applying to all planets except JU and NN.
+#             2) Not include absense of planet combination aspect "none"
+#             3) Increase CV folds to 20
+#
 
 library(boot)
 library(caret)
@@ -90,7 +91,6 @@ logisticModelTrain <- function(aspectView, modelId) {
     #  kernel = "optimal"
     #)
   )
-
 
   # Validate data predictions.
   aspectViewValidate$EffPred <- predict(logisticModel, aspectViewValidate, type = "raw")
