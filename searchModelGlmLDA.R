@@ -3,7 +3,8 @@
 #             1) Add planets from fast planets applying to all planets except JU and NN.
 #             2) Not include absense of planet combination aspect "none"
 #             3) Increase CV folds to 20
-#
+#             4) Validate fit using Actbin daily price change (buy / sell) instead of Effect
+#                The fit is based on MA(2, 4) effect to smooth price variations.
 
 library(boot)
 library(caret)
@@ -58,7 +59,7 @@ hist(securityData$zdiffPercent)
 cat(paste("Total days rows: ", nrow(securityData)), "\n")
 
 aspectView <- merge(
-  securityData[, c('Date', 'diffPercent', 'Eff')],
+  securityData[, c('Date', 'diffPercent', 'Actbin', 'Eff')],
   dailyAspects, by = "Date"
 )
 
@@ -70,14 +71,12 @@ control <- trainControl(
   verboseIter = T
 )
 
-selectCols <- names(aspectView)[c(-1, -2)]
+selectCols <- names(aspectView)[c(-1, -2, -3)]
 
 logisticModelTrain <- function(aspectView, modelId) {
   trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.90, list = FALSE)
   aspectViewTrain <- aspectView[trainIndex,]
   aspectViewValidate <- aspectView[-trainIndex,]
-
-  #SUNE + JUSA
   logisticModel <- train(
     formula(Eff ~ .),
     data = aspectViewTrain[, ..selectCols],
@@ -93,13 +92,14 @@ logisticModelTrain <- function(aspectView, modelId) {
   )
 
   # Validate data predictions.
-  aspectViewValidate$EffPred <- predict(logisticModel, aspectViewValidate, type = "raw")
+  validateEffPred <- predict(logisticModel, aspectViewValidate, type = "raw")
+  aspectViewValidate$EffPred <- mapvalues(validateEffPred, from = c("up", "down"), to = c("buy", "sell"))
 
   table(
-    actualclass = as.character(aspectViewValidate$Eff),
+    actualclass = as.character(aspectViewValidate$Actbin),
     predictedclass = as.character(aspectViewValidate$EffPred)
   ) %>%
-    confusionMatrix(positive = "up") %>%
+    confusionMatrix() %>%
     print()
 
   # Validate with reserved data.
@@ -108,13 +108,14 @@ logisticModelTrain <- function(aspectView, modelId) {
     securityDataTest,
     dailyAspects, by = "Date"
   )
-  aspectViewTest$EffPred <- predict(logisticModel, aspectViewTest, type = "raw")
+  testEffPred <- predict(logisticModel, aspectViewTest, type = "raw")
+  aspectViewTest$EffPred <- mapvalues(testEffPred, from = c("up", "down"), to = c("buy", "sell"))
 
   table(
-    actualclass = as.character(aspectViewTest$Eff),
+    actualclass = as.character(aspectViewTest$Actbin),
     predictedclass = as.character(aspectViewTest$EffPred)
   ) %>%
-    confusionMatrix(positive = "up") %>%
+    confusionMatrix() %>%
     print()
 
   #saveRDS(logisticModel, paste("./models/", symbol, "_logistic_", modelId, ".rds", sep = ""))
@@ -162,13 +163,14 @@ topModel <- train(
 topModel %>% summary()
 
 # Validate data predictions.
-aspectViewValidate$EffPred <- predict(topModel, aspectViewValidate, type = "raw")
+validateEffPred <- predict(topModel, aspectViewValidate, type = "raw")
+aspectViewValidate$EffPred <- mapvalues(validateEffPred, from = c("up", "down"), to = c("buy", "sell"))
 
 table(
-  actualclass = as.character(aspectViewValidate$Eff),
+  actualclass = as.character(aspectViewValidate$Actbin),
   predictedclass = as.character(aspectViewValidate$EffPred)
 ) %>%
-  confusionMatrix(positive = "up") %>%
+  confusionMatrix() %>%
   print()
 
 # Validate with reserved data.
@@ -183,13 +185,14 @@ aspectViewTest$EffUpP1 <- predict(logisticModel1, aspectViewTest, type = "prob")
 aspectViewTest$EffUpP2 <- predict(logisticModel2, aspectViewTest, type = "prob")$up
 aspectViewTest$EffUpP3 <- predict(logisticModel3, aspectViewTest, type = "prob")$up
 # Final ensamble prediction.
-aspectViewTest$EffPred <- predict(topModel, aspectViewTest, type = "raw")
+testEffPred <- predict(topModel, aspectViewTest, type = "raw")
+aspectViewTest$EffPred <- mapvalues(testEffPred, from = c("up", "down"), to = c("buy", "sell"))
 
 table(
-  actualclass = as.character(aspectViewTest$Eff),
+  actualclass = as.character(aspectViewTest$Actbin),
   predictedclass = as.character(aspectViewTest$EffPred)
 ) %>%
-  confusionMatrix(positive = "up") %>%
+  confusionMatrix() %>%
   print()
 
 #saveRDS(topModel, paste("./models/", symbol, "_logistic_ensamble", ".rds", sep = ""))
