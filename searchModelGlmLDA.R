@@ -1,5 +1,5 @@
 # Title     : Daily aspects factors GLM logistic model with CV control with aspects factors.
-# Purpose   : Based on LD model this attempts to add more aspects combinations with the expectation
+# Purpose   : Based on ModelLD this attempts to add more aspects combinations with the expectation
 #             to generalize the different strong correlations for different securities.
 # Created by: pablocc
 # Created on: 02/10/2020
@@ -71,18 +71,6 @@ control <- trainControl(
   classProbs = T,
   verboseIter = T
 )
-
-#selectCols <- c(
-#  'Eff',
-#  'MOME', 'MOSA', 'MOUR',
-#  'MEVE', 'MEMA', 'MESA', 'MEUR', 'MENE', 'MEPL',
-#  'VESU', 'VEMA', 'VENE', 'VEPL'
-#)
-
-#selectCols <- c(
-#  'Eff',
-#  "MEMA", "MESA", "MOME", "MOUR", "MOVE", "VEMA", "VENE", "VEPL", "VESA", "VESU"
-#)
 
 selectCols <- names(aspectView)[c(-1, -2)]
 
@@ -222,4 +210,4 @@ dailyAspects[, EffUpP2 := format(EffUpP2, format="f", big.mark = ",", digits = 3
 dailyAspects[, EffUpP3 := format(EffUpP3, format="f", big.mark = ",", digits = 3)]
 
 exportCols <- c('Date', selectCols[-1], probCols, "EffPred")
-fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-kknn-ensambleLQ", ".csv", sep = ""))
+fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-glmLDA-ensamble", ".csv", sep = ""))
