@@ -17,10 +17,10 @@ library(gbm)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "BAT-USD"
+symbol <- "ADA-USD"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 4
-featureImportanceCut <- 10
+featureImportanceCut <- 5
 
 pxSelect <- c(
   'MO',
