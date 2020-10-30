@@ -19,14 +19,14 @@ source("./indicatorPlots.r")
 symbol <- "ADA-USD"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 4
-featureImportanceCut <- 20
+featureImportanceCut <- 15
 
 pxSelect <- c(
   'MO',
   'ME',
   'VE',
-  'SU',
-  'MA'
+  'SU'
+  #'MA'
 )
 
 pySelect <- c(
@@ -36,7 +36,7 @@ pySelect <- c(
   'MA',
   'JU',
   'SA',
-  #'NN',
+  'NN',
   'UR',
   'NE',
   'PL'
@@ -74,11 +74,9 @@ control <- trainControl(
 
 findRelevantFeatures <- function(aspectView) {
   selectCols <- names(aspectView)[c(-1, -2, -3)]
-  trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.90, list = FALSE)
-  aspectViewTrain <- aspectView[trainIndex,]
   knnModel <- train(
     formula(Eff ~ .),
-    data = aspectViewTrain[, ..selectCols],
+    data = aspectView[, ..selectCols],
     method = "kknn",
     trControl = control,
     tuneLength = 3,
@@ -140,8 +138,7 @@ logisticModelTrain <- function(aspectView, relevantFeatures, modelId) {
 }
 
 relevantFeatures <- findRelevantFeatures(aspectView)
-cat("Relevant features:\n", relevantFeatures, "\n")
-
+cat("Relevant features:\n", relevantFeatures)
 logisticModel1 <- logisticModelTrain(aspectView, relevantFeatures, "1")
 logisticModel2 <- logisticModelTrain(aspectView, relevantFeatures, "2")
 logisticModel3 <- logisticModelTrain(aspectView, relevantFeatures, "3")
@@ -151,11 +148,11 @@ logisticModel1 %>% varImp()
 logisticModel1 %>% summary() %>% print()
 
 logisticModel2 %>% print()
-logisticModel1 %>% varImp()
+logisticModel2 %>% varImp()
 logisticModel2 %>% summary() %>% print()
 
 logisticModel3 %>% print()
-logisticModel1 %>% varImp()
+logisticModel3 %>% varImp()
 logisticModel3 %>% summary() %>% print()
 
 # Predict outcomes for all weak learner models.
