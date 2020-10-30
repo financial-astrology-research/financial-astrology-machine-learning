@@ -5,7 +5,8 @@
 #             3) Increase CV folds to 20
 #             4) Validate fit using Actbin daily price change (buy / sell) instead of Effect
 #                The fit is based on MA(2, 4) effect to smooth price variations.
-#             5) Single train/validate split for GLM train phase.
+#             5) Single train/validate split for weak learners train phase.
+#             TODO: using same split to train same GLM model generate same coeficients, repurpose knn+xgblinear.
 
 library(boot)
 library(caret)
@@ -63,14 +64,14 @@ aspectView <- merge(
 
 control <- trainControl(
   method = "cv",
-  number = 20,
+  number = 10,
   savePredictions = "final",
   classProbs = T,
   verboseIter = T
 )
 
 selectCols <- names(aspectView)[c(-1, -2, -3)]
-trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.90, list = FALSE)
+trainIndex <- createDataPartition(aspectView$Eff, p = 0.90, list = FALSE)
 aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
 
@@ -85,12 +86,13 @@ aspectViewTest <- merge(
   dailyAspects, by = "Date"
 )
 
-logisticModelTrain <- function(aspectView, modelId) {
+modelTrain <- function(method, modelId) {
   logisticModel <- train(
     formula(Eff ~ .),
     data = aspectViewTrain[, ..selectCols],
-    method = "glm",
+    method = method,
     trControl = control,
+    tuneLength = 3,
   )
 
   # Validate data predictions.
@@ -118,9 +120,9 @@ logisticModelTrain <- function(aspectView, modelId) {
   return(logisticModel)
 }
 
-logisticModel1 <- logisticModelTrain(aspectView, "1")
-logisticModel2 <- logisticModelTrain(aspectView, "2")
-logisticModel3 <- logisticModelTrain(aspectView, "3")
+logisticModel1 <- modelTrain("glm", "1")
+logisticModel2 <- modelTrain("knn", "2")
+logisticModel3 <- modelTrain("xgbLinear", "3")
 
 logisticModel1 %>% print()
 logisticModel1 %>% varImp()
@@ -206,4 +208,4 @@ dailyAspects[, EffUpP2 := format(EffUpP2, format="f", big.mark = ",", digits = 3
 dailyAspects[, EffUpP3 := format(EffUpP3, format="f", big.mark = ",", digits = 3)]
 
 exportCols <- c('Date', selectCols[-1], probCols, "EffPred")
-fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-glmLDAA-ensamble", ".csv", sep = ""))
+fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-glmLDAC-ensamble", ".csv", sep = ""))
