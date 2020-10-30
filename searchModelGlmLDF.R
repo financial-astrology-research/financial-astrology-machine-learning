@@ -5,8 +5,9 @@
 #             3) Increase CV folds to 20
 #             4) Validate fit using Actbin daily price change (buy / sell) instead of Effect
 #                The fit is based on MA(2, 4) effect to smooth price variations.
-#             5) Select all fast planets for pxSelect and all slow for pySeelct in order to
-#                detect relevant features with kknn that narrow features used for GLM model
+#             5) Select all fast planets except SU for pxSelect and all slow for pySeelct
+#                in order to detect relevant features with kknn that narrow features used
+#                for GLM model
 #             6) Reduced CV folds from 20 to 10
 
 library(boot)
@@ -16,7 +17,7 @@ library(gbm)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "BNB-USD"
+symbol <- "BAT-USD"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 4
 featureImportanceCut <- 10
@@ -24,9 +25,8 @@ featureImportanceCut <- 10
 pxSelect <- c(
   'MO',
   'ME',
-  'VE',
-  'SU'
-  #'MA'
+  'VE'
+  #'SU'
 )
 
 pySelect <- c(
