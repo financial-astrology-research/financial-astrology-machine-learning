@@ -1337,7 +1337,7 @@ prepareHourlyAspectsModelLC <- function() {
   return(dailyAspectsPlanetCumulativeEnergyWide)
 }
 
-dailyCombPlanetAspectsFactorsTable <- function(orbLimit = 2, aspectFilter = c()) {
+dailyCombPlanetAspectsFactorsTable <- function(orbLimit = 2, aspectFilter = c(), pxSelect = c(), pySelect = c()) {
   idCols <- c('Date', 'Hour')
   setClassicAspectsSet8()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
@@ -1351,6 +1351,8 @@ dailyCombPlanetAspectsFactorsTable <- function(orbLimit = 2, aspectFilter = c())
   dailyAspects <- dailyAspects[p.x == "MO" & aspect == 45, filter := T]
   dailyAspects <- dailyAspects[p.x == "MO" & aspect == 135, filter := T]
   dailyAspects <- dailyAspects[aspect %in% aspectFilter, filter := T]
+  dailyAspects[p.x %ni% pxSelect, filter := T]
+  dailyAspects[p.y %ni% pySelect, filter := T]
   dailyAspects <- dailyAspects[filter != T,]
 
   # Convert numeric aspects to categorical (factors).
