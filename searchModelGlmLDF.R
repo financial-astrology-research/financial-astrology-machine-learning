@@ -19,7 +19,7 @@ source("./indicatorPlots.r")
 symbol <- "ADA-USD"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 4
-featureImportanceCut <- 10
+featureImportanceCut <- 20
 
 pxSelect <- c(
   'MO',
