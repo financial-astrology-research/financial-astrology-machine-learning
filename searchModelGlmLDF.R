@@ -1,14 +1,22 @@
 # Title     : Daily aspects factors GLM logistic model with CV control with aspects factors.
 # Purpose   : Based on ModelLD this model has some variations:
-#             1) Add planets from fast planets applying to all planets except JU and NN.
+#             1) Add planets from fast planets applying to all planets
 #             2) Not include absense of planet combination aspect "none"
 #             3) Increase CV folds to 20
 #             4) Validate fit using Actbin daily price change (buy / sell) instead of Effect
 #                The fit is based on MA(2, 4) effect to smooth price variations.
-#             5) Select all fast planets except SU for pxSelect and all slow for pySeelct
+#             5) Select all fast planets except SU for pxSelect and all slow for pySelect
 #                in order to detect relevant features with kknn that narrow features used
 #                for GLM model
 #             6) Reduced CV folds from 20 to 10
+
+# CONCLUSION:
+# When including target planets JU and NN and automatic feature selection, the model
+# is not able to train consistently without tuning feature importance an in general is more
+# hard to find a good linear model fit with few train phases, many attempts are needed
+# in order to find a good solution. Due to this complexities was decided to don't generate
+# prediction for the basket of test currencies and abandone this route.
+
 
 library(boot)
 library(caret)
