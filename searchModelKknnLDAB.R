@@ -139,10 +139,6 @@ fitModel3 <- modelTrain(
   "kknn", 3, 6, 3, "3"
 )
 
-fitModel4 <- modelTrain(
-  "kknn", 4, 8, 3, "3"
-)
-
 fitModel1 %>% print()
 fitModel1 %>% varImp()
 
@@ -151,9 +147,6 @@ fitModel2 %>% varImp()
 
 fitModel3 %>% print()
 fitModel3 %>% varImp()
-
-fitModel4 %>% print()
-fitModel4 %>% varImp()
 
 securityData <- mainOpenSecurity(
   symbol, maPriceFsPeriod, maPriceSlPeriod,
@@ -176,14 +169,13 @@ selectCols <- names(aspectView)[c(-1, -2, -3)]
 aspectView$EffUpP1 <- predict(fitModel1, aspectView, type = "prob")$up
 aspectView$EffUpP2 <- predict(fitModel2, aspectView, type = "prob")$up
 aspectView$EffUpP3 <- predict(fitModel3, aspectView, type = "prob")$up
-aspectView$EffUpP4 <- predict(fitModel4, aspectView, type = "prob")$up
 
 # Train ensamble model.
 trainIndex <- createDataPartition(aspectView$Actbin, p = 0.80, list = FALSE)
 aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
 
-probCols <- c('EffUpP1', 'EffUpP2', 'EffUpP3', 'EffUpP4')
+probCols <- c('EffUpP1', 'EffUpP2', 'EffUpP3')
 topModel <- train(
   x = aspectViewTrain[, ..probCols],
   y = aspectViewTrain$Actbin,
@@ -209,7 +201,6 @@ table(
 aspectViewTest$EffUpP1 <- predict(fitModel1, aspectViewTest, type = "prob")$up
 aspectViewTest$EffUpP2 <- predict(fitModel2, aspectViewTest, type = "prob")$up
 aspectViewTest$EffUpP3 <- predict(fitModel3, aspectViewTest, type = "prob")$up
-aspectViewTest$EffUpP4 <- predict(fitModel4, aspectViewTest, type = "prob")$up
 # Final ensamble prediction.
 aspectViewTest$EffPred <- predict(topModel, aspectViewTest, type = "raw")
 
@@ -226,14 +217,12 @@ table(
 dailyAspects$EffUpP1 <- predict(fitModel1, dailyAspects, type = "prob")$up
 dailyAspects$EffUpP2 <- predict(fitModel2, dailyAspects, type = "prob")$up
 dailyAspects$EffUpP3 <- predict(fitModel3, dailyAspects, type = "prob")$up
-dailyAspects$EffUpP4 <- predict(fitModel4, dailyAspects, type = "prob")$up
 dailyAspects$EffPred <- predict(topModel, dailyAspects, type = "raw")
 
 # Round probabilities.
 dailyAspects[, EffUpP1 := format(EffUpP1, format="f", big.mark = ",", digits = 3)]
 dailyAspects[, EffUpP2 := format(EffUpP2, format="f", big.mark = ",", digits = 3)]
 dailyAspects[, EffUpP3 := format(EffUpP3, format="f", big.mark = ",", digits = 3)]
-dailyAspects[, EffUpP4 := format(EffUpP4, format="f", big.mark = ",", digits = 4)]
 
 exportCols <- c('Date', selectCols[-1], probCols, "EffPred")
 fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-kknnLDAB-ensamble", ".csv", sep = ""))
