@@ -1,12 +1,12 @@
 # Title     : Daily aspects factors GLM logistic model with CV control with aspects factors.
 # Purpose   : Based on ModelLD this model has some variations:
 #             1) Add planets from fast planets applying to all planets except JU and NN.
-#             2) Not include absense of planet combination aspect "none"
-#             3) Increase CV folds to 20
+#             2) Not include absense of planet combination aspect "none".
+#             3) Increase CV folds to 20.
 #             4) Validate fit using Actbin daily price change (buy / sell) instead of Effect
 #                The fit is based on MA(2, 4) effect to smooth price variations.
-#             5) Single train/validate split for weak learners train phase.
-#             TODO: using same split to train same GLM model generate same coeficients, repurpose knn+xgblinear.
+#             5) Use kknn in favor of glm as weak learners algorithm.
+#             6) Reduce CV folds to 10.
 
 library(boot)
 library(caret)
@@ -15,7 +15,7 @@ library(gbm)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "ADA-USD"
+symbol <- "BNB-USD"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 4
 
@@ -32,9 +32,9 @@ pySelect <- c(
   'VE',
   'SU',
   'MA',
-  #'JU',
+  'JU',
   'SA',
-  #'NN',
+  'NN',
   'UR',
   'NE',
   'PL'
@@ -70,11 +70,6 @@ control <- trainControl(
   verboseIter = T
 )
 
-selectCols <- names(aspectView)[c(-1, -2, -3)]
-trainIndex <- createDataPartition(aspectView$Eff, p = 0.90, list = FALSE)
-aspectViewTrain <- aspectView[trainIndex,]
-aspectViewValidate <- aspectView[-trainIndex,]
-
 # Reserved data for validation.
 securityDataTest <- mainOpenSecurity(
   symbol, maPriceFsPeriod, maPriceSlPeriod,
@@ -86,17 +81,21 @@ aspectViewTest <- merge(
   dailyAspects, by = "Date"
 )
 
-modelTrain <- function(method, modelId) {
-  logisticModel <- train(
+selectCols <- names(aspectView)[c(-1, -2, -3)]
+modelTrain <- function(method, tuneLength, modelId) {
+  trainIndex <- createDataPartition(aspectView$Eff, p = 0.90, list = FALSE)
+  aspectViewTrain <- aspectView[trainIndex,]
+  aspectViewValidate <- aspectView[-trainIndex,]
+  fitModel <- train(
     formula(Eff ~ .),
     data = aspectViewTrain[, ..selectCols],
     method = method,
     trControl = control,
-    tuneLength = 3,
+    tuneLength = tuneLength,
   )
 
   # Validate data predictions.
-  validateEffPred <- predict(logisticModel, aspectViewValidate, type = "raw")
+  validateEffPred <- predict(fitModel, aspectViewValidate, type = "raw")
   aspectViewValidate$EffPred <- mapvalues(validateEffPred, from = c("up", "down"), to = c("buy", "sell"))
 
   table(
@@ -106,7 +105,7 @@ modelTrain <- function(method, modelId) {
     confusionMatrix() %>%
     print()
 
-  testEffPred <- predict(logisticModel, aspectViewTest, type = "raw")
+  testEffPred <- predict(fitModel, aspectViewTest, type = "raw")
   aspectViewTest$EffPred <- mapvalues(testEffPred, from = c("up", "down"), to = c("buy", "sell"))
 
   table(
@@ -117,12 +116,12 @@ modelTrain <- function(method, modelId) {
     print()
 
   #saveRDS(logisticModel, paste("./models/", symbol, "_logistic_", modelId, ".rds", sep = ""))
-  return(logisticModel)
+  return(fitModel)
 }
 
-logisticModel1 <- modelTrain("glm", "1")
-logisticModel2 <- modelTrain("knn", "2")
-logisticModel3 <- modelTrain("xgbLinear", "3")
+logisticModel1 <- modelTrain("kknn", 3, "1")
+logisticModel2 <- modelTrain("kknn", 4, "2")
+logisticModel3 <- modelTrain("kknn", 3, "3")
 
 logisticModel1 %>% print()
 logisticModel1 %>% varImp()
@@ -142,7 +141,7 @@ aspectView$EffUpP2 <- predict(logisticModel2, aspectView, type = "prob")$up
 aspectView$EffUpP3 <- predict(logisticModel3, aspectView, type = "prob")$up
 
 # Train ensamble model.
-trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.90, list = FALSE)
+trainIndex <- createDataPartition(aspectView$Eff, p = 0.90, list = FALSE)
 aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
 
@@ -152,7 +151,7 @@ topModel <- train(
   y = aspectViewTrain$Eff,
   method = "gbm",
   trControl = control,
-  tuneLength = 3
+  tuneLength = 3,
 )
 
 topModel %>% summary()
