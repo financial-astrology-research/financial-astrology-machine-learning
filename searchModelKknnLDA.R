@@ -9,6 +9,7 @@
 #             6) Reduce CV folds to 10.
 #             7) Change data split to 80/20 proportion.
 #             8) Include SU in fast planet.
+#             9) Optimize weak learners and ensamble for Kappa.
 
 library(boot)
 library(caret)
@@ -69,7 +70,9 @@ control <- trainControl(
   number = 10,
   savePredictions = "final",
   classProbs = T,
-  verboseIter = T
+  verboseIter = T,
+  allowParallel = T,
+  trim = F
 )
 
 # Reserved data for validation.
@@ -92,6 +95,7 @@ modelTrain <- function(method, tuneLength, modelId) {
     formula(Eff ~ .),
     data = aspectViewTrain[, ..selectCols],
     method = method,
+    metric = "Kappa",
     trControl = control,
     tuneLength = tuneLength,
   )
@@ -152,8 +156,9 @@ topModel <- train(
   x = aspectViewTrain[, ..probCols],
   y = aspectViewTrain$Eff,
   method = "gbm",
+  metric = "Kappa",
   trControl = control,
-  tuneLength = 3,
+  tuneLength = 3
 )
 
 topModel %>% summary()
@@ -209,4 +214,4 @@ dailyAspects[, EffUpP2 := format(EffUpP2, format="f", big.mark = ",", digits = 3
 dailyAspects[, EffUpP3 := format(EffUpP3, format="f", big.mark = ",", digits = 3)]
 
 exportCols <- c('Date', selectCols[-1], probCols, "EffPred")
-fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-kknnLDAC-ensamble", ".csv", sep = ""))
+fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-kknnLDA-ensamble", ".csv", sep = ""))
