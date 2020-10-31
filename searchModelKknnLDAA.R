@@ -12,6 +12,10 @@
 #             9) Optimize weak learners and ensamble for Kappa.
 #            10) Increase aspect orbs from 2 to 4.
 
+# CONCLUSION:
+# With orb 4 the predictions overfit to the test data and proyected predictions decay accuracy around 0.5
+# so I skip training for all the research currencies basket.
+
 library(boot)
 library(caret)
 library(psych)
