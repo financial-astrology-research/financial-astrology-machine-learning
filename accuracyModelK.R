@@ -4,7 +4,7 @@ rm(list = ls())
 library(caret)
 source("analysis.r")
 
-symbolTest <- "BNB-USD"
+symbolTest <- "ZRX-USD"
 securityDataTest <- mainOpenSecurity(
   symbolTest, 14, 28, "%Y-%m-%d", "2020-09-25"
 )
@@ -26,6 +26,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "ADA-USD-predict-xgblinearLJ-ensamble" # 0.67
 #indicatorFile <- "ADA-USD-predict-xgblinearLM-ensamble" # 0.49
 #indicatorFile <- "ADA-USD-predict-glmLDF-ensamble" # 0.68
+#indicatorFile <- "ADA-USD-predict-kknnLDA-ensamble" # 0.65
 
 #indicatorFile <- "BAT-USD-predict-ensamble" # 0.56
 #indicatorFile <- "BAT-USD-predict-glmLDA-ensamble" # 0.56
@@ -41,10 +42,10 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "BAT-USD-predict-xgblinearLM-ensamble" # 0.59
 #indicatorFile <- "BAT-USD-predict-xgblinearm2-ensamble" # 0.5
 #indicatorFile <- "BAT-USD-predict-glmLDF-ensamble" # 0.63
+#indicatorFile <- "BAT-USD-predict-kknnLDA-ensamble" # 0.56
 
 #indicatorFile <- "BNB-USD-predict-ensamble" # 0.43
 #indicatorFile <- "BNB-USD-predict-glmLDA-ensamble" # 0.53
-#indicatorFile <- "BNB-USD-predict-glmLDAA-ensamble" # 0.53
 #indicatorFile <- "BNB-USD-predict-glmLDAA-ensamble" # 0.53
 #indicatorFile <- "BNB-USD-predict-glmLDAB-ensamble" # 0.53
 #indicatorFile <- "BNB-USD-predict-glmLDB-ensamble" # 0.59
@@ -56,6 +57,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "BNB-USD-predict-xgblinearLN-ensamble" # 0.70
 #indicatorFile <- "BNB-USD-predict-xgblinearm3-ensamble" # 0.53
 #indicatorFile <- "BNB-USD-predict-glmLDF-ensamble" # 0.68
+#indicatorFile <- "BNB-USD-predict-kknnLDA-ensamble" # 0.69
 
 #indicatorFile <- "BTC-USD-predict-glmLDA-ensamble" # 0.57
 #indicatorFile <- "BTC-USD-predict-glmLDAA-ensamble" # 0.55
@@ -67,6 +69,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "BTC-USD-predict-xgblinearLI-ensamble" # 0.51
 #indicatorFile <- "BTC-USD-predict-xgblinearLJ-ensamble" # 0.57
 #indicatorFile <- "BTC-USD-predict-xgblinearLM-ensamble" # 0.45
+#indicatorFile <- "BTC-USD-predict-kknnLDA-ensamble" # 0.64
 
 #indicatorFile <- "EOS-USD-predict-ensamble" # 0.56
 #indicatorFile <- "EOS-USD-predict-glmLDA-ensamble" # 0.53
@@ -79,6 +82,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "EOS-USD-predict-xgblinearLI-ensamble" # 0.5
 #indicatorFile <- "EOS-USD-predict-xgblinearLJ-ensamble" # 0.56
 #indicatorFile <- "EOS-USD-predict-xgblinearLM-ensamble" # 0.56
+#indicatorFile <- "EOS-USD-predict-kknnLDA-ensamble" # 0.56
 
 #indicatorFile <- "DASH-USD-predict-glmLDA-ensamble" # 0.57
 #indicatorFile <- "DASH-USD-predict-glmLDAA-ensamble" # 0.61
@@ -88,6 +92,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "DASH-USD-predict-glmLDD-ensamble" # 0.48
 #indicatorFile <- "DASH-USD-predict-xgblinear-ensamble" # 0.60
 #indicatorFile <- "DASH-USD-predict-xgblinearLM-ensamble" # 0.48
+#indicatorFile <- "DASH-USD-predict-kknnLDA-ensamble" # 0.58
 
 #indicatorFile <- "LINK-USD-predict-ensamble" # 0.53
 #indicatorFile <- "LINK-USD-predict-glmLDA-ensamble" # 0.53
@@ -101,6 +106,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "LINK-USD-predict-xgblinearLJ-ensamble" # 0.56
 #indicatorFile <- "LINK-USD-predict-xgblinearLM-ensamble" # 0.43
 #indicatorFile <- "ml-LINK-USD-daily-avnnet" # 0.43
+#indicatorFile <- "LINK-USD-predict-kknnLDA-ensamble" # 0.56
 
 #indicatorFile <- "LTC-USD-predict-ensamble" # 0.60
 #indicatorFile <- "LTC-USD-predict-glmLDA-ensamble" # 0.57
@@ -109,6 +115,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "LTC-USD-predict-glmLDB-ensamble" # 0.52
 #indicatorFile <- "LTC-USD-predict-glmLDC-ensamble" # 0.57
 #indicatorFile <- "LTC-USD-predict-glmLDD-ensamble" # 0.64
+#indicatorFile <- "LTC-USD-predict-kknnLDA-ensamble" # 0.64
 
 #indicatorFile <- "ZEC-USD-predict-ensamble" # 0.53
 #indicatorFile <- "ZEC-USD-predict-glmLDA-ensamble" # 0.53
@@ -117,6 +124,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "ZEC-USD-predict-glmLDB-ensamble" # 0.53
 #indicatorFile <- "ZEC-USD-predict-glmLDC-ensamble" # 0.53
 #indicatorFile <- "ZEC-USD-predict-glmLDD-ensamble" # 0.53
+#indicatorFile <- "ZEC-USD-predict-kknnLDA-ensamble" # 0.72
 
 #indicatorFile <- "ZRX-USD-predict-ensamble" # 0.65
 #indicatorFile <- "ZRX-USD-predict-xgblinear-ensamble" # 0.68
@@ -126,6 +134,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "ZRX-USD-predict-glmLDB-ensamble" # 0.72
 #indicatorFile <- "ZRX-USD-predict-glmLDC-ensamble" # 0.68
 #indicatorFile <- "ZRX-USD-predict-glmLDD-ensamble" # 0.75
+#indicatorFile <- "ZRX-USD-predict-kknnLDA-ensamble" # 0.69
 
 dailyIndicator <- fread(
   paste(basePath, indicatorFile, ".csv", sep = "")
