@@ -1,12 +1,14 @@
 # Title     : Daily aspects factors GLM logistic model with CV control with aspects factors.
 # Purpose   : Based on ModelLD this model has some variations:
-#             1) Add planets from fast planets applying to all planets except JU and NN.
+#             1) Planets MO, ME, VE, SU fast planets applying to all slow planets except JU and NN.
 #             2) Not include absense of planet combination aspect "none".
 #             3) Increase CV folds to 20.
 #             4) Validate fit using Actbin daily price change (buy / sell) instead of Effect
 #                The fit is based on MA(2, 4) effect to smooth price variations.
 #             5) Use kknn in favor of glm as weak learners algorithm.
 #             6) Reduce CV folds to 10.
+#             7) Change data split to 80/20 proportion.
+#             8) Include SU in fast planet.
 
 library(boot)
 library(caret)
@@ -22,8 +24,8 @@ maPriceSlPeriod <- 4
 pxSelect <- c(
   'MO',
   'ME',
-  'VE'
-  #'SU',
+  'VE',
+  'SU'
   #'MA'
 )
 
@@ -32,9 +34,9 @@ pySelect <- c(
   'VE',
   'SU',
   'MA',
-  'JU',
+  #'JU',
   'SA',
-  'NN',
+  #'NN',
   'UR',
   'NE',
   'PL'
@@ -83,7 +85,7 @@ aspectViewTest <- merge(
 
 selectCols <- names(aspectView)[c(-1, -2, -3)]
 modelTrain <- function(method, tuneLength, modelId) {
-  trainIndex <- createDataPartition(aspectView$Eff, p = 0.90, list = FALSE)
+  trainIndex <- createDataPartition(aspectView$Eff, p = 0.80, list = FALSE)
   aspectViewTrain <- aspectView[trainIndex,]
   aspectViewValidate <- aspectView[-trainIndex,]
   fitModel <- train(
@@ -120,7 +122,7 @@ modelTrain <- function(method, tuneLength, modelId) {
 }
 
 logisticModel1 <- modelTrain("kknn", 3, "1")
-logisticModel2 <- modelTrain("kknn", 4, "2")
+logisticModel2 <- modelTrain("kknn", 3, "2")
 logisticModel3 <- modelTrain("kknn", 3, "3")
 
 logisticModel1 %>% print()
@@ -141,7 +143,7 @@ aspectView$EffUpP2 <- predict(logisticModel2, aspectView, type = "prob")$up
 aspectView$EffUpP3 <- predict(logisticModel3, aspectView, type = "prob")$up
 
 # Train ensamble model.
-trainIndex <- createDataPartition(aspectView$Eff, p = 0.90, list = FALSE)
+trainIndex <- createDataPartition(aspectView$Eff, p = 0.80, list = FALSE)
 aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
 
