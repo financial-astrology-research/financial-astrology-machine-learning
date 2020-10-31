@@ -4,7 +4,7 @@ rm(list = ls())
 library(caret)
 source("analysis.r")
 
-symbolTest <- "BNB-USD"
+symbolTest <- "BTC-USD"
 securityDataTest <- mainOpenSecurity(
   symbolTest, 14, 28, "%Y-%m-%d", "2020-09-25"
 )
@@ -28,6 +28,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "ADA-USD-predict-glmLDF-ensamble" # 0.68
 #indicatorFile <- "ADA-USD-predict-kknnLDA-ensamble" # 0.65
 #indicatorFile <- "ADA-USD-predict-kknnLDAA-ensamble" # 0.50
+#indicatorFile <- "ADA-USD-predict-kknnLDAB-ensamble" # 0.48
 
 #indicatorFile <- "BAT-USD-predict-ensamble" # 0.56
 #indicatorFile <- "BAT-USD-predict-glmLDA-ensamble" # 0.56
@@ -45,6 +46,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "BAT-USD-predict-glmLDF-ensamble" # 0.63
 #indicatorFile <- "BAT-USD-predict-kknnLDA-ensamble" # 0.56
 #indicatorFile <- "BAT-USD-predict-kknnLDAA-ensamble" # 0.65
+#indicatorFile <- "BAT-USD-predict-kknnLDAB-ensamble" # 0.65
 
 #indicatorFile <- "BNB-USD-predict-ensamble" # 0.43
 #indicatorFile <- "BNB-USD-predict-glmLDA-ensamble" # 0.53
@@ -61,6 +63,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "BNB-USD-predict-glmLDF-ensamble" # 0.68
 #indicatorFile <- "BNB-USD-predict-kknnLDA-ensamble" # 0.69
 #indicatorFile <- "BNB-USD-predict-kknnLDAA-ensamble" # 0.65
+#indicatorFile <- "BNB-USD-predict-kknnLDAB-ensamble" # 0.47
 
 #indicatorFile <- "BTC-USD-predict-glmLDA-ensamble" # 0.57
 #indicatorFile <- "BTC-USD-predict-glmLDAA-ensamble" # 0.55
@@ -73,6 +76,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "BTC-USD-predict-xgblinearLJ-ensamble" # 0.57
 #indicatorFile <- "BTC-USD-predict-xgblinearLM-ensamble" # 0.45
 #indicatorFile <- "BTC-USD-predict-kknnLDA-ensamble" # 0.64
+#indicatorFile <- "BTC-USD-predict-kknnLDAB-ensamble" # 0.55
 
 #indicatorFile <- "EOS-USD-predict-ensamble" # 0.56
 #indicatorFile <- "EOS-USD-predict-glmLDA-ensamble" # 0.53

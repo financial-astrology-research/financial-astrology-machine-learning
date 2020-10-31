@@ -13,6 +13,11 @@
 #            10) Train weak learners with different MAs price change trend periods.
 #            11) Fit weak learners for MA trend and ensamble for Actbin to generalize for daily change.
 
+# CONCLUSION:
+# This model cannot weight properly the influence of different weak learners decision due to lack of
+# probability response so at the end the ensambe is just using the most influencial model with the MA
+# that better fits the outcome defeating the purpose of the multi MAs model. Train for all currencies is skipped.
+
 library(boot)
 library(caret)
 library(psych)
@@ -20,7 +25,7 @@ library(gbm)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "ADA-USD"
+symbol <- "BTC-USD"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 4
 
