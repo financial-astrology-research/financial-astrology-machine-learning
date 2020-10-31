@@ -54,7 +54,7 @@ dailyAspects <- dailyCombPlanetAspectsFactorsTableLI(
 control <- trainControl(
   method = "cv",
   number = 10,
-  savePredictions = "final",
+  savePredictions = "all",
   classProbs = T,
   verboseIter = T,
   allowParallel = T,
@@ -127,29 +127,33 @@ modelTrain <- function(method, maPriceFsPeriod, maPriceSlPeriod, tuneLength, mod
   return(fitModel)
 }
 
-logisticModel1 <- modelTrain(
-  "kknn", 2, 4, 3, "1"
+fitModel1 <- modelTrain(
+  "kknn", 1, 2, 3, "1"
 )
 
-logisticModel2 <- modelTrain(
-  "kknn", 4,8, 3, "2"
+fitModel2 <- modelTrain(
+  "kknn", 2,4, 3, "2"
 )
 
-logisticModel3 <- modelTrain(
-  "kknn", 6, 8, 3, "3"
+fitModel3 <- modelTrain(
+  "kknn", 3, 6, 3, "3"
 )
 
-logisticModel1 %>% print()
-logisticModel1 %>% varImp()
-logisticModel1 %>% summary() %>% print()
+fitModel4 <- modelTrain(
+  "kknn", 4, 8, 3, "3"
+)
 
-logisticModel2 %>% print()
-logisticModel2 %>% varImp()
-logisticModel2 %>% summary() %>% print()
+fitModel1 %>% print()
+fitModel1 %>% varImp()
 
-logisticModel3 %>% print()
-logisticModel3 %>% varImp()
-logisticModel3 %>% summary() %>% print()
+fitModel2 %>% print()
+fitModel2 %>% varImp()
+
+fitModel3 %>% print()
+fitModel3 %>% varImp()
+
+fitModel4 %>% print()
+fitModel4 %>% varImp()
 
 securityData <- mainOpenSecurity(
   symbol, maPriceFsPeriod, maPriceSlPeriod,
@@ -169,16 +173,17 @@ aspectView <- merge(
 
 selectCols <- names(aspectView)[c(-1, -2, -3)]
 # Predict outcomes for all weak learner models.
-aspectView$EffUpP1 <- predict(logisticModel1, aspectView, type = "prob")$up
-aspectView$EffUpP2 <- predict(logisticModel2, aspectView, type = "prob")$up
-aspectView$EffUpP3 <- predict(logisticModel3, aspectView, type = "prob")$up
+aspectView$EffUpP1 <- predict(fitModel1, aspectView, type = "prob")$up
+aspectView$EffUpP2 <- predict(fitModel2, aspectView, type = "prob")$up
+aspectView$EffUpP3 <- predict(fitModel3, aspectView, type = "prob")$up
+aspectView$EffUpP4 <- predict(fitModel4, aspectView, type = "prob")$up
 
 # Train ensamble model.
 trainIndex <- createDataPartition(aspectView$Actbin, p = 0.80, list = FALSE)
 aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
 
-probCols <- c('EffUpP1', 'EffUpP2', 'EffUpP3')
+probCols <- c('EffUpP1', 'EffUpP2', 'EffUpP3', 'EffUpP4')
 topModel <- train(
   x = aspectViewTrain[, ..probCols],
   y = aspectViewTrain$Actbin,
@@ -201,9 +206,10 @@ table(
   print()
 
 # Predict outcomes for all weak learner models.
-aspectViewTest$EffUpP1 <- predict(logisticModel1, aspectViewTest, type = "prob")$up
-aspectViewTest$EffUpP2 <- predict(logisticModel2, aspectViewTest, type = "prob")$up
-aspectViewTest$EffUpP3 <- predict(logisticModel3, aspectViewTest, type = "prob")$up
+aspectViewTest$EffUpP1 <- predict(fitModel1, aspectViewTest, type = "prob")$up
+aspectViewTest$EffUpP2 <- predict(fitModel2, aspectViewTest, type = "prob")$up
+aspectViewTest$EffUpP3 <- predict(fitModel3, aspectViewTest, type = "prob")$up
+aspectViewTest$EffUpP4 <- predict(fitModel4, aspectViewTest, type = "prob")$up
 # Final ensamble prediction.
 aspectViewTest$EffPred <- predict(topModel, aspectViewTest, type = "raw")
 
@@ -217,16 +223,17 @@ table(
 #saveRDS(topModel, paste("./models/", symbol, "_logistic_ensamble", ".rds", sep = ""))
 
 # Full data set prediction.
-dailyAspects$EffUpP1 <- predict(logisticModel1, dailyAspects, type = "prob")$up
-dailyAspects$EffUpP2 <- predict(logisticModel2, dailyAspects, type = "prob")$up
-dailyAspects$EffUpP3 <- predict(logisticModel3, dailyAspects, type = "prob")$up
-EffPred <- predict(topModel, dailyAspects, type = "raw")
-dailyAspects$EffPred <- mapvalues(EffPred, from = c("up", "down"), to = c("buy", "sell"))
+dailyAspects$EffUpP1 <- predict(fitModel1, dailyAspects, type = "prob")$up
+dailyAspects$EffUpP2 <- predict(fitModel2, dailyAspects, type = "prob")$up
+dailyAspects$EffUpP3 <- predict(fitModel3, dailyAspects, type = "prob")$up
+dailyAspects$EffUpP4 <- predict(fitModel4, dailyAspects, type = "prob")$up
+dailyAspects$EffPred <- predict(topModel, dailyAspects, type = "raw")
 
 # Round probabilities.
 dailyAspects[, EffUpP1 := format(EffUpP1, format="f", big.mark = ",", digits = 3)]
 dailyAspects[, EffUpP2 := format(EffUpP2, format="f", big.mark = ",", digits = 3)]
 dailyAspects[, EffUpP3 := format(EffUpP3, format="f", big.mark = ",", digits = 3)]
+dailyAspects[, EffUpP4 := format(EffUpP4, format="f", big.mark = ",", digits = 4)]
 
 exportCols <- c('Date', selectCols[-1], probCols, "EffPred")
 fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-kknnLDAB-ensamble", ".csv", sep = ""))
