@@ -1,4 +1,4 @@
-# Title     : Daily aspects factors GLM logistic model with CV control with aspects factors.
+#BAT Title     : Daily aspects factors GLM logistic model with CV control with aspects factors.
 # Purpose   : Based on ModelLD this model has some variations:
 #             1) Planets MO, ME, VE, SU fast planets applying to all slow planets except JU and NN.
 #             2) Not include absense of planet combination aspect "none".
@@ -20,7 +20,7 @@ library(gbm)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "ADA-USD"
+symbol <- "BAT-USD"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 4
 
@@ -55,7 +55,7 @@ dailyAspects <- dailyCombPlanetAspectsFactorsTableLI(
 
 control <- trainControl(
   method = "cv",
-  number = 10,
+  number = 5,
   savePredictions = "all",
   classProbs = T,
   verboseIter = T,
@@ -102,7 +102,11 @@ modelTrain <- function(method, useFeatures, maPriceFsPeriod, maPriceSlPeriod, mo
     method = method,
     metric = "Kappa",
     trControl = control,
-    tuneLength = 3
+    tuneGrid = expand.grid(
+      kmax = 7,
+      distance = 2,
+      kernel = "optimal"
+    )
   )
 
   # Validate data predictions.
@@ -131,12 +135,12 @@ modelTrain <- function(method, useFeatures, maPriceFsPeriod, maPriceSlPeriod, mo
 }
 
 allFeatures <- names(dailyAspects)
-useFeatures1 <- allFeatures[grep('^MO|ME|VE', allFeatures)]
+useFeatures1 <- allFeatures[grep('^MO|^ME', allFeatures)]
 fitModel1 <- modelTrain(
   "kknn", useFeatures1, 2, 4, "1"
 )
 
-useFeatures2 <- allFeatures[grep('^ME|^VE|^SU', allFeatures)]
+useFeatures2 <- allFeatures[grep('^MO|^VE', allFeatures)]
 fitModel2 <- modelTrain(
   "kknn", useFeatures2,2, 4, "2"
 )
@@ -146,7 +150,7 @@ fitModel3 <- modelTrain(
   "kknn", useFeatures3, 2, 4, "3"
 )
 
-useFeatures4 <- allFeatures[grep('^ME|^SU|^MA', allFeatures)]
+useFeatures4 <- allFeatures[grep('^ME|^VE|^SU', allFeatures)]
 fitModel4 <- modelTrain(
   "kknn", useFeatures4, 2, 4, "4"
 )
