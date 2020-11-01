@@ -1,4 +1,4 @@
-#BAT Title     : Daily aspects factors GLM logistic model with CV control with aspects factors.
+# Title     : Daily aspects factors GLM logistic model with CV control with aspects factors.
 # Purpose   : Based on ModelLD this model has some variations:
 #             1) Planets MO, ME, VE, SU, MA, JU fast planets applying to all slow planets except JU and NN.
 #             2) Not include absense of planet combination aspect "none".
