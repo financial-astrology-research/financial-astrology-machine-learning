@@ -66,7 +66,7 @@ control <- trainControl(
 # Reserved data for validation.
 securityDataTest <- mainOpenSecurity(
   symbol, maPriceFsPeriod, maPriceSlPeriod,
-  "%Y-%m-%d", "2020-08-01"
+  "%Y-%m-%d", "2020-09-25"
 )
 
 aspectViewTest <- merge(
@@ -151,7 +151,7 @@ fitModel4 <- modelTrain(
   "kknn", useFeatures4, 2, 4, "4"
 )
 
-useFeatures5 <- allFeatures[grep('^MA|^JU|^SA', allFeatures)]
+useFeatures5 <- allFeatures[grep('^MA|^JU', allFeatures)]
 fitModel5 <- modelTrain(
   "kknn", useFeatures5, 3, 6, "5"
 )
