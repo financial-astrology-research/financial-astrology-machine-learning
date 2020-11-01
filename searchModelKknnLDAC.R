@@ -1,17 +1,16 @@
 #BAT Title     : Daily aspects factors GLM logistic model with CV control with aspects factors.
 # Purpose   : Based on ModelLD this model has some variations:
-#             1) Planets MO, ME, VE, SU fast planets applying to all slow planets except JU and NN.
+#             1) Planets MO, ME, VE, SU, MA, JU fast planets applying to all slow planets except JU and NN.
 #             2) Not include absense of planet combination aspect "none".
-#             3) Increase CV folds to 20.
+#             3) CV folds to 10
 #             4) Validate fit using Actbin daily price change (buy / sell) instead of Effect
 #                The fit is based on MA(2, 4) effect to smooth price variations.
 #             5) Use kknn in favor of glm as weak learners algorithm.
-#             6) Reduce CV folds to 10.
-#             7) Change data split to 80/20 proportion.
-#             8) Include SU in fast planet.
-#             9) Optimize weak learners and ensamble for Kappa.
-#            10) Train weak learners with different aspects features combinations.
-#            11) Fit weak learners for MA trend and ensamble for Actbin to generalize for daily change.
+#             6) Change data split to 80/20 proportion.
+#             7) Include SU in fast planet.
+#             8) Optimize weak learners and ensamble for Kappa.
+#             9) Train weak learners with different aspects features combinations.
+#            10) Fit weak learners for MA trend and ensamble for Actbin to generalize for daily change.
 
 library(boot)
 library(caret)
@@ -20,7 +19,7 @@ library(gbm)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "BAT-USD"
+symbol <- "ADA-USD"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 4
 
@@ -113,22 +112,28 @@ modelTrain <- function(method, useFeatures, maPriceFsPeriod, maPriceSlPeriod, mo
   validateEffPred <- predict(fitModel, aspectViewValidate, type = "raw")
   aspectViewValidate$EffPred <- mapvalues(validateEffPred, from = c("up", "down"), to = c("buy", "sell"))
 
-  table(
+  validateResult <- table(
     actualclass = as.character(aspectViewValidate$Actbin),
     predictedclass = as.character(aspectViewValidate$EffPred)
   ) %>%
-    confusionMatrix() %>%
-    print()
+    confusionMatrix()
+
+  validateAccuracy <- validateResult$overall['Accuracy']
+  validatePrevalence <- validateResult$byClass['Prevalence']
+  cat("Accuracy: ", validateAccuracy, "Prevalence: ", validatePrevalence, "\n")
 
   testEffPred <- predict(fitModel, aspectViewTest, type = "raw")
   aspectViewTest$EffPred <- mapvalues(testEffPred, from = c("up", "down"), to = c("buy", "sell"))
 
-  table(
+  testResult <- table(
     actualclass = as.character(aspectViewTest$Actbin),
     predictedclass = as.character(aspectViewTest$EffPred)
   ) %>%
-    confusionMatrix() %>%
-    print()
+    confusionMatrix()
+
+  testAccuracy <- testResult$overall['Accuracy']
+  testPrevalence <- testResult$byClass['Prevalence']
+  cat("Accuracy: ", testAccuracy, "Prevalence: ", testPrevalence, "\n")
 
   #saveRDS(logisticModel, paste("./models/", symbol, "_logistic_", modelId, ".rds", sep = ""))
   return(fitModel)
