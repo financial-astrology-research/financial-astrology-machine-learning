@@ -252,7 +252,6 @@ mainOpenSecurity <- function(securityfile, mapricefs=20, mapricesl=50, dateforma
   # sort by Date and key it
   setkey(security, 'Date')
   security[, Mid := (High + Low + Close + Open) / 4]
-  #security[, Mid := (High + Low) / 2]
   security[, MidMAF := SMA(Mid, n=mapricefs)]
   security[, MidMAS := SMA(Mid, n=mapricesl)]
   security[, val := MidMAF-MidMAS]
@@ -260,13 +259,18 @@ mainOpenSecurity <- function(securityfile, mapricefs=20, mapricesl=50, dateforma
   security[, diffPercentAbs := abs(diffPercent)]
   security[, zdiffPercent := scale(diffPercent, center = T)]
   security[, zdiffPercentAbs := abs(zdiffPercent)]
+  security[, diffMAF := SMA(diffPercent, mapricefs)]
+  security[, diffMAS := SMA(diffPercent, mapricesl)]
+  security[, diffMom := diffMAF-diffMAS]
 
   if (all(security$val == 0)) {
     stop("Undetermined security price direction")
   }
 
   security <- security[!is.na(val)]
+  security <- security[!is.na(diffMom)]
   security[, Eff := cut(val, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
+  security[, diffEff := cut(diffMom, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
   security[, Actbin := cut(diffPercent, c(-10000, 0, 10000), labels=c('sell', 'buy'), right=FALSE)]
 
   # Take data starting from sdate
