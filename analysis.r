@@ -255,6 +255,12 @@ mainOpenSecurity <- function(securityfile, mapricefs=20, mapricesl=50, dateforma
   security[, MidMAF := SMA(Mid, n=mapricefs)]
   security[, MidMAS := SMA(Mid, n=mapricesl)]
   security[, val := MidMAF-MidMAS]
+
+  security[, HLC := (High + Low + Close) / 3]
+  security[, HLCMAF := SMA(HLC, n=mapricefs)]
+  security[, HLCMAS := SMA(HLC, n=mapricesl)]
+  security[, HLCMom := HLCMAF-HLCMAS]
+
   security[, diffPercent := Delt(Mid, k=1)]
   security[, diffPercentAbs := abs(diffPercent)]
   security[, zdiffPercent := scale(diffPercent, center = T)]
@@ -270,6 +276,7 @@ mainOpenSecurity <- function(securityfile, mapricefs=20, mapricesl=50, dateforma
   security <- security[!is.na(val)]
   security <- security[!is.na(diffMom)]
   security[, Eff := cut(val, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
+  security[, HLCEff := cut(HLCMom, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
   security[, diffEff := cut(diffMom, c(-10000, 0, 10000), labels=c('down', 'up'), right=FALSE)]
   security[, Actbin := cut(diffPercent, c(-10000, 0, 10000), labels=c('sell', 'buy'), right=FALSE)]
 
