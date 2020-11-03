@@ -21,7 +21,6 @@ library(gbm)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-# TODO: Continue fit from ADA.
 symbol <- "ADA-USD"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 4
@@ -266,4 +265,4 @@ dailyAspects[, EffUpP4 := format(EffUpP4, format="f", big.mark = ",", digits = 4
 dailyAspects[, EffUpP5 := format(EffUpP5, format="f", big.mark = ",", digits = 5)]
 
 exportCols <- c('Date', selectCols[-1], probCols, "EffPred")
-fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-kknnLDAF-ensamble", ".csv", sep = ""))
+fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-kknnLDAE-ensamble", ".csv", sep = ""))
