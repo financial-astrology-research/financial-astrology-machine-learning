@@ -19,7 +19,7 @@ library(gbm)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "BAT-USD"
+symbol <- "ADA-USD"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 4
 
@@ -209,8 +209,6 @@ topModel <- train(
   y = aspectViewTrain$Actbin,
   method = "gbm",
   metric = "Kappa",
-  trControl = control,
-  tuneLength = 2
 )
 
 topModel %>% summary()
