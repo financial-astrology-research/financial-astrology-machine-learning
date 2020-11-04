@@ -139,7 +139,7 @@ fitModel1 <- modelTrain(
   "glm", useFeatures1, 2, 4, "1"
 )
 
-useFeatures1 <- allFeatures[grep('^MO|^VE', allFeatures)]
+useFeatures2 <- allFeatures[grep('^MO|^VE', allFeatures)]
 fitModel2 <- modelTrain(
   "glm", useFeatures2,2, 4, "2"
 )
