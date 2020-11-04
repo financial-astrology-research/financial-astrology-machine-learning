@@ -12,8 +12,9 @@
 #             9) Train weak learners with different aspects features combinations.
 #            10) Fit weak learners for MA trend and ensamble for Actbin to generalize for daily change.
 #            11) Use MO/ME/VE for 2 weak learners.
-#            12) Use ME/VE/SU for 2 weak learners.
-#            13) Use ME/VE/SU/MA for 1 weak learner.
+#            12) Use ME/SU for 1 weak learners.
+#            13) Use VE/SU for 1 weak learners.
+#            14) Use MO/ME/VE/SU for 1 weak learner.
 #            15) Split applicative/separative aspect factors.
 
 library(boot)
@@ -31,8 +32,7 @@ pxSelect <- c(
   'MO',
   'ME',
   'VE',
-  'SU',
-  'MA'
+  'SU'
 )
 
 pySelect <- c(
@@ -155,17 +155,17 @@ fitModel2 <- modelTrain(
   "kknn", useFeatures2,2, 4, "2"
 )
 
-useFeatures3 <- allFeatures[grep('^ME|^VE|^SU', allFeatures)]
+useFeatures3 <- allFeatures[grep('^ME|^SU', allFeatures)]
 fitModel3 <- modelTrain(
   "kknn", useFeatures3, 2, 4, "3"
 )
 
-useFeatures4 <- allFeatures[grep('^ME|^VE|^SU', allFeatures)]
+useFeatures4 <- allFeatures[grep('^VE|^SU', allFeatures)]
 fitModel4 <- modelTrain(
   "kknn", useFeatures4, 2, 4, "4"
 )
 
-useFeatures5 <- allFeatures[grep('^ME|^VE|^SU|^MA', allFeatures)]
+useFeatures5 <- allFeatures[grep('^MO|^ME|^VE|^SU', allFeatures)]
 fitModel5 <- modelTrain(
   "kknn", useFeatures5, 2, 4, "5"
 )
