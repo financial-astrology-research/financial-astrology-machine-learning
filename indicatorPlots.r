@@ -1483,6 +1483,46 @@ dailyCombPlanetAspectsFactorsTableLDB <- function(orbLimit = 2, aspectFilter = c
   return(dailyAspectsWide)
 }
 
+
+dailyCombPlanetAspectsFactorsTableLDC <- function(orbLimit = 2, aspectFilter = c(), pxSelect = c(), pySelect = c()) {
+  idCols <- c('Date', 'Hour')
+  setClassicAspectsSet8()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+
+  # Filter minor MO aspects that can overlap multiples to same target planet
+  # in the same day and should not be significant in effect.
+  dailyAspects$filter <- F
+  dailyAspects[p.x == "MO" & aspect == 30, filter := T]
+  dailyAspects[p.x == "MO" & aspect == 45, filter := T]
+  dailyAspects[p.x == "MO" & aspect == 135, filter := T]
+  dailyAspects[p.x %ni% pxSelect, filter := T]
+  dailyAspects[p.y %ni% pySelect, filter := T]
+  dailyAspects[aspect %in% aspectFilter, filter := T]
+  dailyAspects <- dailyAspects[filter != T,]
+
+  # Ignore aspects without type.
+  # Convert numeric aspects to categorical (factors).
+  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
+  # Categorize applicative / separative aspects.
+  dailyAspects <- dailyAspects[p.x != "MO", aspect := as.character(paste(aspect, "-",  round(orb), sep = ""))]
+
+  # Arrange aspects factors as table wide format.
+  dailyAspectsWide <- dcast(
+    dailyAspects,
+    Date ~ origin,
+    value.var = "aspect",
+    fill = ""
+  )
+  setDT(dailyAspectsWide)
+
+  aspectsCols <- names(dailyAspectsWide)[-1]
+  dailyAspectsWide[, c(aspectsCols) := lapply(.SD, as.factor), .SDcols = aspectsCols]
+
+  return(dailyAspectsWide)
+}
+
 dailyAspectsGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), pySelect = c(), aspectFilter = c(), binFlag = F) {
   idCols <- c('Date', 'Hour')
   setModernMixAspectsSet1()
