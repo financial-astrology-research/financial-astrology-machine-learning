@@ -1466,7 +1466,7 @@ dailyCombPlanetAspectsFactorsTableLDB <- function(orbLimit = 2, aspectFilter = c
   # Convert numeric aspects to categorical (factors).
   dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
   # Categorize applicative / separative aspects.
-  dailyAspects <- dailyAspects[p.x == "MO", aspect := as.character(paste(aspect, type, sep = ""))]
+  dailyAspects <- dailyAspects[p.x != "MO", aspect := as.character(paste(aspect, type, sep = ""))]
 
   # Arrange aspects factors as table wide format.
   dailyAspectsWide <- dcast(
