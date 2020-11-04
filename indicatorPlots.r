@@ -198,7 +198,8 @@ dailyAspectsAddOrbs <- function(dailyAspects, dailyPlanets, idCols = c('Date')) 
 
 dailyAspectsAddOrbsDir <- function(dailyAspects) {
   # Calculate orb direction (applicative, separative).
-  dailyAspects[, orbdir := round(orb - Lag(orb), 2), by = c('origin', 'aspect')]
+  dailyAspects[, orbdir := round(orb - Lag(orb, k = 1), 4), by = c('origin', 'aspect')]
+  dailyAspects[is.na(orbdir), orbdir := 0]
   dailyAspects[, type := cut(orbdir, c(-100, 0, 100), labels = (c('A', 'S')))]
 }
 
@@ -1427,6 +1428,45 @@ dailyCombPlanetAspectsFactorsTableLJ <- function(orbLimit = 2, aspectFilter = c(
 
   # Convert numeric aspects to categorical (factors).
   dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
+
+  # Arrange aspects factors as table wide format.
+  dailyAspectsWide <- dcast(
+    dailyAspects,
+    Date ~ origin,
+    value.var = "aspect",
+    fill = ""
+  )
+  setDT(dailyAspectsWide)
+
+  aspectsCols <- names(dailyAspectsWide)[-1]
+  dailyAspectsWide[, c(aspectsCols) := lapply(.SD, as.factor), .SDcols = aspectsCols]
+
+  return(dailyAspectsWide)
+}
+
+dailyCombPlanetAspectsFactorsTableLDB <- function(orbLimit = 2, aspectFilter = c(), pxSelect = c(), pySelect = c()) {
+  idCols <- c('Date', 'Hour')
+  setClassicAspectsSet8()
+  setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+
+  # Filter minor MO aspects that can overlap multiples to same target planet
+  # in the same day and should not be significant in effect.
+  dailyAspects$filter <- F
+  dailyAspects[p.x == "MO" & aspect == 30, filter := T]
+  dailyAspects[p.x == "MO" & aspect == 45, filter := T]
+  dailyAspects[p.x == "MO" & aspect == 135, filter := T]
+  dailyAspects[p.x %ni% pxSelect, filter := T]
+  dailyAspects[p.y %ni% pySelect, filter := T]
+  dailyAspects[aspect %in% aspectFilter, filter := T]
+  dailyAspects <- dailyAspects[filter != T,]
+
+  # Ignore aspects without type.
+  # Convert numeric aspects to categorical (factors).
+  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
+  # Categorize applicative / separative aspects.
+  dailyAspects <- dailyAspects[p.x == "MO", aspect := as.character(paste(aspect, type, sep = ""))]
 
   # Arrange aspects factors as table wide format.
   dailyAspectsWide <- dcast(
