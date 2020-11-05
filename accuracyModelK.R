@@ -4,9 +4,10 @@ rm(list = ls())
 library(caret)
 source("analysis.r")
 
-symbolTest <- "ZRX-USD"
+symbolTest <- "ADA-USD"
 securityDataTest <- mainOpenSecurity(
-  symbolTest, 14, 28, "%Y-%m-%d", "2020-09-25"
+  symbolTest, 14, 28,
+  "%Y-%m-%d", "2020-01-01"
 )
 #basePath <- "~/Sites/own/trading-signal-processing/csv_indicators/"
 #basePath <- "~/Desktop/"
@@ -29,7 +30,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "ADA-USD-predict-kknnLDAH-ensamble" # 59
 #indicatorFile <- "ADA-USD-predict-kknnLDB-ensamble" # 67
 #indicatorFile <- "ADA-USD-predict-kknnLDC-ensamble" # 67
-#indicatorFile <- "ADA-USD-predict-kknnLDD-ensamble" # 67
+indicatorFile <- "ADA-USD-predict-kknnLDD-ensamble" # 67
 #indicatorFile <- "ADA-USD-predict-xgblinearLN-ensamble" # 44
 #indicatorFile <- "ADA-USD-predict-kknnLDAD-ensamble" # 64
 
@@ -176,15 +177,21 @@ dailyIndicator <- fread(
   paste(basePath, indicatorFile, ".csv", sep = "")
 )
 dailyIndicator[, Date := as.Date(Date)]
+dailyIndicator[, YearMonth := format(Date, "%Y-%m")]
 dailyIndicator <- merge(securityDataTest[, c('Date', 'Mid', 'diffPercent', 'Eff', 'Actbin')], dailyIndicator, by = "Date")
 
-cat("\n")
-print(dailyIndicator[, c('Date', 'Mid', 'diffPercent', 'Eff', 'Actbin', 'EffPred')])
-cat("\n\n")
+calculateAccuracy <- function(monthlyData) {
+  categoryLevels = c("buy", "sell")
+  confusionData <- table(
+    actualclass = factor(monthlyData$Actbin, levels = categoryLevels),
+    predictedclass = factor(monthlyData$EffPred, levels = categoryLevels)
+  ) %>% confusionMatrix()
 
-table(
-  actualclass = as.character(dailyIndicator$Actbin),
-  predictedclass = as.character(dailyIndicator$EffPred)
-) %>%
-  confusionMatrix() %>%
-  print()
+  accuracy <- confusionData$overall['Accuracy']
+  prevalence <- confusionData$byClass['Prevalence']
+
+  list(Accuracy = accuracy, Prevalence = prevalence)
+}
+
+cat("\n", symbolTest, "montly predictions performacne test:", "\n")
+dailyIndicator[, calculateAccuracy(.SD), by = "YearMonth"]
