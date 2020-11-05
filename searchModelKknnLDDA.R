@@ -17,12 +17,13 @@ source("./indicatorPlots.r")
 
 symbol <- "ADA-USD"
 maPriceFsPeriod <- 2
-maPriceSlPeriod <- 4
+maPriceSlPeriod <- 3
 orbLimit <- 4
 
 pxSelect <- c(
   'ME',
-  'VE'
+  'VE',
+  'MA'
 )
 
 pySelect <- c(
@@ -54,7 +55,7 @@ dailyAspectsPlanetYCount <- dailyPlanetYActivationCount(
 
 dailyPlanetsSpeed <- dailyPlanetsSpeed()
 dailyAspects <- merge(dailyAspectsCount, dailyAspectsPlanetYCount, by = "Date")
-dailyAspects <- merge(dailyAspects, dailyPlanetsSpeed[, c('Date', 'MASP')], by = "Date")
+dailyAspects <- merge(dailyAspects, dailyPlanetsSpeed[, c('Date', 'VESP', 'MASP', 'JUSP')], by = "Date")
 
 control <- trainControl(
   method = "repeatedcv",
@@ -107,7 +108,7 @@ modelTrain <- function(method, useFeatures, maPriceFsPeriod, maPriceSlPeriod, mo
     metric = "Kappa",
     trControl = control,
     tuneGrid = expand.grid(
-      kmax = 7,
+      kmax = 10,
       distance = 2,
       kernel = "optimal"
     )
