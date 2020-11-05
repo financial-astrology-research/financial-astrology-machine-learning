@@ -15,15 +15,14 @@ library(gbm)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "BAT-USD"
+symbol <- "ADA-USD"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 4
 orbLimit <- 4
 
 pxSelect <- c(
-  'MO',
-  'VE',
-  'SU'
+  'ME',
+  'VE'
 )
 
 pySelect <- c(
@@ -53,7 +52,9 @@ dailyAspectsPlanetYCount <- dailyPlanetYActivationCount(
   pySelect = pySelect
 )
 
+dailyPlanetsSpeed <- dailyPlanetsSpeed()
 dailyAspects <- merge(dailyAspectsCount, dailyAspectsPlanetYCount, by = "Date")
+dailyAspects <- merge(dailyAspects, dailyPlanetsSpeed[, c('Date', 'MASP')], by = "Date")
 
 control <- trainControl(
   method = "repeatedcv",
@@ -264,4 +265,4 @@ dailyAspects[, EffUpP4 := format(EffUpP4, format = "f", big.mark = ",", digits =
 dailyAspects[, EffUpP5 := format(EffUpP5, format = "f", big.mark = ",", digits = 5)]
 
 exportCols <- c('Date', selectCols[-1], probCols, "EffPred")
-fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-kknnLDD-ensamble", ".csv", sep = ""))
+fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-kknnLDDA-ensamble", ".csv", sep = ""))
