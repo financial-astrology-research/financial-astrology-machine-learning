@@ -22,7 +22,8 @@ orbLimit <- 4
 
 pxSelect <- c(
   'ME',
-  'VE'
+  'VE',
+  'SU'
 )
 
 pySelect <- c(
