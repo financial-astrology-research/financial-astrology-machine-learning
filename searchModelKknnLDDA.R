@@ -22,8 +22,7 @@ orbLimit <- 4
 
 pxSelect <- c(
   'ME',
-  'VE',
-  'MA'
+  'VE'
 )
 
 pySelect <- c(
@@ -54,8 +53,10 @@ dailyAspectsPlanetYCount <- dailyPlanetYActivationCount(
 )
 
 dailyPlanetsSpeed <- dailyPlanetsSpeed()
+#dailyPlanetsDeclination <- dailyPlanetsDeclination()
 dailyAspects <- merge(dailyAspectsCount, dailyAspectsPlanetYCount, by = "Date")
 dailyAspects <- merge(dailyAspects, dailyPlanetsSpeed[, c('Date', 'VESP', 'MASP', 'JUSP')], by = "Date")
+#dailyAspects <- merge(dailyAspects, dailyPlanetsDeclination[, c('Date', 'VEDEC')], by = "Date")
 
 control <- trainControl(
   method = "repeatedcv",
