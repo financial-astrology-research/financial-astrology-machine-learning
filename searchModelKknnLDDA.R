@@ -1,5 +1,5 @@
 # Title     : Daily generalized aspects and planets activation count KKNN ensamble model.
-#             1) Planets MO, ME, VE, SU, fast planets applying to all slow planets except NN.
+#             1) Planets MO, VE, SU, fast planets applying to all slow planets except NN.
 #             2) CV folds to 5 with 5 repeats.
 #             3) Validate fit using Actbin daily price change (buy / sell) instead of Effect
 #                The fit is based on MA(2, 4) effect to smooth price variations.
@@ -15,13 +15,13 @@ library(gbm)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "ADA-USD"
+symbol <- "BAT-USD"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 4
 orbLimit <- 4
 
 pxSelect <- c(
-  'ME',
+  'MO',
   'VE',
   'SU'
 )
@@ -145,23 +145,23 @@ modelTrain <- function(method, useFeatures, maPriceFsPeriod, maPriceSlPeriod, mo
 
 allFeatures <- names(dailyAspects)[-1]
 fitModel1 <- modelTrain(
-  "kknn", allFeatures, 2, 4, "1"
+  "kknn", allFeatures, maPriceFsPeriod, maPriceSlPeriod, "1"
 )
 
 fitModel2 <- modelTrain(
-  "kknn", allFeatures, 2, 4, "2"
+  "kknn", allFeatures, maPriceFsPeriod, maPriceSlPeriod, "2"
 )
 
 fitModel3 <- modelTrain(
-  "kknn", allFeatures, 2, 4, "3"
+  "kknn", allFeatures, maPriceFsPeriod, maPriceSlPeriod, "3"
 )
 
 fitModel4 <- modelTrain(
-  "kknn", allFeatures, 2, 4, "4"
+  "kknn", allFeatures, maPriceFsPeriod, maPriceSlPeriod, "4"
 )
 
 fitModel5 <- modelTrain(
-  "kknn", allFeatures, 2, 4, "5"
+  "kknn", allFeatures, maPriceFsPeriod, maPriceSlPeriod, "5"
 )
 
 fitModel1 %>% print()

@@ -1,5 +1,5 @@
 # Title     : Daily generalized aspects and planets activation count KKNN ensamble model.
-#             1) Planets MO, ME, VE, SU, fast planets applying to all slow planets except NN.
+#             1) Planets ME, VE fast planets applying to all slow planets except NN.
 #             2) CV folds to 5 with 5 repeats.
 #             3) Validate fit using Actbin daily price change (buy / sell) instead of Effect
 #                The fit is based on MA(2, 4) effect to smooth price variations.
