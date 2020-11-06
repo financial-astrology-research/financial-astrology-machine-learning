@@ -1792,7 +1792,7 @@ dailyPlanetsSpeed <- function() {
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   dailyPlanetsSpeed <- hourlyPlanets[,
-    lapply(.SD, function(x) mean(x)),
+    lapply(.SD, function(x) round(mean(x), 3)),
     by = Date, .SDcols = planetsSpCols
   ]
 
