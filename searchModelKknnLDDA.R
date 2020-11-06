@@ -145,23 +145,23 @@ modelTrain <- function(method, useFeatures, maPriceFsPeriod, maPriceSlPeriod, mo
 
 allFeatures <- names(dailyAspects)[-1]
 fitModel1 <- modelTrain(
-  "kknn", allFeatures, 2, 4, "1"
+  "kknn", allFeatures, maPriceFsPeriod, maPriceSlPeriod, "1"
 )
 
 fitModel2 <- modelTrain(
-  "kknn", allFeatures, 2, 4, "2"
+  "kknn", allFeatures, maPriceFsPeriod, maPriceSlPeriod, "2"
 )
 
 fitModel3 <- modelTrain(
-  "kknn", allFeatures, 2, 4, "3"
+  "kknn", allFeatures, maPriceFsPeriod, maPriceSlPeriod, "3"
 )
 
 fitModel4 <- modelTrain(
-  "kknn", allFeatures, 2, 4, "4"
+  "kknn", allFeatures, maPriceFsPeriod, maPriceSlPeriod, "4"
 )
 
 fitModel5 <- modelTrain(
-  "kknn", allFeatures, 2, 4, "5"
+  "kknn", allFeatures, maPriceFsPeriod, maPriceSlPeriod, "5"
 )
 
 fitModel1 %>% print()
