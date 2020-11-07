@@ -1560,6 +1560,43 @@ dailyAspectsGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), pySelect 
   return(dailyAspectsCount)
 }
 
+dailyAspectsGeneralizedCountLDI <- function(orbLimit = 2, pxSelect = c(), pySelect = c(), aspectFilter = c(), binFlag = F) {
+  idCols <- c('Date', 'Hour')
+  setModernMixAspectsSet1()
+  setPlanetsMOMEVESUMACEJUNNSAURNEPL()
+  hourlyPlanets <<- openHourlyPlanets('planets_12', clear = F)
+  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+
+  dailyAspects$filter <- F
+  dailyAspects[p.x %ni% pxSelect, filter := T]
+  dailyAspects[p.y %ni% pySelect, filter := T]
+  dailyAspects[aspect %in% aspectFilter, filter := T]
+  dailyAspects <- dailyAspects[filter != T,]
+
+  # Convert numeric aspects to categorical (factors).
+  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
+  # Arrange aspects factors as table wide format.
+  dailyAspectsCount <- dcast(
+    dailyAspects,
+    Date ~ aspect,
+    fun.aggregate = SIT::count,
+    value.var = "aspect",
+    fill = 0
+  )
+  setDT(dailyAspectsCount)
+
+  # Convert counts to binary flags when setting is enabled.
+  if (binFlag) {
+    aspectCols <- names(dailyAspectsCount)[-1]
+    dailyAspectsCount[,
+      c(aspectCols) := lapply(.SD, function(x) ifelse(x > 1, 1, 0)),
+      .SDcols = aspectCols
+    ]
+  }
+
+  return(dailyAspectsCount)
+}
+
 dailyAspectsGeneralizedOrbsMean <- function(orbLimit = 2, pxFilter = c()) {
   idCols <- c('Date', 'Hour')
   setClassicAspectsSet8()
@@ -1619,6 +1656,44 @@ dailyPlanetYActivationCount <- function(orbLimit = 2, pxSelect = c(), pySelect =
   setModernMixAspectsSet1()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+
+  dailyAspects$filter <- F
+  dailyAspects[p.x %ni% pxSelect, filter := T]
+  dailyAspects[p.y %ni% pySelect, filter := T]
+  dailyAspects[aspect %in% aspectFilter, filter := T]
+  dailyAspects <- dailyAspects[filter != T,]
+
+  # Convert numeric aspects to categorical (factors).
+  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
+  dailyAspects <- dailyAspects[, p.y := as.character(paste(p.y, "Y", sep = ""))]
+  # Arrange aspects factors as table wide format.
+  dailyAspectsCount <- dcast(
+    dailyAspects,
+    Date ~ p.y,
+    fun.aggregate = SIT::count,
+    value.var = "aspect",
+    fill = 0
+  )
+  setDT(dailyAspectsCount)
+
+  # Convert counts to binary flags when setting is enabled.
+  if (binFlag) {
+    planetsCols <- names(dailyAspectsCount)[-1]
+    dailyAspectsCount[,
+      c(planetsCols) := lapply(.SD, function(x) ifelse(x > 1, 1, 0)),
+      .SDcols = planetsCols
+    ]
+  }
+
+  return(dailyAspectsCount)
+}
+
+dailyPlanetYActivationCountLDI <- function(orbLimit = 2, pxSelect = c(), pySelect = c(), aspectFilter = c(), binFlag = F) {
+  idCols <- c('Date', 'Hour')
+  setModernMixAspectsSet1()
+  setPlanetsMOMEVESUMACEJUNNSAURNEPL()
+  hourlyPlanets <<- openHourlyPlanets('planets_12', clear = F)
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
 
   dailyAspects$filter <- F
