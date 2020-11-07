@@ -4,7 +4,7 @@ rm(list = ls())
 library(caret)
 source("analysis.r")
 
-symbolTest <- "BNB-USD"
+symbolTest <- "BTC-USD"
 securityDataTest <- mainOpenSecurity(
   symbolTest, 2, 4,
   "%Y-%m-%d", "2020-01-01", "2020-10-31"
@@ -88,31 +88,31 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "BNB-USD-predict-kknnLDE-ensamble" # A: 68, 9 / P: 50, 18 (Best)
 #indicatorFile <- "BNB-USD-predict-xgblinearLN-ensamble" # A: 70, 7 / P: 51, 19 (Best)
 
-# TODO: Continue evaluating model stability.
-#indicatorFile <- "BTC-USD-predict-ensamble" # 54
-#indicatorFile <- "BTC-USD-predict-glmLDAA-ensamble" # 56
-#indicatorFile <- "BTC-USD-predict-glmLDB-ensamble" # 49
-#indicatorFile <- "BTC-USD-predict-glmLDC-ensamble" # 54
-#indicatorFile <- "BTC-USD-predict-glmLDD-ensamble" # 59
-#indicatorFile <- "BTC-USD-predict-glmLDG-ensamble" # 62
-#indicatorFile <- "BTC-USD-predict-kknnLDAB-ensamble" # 56
-#indicatorFile <- "BTC-USD-predict-kknnLDAC-ensamble" # 59
-#indicatorFile <- "BTC-USD-predict-kknnLDAD-ensamble" # 64
-#indicatorFile <- "BTC-USD-predict-kknnLDAE-ensamble" # 72
-#indicatorFile <- "BTC-USD-predict-kknnLDAF-ensamble" # 67
-#indicatorFile <- "BTC-USD-predict-kknnLDAG-ensamble" # 62
-#indicatorFile <- "BTC-USD-predict-kknnLDAH-ensamble" # 64
-#indicatorFile <- "BTC-USD-predict-kknnLDB-ensamble" # 74
-#indicatorFile <- "BTC-USD-predict-kknnLDC-ensamble" # 62
-#indicatorFile <- "BTC-USD-predict-kknnLDD-ensamble" # 69
-#indicatorFile <- "BTC-USD-predict-kknnLDDA-ensamble" # 51
-#indicatorFile <- "BTC-USD-predict-kknnLDDB-ensamble" # 48
-#indicatorFile <- "BTC-USD-predict-kknnLDDC-ensamble" # 45
-#indicatorFile <- "BTC-USD-predict-kknnLDDD-ensamble" # 52
-#indicatorFile <- "BTC-USD-predict-kknnLDDE-ensamble" # 58
-#indicatorFile <- "BTC-USD-predict-kknnLDE-ensamble" # 54
-#indicatorFile <- "BTC-USD-predict-xgblinearLJ-ensamble" # 56
+#indicatorFile <- "BTC-USD-predict-ensamble" # A: 50, 7 / P: 57, 10
+#indicatorFile <- "BTC-USD-predict-glmLDAA-ensamble" # A: 59, 11 / P: 60, 14
+#indicatorFile <- "BTC-USD-predict-glmLDB-ensamble" # A: 58, 12 / P: 62, 14
+#indicatorFile <- "BTC-USD-predict-glmLDC-ensamble" # A: 65, 14 / P: 66, 13
+#indicatorFile <- "BTC-USD-predict-glmLDD-ensamble" # A: 65, 12 / P: 67, 14
+#indicatorFile <- "BTC-USD-predict-glmLDG-ensamble" # A: 61, 11 / P: 59, 17
+#indicatorFile <- "BTC-USD-predict-kknnLDAB-ensamble" # A: 77, 17 / P: 51, 14
+#indicatorFile <- "BTC-USD-predict-kknnLDAC-ensamble" # A: 62, 12 / P: 55, 13 (Best)
+#indicatorFile <- "BTC-USD-predict-kknnLDAD-ensamble" # A: 61, 12 / P: 57, 12
+#indicatorFile <- "BTC-USD-predict-kknnLDAE-ensamble" # A: 63, 11 / P: 60, 16
+#indicatorFile <- "BTC-USD-predict-kknnLDAF-ensamble" # A: 69, 10 / P: 63, 16
+#indicatorFile <- "BTC-USD-predict-kknnLDAG-ensamble" # A: 69, 11 / P: 56, 12 (Best)
+#indicatorFile <- "BTC-USD-predict-kknnLDAH-ensamble" # A: 59, 14 / P: 53, 12
+#indicatorFile <- "BTC-USD-predict-kknnLDB-ensamble" # A: 63, 11 / P: 60, 12
+#indicatorFile <- "BTC-USD-predict-kknnLDC-ensamble" # A: 65, 8 / 56, 11 (Best)
+#indicatorFile <- "BTC-USD-predict-kknnLDD-ensamble" # A: 66, 10 / 55, 9 (Best)
+#indicatorFile <- "BTC-USD-predict-kknnLDDA-ensamble" # A: 65, 11 / 57, 11
+#indicatorFile <- "BTC-USD-predict-kknnLDDB-ensamble" # A: 62, 17 / 53, 11
+#indicatorFile <- "BTC-USD-predict-kknnLDDC-ensamble" # A: 62, 11 / 61, 10
+#indicatorFile <- "BTC-USD-predict-kknnLDDD-ensamble" # A: 62, 17 / 56, 16
+#indicatorFile <- "BTC-USD-predict-kknnLDDE-ensamble" # A: 64, 11 / 59, 12
+#indicatorFile <- "BTC-USD-predict-kknnLDE-ensamble" # A: 64, 15 / 57, 19
+#indicatorFile <- "BTC-USD-predict-xgblinearLJ-ensamble" # A: 59, 10 / 61, 18
 
+# TODO: Continue evaluating model stability.
 #indicatorFile <- "DASH-USD-predict-ensamble" # 64
 #indicatorFile <- "DASH-USD-predict-glmLDA-ensamble" # 54
 #indicatorFile <- "DASH-USD-predict-glmLDAA-ensamble" # 59
