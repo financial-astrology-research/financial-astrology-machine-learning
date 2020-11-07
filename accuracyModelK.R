@@ -4,7 +4,7 @@ rm(list = ls())
 library(caret)
 source("analysis.r")
 
-symbolTest <- "LINK-USD"
+symbolTest <- "LTC-USD"
 securityDataTest <- mainOpenSecurity(
   symbolTest, 2, 4,
   "%Y-%m-%d", "2020-01-01", "2020-10-31"
@@ -177,26 +177,26 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "LINK-USD-predict-kknnLDDE-ensamble" # A: 60, 16 / P: 60, 13
 #indicatorFile <- "LINK-USD-predict-kknnLDE-ensamble" # A: 67, 10 / P: 53, 12 (Best)
 
-# TODO: Continue evaluating model stability.
-#indicatorFile <- "LTC-USD-predict-glmLDAA-ensamble" # 54
-#indicatorFile <- "LTC-USD-predict-glmLDAB-ensamble" # 59
-#indicatorFile <- "LTC-USD-predict-glmLDB-ensamble" # 49
-#indicatorFile <- "LTC-USD-predict-glmLDC-ensamble" # 56
-#indicatorFile <- "LTC-USD-predict-glmLDG-ensamble" # 54
-#indicatorFile <- "LTC-USD-predict-kknnLDAD-ensamble" # 67
-#indicatorFile <- "LTC-USD-predict-kknnLDAE-ensamble" # 67
-#indicatorFile <- "LTC-USD-predict-kknnLDAG-ensamble" # 59
-#indicatorFile <- "LTC-USD-predict-kknnLDAH-ensamble" # 59
-#indicatorFile <- "LTC-USD-predict-kknnLDB-ensamble" # 62
-#indicatorFile <- "LTC-USD-predict-kknnLDC-ensamble" # 51
-#indicatorFile <- "LTC-USD-predict-kknnLDD-ensamble" # 59
-#indicatorFile <- "LTC-USD-predict-kknnLDDA-ensamble" # 51
-#indicatorFile <- "LTC-USD-predict-kknnLDDB-ensamble" # 51
-#indicatorFile <- "LTC-USD-predict-kknnLDDC-ensamble" # 77
-#indicatorFile <- "LTC-USD-predict-kknnLDDD-ensamble" # 51
-#indicatorFile <- "LTC-USD-predict-kknnLDDE-ensamble" # 68
-#indicatorFile <- "LTC-USD-predict-kknnLDE-ensamble" # 48
+#indicatorFile <- "LTC-USD-predict-glmLDAA-ensamble" # A: 54, 10 / P: 46, 12
+#indicatorFile <- "LTC-USD-predict-glmLDAB-ensamble" # A: 54, 11 / P: 51, 16
+#indicatorFile <- "LTC-USD-predict-glmLDB-ensamble" # A: 51, 11 / P: 44, 13
+#indicatorFile <- "LTC-USD-predict-glmLDC-ensamble" # A: 56, 15 / P: 35, 15
+#indicatorFile <- "LTC-USD-predict-glmLDG-ensamble" # A: 62, 9 / P: 47, 15
+#indicatorFile <- "LTC-USD-predict-kknnLDAD-ensamble" # A: 64, 13 / P: 48, 16
+#indicatorFile <- "LTC-USD-predict-kknnLDAE-ensamble" # A: 62, 10 / P: 49, 9 (Best)
+#indicatorFile <- "LTC-USD-predict-kknnLDAG-ensamble" # A: 64, 11 / P: 49, 14
+#indicatorFile <- "LTC-USD-predict-kknnLDAH-ensamble" # A: 61, 13 / P: 49, 13
+#indicatorFile <- "LTC-USD-predict-kknnLDB-ensamble" # A: 66, 8 / P: 50, 13 (Best)
+#indicatorFile <- "LTC-USD-predict-kknnLDC-ensamble" # A: 63, 12 / P: 49, 11
+#indicatorFile <- "LTC-USD-predict-kknnLDD-ensamble" # A: 64, 12 / P: 47, 16
+#indicatorFile <- "LTC-USD-predict-kknnLDDA-ensamble" # A: 64, 13 / P: 56, 10
+#indicatorFile <- "LTC-USD-predict-kknnLDDB-ensamble" # A: 66, 15 / P: 50, 13
+#indicatorFile <- "LTC-USD-predict-kknnLDDC-ensamble" # A: 67, 11 / P: 55, 11 (Best)
+#indicatorFile <- "LTC-USD-predict-kknnLDDD-ensamble" # A: 63, 14 / P: 50, 13
+#indicatorFile <- "LTC-USD-predict-kknnLDDE-ensamble" # A: 63, 14 / P: 54, 11
+#indicatorFile <- "LTC-USD-predict-kknnLDE-ensamble" # A: 68, 13 / P: 53, 13
 
+# TODO: Continue evaluating model stability.
 #indicatorFile <- "ZEC-USD-predict-glmLDAB-ensamble" # 56
 #indicatorFile <- "ZEC-USD-predict-glmLDC-ensamble" # 51
 #indicatorFile <- "ZEC-USD-predict-glmLDD-ensamble" # 49
