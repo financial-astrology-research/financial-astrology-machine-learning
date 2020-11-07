@@ -4,7 +4,7 @@ rm(list = ls())
 library(caret)
 source("analysis.r")
 
-symbolTest <- "ZEC-USD"
+symbolTest <- "ZRX-USD"
 securityDataTest <- mainOpenSecurity(
   symbolTest, 2, 4,
   "%Y-%m-%d", "2020-01-01", "2020-10-31"
@@ -214,23 +214,22 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "ZEC-USD-predict-kknnLDDE-ensamble" # A: 63, 10 / P: 44, 15
 #indicatorFile <- "ZEC-USD-predict-kknnLDE-ensamble" # A: 65, 12 / P: 47, 14
 
-# TODO: Continue evaluating model stability.
-indicatorFile <- "ZRX-USD-predict-glmLDAA-ensamble" # 62
-#indicatorFile <- "ZRX-USD-predict-glmLDB-ensamble" # 72
-#indicatorFile <- "ZRX-USD-predict-glmLDG-ensamble" # 56
-#indicatorFile <- "ZRX-USD-predict-kknnLDAD-ensamble" # 56
-#indicatorFile <- "ZRX-USD-predict-kknnLDAE-ensamble" # 64
-#indicatorFile <- "ZRX-USD-predict-kknnLDAG-ensamble" # 59
-#indicatorFile <- "ZRX-USD-predict-kknnLDAH-ensamble" # 56
-#indicatorFile <- "ZRX-USD-predict-kknnLDB-ensamble" # 69
-#indicatorFile <- "ZRX-USD-predict-kknnLDC-ensamble" # 51
-#indicatorFile <- "ZRX-USD-predict-kknnLDD-ensamble" # 51
-#indicatorFile <- "ZRX-USD-predict-kknnLDDA-ensamble" # 54
-#indicatorFile <- "ZRX-USD-predict-kknnLDDB-ensamble" # 51
-#indicatorFile <- "ZRX-USD-predict-kknnLDDC-ensamble" # 64
-#indicatorFile <- "ZRX-USD-predict-kknnLDDD-ensamble" # 67
-#indicatorFile <- "ZRX-USD-predict-kknnLDDE-ensamble" # 54
-#indicatorFile <- "ZRX-USD-predict-kknnLDE-ensamble" # 64
+#indicatorFile <- "ZRX-USD-predict-glmLDAA-ensamble" # A: 56, 9 / P: 40, 16
+#indicatorFile <- "ZRX-USD-predict-glmLDB-ensamble" # A: 58, 13 / P: 47, 13
+#indicatorFile <- "ZRX-USD-predict-glmLDG-ensamble" # A: 59, 7 / P: 43, 17
+#indicatorFile <- "ZRX-USD-predict-kknnLDAD-ensamble" # A: 64, 8 / P: 44, 19
+#indicatorFile <- "ZRX-USD-predict-kknnLDAE-ensamble" # A: 65, 7 / P: 43, 17
+#indicatorFile <- "ZRX-USD-predict-kknnLDAG-ensamble" # A: 63, 10 / P: 49, 16 (Best)
+#indicatorFile <- "ZRX-USD-predict-kknnLDAH-ensamble" # A: 67, 11 / P: 50, 13 (Best)
+#indicatorFile <- "ZRX-USD-predict-kknnLDB-ensamble" # A: 65, 5 / P: 44, 11 (Best)
+#indicatorFile <- "ZRX-USD-predict-kknnLDC-ensamble" # A: 64, 8 / P: 46, 16
+#indicatorFile <- "ZRX-USD-predict-kknnLDD-ensamble" # A: 60, 10 / P: 32, 14
+#indicatorFile <- "ZRX-USD-predict-kknnLDDA-ensamble" # A: 66, 11 / P: 49, 9 (Best)
+#indicatorFile <- "ZRX-USD-predict-kknnLDDB-ensamble" # A: 63, 13 / P: 46, 17
+#indicatorFile <- "ZRX-USD-predict-kknnLDDC-ensamble" # A: 68, 7 / P: 53, 12 (Best)
+#indicatorFile <- "ZRX-USD-predict-kknnLDDD-ensamble" # A: 71, 11 / P: 43, 17
+#indicatorFile <- "ZRX-USD-predict-kknnLDDE-ensamble" # A: 58, 14 / P: 52, 11
+#indicatorFile <- "ZRX-USD-predict-kknnLDE-ensamble" # A: 69, 10 / P: 41, 12
 
 dailyIndicator <- fread(
   paste(basePath, indicatorFile, ".csv", sep = "")
