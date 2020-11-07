@@ -4,7 +4,7 @@ rm(list = ls())
 library(caret)
 source("analysis.r")
 
-symbolTest <- "EOS-USD"
+symbolTest <- "LINK-USD"
 securityDataTest <- mainOpenSecurity(
   symbolTest, 2, 4,
   "%Y-%m-%d", "2020-01-01", "2020-10-31"
@@ -158,26 +158,26 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "EOS-USD-predict-kknnLDE-ensamble" # A: 63, 17 / P: 51, 10
 #indicatorFile <- "EOS-USD-predict-xgblinearLN-ensamble" # A: 69, 7 / 39, 21
 
-# TODO: Continue evaluating model stability.
-#indicatorFile <- "LINK-USD-predict-ensamble" # 59
-#indicatorFile <- "LINK-USD-predict-glmLDB-ensamble" # 46
-#indicatorFile <- "LINK-USD-predict-glmLDC-ensamble" # 49
-#indicatorFile <- "LINK-USD-predict-glmLDG-ensamble" # 69
-#indicatorFile <- "LINK-USD-predict-kknnLDAC-ensamble" # 51
-#indicatorFile <- "LINK-USD-predict-kknnLDAE-ensamble" # 62
-#indicatorFile <- "LINK-USD-predict-kknnLDAF-ensamble" # 62
-#indicatorFile <- "LINK-USD-predict-kknnLDAG-ensamble" # 59
-#indicatorFile <- "LINK-USD-predict-kknnLDAH-ensamble" # 59
-#indicatorFile <- "LINK-USD-predict-kknnLDB-ensamble" # 62
-#indicatorFile <- "LINK-USD-predict-kknnLDC-ensamble" # 56
-#indicatorFile <- "LINK-USD-predict-kknnLDD-ensamble" # 62
-#indicatorFile <- "LINK-USD-predict-kknnLDDA-ensamble" # 45
-#indicatorFile <- "LINK-USD-predict-kknnLDDB-ensamble" # 32
-#indicatorFile <- "LINK-USD-predict-kknnLDDC-ensamble" # 45
-#indicatorFile <- "LINK-USD-predict-kknnLDDD-ensamble" # 41
-#indicatorFile <- "LINK-USD-predict-kknnLDDE-ensamble" # 61
-#indicatorFile <- "LINK-USD-predict-kknnLDE-ensamble" # 58
+#indicatorFile <- "LINK-USD-predict-ensamble" # A: 61, 7 / P: 65, 14
+#indicatorFile <- "LINK-USD-predict-glmLDB-ensamble" # A: 58, 9 / P: 53, 15
+#indicatorFile <- "LINK-USD-predict-glmLDC-ensamble" # A: 63, 10 / P: 57, 20
+#indicatorFile <- "LINK-USD-predict-glmLDG-ensamble" # A: 60, 12 / P: 52, 18
+#indicatorFile <- "LINK-USD-predict-kknnLDAC-ensamble" # A: 62, 11 / P: 55, 11 (Best)
+#indicatorFile <- "LINK-USD-predict-kknnLDAE-ensamble" # A: 66, 7 / P: 63, 14
+#indicatorFile <- "LINK-USD-predict-kknnLDAF-ensamble" # A: 65, 6 / P: 56, 14 (Best)
+#indicatorFile <- "LINK-USD-predict-kknnLDAG-ensamble" # A: 65, 9 / P: 62, 14
+#indicatorFile <- "LINK-USD-predict-kknnLDAH-ensamble" # A: 64, 9 / P: 56, 15 (Best)
+#indicatorFile <- "LINK-USD-predict-kknnLDB-ensamble" # A: 63, 8 / P: 63, 12
+#indicatorFile <- "LINK-USD-predict-kknnLDC-ensamble" # A: 63, 9 / P: 60, 11
+#indicatorFile <- "LINK-USD-predict-kknnLDD-ensamble" # A: 64, 8 / P: 50, 12 (Best)
+#indicatorFile <- "LINK-USD-predict-kknnLDDA-ensamble" # A: 68, 9 / P: 57, 9
+#indicatorFile <- "LINK-USD-predict-kknnLDDB-ensamble" # A: 62, 14 / P: 54, 7
+#indicatorFile <- "LINK-USD-predict-kknnLDDC-ensamble" # A: 61, 14 / P: 57, 11
+#indicatorFile <- "LINK-USD-predict-kknnLDDD-ensamble" # A: 66, 13 / P: 51, 15
+#indicatorFile <- "LINK-USD-predict-kknnLDDE-ensamble" # A: 60, 16 / P: 60, 13
+#indicatorFile <- "LINK-USD-predict-kknnLDE-ensamble" # A: 67, 10 / P: 53, 12 (Best)
 
+# TODO: Continue evaluating model stability.
 #indicatorFile <- "LTC-USD-predict-glmLDAA-ensamble" # 54
 #indicatorFile <- "LTC-USD-predict-glmLDAB-ensamble" # 59
 #indicatorFile <- "LTC-USD-predict-glmLDB-ensamble" # 49
