@@ -4,7 +4,7 @@ rm(list = ls())
 library(caret)
 source("analysis.r")
 
-symbolTest <- "ZRX-USD"
+symbolTest <- "ADA-USD"
 securityDataTest <- mainOpenSecurity(
   symbolTest, 2, 4,
   "%Y-%m-%d", "2020-01-01"
@@ -15,19 +15,20 @@ basePath <- "~/Desktop/ModelsPred/"
 
 symbolNormalized <- str_replace(symbolTest, "-", "")
 
+# TODO: Continue evaluating model stability.
 #indicatorFile <- "ADA-USD-predict-ensamble" # 67
-#indicatorFile <- "ADA-USD-predict-glmLDC-ensamble" # 56
-#indicatorFile <- "ADA-USD-predict-glmLDD-ensamble" # 54
-#indicatorFile <- "ADA-USD-predict-glmLDF-ensamble" # 62
-#indicatorFile <- "ADA-USD-predict-glmLDG-ensamble" # 62
-#indicatorFile <- "ADA-USD-predict-kknnLDA-ensamble" # 44
-#indicatorFile <- "ADA-USD-predict-kknnLDAA-ensamble" # 49
-#indicatorFile <- "ADA-USD-predict-kknnLDAC-ensamble" # 59
-#indicatorFile <- "ADA-USD-predict-kknnLDAD-ensamble" # 64
-#indicatorFile <- "ADA-USD-predict-kknnLDAE-ensamble" # 64
-#indicatorFile <- "ADA-USD-predict-kknnLDAF-ensamble" # 69
-#indicatorFile <- "ADA-USD-predict-kknnLDAG-ensamble" # 61
-#indicatorFile <- "ADA-USD-predict-kknnLDAH-ensamble" # 59
+#indicatorFile <- "ADA-USD-predict-glmLDC-ensamble" # 61
+#indicatorFile <- "ADA-USD-predict-glmLDD-ensamble" # 58
+#indicatorFile <- "ADA-USD-predict-glmLDF-ensamble" # 70
+#indicatorFile <- "ADA-USD-predict-glmLDG-ensamble" # 67 (Stable)
+#indicatorFile <- "ADA-USD-predict-kknnLDA-ensamble" # 39
+#indicatorFile <- "ADA-USD-predict-kknnLDAA-ensamble" # 45
+#indicatorFile <- "ADA-USD-predict-kknnLDAC-ensamble" # 61 (Stable)
+#indicatorFile <- "ADA-USD-predict-kknnLDAD-ensamble" # 70 (Stable)
+#indicatorFile <- "ADA-USD-predict-kknnLDAE-ensamble" # 70 (Very Stable)
+#indicatorFile <- "ADA-USD-predict-kknnLDAF-ensamble" # 77 (Stable)
+indicatorFile <- "ADA-USD-predict-kknnLDAG-ensamble" # 61 (Very Stable)
+#indicatorFile <- "ADA-USD-predict-kknnLDAH-ensamble" # 64
 #indicatorFile <- "ADA-USD-predict-kknnLDB-ensamble" # 67
 #indicatorFile <- "ADA-USD-predict-kknnLDC-ensamble" # 67
 #indicatorFile <- "ADA-USD-predict-kknnLDD-ensamble" # 67
@@ -253,4 +254,6 @@ calculateAccuracy <- function(monthlyData) {
 }
 
 cat("\n", symbolTest, "montly predictions performacne test:", "\n")
-dailyIndicator[, calculateAccuracy(.SD), by = "YearMonth"]
+accuracyTest <- dailyIndicator[, calculateAccuracy(.SD), by = "YearMonth"]
+print(accuracyTest)
+describe(accuracyTest[, c('Accuracy', 'Prevalence')])
