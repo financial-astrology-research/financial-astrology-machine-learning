@@ -4,7 +4,7 @@ rm(list = ls())
 library(caret)
 source("analysis.r")
 
-symbolTest <- "DASH-USD"
+symbolTest <- "EOS-USD"
 securityDataTest <- mainOpenSecurity(
   symbolTest, 2, 4,
   "%Y-%m-%d", "2020-01-01", "2020-10-31"
@@ -133,32 +133,32 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "DASH-USD-predict-kknnLDDE-ensamble" # A: 56, 13 / P: 51, 14
 #indicatorFile <- "DASH-USD-predict-kknnLDE-ensamble" # A: 58, 15 / P: 46, 13
 
-# TODO: Continue evaluating model stability.
-#indicatorFile <- "EOS-USD-predict-ensamble" # 54
-#indicatorFile <- "EOS-USD-predict-glmLDA-ensamble" # 51
-#indicatorFile <- "EOS-USD-predict-glmLDAA-ensamble" # 46
-#indicatorFile <- "EOS-USD-predict-glmLDAB-ensamble" # 54
-#indicatorFile <- "EOS-USD-predict-glmLDB-ensamble" # 54
-#indicatorFile <- "EOS-USD-predict-glmLDC-ensamble" # 51
-#indicatorFile <- "EOS-USD-predict-glmLDD-ensamble" # 54
-#indicatorFile <- "EOS-USD-predict-glmLDG-ensamble" # 56
-#indicatorFile <- "EOS-USD-predict-kknnLDAC-ensamble" # 59
-#indicatorFile <- "EOS-USD-predict-kknnLDAD-ensamble" # 46
-#indicatorFile <- "EOS-USD-predict-kknnLDAE-ensamble" # 51
-#indicatorFile <- "EOS-USD-predict-kknnLDAF-ensamble" # 51
-#indicatorFile <- "EOS-USD-predict-kknnLDAG-ensamble" # 59
-#indicatorFile <- "EOS-USD-predict-kknnLDAH-ensamble" # 56
-#indicatorFile <- "EOS-USD-predict-kknnLDB-ensamble" # 61
-#indicatorFile <- "EOS-USD-predict-kknnLDC-ensamble" # 64
-#indicatorFile <- "EOS-USD-predict-kknnLDD-ensamble" # 62
-#indicatorFile <- "EOS-USD-predict-kknnLDDA-ensamble" # 61
-#indicatorFile <- "EOS-USD-predict-kknnLDDB-ensamble" # 51
-#indicatorFile <- "EOS-USD-predict-kknnLDDC-ensamble" # 51
-#indicatorFile <- "EOS-USD-predict-kknnLDDD-ensamble" # 48
-#indicatorFile <- "EOS-USD-predict-kknnLDDE-ensamble" # 64
-#indicatorFile <- "EOS-USD-predict-kknnLDE-ensamble" # 48
-#indicatorFile <- "EOS-USD-predict-xgblinearLN-ensamble" # 67
+#indicatorFile <- "EOS-USD-predict-ensamble" # A: 55, 13 / P: 41, 21
+#indicatorFile <- "EOS-USD-predict-glmLDA-ensamble" # A: 53, 14 / P: 47, 17
+#indicatorFile <- "EOS-USD-predict-glmLDAA-ensamble" # A: 56, 10 / P: 49, 15
+#indicatorFile <- "EOS-USD-predict-glmLDAB-ensamble" # A: 56, 11 / P: 49, 15
+#indicatorFile <- "EOS-USD-predict-glmLDB-ensamble" # A: 53, 12 / P: 56, 18
+#indicatorFile <- "EOS-USD-predict-glmLDC-ensamble" # A: 58, 11 / P: 45, 17
+#indicatorFile <- "EOS-USD-predict-glmLDD-ensamble" # A: 60, 17 / P: 53, 18
+#indicatorFile <- "EOS-USD-predict-glmLDG-ensamble" # A: 60, 8 / P: 51, 18 (Best)
+#indicatorFile <- "EOS-USD-predict-kknnLDAC-ensamble" # A: 64, 11 / P: 51, 13 (Best)
+#indicatorFile <- "EOS-USD-predict-kknnLDAD-ensamble" # A: 63, 13 / P: 55, 19
+#indicatorFile <- "EOS-USD-predict-kknnLDAE-ensamble" # A: 62, 13 / P: 54, 17
+#indicatorFile <- "EOS-USD-predict-kknnLDAF-ensamble" # A: 63, 14 / P: 49, 13
+#indicatorFile <- "EOS-USD-predict-kknnLDAG-ensamble" # A: 66, 12 / P: 50, 11
+#indicatorFile <- "EOS-USD-predict-kknnLDAH-ensamble" # A: 62, 15 / P: 50, 13
+#indicatorFile <- "EOS-USD-predict-kknnLDB-ensamble" # A: 65, 8 / P: 50, 12 (Best)
+#indicatorFile <- "EOS-USD-predict-kknnLDC-ensamble" # A: 68, 9 / P: 49, 13 (Best)
+#indicatorFile <- "EOS-USD-predict-kknnLDD-ensamble" # A: 64, 13 / P: 42, 18
+#indicatorFile <- "EOS-USD-predict-kknnLDDA-ensamble" # A: 66, 5 / P: 47, 8 (Best)
+#indicatorFile <- "EOS-USD-predict-kknnLDDB-ensamble" # A: 68, 14 / P: 53, 14
+#indicatorFile <- "EOS-USD-predict-kknnLDDC-ensamble" # A: 61, 17 / P: 53, 14
+#indicatorFile <- "EOS-USD-predict-kknnLDDD-ensamble" # A: 63, 16 / P: 50, 17
+#indicatorFile <- "EOS-USD-predict-kknnLDDE-ensamble" # A: 64, 12 / P: 51, 13
+#indicatorFile <- "EOS-USD-predict-kknnLDE-ensamble" # A: 63, 17 / P: 51, 10
+#indicatorFile <- "EOS-USD-predict-xgblinearLN-ensamble" # A: 69, 7 / 39, 21
 
+# TODO: Continue evaluating model stability.
 #indicatorFile <- "LINK-USD-predict-ensamble" # 59
 #indicatorFile <- "LINK-USD-predict-glmLDB-ensamble" # 46
 #indicatorFile <- "LINK-USD-predict-glmLDC-ensamble" # 49
