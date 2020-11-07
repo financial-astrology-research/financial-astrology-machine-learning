@@ -4,7 +4,7 @@ rm(list = ls())
 library(caret)
 source("analysis.r")
 
-symbolTest <- "BAT-USD"
+symbolTest <- "BNB-USD"
 securityDataTest <- mainOpenSecurity(
   symbolTest, 2, 4,
   "%Y-%m-%d", "2020-01-01", "2020-10-31"
@@ -68,27 +68,27 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "BAT-USD-predict-xgblinearLJ-ensamble" # A: 66, 10 / P: 45, 15
 #indicatorFile <- "BAT-USD-predict-xgblinearLN-ensamble" # A: 64, 9 / P: 50, 15
 
-# TODO: Continue evaluating model stability.
-#indicatorFile <- "BNB-USD-predict-glmLDAB-ensamble" # 44
-#indicatorFile <- "BNB-USD-predict-glmLDF-ensamble" # 36
-#indicatorFile <- "BNB-USD-predict-glmLDG-ensamble" # 51
-#indicatorFile <- "BNB-USD-predict-kknnLDAA-ensamble" # 41
-#indicatorFile <- "BNB-USD-predict-kknnLDAB-ensamble" # 49
-#indicatorFile <- "BNB-USD-predict-kknnLDAE-ensamble" # 49
-#indicatorFile <- "BNB-USD-predict-kknnLDAF-ensamble" # 59
-#indicatorFile <- "BNB-USD-predict-kknnLDAG-ensamble" # 59
-#indicatorFile <- "BNB-USD-predict-kknnLDAH-ensamble" # 56
-#indicatorFile <- "BNB-USD-predict-kknnLDB-ensamble" # 62
-#indicatorFile <- "BNB-USD-predict-kknnLDC-ensamble" # 59
-#indicatorFile <- "BNB-USD-predict-kknnLDD-ensamble" # 62
-#indicatorFile <- "BNB-USD-predict-kknnLDDA-ensamble" # 61
-#indicatorFile <- "BNB-USD-predict-kknnLDDB-ensamble" # 48
-#indicatorFile <- "BNB-USD-predict-kknnLDDC-ensamble" # 51
-#indicatorFile <- "BNB-USD-predict-kknnLDDD-ensamble" # 42
-#indicatorFile <- "BNB-USD-predict-kknnLDDE-ensamble" # 58
-#indicatorFile <- "BNB-USD-predict-kknnLDE-ensamble" # 61
-#indicatorFile <- "BNB-USD-predict-xgblinearLN-ensamble" # 54
+#indicatorFile <- "BNB-USD-predict-glmLDAB-ensamble" # A: 56, 11 / P: 55, 18
+#indicatorFile <- "BNB-USD-predict-glmLDF-ensamble" # A: 54, 11 / P: 52, 23
+#indicatorFile <- "BNB-USD-predict-glmLDG-ensamble" # A: 58, 6 / P: 65, 17
+#indicatorFile <- "BNB-USD-predict-kknnLDAA-ensamble" # A: 64, 12 / P: 53, 18
+#indicatorFile <- "BNB-USD-predict-kknnLDAB-ensamble" # A: 76, 23 / P: 56, 10
+#indicatorFile <- "BNB-USD-predict-kknnLDAE-ensamble" # A: 61, 11 / P: 57, 15
+#indicatorFile <- "BNB-USD-predict-kknnLDAF-ensamble" # A: 61, 12 / P: 50, 20
+#indicatorFile <- "BNB-USD-predict-kknnLDAG-ensamble" # A: 67, 7 / P: 57, 14 (Best)
+#indicatorFile <- "BNB-USD-predict-kknnLDAH-ensamble" # A: 64, 10 / P: 51, 16
+#indicatorFile <- "BNB-USD-predict-kknnLDB-ensamble" # A: 66, 8 / P: 53, 17
+#indicatorFile <- "BNB-USD-predict-kknnLDC-ensamble" # A: 66, 8 / P: 54, 15 (Best)
+#indicatorFile <- "BNB-USD-predict-kknnLDD-ensamble" # A: 64, 7 / P: 48, 15 (Best)
+#indicatorFile <- "BNB-USD-predict-kknnLDDA-ensamble" # A: 69, 12 / P: 60, 12
+#indicatorFile <- "BNB-USD-predict-kknnLDDB-ensamble" # A: 61, 13 / P: 54, 15
+#indicatorFile <- "BNB-USD-predict-kknnLDDC-ensamble" # A: 67, 11 / P: 61, 11
+#indicatorFile <- "BNB-USD-predict-kknnLDDD-ensamble" # A: 62, 13 / P: 57, 17
+#indicatorFile <- "BNB-USD-predict-kknnLDDE-ensamble" # A: 64, 12 / P: 59, 15
+#indicatorFile <- "BNB-USD-predict-kknnLDE-ensamble" # A: 68, 9 / P: 50, 18 (Best)
+#indicatorFile <- "BNB-USD-predict-xgblinearLN-ensamble" # A: 70, 7 / P: 51, 19 (Best)
 
+# TODO: Continue evaluating model stability.
 #indicatorFile <- "BTC-USD-predict-ensamble" # 54
 #indicatorFile <- "BTC-USD-predict-glmLDAA-ensamble" # 56
 #indicatorFile <- "BTC-USD-predict-glmLDB-ensamble" # 49
