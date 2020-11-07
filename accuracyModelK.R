@@ -4,7 +4,7 @@ rm(list = ls())
 library(caret)
 source("analysis.r")
 
-symbolTest <- "LTC-USD"
+symbolTest <- "ZEC-USD"
 securityDataTest <- mainOpenSecurity(
   symbolTest, 2, 4,
   "%Y-%m-%d", "2020-01-01", "2020-10-31"
@@ -196,26 +196,26 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "LTC-USD-predict-kknnLDDE-ensamble" # A: 63, 14 / P: 54, 11
 #indicatorFile <- "LTC-USD-predict-kknnLDE-ensamble" # A: 68, 13 / P: 53, 13
 
-# TODO: Continue evaluating model stability.
-#indicatorFile <- "ZEC-USD-predict-glmLDAB-ensamble" # 56
-#indicatorFile <- "ZEC-USD-predict-glmLDC-ensamble" # 51
-#indicatorFile <- "ZEC-USD-predict-glmLDD-ensamble" # 49
-#indicatorFile <- "ZEC-USD-predict-glmLDG-ensamble" # 51
-#indicatorFile <- "ZEC-USD-predict-kknnLDAD-ensamble" # 67
-#indicatorFile <- "ZEC-USD-predict-kknnLDAE-ensamble" # 62
-#indicatorFile <- "ZEC-USD-predict-kknnLDAG-ensamble" # 64
-#indicatorFile <- "ZEC-USD-predict-kknnLDAH-ensamble" # 51
-#indicatorFile <- "ZEC-USD-predict-kknnLDB-ensamble" # 62
-#indicatorFile <- "ZEC-USD-predict-kknnLDC-ensamble" # 56
-#indicatorFile <- "ZEC-USD-predict-kknnLDD-ensamble" # 74
-#indicatorFile <- "ZEC-USD-predict-kknnLDDA-ensamble" # 48
-#indicatorFile <- "ZEC-USD-predict-kknnLDDB-ensamble" # 54
-#indicatorFile <- "ZEC-USD-predict-kknnLDDC-ensamble" # 51
-#indicatorFile <- "ZEC-USD-predict-kknnLDDD-ensamble" # 54
-#indicatorFile <- "ZEC-USD-predict-kknnLDDE-ensamble" # 58
-#indicatorFile <- "ZEC-USD-predict-kknnLDE-ensamble" # 54
+#indicatorFile <- "ZEC-USD-predict-glmLDAB-ensamble" # A: 56, 7 / P: 38, 14
+#indicatorFile <- "ZEC-USD-predict-glmLDC-ensamble" # A: 59: 15 / P: 47, 15
+#indicatorFile <- "ZEC-USD-predict-glmLDD-ensamble" # A: 60, 11 / P: 37, 13
+#indicatorFile <- "ZEC-USD-predict-glmLDG-ensamble" # A: 58, 9 / P: 30, 15
+#indicatorFile <- "ZEC-USD-predict-kknnLDAD-ensamble" # A: 64, 12 / P: 45, 17
+#indicatorFile <- "ZEC-USD-predict-kknnLDAE-ensamble" # A: 65, 9 / P: 45, 16 (Best)
+#indicatorFile <- "ZEC-USD-predict-kknnLDAG-ensamble" # A: 66, 7 / P: 51, 12 (Best)
+#indicatorFile <- "ZEC-USD-predict-kknnLDAH-ensamble" # A: 62, 11 / P: 48, 14
+#indicatorFile <- "ZEC-USD-predict-kknnLDB-ensamble" # A: 63, 10 / P: 52, 14
+#indicatorFile <- "ZEC-USD-predict-kknnLDC-ensamble" # A: 63, 10 / P: 51, 11 (Best)
+#indicatorFile <- "ZEC-USD-predict-kknnLDD-ensamble" # A: 63, 15 / P: 48, 20
+#indicatorFile <- "ZEC-USD-predict-kknnLDDA-ensamble" # A: 65, 11 / P: 49, 11 (Best)
+#indicatorFile <- "ZEC-USD-predict-kknnLDDB-ensamble" # A: 65, 11 / P: 47, 15
+#indicatorFile <- "ZEC-USD-predict-kknnLDDC-ensamble" # A: 66, 12 / P 49, 10
+#indicatorFile <- "ZEC-USD-predict-kknnLDDD-ensamble" # A: 63, 10 / P: 44, 15
+#indicatorFile <- "ZEC-USD-predict-kknnLDDE-ensamble" # A: 63, 10 / P: 44, 15
+#indicatorFile <- "ZEC-USD-predict-kknnLDE-ensamble" # A: 65, 12 / P: 47, 14
 
-#indicatorFile <- "ZRX-USD-predict-glmLDAA-ensamble" # 62
+# TODO: Continue evaluating model stability.
+indicatorFile <- "ZRX-USD-predict-glmLDAA-ensamble" # 62
 #indicatorFile <- "ZRX-USD-predict-glmLDB-ensamble" # 72
 #indicatorFile <- "ZRX-USD-predict-glmLDG-ensamble" # 56
 #indicatorFile <- "ZRX-USD-predict-kknnLDAD-ensamble" # 56
