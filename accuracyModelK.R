@@ -4,7 +4,7 @@ rm(list = ls())
 library(caret)
 source("analysis.r")
 
-symbolTest <- "BTC-USD"
+symbolTest <- "DASH-USD"
 securityDataTest <- mainOpenSecurity(
   symbolTest, 2, 4,
   "%Y-%m-%d", "2020-01-01", "2020-10-31"
@@ -112,29 +112,28 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "BTC-USD-predict-kknnLDE-ensamble" # A: 64, 15 / 57, 19
 #indicatorFile <- "BTC-USD-predict-xgblinearLJ-ensamble" # A: 59, 10 / 61, 18
 
-# TODO: Continue evaluating model stability.
-#indicatorFile <- "DASH-USD-predict-ensamble" # 64
-#indicatorFile <- "DASH-USD-predict-glmLDA-ensamble" # 54
-#indicatorFile <- "DASH-USD-predict-glmLDAA-ensamble" # 59
-#indicatorFile <- "DASH-USD-predict-glmLDAB-ensamble" # 51
-#indicatorFile <- "DASH-USD-predict-glmLDB-ensamble" # 54
-#indicatorFile <- "DASH-USD-predict-glmLDC-ensamble" # 51
-#indicatorFile <- "DASH-USD-predict-glmLDC-ensamble" # 51
-#indicatorFile <- "DASH-USD-predict-glmLDG-ensamble" # 62
-#indicatorFile <- "DASH-USD-predict-kknnLDAE-ensamble" # 69
-#indicatorFile <- "DASH-USD-predict-kknnLDAF-ensamble" # 54
-#indicatorFile <- "DASH-USD-predict-kknnLDAG-ensamble" # 59
-#indicatorFile <- "DASH-USD-predict-kknnLDAH-ensamble" # 59
-#indicatorFile <- "DASH-USD-predict-kknnLDB-ensamble" # 64
-#indicatorFile <- "DASH-USD-predict-kknnLDC-ensamble" # 72
-#indicatorFile <- "DASH-USD-predict-kknnLDD-ensamble" # 64
-#indicatorFile <- "DASH-USD-predict-kknnLDDA-ensamble" # 61
-#indicatorFile <- "DASH-USD-predict-kknnLDDB-ensamble" # 58
-#indicatorFile <- "DASH-USD-predict-kknnLDDC-ensamble" # 38
-#indicatorFile <- "DASH-USD-predict-kknnLDDD-ensamble" # 48
-#indicatorFile <- "DASH-USD-predict-kknnLDDE-ensamble" # 61
-#indicatorFile <- "DASH-USD-predict-kknnLDE-ensamble" # 0.38
+#indicatorFile <- "DASH-USD-predict-ensamble" # A: 59, 13 / P: 44, 20
+#indicatorFile <- "DASH-USD-predict-glmLDA-ensamble" # A: 58, 13 / P: 44, 10
+#indicatorFile <- "DASH-USD-predict-glmLDAA-ensamble" # A: 57, 15 / P: 43, 12
+#indicatorFile <- "DASH-USD-predict-glmLDAB-ensamble" # A: 57, 11 / P: 43, 10
+#indicatorFile <- "DASH-USD-predict-glmLDB-ensamble" # A: 56, 13 / P: 41, 12
+#indicatorFile <- "DASH-USD-predict-glmLDC-ensamble" # A: 63, 14 / P: 51, 9 (Best)
+#indicatorFile <- "DASH-USD-predict-glmLDG-ensamble" # A: 56, 14 / P: 47, 14
+#indicatorFile <- "DASH-USD-predict-kknnLDAE-ensamble" # A: 60, 6 / P: 45, 16
+#indicatorFile <- "DASH-USD-predict-kknnLDAF-ensamble" # A: 59, 9 / P: 46, 15
+#indicatorFile <- "DASH-USD-predict-kknnLDAG-ensamble" # A: 60, 9 / P: 43, 12
+#indicatorFile <- "DASH-USD-predict-kknnLDAH-ensamble" # A: 61, 15 / P: 44, 16
+#indicatorFile <- "DASH-USD-predict-kknnLDB-ensamble" # A: 60, 13 / P: 32, 16
+#indicatorFile <- "DASH-USD-predict-kknnLDC-ensamble" # A: 62, 12 / P: 45, 13 (Best)
+#indicatorFile <- "DASH-USD-predict-kknnLDD-ensamble" # A: 59, 15 /  P: 46, 14
+#indicatorFile <- "DASH-USD-predict-kknnLDDA-ensamble" # A: 62, 8 / P: 52, 10 (Best)
+#indicatorFile <- "DASH-USD-predict-kknnLDDB-ensamble" # A: 57, 17 / P: 48, 13
+#indicatorFile <- "DASH-USD-predict-kknnLDDC-ensamble" # A: 59, 12 / P: 46, 12
+#indicatorFile <- "DASH-USD-predict-kknnLDDD-ensamble" # A: 58, 12 / P: 50, 12
+#indicatorFile <- "DASH-USD-predict-kknnLDDE-ensamble" # A: 56, 13 / P: 51, 14
+#indicatorFile <- "DASH-USD-predict-kknnLDE-ensamble" # A: 58, 15 / P: 46, 13
 
+# TODO: Continue evaluating model stability.
 #indicatorFile <- "EOS-USD-predict-ensamble" # 54
 #indicatorFile <- "EOS-USD-predict-glmLDA-ensamble" # 51
 #indicatorFile <- "EOS-USD-predict-glmLDAA-ensamble" # 46
