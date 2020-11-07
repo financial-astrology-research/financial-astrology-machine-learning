@@ -4,7 +4,7 @@ rm(list = ls())
 library(caret)
 source("analysis.r")
 
-symbolTest <- "ADA-USD"
+symbolTest <- "BAT-USD"
 securityDataTest <- mainOpenSecurity(
   symbolTest, 2, 4,
   "%Y-%m-%d", "2020-01-01", "2020-10-31"
@@ -39,36 +39,36 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "ADA-USD-predict-kknnLDE-ensamble" # A: 65, 12 / P: 52, 22
 #indicatorFile <- "ADA-USD-predict-xgblinearLN-ensamble" # 66, 14 / P: 58, 13
 
-# TODO: Continue evaluating model stability.
-#indicatorFile <- "BAT-USD-predict-ensamble" # 56
-#indicatorFile <- "BAT-USD-predict-glmLDAB-ensamble" # 59
-#indicatorFile <- "BAT-USD-predict-glmLDB-ensamble" # 51
-#indicatorFile <- "BAT-USD-predict-glmLDC-ensamble" # 46
-#indicatorFile <- "BAT-USD-predict-glmLDD-ensamble" # 49
-#indicatorFile <- "BAT-USD-predict-glmLDF-ensamble" # 62
-#indicatorFile <- "BAT-USD-predict-glmLDG-ensamble" # 64
-#indicatorFile <- "BAT-USD-predict-kknnLDA-ensamble" # 56
-#indicatorFile <- "BAT-USD-predict-kknnLDAA-ensamble" # 56
-#indicatorFile <- "BAT-USD-predict-kknnLDAB-ensamble" # 64
-#indicatorFile <- "BAT-USD-predict-kknnLDAD-ensamble" # 54
-#indicatorFile <- "BAT-USD-predict-kknnLDAE-ensamble" # 56
-#indicatorFile <- "BAT-USD-predict-kknnLDAF-ensamble" # 56
-#indicatorFile <- "BAT-USD-predict-kknnLDAG-ensamble" # 62
-#indicatorFile <- "BAT-USD-predict-kknnLDAH-ensamble" # 59
-#indicatorFile <- "BAT-USD-predict-kknnLDB-ensamble" # 46
-#indicatorFile <- "BAT-USD-predict-kknnLDC-ensamble" # 51
-#indicatorFile <- "BAT-USD-predict-kknnLDD-ensamble" # 62
-#indicatorFile <- "BAT-USD-predict-kknnLDDA-ensamble" # 48
-#indicatorFile <- "BAT-USD-predict-kknnLDDB-ensamble" # 41
-#indicatorFile <- "BAT-USD-predict-kknnLDDC-ensamble" # 54
-#indicatorFile <- "BAT-USD-predict-kknnLDDD-ensamble" # 45
-#indicatorFile <- "BAT-USD-predict-kknnLDDE-ensamble" # 41
-#indicatorFile <- "BAT-USD-predict-kknnLDE-ensamble" # 58
-#indicatorFile <- "BAT-USD-predict-xgblinearLH-ensamble" # 54
-#indicatorFile <- "BAT-USD-predict-xgblinearLI-ensamble" # 54
-#indicatorFile <- "BAT-USD-predict-xgblinearLJ-ensamble" # 44
-#indicatorFile <- "BAT-USD-predict-xgblinearLN-ensamble" # 59
+#indicatorFile <- "BAT-USD-predict-ensamble" # A: 55, 8 / P: 44, 12
+#indicatorFile <- "BAT-USD-predict-glmLDAB-ensamble" # A: 56, 11 / P: 42, 14
+#indicatorFile <- "BAT-USD-predict-glmLDB-ensamble" # A: 57, 11 / P: 48, 21
+#indicatorFile <- "BAT-USD-predict-glmLDC-ensamble" # A: 57, 17 / P: 43, 15
+#indicatorFile <- "BAT-USD-predict-glmLDD-ensamble" # A: 57, 16 / P: 48, 15
+#indicatorFile <- "BAT-USD-predict-glmLDF-ensamble" # A: 57, 11 / P: 47, 17
+#indicatorFile <- "BAT-USD-predict-glmLDG-ensamble" # A: 59, 11 / P: 42, 15
+#indicatorFile <- "BAT-USD-predict-kknnLDA-ensamble" # A: 63, 11 / P: 54, 12
+#indicatorFile <- "BAT-USD-predict-kknnLDAA-ensamble" # A: 63, 11 / P: 54, 12
+#indicatorFile <- "BAT-USD-predict-kknnLDAB-ensamble" # A: 75, 18 / P: 51, 7
+#indicatorFile <- "BAT-USD-predict-kknnLDAD-ensamble" # A: 66, 7 / P: 50, 13 (Best)
+#indicatorFile <- "BAT-USD-predict-kknnLDAE-ensamble" # A: 61, 11 / P: 52, 13
+#indicatorFile <- "BAT-USD-predict-kknnLDAF-ensamble" # A: 61, 10 / P: 52, 12
+#indicatorFile <- "BAT-USD-predict-kknnLDAG-ensamble" # A: 62, 14 / P: 51, 19
+#indicatorFile <- "BAT-USD-predict-kknnLDAH-ensamble" # A: 62, 10 / P: 48, 16
+#indicatorFile <- "BAT-USD-predict-kknnLDB-ensamble" # A: 63, 8 / P: 52, 11  (Best)
+#indicatorFile <- "BAT-USD-predict-kknnLDC-ensamble" # A: 64, 9 / P: 52, 12 (Best)
+#indicatorFile <- "BAT-USD-predict-kknnLDD-ensamble" # A: 63, 13 / P: 55, 14
+#indicatorFile <- "BAT-USD-predict-kknnLDDA-ensamble" # A: 62, 9 / P: 54, 8 (Best)
+#indicatorFile <- "BAT-USD-predict-kknnLDDB-ensamble" # A: 63, 13 / P: 50, 13
+#indicatorFile <- "BAT-USD-predict-kknnLDDC-ensamble" # A: 63, 11 / P: 54, 8
+#indicatorFile <- "BAT-USD-predict-kknnLDDD-ensamble" # A: 63, 9 / P: 46, 18
+#indicatorFile <- "BAT-USD-predict-kknnLDDE-ensamble" # A: 63, 11 / P: 58, 16
+#indicatorFile <- "BAT-USD-predict-kknnLDE-ensamble" # A: 66, 8 / P: 49, 15 (Best)
+#indicatorFile <- "BAT-USD-predict-xgblinearLH-ensamble" # A: 62, 11 / P: 49, 19
+#indicatorFile <- "BAT-USD-predict-xgblinearLI-ensamble" # A: 62, 11 / P: 49, 19
+#indicatorFile <- "BAT-USD-predict-xgblinearLJ-ensamble" # A: 66, 10 / P: 45, 15
+#indicatorFile <- "BAT-USD-predict-xgblinearLN-ensamble" # A: 64, 9 / P: 50, 15
 
+# TODO: Continue evaluating model stability.
 #indicatorFile <- "BNB-USD-predict-glmLDAB-ensamble" # 44
 #indicatorFile <- "BNB-USD-predict-glmLDF-ensamble" # 36
 #indicatorFile <- "BNB-USD-predict-glmLDG-ensamble" # 51
