@@ -7,7 +7,7 @@ source("analysis.r")
 symbolTest <- "ADA-USD"
 securityDataTest <- mainOpenSecurity(
   symbolTest, 2, 4,
-  "%Y-%m-%d", "2020-01-01"
+  "%Y-%m-%d", "2020-01-01", "2020-10-31"
 )
 #basePath <- "~/Sites/own/trading-signal-processing/csv_indicators/"
 #basePath <- "~/Desktop/"
@@ -15,31 +15,31 @@ basePath <- "~/Desktop/ModelsPred/"
 
 symbolNormalized <- str_replace(symbolTest, "-", "")
 
-# TODO: Continue evaluating model stability.
-#indicatorFile <- "ADA-USD-predict-ensamble" # 67
-#indicatorFile <- "ADA-USD-predict-glmLDC-ensamble" # 61
-#indicatorFile <- "ADA-USD-predict-glmLDD-ensamble" # 58
-#indicatorFile <- "ADA-USD-predict-glmLDF-ensamble" # 70
-#indicatorFile <- "ADA-USD-predict-glmLDG-ensamble" # 67 (Stable)
-#indicatorFile <- "ADA-USD-predict-kknnLDA-ensamble" # 39
-#indicatorFile <- "ADA-USD-predict-kknnLDAA-ensamble" # 45
-#indicatorFile <- "ADA-USD-predict-kknnLDAC-ensamble" # 61 (Stable)
-#indicatorFile <- "ADA-USD-predict-kknnLDAD-ensamble" # 70 (Stable)
-#indicatorFile <- "ADA-USD-predict-kknnLDAE-ensamble" # 70 (Very Stable)
-#indicatorFile <- "ADA-USD-predict-kknnLDAF-ensamble" # 77 (Stable)
-indicatorFile <- "ADA-USD-predict-kknnLDAG-ensamble" # 61 (Very Stable)
-#indicatorFile <- "ADA-USD-predict-kknnLDAH-ensamble" # 64
-#indicatorFile <- "ADA-USD-predict-kknnLDB-ensamble" # 67
-#indicatorFile <- "ADA-USD-predict-kknnLDC-ensamble" # 67
-#indicatorFile <- "ADA-USD-predict-kknnLDD-ensamble" # 67
-#indicatorFile <- "ADA-USD-predict-kknnLDDA-ensamble" # 67
-#indicatorFile <- "ADA-USD-predict-kknnLDDB-ensamble" # 61
-#indicatorFile <- "ADA-USD-predict-kknnLDDC-ensamble" # 54
-#indicatorFile <- "ADA-USD-predict-kknnLDDD-ensamble" # 61
-#indicatorFile <- "ADA-USD-predict-kknnLDDE-ensamble" # 65
-#indicatorFile <- "ADA-USD-predict-kknnLDE-ensamble" # 61
-#indicatorFile <- "ADA-USD-predict-xgblinearLN-ensamble" # 44
+#indicatorFile <- "ADA-USD-predict-ensamble" # A: 63 M, 7 SD / P: 54 M, 14 SD
+#indicatorFile <- "ADA-USD-predict-glmLDC-ensamble" # A: 61, 11 / P: 51, 14
+#indicatorFile <- "ADA-USD-predict-glmLDD-ensamble" # A: 58, 13 / P: 51, 13
+#indicatorFile <- "ADA-USD-predict-glmLDF-ensamble" # A: 60, 13 / P: 50, 20
+#indicatorFile <- "ADA-USD-predict-glmLDG-ensamble" # A: 61, 11 / P: 54, 15
+#indicatorFile <- "ADA-USD-predict-kknnLDA-ensamble" # A: 66, 14 / P: 54, 13
+#indicatorFile <- "ADA-USD-predict-kknnLDAA-ensamble" # A: 66, 12 / P: 53, 13 (Best)
+#indicatorFile <- "ADA-USD-predict-kknnLDAC-ensamble" # A: 67, 10 / P: 52, 17
+#indicatorFile <- "ADA-USD-predict-kknnLDAD-ensamble" # A: 67, 11 / P: 51, 21
+#indicatorFile <- "ADA-USD-predict-kknnLDAE-ensamble" # A: 69, 11 / P: 52, 17
+#indicatorFile <- "ADA-USD-predict-kknnLDAF-ensamble" # A: 70, 13 / P: 50, 13 (Best)
+#indicatorFile <- "ADA-USD-predict-kknnLDAG-ensamble" # A: 70, 10 / P: 57, 19
+#indicatorFile <- "ADA-USD-predict-kknnLDAH-ensamble" # A: 64, 14 / P: 48, 19
+#indicatorFile <- "ADA-USD-predict-kknnLDB-ensamble" # A: 66, 15 / P: 49, 20
+#indicatorFile <- "ADA-USD-predict-kknnLDC-ensamble" # A: 67, 8 / P: 51, 19
+#indicatorFile <- "ADA-USD-predict-kknnLDD-ensamble" # A: 68, 9 / P: 52, 15 (Best)
+#indicatorFile <- "ADA-USD-predict-kknnLDDA-ensamble" # A: 64, 14 / P: 56, 12
+#indicatorFile <- "ADA-USD-predict-kknnLDDB-ensamble" # A: 66, 17 / P: 51, 17
+#indicatorFile <- "ADA-USD-predict-kknnLDDC-ensamble" # A: 66, 12 / P: 58, 10
+#indicatorFile <- "ADA-USD-predict-kknnLDDD-ensamble" # A: 67, 13 / P: 51, 17 (Best)
+#indicatorFile <- "ADA-USD-predict-kknnLDDE-ensamble" # A: 66, 11 / P: 45, 13
+#indicatorFile <- "ADA-USD-predict-kknnLDE-ensamble" # A: 65, 12 / P: 52, 22
+#indicatorFile <- "ADA-USD-predict-xgblinearLN-ensamble" # 66, 14 / P: 58, 13
 
+# TODO: Continue evaluating model stability.
 #indicatorFile <- "BAT-USD-predict-ensamble" # 56
 #indicatorFile <- "BAT-USD-predict-glmLDAB-ensamble" # 59
 #indicatorFile <- "BAT-USD-predict-glmLDB-ensamble" # 51
