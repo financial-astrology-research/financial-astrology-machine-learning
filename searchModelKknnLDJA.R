@@ -1,5 +1,5 @@
 # Title     : Daily generalized aspects count and combined planets activation boolean flag.
-#             1) Planets ME, VE fast planets applying to all slow planets except NN.
+#             1) Planets MO, ME, VE fast planets applying to all slow planets except NN.
 #             2) CV folds to 5 with 5 repeats.
 #             3) Validate fit using Actbin daily price change (buy / sell) instead of Effect
 #             4) Fit based on MA(2, 3) effect to smooth price variations.
@@ -21,6 +21,7 @@ maPriceSlPeriod <- 3
 orbLimit <- 4
 
 pxSelect <- c(
+  'MO',
   'ME',
   'VE'
 )
@@ -263,4 +264,4 @@ dailyAspects[, EffUpP4 := format(EffUpP4, format = "f", big.mark = ",", digits =
 dailyAspects[, EffUpP5 := format(EffUpP5, format = "f", big.mark = ",", digits = 5)]
 
 exportCols <- c('Date', selectCols[-1], probCols, "EffPred")
-fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-kknnLDJ-ensamble", ".csv", sep = ""))
+fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-kknnLDJA-ensamble", ".csv", sep = ""))
