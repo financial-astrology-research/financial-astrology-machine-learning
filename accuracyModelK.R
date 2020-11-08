@@ -44,6 +44,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "ADA-USD-predict-kknnLDJA-ensamble" # A: 65, 12 / P: 57, 14
 #indicatorFile <- "ADA-USD-predict-kknnLDJB-ensamble" # A: 71, 7 / P: 60, 10 (Best)
 #indicatorFile <- "ADA-USD-predict-kknnLDJC-ensamble" # A: 65, 13 / P: 53, 15
+#indicatorFile <- "ADA-USD-predict-kknnLDJD-ensamble" # A: 65, 13 / P: 54, 16
 #indicatorFile <- "ADA-USD-predict-xgblinearLN-ensamble" # 66, 14 / P: 58, 13
 
 #indicatorFile <- "BAT-USD-predict-ensamble" # A: 55, 8 / P: 44, 12
@@ -77,6 +78,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "BAT-USD-predict-kknnLDJA-ensamble" # A: 65, 10 / P: 60, 9 (Best)
 #indicatorFile <- "BAT-USD-predict-kknnLDJB-ensamble" # A: 61, 10 / P: 55, 9
 #indicatorFile <- "BAT-USD-predict-kknnLDJC-ensamble" # A: 64, 11 / P: 60, 10
+#indicatorFile <- "BAT-USD-predict-kknnLDJD-ensamble" # A: 64, 13 / P: 51, 13 (Best)
 #indicatorFile <- "BAT-USD-predict-xgblinearLH-ensamble" # A: 62, 11 / P: 49, 19
 #indicatorFile <- "BAT-USD-predict-xgblinearLI-ensamble" # A: 62, 11 / P: 49, 19
 #indicatorFile <- "BAT-USD-predict-xgblinearLJ-ensamble" # A: 66, 10 / P: 45, 15
@@ -107,6 +109,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "BNB-USD-predict-kknnLDJA-ensamble" # A: 67, 11 / P: 59, 14 (Best)
 #indicatorFile <- "BNB-USD-predict-kknnLDJB-ensamble" # A: 68, 12 / P: 57, 16
 #indicatorFile <- "BNB-USD-predict-kknnLDJC-ensamble" # A: 68, 12 / P: 61, 12
+#indicatorFile <- "BNB-USD-predict-kknnLDJD-ensamble" # A: 62, 19 / P: 61, 16
 #indicatorFile <- "BNB-USD-predict-xgblinearLN-ensamble" # A: 70, 7 / P: 51, 19 (Best)
 
 #indicatorFile <- "BTC-USD-predict-ensamble" # A: 50, 7 / P: 57, 10
@@ -138,6 +141,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "BTC-USD-predict-kknnLDJA-ensamble" # A: 68, 11 / 54, 14 (Best)
 #indicatorFile <- "BTC-USD-predict-kknnLDJB-ensamble" # A: 66, 14 / 54, 14
 #indicatorFile <- "BTC-USD-predict-kknnLDJC-ensamble" # A: 68, 11 / 55, 11 (Best)
+#indicatorFile <- "BTC-USD-predict-kknnLDJD-ensamble" # A: 66, 14 / 57, 13
 #indicatorFile <- "BTC-USD-predict-xgblinearLJ-ensamble" # A: 59, 10 / 61, 18
 
 #indicatorFile <- "DASH-USD-predict-ensamble" # A: 59, 13 / P: 44, 20
@@ -167,7 +171,8 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "DASH-USD-predict-kknnLDJA-ensamble" # A: 60, 12 / P: 50, 9
 #indicatorFile <- "DASH-USD-predict-kknnLDJB-ensamble" # A: 61, 11 / P: 50, 11
 #indicatorFile <- "DASH-USD-predict-kknnLDJC-ensamble" # A: 60, 7 / P: 56, 10 (Best)
-
+#indicatorFile <- "DASH-USD-predict-kknnLDJD-ensamble" # A: 62, 15 / P: 52, 12
+#
 #indicatorFile <- "EOS-USD-predict-ensamble" # A: 55, 13 / P: 41, 21
 #indicatorFile <- "EOS-USD-predict-glmLDA-ensamble" # A: 53, 14 / P: 47, 17
 #indicatorFile <- "EOS-USD-predict-glmLDAA-ensamble" # A: 56, 10 / P: 49, 15
@@ -198,6 +203,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "EOS-USD-predict-kknnLDJA-ensamble" # A: 65, 12 / P: 54, 13 (Best)
 #indicatorFile <- "EOS-USD-predict-kknnLDJB-ensamble" # A: 63, 15 / P: 49, 13
 #indicatorFile <- "EOS-USD-predict-kknnLDJC-ensamble" # A: 67, 11 / P: 54, 11 (Best)
+#indicatorFile <- "EOS-USD-predict-kknnLDJD-ensamble" # A: 61, 18 / P: 51, 14
 #indicatorFile <- "EOS-USD-predict-xgblinearLN-ensamble" # A: 69, 7 / 39, 21
 
 #indicatorFile <- "LINK-USD-predict-ensamble" # A: 61, 7 / P: 65, 14
@@ -225,6 +231,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "LINK-USD-predict-kknnLDJA-ensamble" # A: 67, 11 / P: 58, 8 (Best)
 #indicatorFile <- "LINK-USD-predict-kknnLDJB-ensamble" # A: 65, 12 / P: 55, 10
 #indicatorFile <- "LINK-USD-predict-kknnLDJC-ensamble" # A: 65, 13 / P: 56, 9
+#indicatorFile <- "LINK-USD-predict-kknnLDJD-ensamble" # A: 64, 10 / P: 55, 15
 
 #indicatorFile <- "LTC-USD-predict-glmLDAA-ensamble" # A: 54, 10 / P: 46, 12
 #indicatorFile <- "LTC-USD-predict-glmLDAB-ensamble" # A: 54, 11 / P: 51, 16
@@ -251,6 +258,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "LTC-USD-predict-kknnLDJA-ensamble" # A: 67, 12 / P: 51, 11 (Best)
 #indicatorFile <- "LTC-USD-predict-kknnLDJB-ensamble" # A: 65, 13 / P: 49, 13
 #indicatorFile <- "LTC-USD-predict-kknnLDJC-ensamble" # A: 71, 14 / P: 54, 16
+#indicatorFile <- "LTC-USD-predict-kknnLDJD-ensamble" # A: 68, 12 / P: 48, 12 (Best)
 
 #indicatorFile <- "ZEC-USD-predict-glmLDAB-ensamble" # A: 56, 7 / P: 38, 14
 #indicatorFile <- "ZEC-USD-predict-glmLDC-ensamble" # A: 59: 15 / P: 47, 15
@@ -276,6 +284,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "ZEC-USD-predict-kknnLDJA-ensamble" # A: 68, 11 / P: 49, 12 (Best)
 #indicatorFile <- "ZEC-USD-predict-kknnLDJB-ensamble" # A: 66, 10 / P: 45, 16
 #indicatorFile <- "ZEC-USD-predict-kknnLDJC-ensamble" # A: 68, 9 / P: 46, 16 (Best)
+#indicatorFile <- "ZEC-USD-predict-kknnLDJD-ensamble" # A: 65, 15 / P: 44, 15
 
 #indicatorFile <- "ZRX-USD-predict-glmLDAA-ensamble" # A: 56, 9 / P: 40, 16
 #indicatorFile <- "ZRX-USD-predict-glmLDB-ensamble" # A: 58, 13 / P: 47, 13
@@ -301,6 +310,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "ZRX-USD-predict-kknnLDJA-ensamble" # A: 67, 10 / P: 51, 10 (Best)
 #indicatorFile <- "ZRX-USD-predict-kknnLDJB-ensamble" # A: 62, 10 / P: 47, 12
 #indicatorFile <- "ZRX-USD-predict-kknnLDJC-ensamble" # A: 66, 8 / P: 50, 13 (Best)
+#indicatorFile <- "ZRX-USD-predict-kknnLDJD-ensamble" # A: 67, 12 / P: 50, 13
 
 dailyIndicator <- fread(
   paste(basePath, indicatorFile, ".csv", sep = "")
