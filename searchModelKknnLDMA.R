@@ -8,6 +8,10 @@
 #             7) Fit weak learners for MA trend and ensamble for Actbin to generalize for daily change.
 #             8) Orb to 2 degrees.
 
+# CONCLUSION:
+# The planets Y aspect count is not able to fit to the research symbols data possibly because
+# there are many variables and become very sparsed. I skip performance test for this model.
+
 library(boot)
 library(caret)
 library(psych)
