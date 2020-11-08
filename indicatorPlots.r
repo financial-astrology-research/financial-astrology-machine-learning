@@ -1597,7 +1597,7 @@ dailyAspectsGeneralizedCountLDI <- function(orbLimit = 2, pxSelect = c(), pySele
   return(dailyAspectsCount)
 }
 
-dailyAspectsGeneralizedOrbsMean <- function(orbLimit = 2, pxFilter = c()) {
+dailyAspectsGeneralizedOrbsMean <- function(orbLimit = 2, pxSelect = c(), pySelect = c(), aspectFilter = c()) {
   idCols <- c('Date', 'Hour')
   setClassicAspectsSet8()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
@@ -1605,7 +1605,9 @@ dailyAspectsGeneralizedOrbsMean <- function(orbLimit = 2, pxFilter = c()) {
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
 
   dailyAspects$filter <- F
-  dailyAspects[p.x %in% pxFilter, filter := T]
+  dailyAspects[p.x %ni% pxSelect, filter := T]
+  dailyAspects[p.y %ni% pySelect, filter := T]
+  dailyAspects[aspect %in% aspectFilter, filter := T]
   dailyAspects <- dailyAspects[filter != T,]
 
   # Convert numeric aspects to categorical (factors).
