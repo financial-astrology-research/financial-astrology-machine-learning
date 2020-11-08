@@ -1625,7 +1625,7 @@ dailyAspectsGeneralizedOrbsMean <- function(orbLimit = 2, pxFilter = c()) {
 
 dailyAspectsGeneralizedEnergySum <- function(orbLimit = 2, pxSelect = c(), pySelect = c(), aspectFilter = c()) {
   idCols <- c('Date', 'Hour')
-  setClassicAspectsSet8()
+  setModernMixAspectsSet1()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
