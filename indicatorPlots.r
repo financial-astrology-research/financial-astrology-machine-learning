@@ -1797,7 +1797,7 @@ dailyPlanetYAspectMeanOrb <- function(orbLimit = 2, pxSelect = c(), pySelect = c
 }
 
 # Count total aspects per planet combination.
-dailyAspectsPlanetCombGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), pySelect = c()) {
+dailyAspectsPlanetCombGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), pySelect = c(), aspectFilter = c()) {
   idCols <- c('Date', 'Hour')
   setModernMixAspectsSet1()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
@@ -1807,6 +1807,7 @@ dailyAspectsPlanetCombGeneralizedCount <- function(orbLimit = 2, pxSelect = c(),
   dailyAspects$filter <- F
   dailyAspects[p.x %ni% pxSelect, filter := T]
   dailyAspects[p.y %ni% pySelect, filter := T]
+  dailyAspects[aspect %in% aspectFilter, filter := T]
   dailyAspects <- dailyAspects[filter != T,]
 
   # Convert numeric aspects to categorical (factors).
