@@ -1,5 +1,5 @@
 # Title     : Daily generalized aspects count and combined planets activation boolean flag.
-#             1) Planets MO, ME, VE fast planets applying to all slow planets and VS except NN.
+#             1) Planets MO, ME, VE fast planets applying to all slow planets except NN and CE, VS, CH.
 #             2) CV folds to 5 with 5 repeats.
 #             3) Validate fit using Actbin daily price change (buy / sell) instead of Effect
 #             4) Fit based on MA(2, 3) effect to smooth price variations.
@@ -17,7 +17,7 @@ source("./indicatorPlots.r")
 
 symbol <- "ADA-USD"
 maPriceFsPeriod <- 2
-maPriceSlPeriod <- 3
+maPriceSlPeriod <- 4
 orbLimit <- 4
 
 pxSelect <- c(
@@ -31,9 +31,11 @@ pySelect <- c(
   'VE',
   'SU',
   'MA',
+  'CE',
   'VS',
   'JU',
   'SA',
+  'CH',
   #'NN',
   'UR',
   'NE',
