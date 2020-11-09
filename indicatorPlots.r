@@ -1526,7 +1526,7 @@ dailyCombPlanetAspectsFactorsTableLDC <- function(orbLimit = 2, aspectFilter = c
 dailyAspectsGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), pySelect = c(), aspectFilter = c(), binFlag = F) {
   idCols <- c('Date', 'Hour')
   setModernMixAspectsSet1()
-  setPlanetsMOMEVESUMACEJNPAPHVSJUNNSAURCHNEPL()
+  setPlanetsMOMEVESUMACEVSJUNNSAURCHNEPL()
   hourlyPlanets <<- openHourlyPlanets('planets_12', clear = F)
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
 
@@ -1804,7 +1804,7 @@ dailyPlanetYAspectMeanOrb <- function(orbLimit = 2, pxSelect = c(), pySelect = c
 dailyAspectsPlanetCombGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), pySelect = c(), aspectFilter = c()) {
   idCols <- c('Date', 'Hour')
   setModernMixAspectsSet1()
-  setPlanetsMOMEVESUMACEJNPAPHVSJUNNSAURCHNEPL()
+  setPlanetsMOMEVESUMACEVSJUNNSAURCHNEPL()
   hourlyPlanets <<- openHourlyPlanets('planets_12', clear = F)
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
 
