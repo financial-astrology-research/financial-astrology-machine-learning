@@ -17,7 +17,7 @@ library(ModelMetrics)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "BTC-USD"
+symbol <- "ADA-USD"
 zdiffPercentCut <- 2
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
@@ -182,7 +182,7 @@ securityData <- mainOpenSecurity(
 # Filter the extreme outliers.
 cat(paste("Original days rows: ", nrow(securityData)), "\n")
 securityData <- securityData[abs(zdiffPercent) < zdiffPercentCut]
-hist(securityData$zdiffPercent)
+hist(securityData$diffPercent)
 cat(paste("Total days rows: ", nrow(securityData)), "\n")
 
 aspectView <- merge(
