@@ -43,10 +43,17 @@ pySelect <- c(
   'PL'
 )
 
+aspectFilter <- c(
+  30,
+  60,
+  120
+)
+
 dailyAspects <- dailyCombPlanetAspectsFactorsTableLI(
   orbLimit = orbLimit,
   pxSelect = pxSelect,
-  pySelect = pySelect
+  pySelect = pySelect,
+  aspectFilter = aspectFilter
 )
 
 control <- trainControl(
@@ -138,7 +145,7 @@ fitModel2 <- modelTrain(
   "kknn", useFeatures2, maPriceFsPeriod, maPriceSlPeriod, "2"
 )
 
-useFeatures3 <- allFeatures[grep('VE|SU', allFeatures)]
+useFeatures3 <- allFeatures[grep('VE', allFeatures)]
 fitModel3 <- modelTrain(
   "kknn", useFeatures3, maPriceFsPeriod, maPriceSlPeriod, "3"
 )
@@ -148,7 +155,7 @@ fitModel4 <- modelTrain(
   "kknn", useFeatures4, maPriceFsPeriod, maPriceSlPeriod, "4"
 )
 
-useFeatures5 <- allFeatures[grep('MO|ME|VE|SU', allFeatures)]
+useFeatures5 <- allFeatures[grep('MO|SU', allFeatures)]
 fitModel5 <- modelTrain(
   "kknn", useFeatures5, maPriceFsPeriod, maPriceSlPeriod, "5"
 )
