@@ -78,7 +78,7 @@ aspectViewTest <- merge(
   dailyAspects, by = "Date"
 )
 
-modelTrain <- function(method, useFeatures, maPriceFsPeriod, maPriceSlPeriod, modelId) {
+modelTrain <- function(useFeatures, maPriceFsPeriod, maPriceSlPeriod, modelId) {
   securityData <- mainOpenSecurity(
     symbol, maPriceFsPeriod, maPriceSlPeriod,
     "%Y-%m-%d", "2010-01-01", "2020-06-30"
@@ -105,7 +105,7 @@ modelTrain <- function(method, useFeatures, maPriceFsPeriod, maPriceSlPeriod, mo
   fitModel <- train(
     formula(diffPercent ~ .),
     data = aspectViewTrain[, ..selectCols],
-    method = method,
+    method = "kknn",
     metric = "MSE",
     trControl = control,
     tuneGrid = expand.grid(
@@ -137,27 +137,27 @@ modelTrain <- function(method, useFeatures, maPriceFsPeriod, maPriceSlPeriod, mo
 allFeatures <- names(dailyAspects)
 useFeatures1 <- allFeatures[grep('MO|ME|VE', allFeatures)]
 fitModel1 <- modelTrain(
-  "kknn", useFeatures1, maPriceFsPeriod, maPriceSlPeriod, "1"
+  useFeatures1, maPriceFsPeriod, maPriceSlPeriod, "1"
 )
 
 useFeatures2 <- allFeatures[grep('MO|ME|VE', allFeatures)]
 fitModel2 <- modelTrain(
-  "kknn", useFeatures2, maPriceFsPeriod, maPriceSlPeriod, "2"
+  useFeatures2, maPriceFsPeriod, maPriceSlPeriod, "2"
 )
 
 useFeatures3 <- allFeatures[grep('MO|ME|VE', allFeatures)]
 fitModel3 <- modelTrain(
-  "kknn", useFeatures3, maPriceFsPeriod, maPriceSlPeriod, "3"
+  useFeatures3, maPriceFsPeriod, maPriceSlPeriod, "3"
 )
 
 useFeatures4 <- allFeatures[grep('VE', allFeatures)]
 fitModel4 <- modelTrain(
-  "kknn", useFeatures4, maPriceFsPeriod, maPriceSlPeriod, "4"
+  useFeatures4, maPriceFsPeriod, maPriceSlPeriod, "4"
 )
 
 useFeatures5 <- allFeatures[grep('SU', allFeatures)]
 fitModel5 <- modelTrain(
-  "kknn", useFeatures5, maPriceFsPeriod, maPriceSlPeriod, "5"
+  useFeatures5, maPriceFsPeriod, maPriceSlPeriod, "5"
 )
 
 fitModel1 %>% print()
