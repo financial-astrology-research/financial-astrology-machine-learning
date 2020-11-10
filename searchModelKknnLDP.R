@@ -17,7 +17,7 @@ library(ModelMetrics)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "ADA-USD"
+symbol <- "BTC-USD"
 zdiffPercentCut <- 2
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
@@ -61,7 +61,6 @@ control <- trainControl(
   number = 5,
   repeats = 5,
   savePredictions = "all",
-  classProbs = T,
   verboseIter = T,
   allowParallel = T,
   trim = F
@@ -106,7 +105,7 @@ modelTrain <- function(useFeatures, maPriceFsPeriod, maPriceSlPeriod, modelId) {
     formula(diffPercent ~ .),
     data = aspectViewTrain[, ..selectCols],
     method = "kknn",
-    metric = "MSE",
+    metric = "RMSE",
     trControl = control,
     tuneGrid = expand.grid(
       kmax = 7,
