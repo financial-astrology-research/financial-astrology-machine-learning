@@ -140,22 +140,22 @@ fitModel1 <- modelTrain(
   "kknn", useFeatures1, maPriceFsPeriod, maPriceSlPeriod, "1"
 )
 
-useFeatures2 <- allFeatures[grep('ME|VE', allFeatures)]
+useFeatures2 <- allFeatures[grep('MO|ME|VE', allFeatures)]
 fitModel2 <- modelTrain(
   "kknn", useFeatures2, maPriceFsPeriod, maPriceSlPeriod, "2"
 )
 
-useFeatures3 <- allFeatures[grep('VE', allFeatures)]
+useFeatures3 <- allFeatures[grep('MO|ME|VE', allFeatures)]
 fitModel3 <- modelTrain(
   "kknn", useFeatures3, maPriceFsPeriod, maPriceSlPeriod, "3"
 )
 
-useFeatures4 <- allFeatures[grep('SU|MA', allFeatures)]
+useFeatures4 <- allFeatures[grep('VE', allFeatures)]
 fitModel4 <- modelTrain(
   "kknn", useFeatures4, maPriceFsPeriod, maPriceSlPeriod, "4"
 )
 
-useFeatures5 <- allFeatures[grep('MO|SU', allFeatures)]
+useFeatures5 <- allFeatures[grep('SU', allFeatures)]
 fitModel5 <- modelTrain(
   "kknn", useFeatures5, maPriceFsPeriod, maPriceSlPeriod, "5"
 )
