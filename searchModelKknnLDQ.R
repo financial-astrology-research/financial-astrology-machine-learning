@@ -1,13 +1,13 @@
-# Title     : Daily aspects planet Y generalized count KNN regression model that estimate daily price percent change.
+# Title     : Daily aspects planet X generalized count KNN regression model that estimate daily price percent change.
 # Purpose   : Based on ModelLD this model has some variations:
-#             1) Planets MO, ME, VE, SU fast planets applying to all slow planets except NN.
+#             1) Planets MO, ME, VE, SU fast planets applying to all slow planets and asteroids except NN.
 #             2) CV folds to 5 with 5 repeats.
 #             3) Validate fit using Actbin daily price change (buy / sell) instead of Effect
-#             4) Fit is based on MA(2, 3) effect to smooth price variations.
-#             5) Fit weak learners for MA trend and ensamble for Actbin to generalize for daily change.
-#             6) Split to 80/20 proportion.
-#             7) Optimize weak learners and ensamble for Kappa.
-#             8) 9 weak learners that combine multiples fast aspects cycles.
+#             4) Fit weak learners for diff percent change and ensamble for Actbin
+#                to generalize for daily change (buy / sell) signal.
+#             5) Split to 80/20 proportion.
+#             6) Optimize weak learners and ensamble for Kappa.
+#             7) 5 weak learners that combine multiples planet X aspects cycles.
 
 library(boot)
 library(caret)
