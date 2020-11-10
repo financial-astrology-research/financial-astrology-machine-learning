@@ -24,9 +24,10 @@ maPriceSlPeriod <- 3
 orbLimit <- 4
 
 pxSelect <- c(
+  'MO',
   'ME',
   'VE',
-  'SU',
+  'SU'
 )
 
 pySelect <- c(
@@ -34,9 +35,12 @@ pySelect <- c(
   'VE',
   'SU',
   'MA',
+  'CE',
+  'VS',
   'JU',
   'SA',
   #'NN',
+  'CH',
   'UR',
   'NE',
   'PL'
@@ -126,27 +130,27 @@ modelTrain <- function(useFeatures, maPriceFsPeriod, maPriceSlPeriod, modelId) {
 }
 
 allFeatures <- names(dailyAspects)
-useFeatures1 <- allFeatures[grep('ME', allFeatures)]
+useFeatures1 <- allFeatures[grep('MO|ME|VE|SU', allFeatures)]
 fitModel1 <- modelTrain(
   useFeatures1, maPriceFsPeriod, maPriceSlPeriod, "1"
 )
 
-useFeatures2 <- allFeatures[grep('VE', allFeatures)]
+useFeatures2 <- allFeatures[grep('MO|ME|VE|SU', allFeatures)]
 fitModel2 <- modelTrain(
   useFeatures2, maPriceFsPeriod, maPriceSlPeriod, "2"
 )
 
-useFeatures3 <- allFeatures[grep('VE', allFeatures)]
+useFeatures3 <- allFeatures[grep('MO|ME|VE|SU', allFeatures)]
 fitModel3 <- modelTrain(
   useFeatures3, maPriceFsPeriod, maPriceSlPeriod, "3"
 )
 
-useFeatures4 <- allFeatures[grep('SU', allFeatures)]
+useFeatures4 <- allFeatures[grep('VE|SU', allFeatures)]
 fitModel4 <- modelTrain(
   useFeatures4, maPriceFsPeriod, maPriceSlPeriod, "4"
 )
 
-useFeatures5 <- allFeatures[grep('SU', allFeatures)]
+useFeatures5 <- allFeatures[grep('VE|SU', allFeatures)]
 fitModel5 <- modelTrain(
   useFeatures5, maPriceFsPeriod, maPriceSlPeriod, "5"
 )
@@ -201,8 +205,6 @@ topModel <- train(
   y = aspectViewTrain$Actbin,
   method = "gbm",
   metric = "Kappa",
-  trControl = control,
-  tuneLength = 3
 )
 
 topModel %>% summary()
