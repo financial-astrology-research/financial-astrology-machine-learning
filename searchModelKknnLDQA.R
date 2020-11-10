@@ -150,10 +150,10 @@ modelTrain <- function(featureCorrelationCut, modelId) {
 }
 
 fitModel1 <- modelTrain(-0.02, "1")
-fitModel2 <- modelTrain(-0.04, "2")
-fitModel3 <- modelTrain(-0.05, "3")
+fitModel2 <- modelTrain(-0.03, "2")
+fitModel3 <- modelTrain(-0.04, "3")
 fitModel4 <- modelTrain(0.02, "4")
-fitModel5 <- modelTrain(0.04, "5")
+fitModel5 <- modelTrain(0.03, "5")
 
 fitModel1 %>% print()
 fitModel1 %>% varImp()
