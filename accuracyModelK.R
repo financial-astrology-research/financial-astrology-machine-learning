@@ -2,9 +2,10 @@
 
 rm(list = ls())
 library(caret)
+library(psych)
 source("analysis.r")
 
-symbolTest <- "ZRX-USD"
+symbolTest <- "LINK-USD"
 securityDataTest <- mainOpenSecurity(
   symbolTest, 2, 4,
   "%Y-%m-%d", "2020-01-01", "2020-10-31"
