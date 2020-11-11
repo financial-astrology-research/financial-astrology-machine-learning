@@ -163,8 +163,7 @@ gar <- ga(
     'NEY',
     'PLY'
   ),
-  popSize = 200, elitism = 20, pcrossover = 0.9, pmutation = 0.1,
-  maxiter = 100, run = 30,
+  popSize = 100, maxiter = 50, run = 30,
   selection = gabin_rwSelection, mutation = gabin_raMutation,
   crossover = gabin_spCrossover, population = gabin_Population,
   parallel = F, monitor = gaMonitor, keepBest = T
@@ -172,6 +171,9 @@ gar <- ga(
 
 summary(gar)
 plot(gar)
+
+# ADA Best features:
+# Using PX:  ME VE - PY:  SU MA CE VS JU SA NN CH UR NE PL / R2=0.10 to 0.15
 
 #fitModel1 <- modelTrain( "1" )
 #fitModel2 <- modelTrain( "2" )
