@@ -89,10 +89,10 @@ modelTrain <- function(pxSelect, pySelect) {
   )
 
   # Filter the extreme outliers.
-  cat(paste("Original days rows: ", nrow(securityData)), "\n")
+  cat(paste("Original days rows:", nrow(securityData)), "\n")
   securityData <- securityData[abs(zdiffPercent) <= zdiffPercentCut]
   hist(securityData$diffPercent)
-  cat(paste("Total days rows: ", nrow(securityData)), "\n")
+  cat(paste("Total days rows:", nrow(securityData)), "\n")
 
   aspectView <- merge(
     securityData[, c('Date', 'diffPercent', 'Actbin', 'Eff')],
@@ -101,7 +101,7 @@ modelTrain <- function(pxSelect, pySelect) {
 
   useFeatures <- names(dailyAspects)[-1]
   selectCols <- c('diffPercent', useFeatures)
-  cat("Using features: ", selectCols, "\n")
+  cat("Using features:", selectCols, "\n")
   trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.80, list = FALSE)
   aspectViewTrain <- aspectView[trainIndex,]
   aspectViewValidate <- aspectView[-trainIndex,]
@@ -123,8 +123,8 @@ modelTrain <- function(pxSelect, pySelect) {
   validatePredictionMSE <- rmse(aspectViewValidate$diffPercent, validateDiffPercentPred)
   validatePredictionCorrelation <- cor(aspectViewValidate$diffPercent, validateDiffPercentPred)
   plot(aspectViewValidate$diffPercent, validateDiffPercentPred)
-  cat("Validate RMSE: ", validatePredictionMSE, "\n")
-  cat("Validate Actual/Predicted correlation: ", validatePredictionCorrelation, "\n")
+  cat("Validate RMSE:", validatePredictionMSE, "\n")
+  cat("Validate Actual/Predicted correlation:", validatePredictionCorrelation, "\n")
 
   #saveRDS(logisticModel, paste("./models/", symbol, "_logistic_", modelId, ".rds", sep = ""))
   return(fitModel)
@@ -133,9 +133,9 @@ modelTrain <- function(pxSelect, pySelect) {
 findRelevantFeatures <- function(params) {
   pxSelect <- pxSelectAll[params[1:4] == 1]
   pySelect <- pySelectAll[params[5:17] == 1]
-  cat("Using PX: ", pxSelect, " - PY: ", pySelect, "\n")
+  cat("Using PX:", pxSelect, "- PY: ", pySelect, "\n")
   fitModel <- modelTrain(pxSelect, pySelect)
-  cat("Fit Rsquared: ", fitModel$results$Rsquared, "\n\n")
+  cat("Fit Rsquared:", fitModel$results$Rsquared, "\n\n")
 
   return(fitModel$results$Rsquared)
 }
