@@ -1957,8 +1957,9 @@ dailyPlanetXAspectsGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), py
 dailyPlanetYAspectsGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), pySelect = c(), binFlag = F) {
   idCols <- c('Date', 'Hour')
   setModernMixAspectsSet1()
-  setPlanetsMOMEVESUMAJUNNSAURNEPL()
-  hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  #setPlanetsMOMEVESUMAJUNNSAURNEPL()
+  setPlanetsMOMEVESUMACEVSJUNNSAURCHNEPL()
+  hourlyPlanets <<- openHourlyPlanets('planets_12', clear = F)
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
 
   dailyAspects$filter <- F
