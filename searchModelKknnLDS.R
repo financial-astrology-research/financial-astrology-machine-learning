@@ -163,7 +163,7 @@ gar <- ga(
     'NEY',
     'PLY'
   ),
-  popSize = 100, maxiter = 50, run = 30,
+  popSize = 100, maxiter = 50, run = 10,
   selection = gabin_rwSelection, mutation = gabin_raMutation,
   crossover = gabin_spCrossover, population = gabin_Population,
   parallel = F, monitor = gaMonitor, keepBest = T
