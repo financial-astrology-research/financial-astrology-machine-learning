@@ -23,6 +23,7 @@ zdiffPercentCut <- 2
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
 orbLimit <- 4
+kMax <- 7
 
 pxSelectAll <- c(
   'MO',
@@ -52,6 +53,17 @@ setModernMixAspectsSet1()
 setPlanetsMOMEVESUMACEVSJUNNSAURCHNEPL()
 hourlyPlanets <<- openHourlyPlanets('planets_12', clear = F)
 dailyAspectsRows <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+
+securityData <- mainOpenSecurity(
+  symbol, maPriceFsPeriod, maPriceSlPeriod,
+  "%Y-%m-%d", "2010-01-01", "2020-06-30"
+)
+
+# Filter the extreme outliers.
+cat(paste("Original days rows:", nrow(securityData)), "\n")
+securityData <- securityData[abs(zdiffPercent) <= zdiffPercentCut]
+hist(securityData$diffPercent)
+cat(paste("Total days rows:", nrow(securityData)), "\n")
 
 control <- trainControl(
   method = "repeatedcv",
@@ -83,17 +95,6 @@ modelTrain <- function(pxSelect, pySelect) {
   )
 
   dailyAspects <- merge(dailyAspectsGeneralizedCount, dailyPlanetYActivationCount, date = "Date")
-  securityData <- mainOpenSecurity(
-    symbol, maPriceFsPeriod, maPriceSlPeriod,
-    "%Y-%m-%d", "2010-01-01", "2020-06-30"
-  )
-
-  # Filter the extreme outliers.
-  cat(paste("Original days rows:", nrow(securityData)), "\n")
-  securityData <- securityData[abs(zdiffPercent) <= zdiffPercentCut]
-  hist(securityData$diffPercent)
-  cat(paste("Total days rows:", nrow(securityData)), "\n")
-
   aspectView <- merge(
     securityData[, c('Date', 'diffPercent', 'Actbin', 'Eff')],
     dailyAspects, by = "Date"
@@ -102,6 +103,7 @@ modelTrain <- function(pxSelect, pySelect) {
   useFeatures <- names(dailyAspects)[-1]
   selectCols <- c('diffPercent', useFeatures)
   cat("Using features:", selectCols, "\n")
+
   trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.80, list = FALSE)
   aspectViewTrain <- aspectView[trainIndex,]
   aspectViewValidate <- aspectView[-trainIndex,]
@@ -112,7 +114,7 @@ modelTrain <- function(pxSelect, pySelect) {
     metric = "RMSE",
     trControl = control,
     tuneGrid = expand.grid(
-      kmax = 7,
+      kmax = kMax,
       distance = 2,
       kernel = "optimal"
     )
@@ -122,7 +124,7 @@ modelTrain <- function(pxSelect, pySelect) {
   validateDiffPercentPred <- predict(fitModel, aspectViewValidate, type = "raw")
   validatePredictionMSE <- rmse(aspectViewValidate$diffPercent, validateDiffPercentPred)
   validatePredictionCorrelation <- cor(aspectViewValidate$diffPercent, validateDiffPercentPred)
-  plot(aspectViewValidate$diffPercent, validateDiffPercentPred)
+  #plot(aspectViewValidate$diffPercent, validateDiffPercentPred)
   cat("Validate RMSE:", validatePredictionMSE, "\n")
   cat("Validate Actual/Predicted correlation:", validatePredictionCorrelation, "\n")
 
@@ -163,17 +165,20 @@ gar <- ga(
     'NEY',
     'PLY'
   ),
-  popSize = 100, maxiter = 50, run = 10,
+  popSize = 50, maxiter = 50, run = 10,
   selection = gabin_rwSelection, mutation = gabin_raMutation,
   crossover = gabin_spCrossover, population = gabin_Population,
   parallel = F, monitor = gaMonitor, keepBest = T
 )
 
 summary(gar)
+print(gar@solution)
 plot(gar)
 
 # ADA Best features:
 # Using PX:  ME VE - PY:  SU MA CE VS JU SA NN CH UR NE PL / R2=0.10 to 0.15
+#MOX MEX VEX SUX MEY VEY SUY MAY CEY VSY JUY SAY NNY CHY URY NEY PLY
+#[1,]   0   1   1   0   0   0   1   1   1   1   1   1   1   1   1   1   1
 
 #fitModel1 <- modelTrain( "1" )
 #fitModel2 <- modelTrain( "2" )
