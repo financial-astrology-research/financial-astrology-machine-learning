@@ -142,8 +142,6 @@ modelTrain <- function(pxSelect, pySelect) {
 }
 
 parseSolutionParameters <- function(solution) {
-  cat("Fit model for best solution:\n")
-  print(solution)
   pxSelect <- pxSelectAll[solution[1:4] == 1]
   pySelect <- pySelectAll[solution[5:17] == 1]
 
@@ -201,13 +199,15 @@ solutionModelTrain <- function(params) {
 
 summary(gar)
 plot(gar)
-params <- parseSolutionParameters(gar@params)
+
+cat("Best GA solution:", gar@solution, "\n")
 
 # ADA Best features:
 # Using PX:  ME VE - PY:  SU MA CE VS JU SA NN CH UR NE PL / R2=0.10 to 0.15
 #      MOX MEX VEX SUX MEY VEY SUY MAY CEY VSY JUY SAY NNY CHY URY NEY PLY
 #[1,]   0   1   1   0   0   0   1   1   1   1   1   1   1   1   1   1   1
 
+params <- parseSolutionParameters(gar@params)
 fitModel1 <- solutionModelTrain(params)
 fitModel1 %>% summary()
 fitModel1 %>% varImp()
