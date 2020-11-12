@@ -27,6 +27,7 @@ trainDataEndDate <- as.Date("2020-08-15")
 testDataStartDate <- as.Date("2020-09-01")
 orbLimit <- 4
 kMax <- 7
+gaMaxIter <- 30
 
 pxSelectAll <- c(
   'MO',
@@ -160,6 +161,14 @@ findRelevantFeatures <- function(solution) {
   return(fitModel$results$Rsquared)
 }
 
+solutionModelTrain <- function(params) {
+  cat("Using PX:", params$pxSelect, "- PY: ", params$pySelect, "\n")
+  fitModel <- modelTrain(params$pxSelect, params$pySelect)
+  cat("Fit Rsquared:", fitModel$results$Rsquared, "\n\n")
+
+  return(fitModel)
+}
+
 gar <- ga(
   "binary",
   fitness = findRelevantFeatures,
@@ -183,31 +192,23 @@ gar <- ga(
     'NEY',
     'PLY'
   ),
-  popSize = 100, maxiter = 40, run = 20,
+  popSize = 100, maxiter = gaMaxIter, run = 20,
   selection = gabin_rwSelection, mutation = gabin_raMutation,
   crossover = gabin_spCrossover, population = gabin_Population,
   parallel = F, monitor = gaMonitor, keepBest = T
 )
 
-solutionModelTrain <- function(params) {
-  cat("Using PX:", params$pxSelect, "- PY: ", params$pySelect, "\n")
-  fitModel <- modelTrain(params$pxSelect, params$pySelect)
-  cat("Fit Rsquared:", fitModel$results$Rsquared, "\n\n")
-
-  return(fitModel)
-}
-
 summary(gar)
 plot(gar)
-
-cat("Best GA solution:", gar@solution, "\n")
+cat("Best GA solution:\n")
+print(gar@solution)
 
 # ADA Best features:
 # Using PX:  ME VE - PY:  SU MA CE VS JU SA NN CH UR NE PL / R2=0.10 to 0.15
 #      MOX MEX VEX SUX MEY VEY SUY MAY CEY VSY JUY SAY NNY CHY URY NEY PLY
 #[1,]   0   1   1   0   0   0   1   1   1   1   1   1   1   1   1   1   1
 
-params <- parseSolutionParameters(gar@params)
+params <- parseSolutionParameters(gar@solution)
 fitModel1 <- solutionModelTrain(params)
 fitModel1 %>% summary()
 fitModel1 %>% varImp()
