@@ -3,12 +3,13 @@
 #             daily price percent change estimation.
 # Purpose   : Based on ModelLD this model has some variations:
 #             1) Planets MO, ME, VE, SU fast planets applying to all slow planets and asteroids except NN.
-#             2) CV folds to 5 with 5 repeats.
+#             2) CV folds to 5 with 3 repeats.
 #             3) Validate fit using Actbin daily price change (buy / sell) instead of Effect
 #             4) Fit weak learners for diff percent change and ensamble for Actbin
 #                to generalize for daily change (buy / sell) signal.
 #             5) Split to 80/20 proportion.
 #             6) Optimize weak learners for RMSE.
+#             7) GA feature selection popSize = 100 and iter = 20
 
 library(boot)
 library(caret)
@@ -27,8 +28,8 @@ trainDataEndDate <- as.Date("2020-08-15")
 testDataStartDate <- as.Date("2020-09-01")
 orbLimit <- 4
 kMax <- 7
-gaMaxIter <- 30
-cvFolds <- 10
+gaMaxIter <- 20
+cvFolds <- 5
 cvRepeats <- 3
 
 pxSelectAll <- c(
@@ -255,6 +256,8 @@ topModel <- train(
   y = aspectViewTrain$Actbin,
   method = "gbm",
   metric = "Kappa",
+  trControl = control,
+  tuneLength = 3
 )
 
 topModel %>% summary()
