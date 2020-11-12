@@ -22,6 +22,9 @@ symbol <- "ADA-USD"
 zdiffPercentCut <- 2
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
+trainDataStartDate <- as.Date("2010-01-01")
+trainDataEndDate <- as.Date("2020-08-15")
+testDataStartDate <- as.Date("2020-09-01")
 orbLimit <- 4
 kMax <- 7
 
@@ -56,7 +59,7 @@ dailyAspectsRows <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLim
 
 securityData <- mainOpenSecurity(
   symbol, maPriceFsPeriod, maPriceSlPeriod,
-  "%Y-%m-%d", "2010-01-01", "2020-06-30"
+  "%Y-%m-%d", trainDataStartDate, trainDataEndDate
 )
 
 # Filter the extreme outliers.
@@ -228,17 +231,6 @@ fitModel5 %>% summary()
 fitModel5 %>% varImp()
 
 dailyAspects <- prepareDailyAspects(solution$pxSelect, solution$pySelect)
-securityData <- mainOpenSecurity(
-  symbol, maPriceFsPeriod, maPriceSlPeriod,
-  "%Y-%m-%d", "2010-01-01", "2020-09-30"
-)
-
-# Filter the extreme outliers.
-cat(paste("Original days rows: ", nrow(securityData)), "\n")
-securityData <- securityData[abs(zdiffPercent) < zdiffPercentCut]
-hist(securityData$diffPercent)
-cat(paste("Total days rows: ", nrow(securityData)), "\n")
-
 aspectView <- merge(
   securityData[, c('Date', 'diffPercent', 'Actbin', 'Eff')],
   dailyAspects, by = "Date"
@@ -277,12 +269,13 @@ table(
 # Reserved data for validation.
 securityDataTest <- mainOpenSecurity(
   symbol, maPriceFsPeriod, maPriceSlPeriod,
-  "%Y-%m-%d", "2020-09-25"
+  "%Y-%m-%d", testDataStartDate
 )
 
 aspectViewTest <- merge(
-  securityDataTest,
-  dailyAspects, by = "Date"
+  securityDataTest[, c('Date', 'Actbin', 'Eff')],
+  dailyAspects,
+  by = "Date"
 )
 
 # Predict outcomes for all weak learner models.
