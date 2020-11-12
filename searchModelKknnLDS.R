@@ -68,18 +68,14 @@ cat(paste("Total days rows:", nrow(securityData)), "\n")
 control <- trainControl(
   method = "repeatedcv",
   number = 5,
-  repeats = 5,
+  repeats = 2,
   savePredictions = "all",
   verboseIter = F,
   allowParallel = T,
   trim = F
 )
 
-modelTrain <- function(pxSelect, pySelect) {
-  if (count(pxSelect) == 0) {
-    pxSelect <- pxSelectAll
-  }
-
+prepareDailyAspects <- function(pxSelect, pySelect) {
   dailyAspectsGeneralizedCount <- dailyAspectsGeneralizedCount(
     dailyAspects = dailyAspectsRows,
     orbLimit = orbLimit,
@@ -95,6 +91,16 @@ modelTrain <- function(pxSelect, pySelect) {
   )
 
   dailyAspects <- merge(dailyAspectsGeneralizedCount, dailyPlanetYActivationCount, date = "Date")
+
+  return(dailyAspects)
+}
+
+modelTrain <- function(pxSelect, pySelect) {
+  if (count(pxSelect) == 0) {
+    pxSelect <- pxSelectAll
+  }
+
+  dailyAspects <- prepareDailyAspects(pxSelect, pySelect)
   aspectView <- merge(
     securityData[, c('Date', 'diffPercent', 'Actbin', 'Eff')],
     dailyAspects, by = "Date"
@@ -165,27 +171,62 @@ gar <- ga(
     'NEY',
     'PLY'
   ),
-  popSize = 50, maxiter = 50, run = 10,
+  popSize = 100, maxiter = 20, run = 20,
   selection = gabin_rwSelection, mutation = gabin_raMutation,
   crossover = gabin_spCrossover, population = gabin_Population,
   parallel = F, monitor = gaMonitor, keepBest = T
 )
 
+parseSolutionParameters <- function(gar) {
+  cat("Fit model for best solution:\n")
+  print(gar@solution)
+  params <- gar@solution
+  pxSelect <- pxSelectAll[params[1:4] == 1]
+  pySelect <- pySelectAll[params[5:17] == 1]
+
+  return(list(
+    pxSelect = pxSelect,
+    pySelect = pySelect
+  ))
+}
+
+solutionModelTrain <- function(solution) {
+  cat("Using PX:", solution$pxSelect, "- PY: ", solution$pySelect, "\n")
+  fitModel <- modelTrain(solution$pxSelect, solution$pySelect)
+  cat("Fit Rsquared:", fitModel$results$Rsquared, "\n\n")
+
+  return(fitModel)
+}
+
 summary(gar)
-print(gar@solution)
 plot(gar)
+solution <- parseSolutionParameters(gar)
 
 # ADA Best features:
 # Using PX:  ME VE - PY:  SU MA CE VS JU SA NN CH UR NE PL / R2=0.10 to 0.15
-#MOX MEX VEX SUX MEY VEY SUY MAY CEY VSY JUY SAY NNY CHY URY NEY PLY
+#      MOX MEX VEX SUX MEY VEY SUY MAY CEY VSY JUY SAY NNY CHY URY NEY PLY
 #[1,]   0   1   1   0   0   0   1   1   1   1   1   1   1   1   1   1   1
 
-#fitModel1 <- modelTrain( "1" )
-#fitModel2 <- modelTrain( "2" )
-#fitModel3 <- modelTrain( "3" )
-#fitModel4 <- modelTrain( "4" )
-#fitModel5 <- modelTrain( "5" )
-#
+fitModel1 <- solutionModelTrain(solution)
+fitModel1 %>% summary()
+fitModel1 %>% varImp()
+
+fitModel2 <- solutionModelTrain(solution)
+fitModel2 %>% summary()
+fitModel2 %>% varImp()
+
+fitModel3 <- solutionModelTrain(solution)
+fitModel3 %>% summary()
+fitModel3 %>% varImp()
+
+fitModel4 <- solutionModelTrain(solution)
+fitModel4 %>% summary()
+fitModel4 %>% varImp()
+
+fitModel5 <- solutionModelTrain(solution)
+fitModel5 %>% summary()
+fitModel5 %>% varImp()
+
 #securityData <- mainOpenSecurity(
 #  symbol, maPriceFsPeriod, maPriceSlPeriod,
 #  "%Y-%m-%d", "2010-01-01", "2020-09-30"
