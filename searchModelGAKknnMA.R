@@ -239,18 +239,18 @@ aspectView <- merge(
 )
 
 # Predict outcomes for all weak learner models.
-aspectView$diffPred1 <- predict(fitModel1, aspectView, type = "raw")
-aspectView$diffPred2 <- predict(fitModel2, aspectView, type = "raw")
-aspectView$diffPred3 <- predict(fitModel3, aspectView, type = "raw")
-aspectView$diffPred4 <- predict(fitModel4, aspectView, type = "raw")
-aspectView$diffPred5 <- predict(fitModel5, aspectView, type = "raw")
+aspectView$DiffPred1 <- predict(fitModel1, aspectView, type = "raw")
+aspectView$DiffPred2 <- predict(fitModel2, aspectView, type = "raw")
+aspectView$DiffPred3 <- predict(fitModel3, aspectView, type = "raw")
+aspectView$DiffPred4 <- predict(fitModel4, aspectView, type = "raw")
+aspectView$DiffPred5 <- predict(fitModel5, aspectView, type = "raw")
 
 # Train ensamble model.
 trainIndex <- createDataPartition(aspectView$Actbin, p = 0.80, list = FALSE)
 aspectViewTrain <- aspectView[trainIndex,]
 aspectViewValidate <- aspectView[-trainIndex,]
 
-probCols <- c("diffPred1", "diffPred2", "diffPred3", "diffPred4", "diffPred5")
+probCols <- c("DiffPred1", "DiffPred2", "DiffPred3", "DiffPred4", "DiffPred5")
 topModel <- train(
   x = aspectViewTrain[, ..probCols],
   y = aspectViewTrain$Actbin,
@@ -292,11 +292,11 @@ aspectViewTest <- merge(
 )
 
 # Predict outcomes for all weak learner models.
-aspectViewTest$diffPred1 <- predict(fitModel1, aspectViewTest, type = "raw")
-aspectViewTest$diffPred2 <- predict(fitModel2, aspectViewTest, type = "raw")
-aspectViewTest$diffPred3 <- predict(fitModel3, aspectViewTest, type = "raw")
-aspectViewTest$diffPred4 <- predict(fitModel4, aspectViewTest, type = "raw")
-aspectViewTest$diffPred5 <- predict(fitModel5, aspectViewTest, type = "raw")
+aspectViewTest$DiffPred1 <- predict(fitModel1, aspectViewTest, type = "raw")
+aspectViewTest$DiffPred2 <- predict(fitModel2, aspectViewTest, type = "raw")
+aspectViewTest$DiffPred3 <- predict(fitModel3, aspectViewTest, type = "raw")
+aspectViewTest$DiffPred4 <- predict(fitModel4, aspectViewTest, type = "raw")
+aspectViewTest$DiffPred5 <- predict(fitModel5, aspectViewTest, type = "raw")
 # Final ensamble prediction.
 aspectViewTest$EffPred <- predict(topModel, aspectViewTest, type = "raw")
 
@@ -307,20 +307,23 @@ table(
 #saveRDS(topModel, paste("./models/", symbol, "_logistic_ensamble", ".rds", sep = ""))
 
 # Full data set prediction.
-dailyAspects$diffPred1 <- predict(fitModel1, dailyAspects, type = "raw")
-dailyAspects$diffPred2 <- predict(fitModel2, dailyAspects, type = "raw")
-dailyAspects$diffPred3 <- predict(fitModel3, dailyAspects, type = "raw")
-dailyAspects$diffPred4 <- predict(fitModel4, dailyAspects, type = "raw")
-dailyAspects$diffPred5 <- predict(fitModel5, dailyAspects, type = "raw")
+dailyAspects$DiffPred1 <- predict(fitModel1, dailyAspects, type = "raw")
+dailyAspects$DiffPred2 <- predict(fitModel2, dailyAspects, type = "raw")
+dailyAspects$DiffPred3 <- predict(fitModel3, dailyAspects, type = "raw")
+dailyAspects$DiffPred4 <- predict(fitModel4, dailyAspects, type = "raw")
+dailyAspects$DiffPred5 <- predict(fitModel5, dailyAspects, type = "raw")
+# Ensamble buy probability and class prediction.
+dailyAspects$BuyProb <- predict(topModel, dailyAspects, type = "prob")$buy
 dailyAspects$EffPred <- predict(topModel, dailyAspects, type = "raw")
 
 # Round probabilities.
-dailyAspects[, diffPred1 := format(diffPred1, format = "f", big.mark = ",", digits = 2)]
-dailyAspects[, diffPred2 := format(diffPred2, format = "f", big.mark = ",", digits = 2)]
-dailyAspects[, diffPred3 := format(diffPred3, format = "f", big.mark = ",", digits = 2)]
-dailyAspects[, diffPred4 := format(diffPred4, format = "f", big.mark = ",", digits = 2)]
-dailyAspects[, diffPred5 := format(diffPred5, format = "f", big.mark = ",", digits = 2)]
+dailyAspects[, DiffPred1 := format(DiffPred1, format = "f", big.mark = ",", digits = 2)]
+dailyAspects[, DiffPred2 := format(DiffPred2, format = "f", big.mark = ",", digits = 2)]
+dailyAspects[, DiffPred3 := format(DiffPred3, format = "f", big.mark = ",", digits = 2)]
+dailyAspects[, DiffPred4 := format(DiffPred4, format = "f", big.mark = ",", digits = 2)]
+dailyAspects[, DiffPred5 := format(DiffPred5, format = "f", big.mark = ",", digits = 2)]
+dailyAspects[, BuyProb := format(BuyProb, format = "f", big.mark = ",", digits = 2)]
 
 aspectsCols <- names(aspectView)[-seq(2, 4)]
-exportCols <- c(aspectsCols, probCols, "EffPred")
+exportCols <- c(aspectsCols, "EffPred")
 fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-ensamble-gakknn-MA", ".csv", sep = ""))
