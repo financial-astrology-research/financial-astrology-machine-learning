@@ -310,5 +310,5 @@ dailyAspects[, diffPred4 := format(diffPred4, format = "f", big.mark = ",", digi
 dailyAspects[, diffPred5 := format(diffPred5, format = "f", big.mark = ",", digits = 2)]
 
 aspectsCols <- names(aspectView)[-seq(2, 4)]
-exportCols <- c('Date', aspectsCols, probCols, "EffPred")
+exportCols <- c(aspectsCols, probCols, "EffPred")
 fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-ensamble-gakknn-MA", ".csv", sep = ""))
