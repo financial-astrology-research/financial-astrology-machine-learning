@@ -27,7 +27,7 @@ trainDataStartDate <- as.Date("2010-01-01")
 trainDataEndDate <- as.Date("2020-08-15")
 testDataStartDate <- as.Date("2020-09-01")
 orbLimit <- 4
-kMax <- 7
+kMax <- 10
 gaMaxIter <- 20
 wlCVFolds <- 5
 wlCVRepeats <- 3
@@ -163,6 +163,8 @@ findRelevantFeatures <- function(solution) {
   fitModel <- modelTrain(params$pxSelect, params$pySelect)
   cat("Fit Rsquared:", fitModel$results$Rsquared, "\n\n")
 
+  #return(fitModel$results$RMSE)
+  #return(fitModel$results$MAE)
   return(fitModel$results$Rsquared)
 }
 
