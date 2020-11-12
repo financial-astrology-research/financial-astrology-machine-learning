@@ -256,7 +256,16 @@ topModel <- train(
   y = aspectViewTrain$Actbin,
   method = "gbm",
   metric = "Kappa",
-  trControl = control,
+  trControl = trainControl(
+    method = "repeatedcv",
+    number = 10,
+    repeats = 20,
+    savePredictions = "all",
+    classProbs = T,
+    verboseIter = F,
+    allowParallel = T,
+    trim = F
+  ),
   tuneLength = 3
 )
 
