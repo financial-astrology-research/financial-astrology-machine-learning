@@ -1523,12 +1523,16 @@ dailyCombPlanetAspectsFactorsTableLDC <- function(orbLimit = 2, aspectFilter = c
   return(dailyAspectsWide)
 }
 
-dailyAspectsGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), pySelect = c(), aspectFilter = c(), binFlag = F) {
-  idCols <- c('Date', 'Hour')
-  setModernMixAspectsSet1()
-  setPlanetsMOMEVESUMACEVSJUNNSAURCHNEPL()
-  hourlyPlanets <<- openHourlyPlanets('planets_12', clear = F)
-  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+dailyAspectsGeneralizedCount <- function(
+  dailyAspects = NULL, orbLimit = 2, pxSelect = c(), pySelect = c(), aspectFilter = c(), binFlag = F
+) {
+  if (is.null(dailyAspects)) {
+    idCols <- c('Date', 'Hour')
+    setModernMixAspectsSet1()
+    setPlanetsMOMEVESUMACEVSJUNNSAURCHNEPL()
+    hourlyPlanets <<- openHourlyPlanets('planets_12', clear = F)
+    dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+  }
 
   dailyAspects$filter <- F
   dailyAspects[p.x %ni% pxSelect, filter := T]
@@ -1655,12 +1659,17 @@ dailyAspectsGeneralizedEnergySum <- function(orbLimit = 2, pxSelect = c(), pySel
 }
 
 # Count total aspects per planet Y (receiver).
-dailyPlanetYActivationCount <- function(orbLimit = 2, pxSelect = c(), pySelect = c(), aspectFilter = c(), binFlag = F) {
-  idCols <- c('Date', 'Hour')
-  setModernMixAspectsSet1()
-  setPlanetsMOMEVESUMAJUNNSAURNEPL()
-  hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
-  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+dailyPlanetYActivationCount <- function(
+  dailyAspects = NULL, orbLimit = 2, pxSelect = c(), pySelect = c(), aspectFilter = c(), binFlag = F
+) {
+  if (is.null(dailyAspects)) {
+    idCols <- c('Date', 'Hour')
+    setModernMixAspectsSet1()
+    #setPlanetsMOMEVESUMAJUNNSAURNEPL()
+    setPlanetsMOMEVESUMACEVSJUNNSAURCHNEPL()
+    hourlyPlanets <<- openHourlyPlanets('planets_12', clear = F)
+    dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+  }
 
   dailyAspects$filter <- F
   dailyAspects[p.x %ni% pxSelect, filter := T]
