@@ -29,8 +29,10 @@ testDataStartDate <- as.Date("2020-09-01")
 orbLimit <- 4
 kMax <- 7
 gaMaxIter <- 20
-cvFolds <- 5
-cvRepeats <- 3
+wlCVFolds <- 5
+wlCVRepeats <- 3
+enCVFolds <- 10
+enCVRepeats <- 10
 
 pxSelectAll <- c(
   'MO',
@@ -74,8 +76,8 @@ cat(paste("Total days rows:", nrow(securityData)), "\n")
 
 control <- trainControl(
   method = "repeatedcv",
-  number = cvFolds,
-  repeats = cvRepeats,
+  number = wlCVFolds,
+  repeats = wlCVRepeats,
   savePredictions = "all",
   verboseIter = F,
   allowParallel = T,
@@ -258,8 +260,8 @@ topModel <- train(
   metric = "Kappa",
   trControl = trainControl(
     method = "repeatedcv",
-    number = 10,
-    repeats = 20,
+    number = enCVFolds,
+    repeats = enCVRepeats,
     savePredictions = "all",
     classProbs = T,
     verboseIter = F,
