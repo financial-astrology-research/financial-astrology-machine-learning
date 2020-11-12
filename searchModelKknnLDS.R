@@ -227,93 +227,94 @@ fitModel5 <- solutionModelTrain(solution)
 fitModel5 %>% summary()
 fitModel5 %>% varImp()
 
-#securityData <- mainOpenSecurity(
-#  symbol, maPriceFsPeriod, maPriceSlPeriod,
-#  "%Y-%m-%d", "2010-01-01", "2020-09-30"
-#)
-#
-## Reserved data for validation.
-#securityDataTest <- mainOpenSecurity(
-#  symbol, maPriceFsPeriod, maPriceSlPeriod,
-#  "%Y-%m-%d", "2020-09-25"
-#)
-#
-#aspectViewTest <- merge(
-#  securityDataTest,
-#  dailyAspects, by = "Date"
-#)
-#
-## Filter the extreme outliers.
-#cat(paste("Original days rows: ", nrow(securityData)), "\n")
-#securityData <- securityData[abs(zdiffPercent) < zdiffPercentCut]
-#hist(securityData$diffPercent)
-#cat(paste("Total days rows: ", nrow(securityData)), "\n")
-#
-#aspectView <- merge(
-#  securityData[, c('Date', 'diffPercent', 'Actbin', 'Eff')],
-#  dailyAspects, by = "Date"
-#)
-#
-#selectCols <- names(aspectView)[c(-1, -2, -3)]
-## Predict outcomes for all weak learner models.
-#aspectView$diffPred1 <- predict(fitModel1, aspectView, type = "raw")
-#aspectView$diffPred2 <- predict(fitModel2, aspectView, type = "raw")
-#aspectView$diffPred3 <- predict(fitModel3, aspectView, type = "raw")
-#aspectView$diffPred4 <- predict(fitModel4, aspectView, type = "raw")
-#aspectView$diffPred5 <- predict(fitModel5, aspectView, type = "raw")
-#
-## Train ensamble model.
-#trainIndex <- createDataPartition(aspectView$Actbin, p = 0.80, list = FALSE)
-#aspectViewTrain <- aspectView[trainIndex,]
-#aspectViewValidate <- aspectView[-trainIndex,]
-#
-#probCols <- c("diffPred1", "diffPred2", "diffPred3", "diffPred4", "diffPred5")
-#topModel <- train(
-#  x = aspectViewTrain[, ..probCols],
-#  y = aspectViewTrain$Actbin,
-#  method = "gbm",
-#  metric = "Kappa",
-#)
-#
-#topModel %>% summary()
-#
-## Validate data predictions.
-#aspectViewValidate$EffPred <- predict(topModel, aspectViewValidate, type = "raw")
-#
-#table(
-#  actual = aspectViewValidate$Actbin,
-#  predicted = aspectViewValidate$EffPred
-#) %>% caret::confusionMatrix()
-#
-## Predict outcomes for all weak learner models.
-#aspectViewTest$diffPred1 <- predict(fitModel1, aspectViewTest, type = "raw")
-#aspectViewTest$diffPred2 <- predict(fitModel2, aspectViewTest, type = "raw")
-#aspectViewTest$diffPred3 <- predict(fitModel3, aspectViewTest, type = "raw")
-#aspectViewTest$diffPred4 <- predict(fitModel4, aspectViewTest, type = "raw")
-#aspectViewTest$diffPred5 <- predict(fitModel5, aspectViewTest, type = "raw")
-## Final ensamble prediction.
-#aspectViewTest$EffPred <- predict(topModel, aspectViewTest, type = "raw")
-#
-#table(
-#  actualclass = aspectViewTest$Actbin,
-#  predictedclass = aspectViewTest$EffPred
-#) %>% caret::confusionMatrix()
-##saveRDS(topModel, paste("./models/", symbol, "_logistic_ensamble", ".rds", sep = ""))
-#
-## Full data set prediction.
-#dailyAspects$diffPred1 <- predict(fitModel1, dailyAspects, type = "raw")
-#dailyAspects$diffPred2 <- predict(fitModel2, dailyAspects, type = "raw")
-#dailyAspects$diffPred3 <- predict(fitModel3, dailyAspects, type = "raw")
-#dailyAspects$diffPred4 <- predict(fitModel4, dailyAspects, type = "raw")
-#dailyAspects$diffPred5 <- predict(fitModel5, dailyAspects, type = "raw")
-#dailyAspects$EffPred <- predict(topModel, dailyAspects, type = "raw")
-#
-## Round probabilities.
-#dailyAspects[, diffPred1 := format(diffPred1, format = "f", big.mark = ",", digits = 3)]
-#dailyAspects[, diffPred2 := format(diffPred2, format = "f", big.mark = ",", digits = 3)]
-#dailyAspects[, diffPred3 := format(diffPred3, format = "f", big.mark = ",", digits = 3)]
-#dailyAspects[, diffPred4 := format(diffPred4, format = "f", big.mark = ",", digits = 4)]
-#dailyAspects[, diffPred5 := format(diffPred5, format = "f", big.mark = ",", digits = 5)]
-#
-#exportCols <- c('Date', selectCols[-1], probCols, "EffPred")
-#fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-kknnLDS-ensamble", ".csv", sep = ""))
+dailyAspects <- prepareDailyAspects(solution$pxSelect, solution$pySelect)
+securityData <- mainOpenSecurity(
+  symbol, maPriceFsPeriod, maPriceSlPeriod,
+  "%Y-%m-%d", "2010-01-01", "2020-09-30"
+)
+
+# Filter the extreme outliers.
+cat(paste("Original days rows: ", nrow(securityData)), "\n")
+securityData <- securityData[abs(zdiffPercent) < zdiffPercentCut]
+hist(securityData$diffPercent)
+cat(paste("Total days rows: ", nrow(securityData)), "\n")
+
+aspectView <- merge(
+  securityData[, c('Date', 'diffPercent', 'Actbin', 'Eff')],
+  dailyAspects, by = "Date"
+)
+
+# Predict outcomes for all weak learner models.
+aspectView$diffPred1 <- predict(fitModel1, aspectView, type = "raw")
+aspectView$diffPred2 <- predict(fitModel2, aspectView, type = "raw")
+aspectView$diffPred3 <- predict(fitModel3, aspectView, type = "raw")
+aspectView$diffPred4 <- predict(fitModel4, aspectView, type = "raw")
+aspectView$diffPred5 <- predict(fitModel5, aspectView, type = "raw")
+
+# Train ensamble model.
+trainIndex <- createDataPartition(aspectView$Actbin, p = 0.80, list = FALSE)
+aspectViewTrain <- aspectView[trainIndex,]
+aspectViewValidate <- aspectView[-trainIndex,]
+
+probCols <- c("diffPred1", "diffPred2", "diffPred3", "diffPred4", "diffPred5")
+topModel <- train(
+  x = aspectViewTrain[, ..probCols],
+  y = aspectViewTrain$Actbin,
+  method = "gbm",
+  metric = "Kappa",
+)
+
+topModel %>% summary()
+
+# Validate data predictions.
+aspectViewValidate$EffPred <- predict(topModel, aspectViewValidate, type = "raw")
+
+table(
+  actual = aspectViewValidate$Actbin,
+  predicted = aspectViewValidate$EffPred
+) %>% caret::confusionMatrix()
+
+# Reserved data for validation.
+securityDataTest <- mainOpenSecurity(
+  symbol, maPriceFsPeriod, maPriceSlPeriod,
+  "%Y-%m-%d", "2020-09-25"
+)
+
+aspectViewTest <- merge(
+  securityDataTest,
+  dailyAspects, by = "Date"
+)
+
+# Predict outcomes for all weak learner models.
+aspectViewTest$diffPred1 <- predict(fitModel1, aspectViewTest, type = "raw")
+aspectViewTest$diffPred2 <- predict(fitModel2, aspectViewTest, type = "raw")
+aspectViewTest$diffPred3 <- predict(fitModel3, aspectViewTest, type = "raw")
+aspectViewTest$diffPred4 <- predict(fitModel4, aspectViewTest, type = "raw")
+aspectViewTest$diffPred5 <- predict(fitModel5, aspectViewTest, type = "raw")
+# Final ensamble prediction.
+aspectViewTest$EffPred <- predict(topModel, aspectViewTest, type = "raw")
+
+table(
+  actualclass = aspectViewTest$Actbin,
+  predictedclass = aspectViewTest$EffPred
+) %>% caret::confusionMatrix()
+#saveRDS(topModel, paste("./models/", symbol, "_logistic_ensamble", ".rds", sep = ""))
+
+# Full data set prediction.
+dailyAspects$diffPred1 <- predict(fitModel1, dailyAspects, type = "raw")
+dailyAspects$diffPred2 <- predict(fitModel2, dailyAspects, type = "raw")
+dailyAspects$diffPred3 <- predict(fitModel3, dailyAspects, type = "raw")
+dailyAspects$diffPred4 <- predict(fitModel4, dailyAspects, type = "raw")
+dailyAspects$diffPred5 <- predict(fitModel5, dailyAspects, type = "raw")
+dailyAspects$EffPred <- predict(topModel, dailyAspects, type = "raw")
+
+# Round probabilities.
+dailyAspects[, diffPred1 := format(diffPred1, format = "f", big.mark = ",", digits = 2)]
+dailyAspects[, diffPred2 := format(diffPred2, format = "f", big.mark = ",", digits = 2)]
+dailyAspects[, diffPred3 := format(diffPred3, format = "f", big.mark = ",", digits = 2)]
+dailyAspects[, diffPred4 := format(diffPred4, format = "f", big.mark = ",", digits = 2)]
+dailyAspects[, diffPred5 := format(diffPred5, format = "f", big.mark = ",", digits = 2)]
+
+aspectsCols <- names(aspectView)[-seq(2, 4)]
+exportCols <- c('Date', aspectsCols, probCols, "EffPred")
+fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-kknnLDS-ensamble", ".csv", sep = ""))
