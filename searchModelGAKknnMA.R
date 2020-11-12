@@ -28,7 +28,7 @@ testDataStartDate <- as.Date("2020-09-01")
 orbLimit <- 4
 kMax <- 7
 gaMaxIter <- 30
-cvFolds <- 5
+cvFolds <- 10
 cvRepeats <- 3
 
 pxSelectAll <- c(
