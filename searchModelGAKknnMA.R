@@ -1,5 +1,5 @@
 # Title     : Daily generalized aspects / planet Y activation count KNN regression model
-#             with GA feature selection that maximize Rsquared on train to fit for
+#             with GA feature selection that maximize Rsquared on train data to fit for
 #             daily price percent change estimation.
 # Purpose   : Based on ModelLD this model has some variations:
 #             1) Planets MO, ME, VE, SU fast planets applying to all slow planets and asteroids except NN.
@@ -174,7 +174,7 @@ gar <- ga(
     'NEY',
     'PLY'
   ),
-  popSize = 100, maxiter = 20, run = 20,
+  popSize = 100, maxiter = 40, run = 20,
   selection = gabin_rwSelection, mutation = gabin_raMutation,
   crossover = gabin_spCrossover, population = gabin_Population,
   parallel = F, monitor = gaMonitor, keepBest = T
