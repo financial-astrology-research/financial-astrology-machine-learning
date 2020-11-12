@@ -141,11 +141,22 @@ modelTrain <- function(pxSelect, pySelect) {
   return(fitModel)
 }
 
-findRelevantFeatures <- function(params) {
-  pxSelect <- pxSelectAll[params[1:4] == 1]
-  pySelect <- pySelectAll[params[5:17] == 1]
-  cat("Using PX:", pxSelect, "- PY: ", pySelect, "\n")
-  fitModel <- modelTrain(pxSelect, pySelect)
+parseSolutionParameters <- function(solution) {
+  cat("Fit model for best solution:\n")
+  print(solution)
+  pxSelect <- pxSelectAll[solution[1:4] == 1]
+  pySelect <- pySelectAll[solution[5:17] == 1]
+
+  return(list(
+    pxSelect = pxSelect,
+    pySelect = pySelect
+  ))
+}
+
+findRelevantFeatures <- function(solution) {
+  params <- parseSolutionParameters(solution)
+  cat("Using PX:", params$pxSelect, "- PY: ", params$pySelect, "\n")
+  fitModel <- modelTrain(params$pxSelect, params$pySelect)
   cat("Fit Rsquared:", fitModel$results$Rsquared, "\n\n")
 
   return(fitModel$results$Rsquared)
@@ -180,22 +191,9 @@ gar <- ga(
   parallel = F, monitor = gaMonitor, keepBest = T
 )
 
-parseSolutionParameters <- function(gar) {
-  cat("Fit model for best solution:\n")
-  print(gar@solution)
-  params <- gar@solution
-  pxSelect <- pxSelectAll[params[1:4] == 1]
-  pySelect <- pySelectAll[params[5:17] == 1]
-
-  return(list(
-    pxSelect = pxSelect,
-    pySelect = pySelect
-  ))
-}
-
-solutionModelTrain <- function(solution) {
-  cat("Using PX:", solution$pxSelect, "- PY: ", solution$pySelect, "\n")
-  fitModel <- modelTrain(solution$pxSelect, solution$pySelect)
+solutionModelTrain <- function(params) {
+  cat("Using PX:", params$pxSelect, "- PY: ", params$pySelect, "\n")
+  fitModel <- modelTrain(params$pxSelect, params$pySelect)
   cat("Fit Rsquared:", fitModel$results$Rsquared, "\n\n")
 
   return(fitModel)
@@ -203,34 +201,34 @@ solutionModelTrain <- function(solution) {
 
 summary(gar)
 plot(gar)
-solution <- parseSolutionParameters(gar)
+params <- parseSolutionParameters(gar@params)
 
 # ADA Best features:
 # Using PX:  ME VE - PY:  SU MA CE VS JU SA NN CH UR NE PL / R2=0.10 to 0.15
 #      MOX MEX VEX SUX MEY VEY SUY MAY CEY VSY JUY SAY NNY CHY URY NEY PLY
 #[1,]   0   1   1   0   0   0   1   1   1   1   1   1   1   1   1   1   1
 
-fitModel1 <- solutionModelTrain(solution)
+fitModel1 <- solutionModelTrain(params)
 fitModel1 %>% summary()
 fitModel1 %>% varImp()
 
-fitModel2 <- solutionModelTrain(solution)
+fitModel2 <- solutionModelTrain(params)
 fitModel2 %>% summary()
 fitModel2 %>% varImp()
 
-fitModel3 <- solutionModelTrain(solution)
+fitModel3 <- solutionModelTrain(params)
 fitModel3 %>% summary()
 fitModel3 %>% varImp()
 
-fitModel4 <- solutionModelTrain(solution)
+fitModel4 <- solutionModelTrain(params)
 fitModel4 %>% summary()
 fitModel4 %>% varImp()
 
-fitModel5 <- solutionModelTrain(solution)
+fitModel5 <- solutionModelTrain(params)
 fitModel5 %>% summary()
 fitModel5 %>% varImp()
 
-dailyAspects <- prepareDailyAspects(solution$pxSelect, solution$pySelect)
+dailyAspects <- prepareDailyAspects(params$pxSelect, params$pySelect)
 aspectView <- merge(
   securityData[, c('Date', 'diffPercent', 'Actbin', 'Eff')],
   dailyAspects, by = "Date"
