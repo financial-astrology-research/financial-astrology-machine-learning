@@ -33,7 +33,7 @@ kMax <- 7
 gaMaxIter <- 20
 nBits <- 16
 wlCVFolds <- 5
-wlCVRepeats <- 3
+wlCVRepeats <- 5
 enCVFolds <- 10
 enCVRepeats <- 10
 
