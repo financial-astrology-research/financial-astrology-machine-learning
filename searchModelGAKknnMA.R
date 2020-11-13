@@ -31,6 +31,7 @@ testDataStartDate <- as.Date("2020-09-01")
 orbLimit <- 4
 kMax <- 7
 gaMaxIter <- 20
+nBits <- 16
 wlCVFolds <- 5
 wlCVRepeats <- 3
 enCVFolds <- 10
@@ -151,7 +152,7 @@ modelTrain <- function(pxSelect, pySelect) {
 
 parseSolutionParameters <- function(solution) {
   pxSelect <- pxSelectAll[solution[1:4] == 1]
-  pySelect <- pySelectAll[solution[5:17] == 1]
+  pySelect <- pySelectAll[solution[5:nBits] == 1]
 
   return(list(
     pxSelect = pxSelect,
@@ -181,7 +182,7 @@ solutionModelTrain <- function(params) {
 gar <- ga(
   "binary",
   fitness = findRelevantFeatures,
-  nBits = 16,
+  nBits = nBits,
   names = c(
     'MOX',
     'MEX',
