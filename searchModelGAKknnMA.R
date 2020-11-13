@@ -4,12 +4,14 @@
 # Purpose   : Based on ModelLD this model has some variations:
 #             1) Planets MO, ME, VE, SU fast planets applying to all slow planets and asteroids except NN.
 #             2) CV folds to 5 with 3 repeats.
-#             3) Validate fit using Actbin daily price change (buy / sell) instead of Effect
-#             4) Fit weak learners for diff percent change and ensamble for Actbin
-#                to generalize for daily change (buy / sell) signal.
-#             5) Split to 80/20 proportion.
-#             6) Optimize weak learners for RMSE.
-#             7) GA feature selection popSize = 100 and iter = 20
+#             3) Split to 80/20 proportion.
+#             4) Validate fit using Actbin daily price change (buy / sell) instead of Effect
+#             5) GA feature detection that fit to maximize Rsquared train data.
+#             6) Fit 5 weak learners for diff percent change.
+#             7) Ensamble weak learnets to fit for Actbin to predict categorical (buy / sell) signal.
+#             8) Optimize weak learners for RMSE.
+#             9) GA feature selection popSize = 100 and iter = 20.
+#            10) KKNN K param set to 7.
 
 library(boot)
 library(caret)
@@ -209,11 +211,6 @@ summary(gar)
 plot(gar)
 cat("Best GA solution:\n")
 print(gar@solution)
-
-# ADA Best features:
-# Using PX:  ME VE - PY:  SU MA CE VS JU SA NN CH UR NE PL / R2=0.10 to 0.15
-#      MOX MEX VEX SUX MEY VEY SUY MAY CEY VSY JUY SAY NNY CHY URY NEY PLY
-#[1,]   0   1   1   0   0   0   1   1   1   1   1   1   1   1   1   1   1
 
 params <- parseSolutionParameters(gar@solution)
 fitModel1 <- solutionModelTrain(params)
