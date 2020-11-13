@@ -19,7 +19,7 @@ library(ModelMetrics)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "BNB-USD"
+symbol <- readline(prompt="Enter a symbol: ")
 zdiffPercentCut <- 2
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
