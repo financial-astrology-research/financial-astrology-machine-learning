@@ -52,7 +52,7 @@ pySelectAll <- c(
   'VS',
   'JU',
   'SA',
-  'NN',
+  #'NN',
   'CH',
   'UR',
   'NE',
@@ -181,7 +181,7 @@ solutionModelTrain <- function(params) {
 gar <- ga(
   "binary",
   fitness = findRelevantFeatures,
-  nBits = 17,
+  nBits = 16,
   names = c(
     'MOX',
     'MEX',
@@ -195,7 +195,6 @@ gar <- ga(
     'VSY',
     'JUY',
     'SAY',
-    'NNY',
     'CHY',
     'URY',
     'NEY',
