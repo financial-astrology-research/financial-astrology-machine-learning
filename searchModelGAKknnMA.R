@@ -338,5 +338,9 @@ searchModel <- function(symbol) {
 listFilePath <- npath(paste("~/Sites/own/astro-trading/hisdata/symbols/working.csv", sep=""))
 symbolsList <- read.csv(listFilePath, header=F, stringsAsFactors=F)
 testResults <- lapply(symbolsList$V1, searchModel)
-cat("\nSymbols test results summary:\n")
-print(testResults)
+cat("\nMODEL TEST RESULTS:\n")
+
+for(idx in 1:count(testResults)) {
+  cat(testResults[[idx]]$symbol, "TEST RESULT:\n")
+  print(testResults[[idx]]$results)
+}
