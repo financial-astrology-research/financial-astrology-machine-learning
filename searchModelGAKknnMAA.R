@@ -22,6 +22,7 @@ library(ModelMetrics)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
+modelId <- "ensamble-gakknn-MAA"
 zdiffPercentCut <- 2
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
@@ -360,7 +361,7 @@ parseSolutionParameters <- function(solution) {
 
   aspectsCols <- names(aspectView)[-seq(2, 4)]
   exportCols <- c(aspectsCols, "EffPred")
-  fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-ensamble-gakknn-MA", ".csv", sep = ""))
+  fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-", modelId, ".csv", sep = ""))
 
   return(
     list(symbol=symbol, results=testResult)
