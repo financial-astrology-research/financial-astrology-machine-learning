@@ -220,8 +220,9 @@ searchModel <- function(symbol) {
     ),
     popSize = gaPopSize, maxiter = gaMaxIter, run = gaMaxIter,
     selection = gabin_rwSelection, mutation = gabin_raMutation,
-    crossover = gabin_spCrossover, population = gabin_Population,
-    elitism = base::max(1, round(gaPopSize * 0.5)),
+    crossover = gabin_uCrossover, population = gabin_Population,
+    elitism = base::max(1, round(gaPopSize * 0.3)),
+    pmutation = 0.3, pcrossover = 0.5,
     parallel = F, monitor = gaMonitor, keepBest = T
   )
 
