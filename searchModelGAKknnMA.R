@@ -213,24 +213,23 @@ searchModel <- function(symbol) {
   )
 
   cat("\n")
-  summary(gar)
-  plot(gar)
+  summary(gar) %>% print()
 
   params <- parseSolutionParameters(gar@solution)
   fitModel1 <- solutionModelTrain(params)
-  fitModel1 %>% varImp()
+  fitModel1 %>% varImp() %>% print()
 
   fitModel2 <- solutionModelTrain(params)
-  fitModel2 %>% varImp()
+  fitModel2 %>% varImp() %>% print()
 
   fitModel3 <- solutionModelTrain(params)
-  fitModel3 %>% varImp()
+  fitModel3 %>% varImp() %>% print()
 
   fitModel4 <- solutionModelTrain(params)
-  fitModel4 %>% varImp()
+  fitModel4 %>% varImp() %>% print()
 
   fitModel5 <- solutionModelTrain(params)
-  fitModel5 %>% varImp()
+  fitModel5 %>% varImp() %>% print()
 
   dailyAspects <- prepareDailyAspects(params$pxSelect, params$pySelect)
   aspectView <- merge(
@@ -270,7 +269,7 @@ searchModel <- function(symbol) {
     verbose = F
   )
 
-  topModel %>% summary()
+  topModel %>% summary() %>% print()
 
   # Validate data predictions.
   aspectViewValidate$EffPred <- predict(topModel, aspectViewValidate, type = "raw")
@@ -278,7 +277,7 @@ searchModel <- function(symbol) {
   table(
     actual = aspectViewValidate$Actbin,
     predicted = aspectViewValidate$EffPred
-  ) %>% caret::confusionMatrix()
+  ) %>% caret::confusionMatrix() %>% print()
 
   # Reserved data for validation.
   securityDataTest <- mainOpenSecurity(
@@ -306,6 +305,7 @@ searchModel <- function(symbol) {
     actualclass = aspectViewTest$Actbin,
     predictedclass = aspectViewTest$EffPred
   ) %>% caret::confusionMatrix()
+  print(testResult)
   #saveRDS(topModel, paste("./models/", symbol, "_logistic_ensamble", ".rds", sep = ""))
 
   # Full data set prediction.
