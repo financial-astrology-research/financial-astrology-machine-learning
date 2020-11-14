@@ -107,6 +107,7 @@ prepareDailyAspects <- function(pxSelect, pySelect) {
 }
 
 modelTrain <- function(pxSelect, pySelect) {
+  cat("Using PX:", params$pxSelect, "- PY:", params$pySelect, "\n")
   if (count(pxSelect) == 0) {
     pxSelect <- pxSelectAll
   }
@@ -123,7 +124,7 @@ modelTrain <- function(pxSelect, pySelect) {
 
   useFeatures <- names(dailyAspects)[-1]
   selectCols <- c('diffPercent', useFeatures)
-  cat("Using features:", selectCols, "\n")
+  cat("Selected cols:", selectCols, "\n")
 
   trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.80, list = FALSE)
   aspectViewTrain <- aspectView[trainIndex,]
@@ -143,10 +144,15 @@ modelTrain <- function(pxSelect, pySelect) {
 
   # Validate data predictions.
   validateDiffPercentPred <- predict(fitModel, aspectViewValidate, type = "raw")
-  validatePredictionMSE <- mse(aspectViewValidate$diffPercent, validateDiffPercentPred)
-  validatePredictionRMSE <- rmse(aspectViewValidate$diffPercent, validateDiffPercentPred)
-  validatePredictionR2 <- cor(aspectViewValidate$diffPercent, validateDiffPercentPred) ^ 2
-  cat("Validate MSE:", validatePredictionMSE, "RMSE:", validatePredictionRMSE, "R2:", validatePredictionR2, "\n")
+  validateMSE <- mse(aspectViewValidate$diffPercent, validateDiffPercentPred)
+  validateRMSE <- rmse(aspectViewValidate$diffPercent, validateDiffPercentPred)
+  validateR2 <- cor(aspectViewValidate$diffPercent, validateDiffPercentPred) ^ 2
+  cat("Validate MSE:", validateMSE, "RMSE:", validateRMSE, "R2:", validateR2, "\n")
+
+  trainMSE <- fitModel$results$MAE
+  trainRMSE <- fitModel$results$RMSE
+  trainR2 <- fitModel$results$Rsquared
+  cat("Train MSE:", trainMSE, "RMSE:", trainRMSE, "R2:", trainR2, "\n")
 
   return(fitModel)
 }
@@ -163,9 +169,7 @@ parseSolutionParameters <- function(solution) {
 
 findRelevantFeatures <- function(solution) {
   params <- parseSolutionParameters(solution)
-  cat("Using PX:", params$pxSelect, "- PY: ", params$pySelect, "\n")
   fitModel <- modelTrain(params$pxSelect, params$pySelect)
-  cat("Fit Rsquared:", fitModel$results$Rsquared, "\n\n")
 
   #return(fitModel$results$RMSE)
   #return(fitModel$results$MAE)
