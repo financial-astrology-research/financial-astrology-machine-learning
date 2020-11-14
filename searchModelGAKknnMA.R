@@ -144,15 +144,15 @@ modelTrain <- function(pxSelect, pySelect) {
 
   # Validate data predictions.
   validateDiffPercentPred <- predict(fitModel, aspectViewValidate, type = "raw")
-  validateMSE <- mse(aspectViewValidate$diffPercent, validateDiffPercentPred)
+  validateMAE <- mae(aspectViewValidate$diffPercent, validateDiffPercentPred)
   validateRMSE <- rmse(aspectViewValidate$diffPercent, validateDiffPercentPred)
   validateR2 <- cor(aspectViewValidate$diffPercent, validateDiffPercentPred) ^ 2
-  cat("Validate MSE:", validateMSE, "RMSE:", validateRMSE, "R2:", validateR2, "\n")
+  cat("Validate MAE:", validateMAE, "RMSE:", validateRMSE, "R2:", validateR2, "\n")
 
-  trainMSE <- fitModel$results$MAE
+  trainMAE <- fitModel$results$MAE
   trainRMSE <- fitModel$results$RMSE
   trainR2 <- fitModel$results$Rsquared
-  cat("Train MSE:", trainMSE, "RMSE:", trainRMSE, "R2:", trainR2, "\n")
+  cat("Train MAE:", trainMAE, "RMSE:", trainRMSE, "R2:", trainR2, "\n\n")
 
   return(fitModel)
 }
