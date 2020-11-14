@@ -83,10 +83,10 @@ searchModel <- function(symbol) {
   )
 
   # Filter the extreme outliers.
-  cat(paste("Original days rows:", nrow(securityData)), "\n")
+  cat(paste("Original days observations rows:", nrow(securityData)), "\n")
   securityData <- securityData[abs(zdiffPercent) <= zdiffPercentCut]
   hist(securityData$diffPercent)
-  cat(paste("Total days rows:", nrow(securityData)), "\n")
+  cat(paste("Post filter days observations rows:", nrow(securityData)), "\n\n")
 
   prepareDailyAspects <- function(pxSelect, pySelect) {
     dailyAspectsGeneralizedCount <- dailyAspectsGeneralizedCount(
