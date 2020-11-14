@@ -31,7 +31,7 @@ testDataStartDate <- as.Date("2020-09-01")
 orbLimit <- 4
 kMax <- 7
 gaPopSize <- 200
-gaMaxIter <- 50
+gaMaxIter <- 30
 nBits <- 13
 wlCVFolds <- 5
 wlCVRepeats <- 1
