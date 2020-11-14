@@ -218,7 +218,7 @@ searchModel <- function(symbol) {
       'NEY',
       'PLY'
     ),
-    popSize = gaPopSize, maxiter = gaMaxIter, run = 20,
+    popSize = gaPopSize, maxiter = gaMaxIter, run = gaMaxIter,
     selection = gabin_rwSelection, mutation = gabin_raMutation,
     crossover = gabin_spCrossover, population = gabin_Population,
     parallel = F, monitor = gaMonitor, keepBest = T
