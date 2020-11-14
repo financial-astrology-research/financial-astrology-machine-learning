@@ -94,36 +94,6 @@ searchModel <- function(symbol) {
   securityDataTrain <- securityData[trainIndex,]
   securityDataValidate <- securityData[-trainIndex,]
 
-  fitModel <- train(
-    formula(diffPercent ~ .),
-    data = aspectViewTrain[, ..selectCols],
-    method = "kknn",
-    metric = "RMSE",
-    trControl = control,
-    tuneGrid = expand.grid(
-      kmax = kMax,
-      distance = 2,
-      kernel = "optimal"
-    )
-  )
-
-  # Validate data predictions.
-  validateDiffPercentPred <- predict(fitModel, aspectViewValidate, type = "raw")
-  validateMAE <- mae(aspectViewValidate$diffPercent, validateDiffPercentPred)
-  validateRMSE <- rmse(aspectViewValidate$diffPercent, validateDiffPercentPred)
-  validateR2 <- cor(aspectViewValidate$diffPercent, validateDiffPercentPred)^2
-  cat("Validate MAE:", validateMAE, "RMSE:", validateRMSE, "R2:", validateR2, "\n")
-
-  trainMAE <- fitModel$results$MAE
-  trainRMSE <- fitModel$results$RMSE
-  trainR2 <- fitModel$results$Rsquared
-  cat("Train MAE:", trainMAE, "RMSE:", trainRMSE, "R2:", trainR2, "\n\n")
-
-  return(fitModel)
-}
-
-parseSolutionParameters <- function(solution) {
-  pxSelect <- pxSelectAll[solution[1:4] == 1]
   prepareDailyAspects <- function(pxSelect, pySelect) {
     dailyAspectsGeneralizedCount <- dailyAspectsGeneralizedCount(
       dailyAspects = dailyAspectsRows,
