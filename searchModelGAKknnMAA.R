@@ -114,12 +114,12 @@ searchModel <- function(symbol) {
     cat("Using PX:", pxSelect, "- PY:", pySelect, "\n")
 
     if (count(pxSelect) == 0) {
-      cat("Invalid pxSelect params\n")
+      cat("Invalid pxSelect params\n\n")
       return(NULL)
     }
 
     if (count(pySelect) <= 2) {
-      cat("Invalid pySelect params\n")
+      cat("Invalid pySelect params\n\n")
       return(NULL)
     }
 
@@ -221,6 +221,7 @@ searchModel <- function(symbol) {
     popSize = gaPopSize, maxiter = gaMaxIter, run = gaMaxIter,
     selection = gabin_rwSelection, mutation = gabin_raMutation,
     crossover = gabin_spCrossover, population = gabin_Population,
+    elitism = base::max(1, round(gaPopSize * 0.5)),
     parallel = F, monitor = gaMonitor, keepBest = T
   )
 
