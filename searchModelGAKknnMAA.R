@@ -30,7 +30,7 @@ trainDataEndDate <- as.Date("2020-08-15")
 testDataStartDate <- as.Date("2020-09-01")
 orbLimit <- 4
 kMax <- 7
-gaMaxIter <- 20
+gaMaxIter <- 10
 nBits <- 16
 wlCVFolds <- 5
 wlCVRepeats <- 1
@@ -190,6 +190,7 @@ searchModel <- function(symbol) {
     return(fitModel)
   }
 
+  cat("\nProcessing GA features selection\n")
   gar <- ga(
     "binary",
     fitness = findRelevantFeatures,
@@ -220,6 +221,7 @@ searchModel <- function(symbol) {
 
   cat("\n")
   summary(gar) %>% print()
+  cat("\nProcessing weak learners train\n")
 
   params <- parseSolutionParameters(gar@solution)
   fitModel1 <- solutionModelTrain(params)
@@ -255,6 +257,7 @@ searchModel <- function(symbol) {
   aspectViewTrain <- aspectView[trainIndex,]
   aspectViewValidate <- aspectView[-trainIndex,]
 
+  cat("\nProcessing ensamble train\n")
   probCols <- c("DiffPred1", "DiffPred2", "DiffPred3", "DiffPred4", "DiffPred5")
   topModel <- train(
     x = aspectViewTrain[, ..probCols],
@@ -280,7 +283,7 @@ searchModel <- function(symbol) {
   # Validate data predictions.
   aspectViewValidate$EffPred <- predict(topModel, aspectViewValidate, type = "raw")
 
-  cat(symbol, "MODEL VALIDATE RESULT:\n")
+  cat("\n", symbol, "MODEL VALIDATE RESULT:\n")
   table(
     actual = aspectViewValidate$Actbin,
     predicted = aspectViewValidate$EffPred
@@ -307,7 +310,7 @@ searchModel <- function(symbol) {
   # Final ensamble prediction.
   aspectViewTest$EffPred <- predict(topModel, aspectViewTest, type = "raw")
 
-  cat(symbol, "MODEL TEST RESULT:\n")
+  cat("\n", symbol, "MODEL TEST RESULT:\n")
   testResult <- table(
     actualclass = aspectViewTest$Actbin,
     predictedclass = aspectViewTest$EffPred
