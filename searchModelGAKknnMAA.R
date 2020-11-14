@@ -252,6 +252,11 @@ searchModel <- function(symbol) {
   aspectView$DiffPred4 <- predict(fitModel4, aspectView, type = "raw")
   aspectView$DiffPred5 <- predict(fitModel5, aspectView, type = "raw")
 
+  # Ensamble model data partition.
+  trainIndex <- createDataPartition(aspectView$Actbin, p = 0.80, list = FALSE)
+  aspectViewTrain <- aspectView[trainIndex,]
+  aspectViewValidate <- aspectView[-trainIndex,]
+
   probCols <- c("DiffPred1", "DiffPred2", "DiffPred3", "DiffPred4", "DiffPred5")
   topModel <- train(
     x = aspectViewTrain[, ..probCols],
