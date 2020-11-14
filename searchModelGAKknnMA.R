@@ -76,6 +76,7 @@ control <- trainControl(
 )
 
 searchModel <- function(symbol) {
+  cat("\nProcessing", symbol, "model search...\n")
   securityData <- mainOpenSecurity(
     symbol, maPriceFsPeriod, maPriceSlPeriod,
     "%Y-%m-%d", trainDataStartDate, trainDataEndDate
@@ -217,23 +218,18 @@ searchModel <- function(symbol) {
 
   params <- parseSolutionParameters(gar@solution)
   fitModel1 <- solutionModelTrain(params)
-  fitModel1 %>% summary()
   fitModel1 %>% varImp()
 
   fitModel2 <- solutionModelTrain(params)
-  fitModel2 %>% summary()
   fitModel2 %>% varImp()
 
   fitModel3 <- solutionModelTrain(params)
-  fitModel3 %>% summary()
   fitModel3 %>% varImp()
 
   fitModel4 <- solutionModelTrain(params)
-  fitModel4 %>% summary()
   fitModel4 %>% varImp()
 
   fitModel5 <- solutionModelTrain(params)
-  fitModel5 %>% summary()
   fitModel5 %>% varImp()
 
   dailyAspects <- prepareDailyAspects(params$pxSelect, params$pySelect)
@@ -306,7 +302,7 @@ searchModel <- function(symbol) {
   aspectViewTest$EffPred <- predict(topModel, aspectViewTest, type = "raw")
 
   cat(symbol, "MODEL RESULTS:\n")
-  table(
+  testResult <- table(
     actualclass = aspectViewTest$Actbin,
     predictedclass = aspectViewTest$EffPred
   ) %>% caret::confusionMatrix()
@@ -333,7 +329,14 @@ searchModel <- function(symbol) {
   aspectsCols <- names(aspectView)[-seq(2, 4)]
   exportCols <- c(aspectsCols, "EffPred")
   fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-ensamble-gakknn-MA", ".csv", sep = ""))
+
+  return(
+    list(symbol=symbol, results=testResult)
+  )
 }
 
-symbol <- readline(prompt = "Enter a symbol: ")
-searchModel(symbol)
+listFilePath <- npath(paste("~/Sites/own/astro-trading/hisdata/symbols/working.csv", sep=""))
+symbolsList <- read.csv(listFilePath, header=F, stringsAsFactors=F)
+testResults <- lapply(symbolsList$V1, searchModel)
+cat("\nSymbols test results summary:\n")
+print(testResults)
