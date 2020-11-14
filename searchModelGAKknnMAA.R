@@ -30,7 +30,7 @@ trainDataEndDate <- as.Date("2020-08-15")
 testDataStartDate <- as.Date("2020-09-01")
 orbLimit <- 4
 kMax <- 7
-gaPopSize <- 100
+gaPopSize <- 50
 gaMaxIter <- 5
 nBits <- 13
 wlCVFolds <- 5
@@ -114,11 +114,11 @@ searchModel <- function(symbol) {
     cat("Using PX:", pxSelect, "- PY:", pySelect, "\n")
 
     if (count(pxSelect) == 0) {
-      pxSelect <- pxSelectAll
+      return(NULL)
     }
 
-    if (count(pySelect) < 3) {
-      pySelect <- pySelectAll
+    if (count(pySelect) <= 1) {
+      return(NULL)
     }
 
     dailyAspects <- prepareDailyAspects(pxSelect, pySelect)
@@ -174,6 +174,11 @@ searchModel <- function(symbol) {
   findRelevantFeatures <- function(solution) {
     params <- parseSolutionParameters(solution)
     fitModel <- modelTrain(params$pxSelect, params$pySelect)
+
+    # Invalid GA parameters that failed fit, penalize with high negative value.
+    if (is.null(fitModel)) {
+      return(-100)
+    }
 
     #return(fitModel$results$RMSE)
     #return(fitModel$results$MAE)
