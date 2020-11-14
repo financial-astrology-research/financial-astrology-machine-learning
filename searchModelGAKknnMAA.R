@@ -114,10 +114,12 @@ searchModel <- function(symbol) {
     cat("Using PX:", pxSelect, "- PY:", pySelect, "\n")
 
     if (count(pxSelect) == 0) {
+      cat("Invalid pxSelect params\n")
       return(NULL)
     }
 
     if (count(pySelect) <= 2) {
+      cat("Invalid pySelect params\n")
       return(NULL)
     }
 
