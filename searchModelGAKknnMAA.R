@@ -114,7 +114,7 @@ searchModel <- function(symbol) {
     return(dailyAspects)
   }
 
-  modelTrain <- function(pxSelect, pySelect) {
+  modelTrain <- function(securityDataTrain, securityDataValidate, pxSelect, pySelect) {
     cat("Using PX:", pxSelect, "- PY:", pySelect, "\n")
 
     if (count(pxSelect) == 0) {
@@ -179,7 +179,9 @@ searchModel <- function(symbol) {
 
   findRelevantFeatures <- function(solution) {
     params <- parseSolutionParameters(solution)
-    fitModel <- modelTrain(params$pxSelect, params$pySelect)
+    fitModel <- modelTrain(
+      securityDataTrain, securityDataValidate, params$pxSelect, params$pySelect
+    )
 
     #return(fitModel$results$RMSE)
     #return(fitModel$results$MAE)
@@ -187,7 +189,14 @@ searchModel <- function(symbol) {
   }
 
   solutionModelTrain <- function(params) {
-    fitModel <- modelTrain(params$pxSelect, params$pySelect)
+    # Different partition for each weak learner train
+    trainIndex <- createDataPartition(securityData$diffPercent, p = 0.80, list = FALSE)
+    securityDataTrain <- securityData[trainIndex,]
+    securityDataValidate <- securityData[-trainIndex,]
+
+    fitModel <- modelTrain(
+      securityDataTrain, securityDataValidate, params$pxSelect, params$pySelect
+    )
 
     return(fitModel)
   }
