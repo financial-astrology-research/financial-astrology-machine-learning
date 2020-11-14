@@ -107,7 +107,8 @@ prepareDailyAspects <- function(pxSelect, pySelect) {
 }
 
 modelTrain <- function(pxSelect, pySelect) {
-  cat("Using PX:", params$pxSelect, "- PY:", params$pySelect, "\n")
+  cat("Using PX:", pxSelect, "- PY:", pySelect, "\n")
+
   if (count(pxSelect) == 0) {
     pxSelect <- pxSelectAll
   }
