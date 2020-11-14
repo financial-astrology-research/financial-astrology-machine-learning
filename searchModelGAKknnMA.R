@@ -65,7 +65,6 @@ setModernMixAspectsSet1()
 setPlanetsMOMEVESUMACEVSJUNNSAURCHNEPL()
 hourlyPlanets <<- openHourlyPlanets('planets_12', clear = F)
 dailyAspectsRows <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
-
 securityData <- mainOpenSecurity(
   symbol, maPriceFsPeriod, maPriceSlPeriod,
   "%Y-%m-%d", trainDataStartDate, trainDataEndDate
@@ -144,13 +143,11 @@ modelTrain <- function(pxSelect, pySelect) {
 
   # Validate data predictions.
   validateDiffPercentPred <- predict(fitModel, aspectViewValidate, type = "raw")
-  validatePredictionMSE <- rmse(aspectViewValidate$diffPercent, validateDiffPercentPred)
-  validatePredictionCorrelation <- cor(aspectViewValidate$diffPercent, validateDiffPercentPred)
-  #plot(aspectViewValidate$diffPercent, validateDiffPercentPred)
-  cat("Validate RMSE:", validatePredictionMSE, "\n")
-  cat("Validate Actual/Predicted correlation:", validatePredictionCorrelation, "\n")
+  validatePredictionMSE <- mse(aspectViewValidate$diffPercent, validateDiffPercentPred)
+  validatePredictionRMSE <- rmse(aspectViewValidate$diffPercent, validateDiffPercentPred)
+  validatePredictionR2 <- cor(aspectViewValidate$diffPercent, validateDiffPercentPred) ^ 2
+  cat("Validate MSE:", validatePredictionMSE, "RMSE:", validatePredictionRMSE, "R2:", validatePredictionR2, "\n")
 
-  #saveRDS(logisticModel, paste("./models/", symbol, "_logistic_", modelId, ".rds", sep = ""))
   return(fitModel)
 }
 
