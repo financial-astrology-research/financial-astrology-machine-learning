@@ -3,7 +3,7 @@
 #             daily price percent change estimation.
 # Purpose   : Based on ModelLD this model has some variations:
 #             1) Planets MO, ME, VE, SU fast planets applying to all slow planets and asteroids except NN.
-#             2) CV folds to 5 with 2 repeats.
+#             2) CV folds to 5 with 1 repeats.
 #             3) Split to 80/20 proportion.
 #             4) Validate fit using Actbin daily price change (buy / sell) instead of Effect
 #             5) GA feature detection that fit to maximize Rsquared train data.
@@ -12,7 +12,6 @@
 #             8) Optimize weak learners for RMSE.
 #             9) GA feature selection popSize = 100 and iter = 20.
 #            10) KKNN K param set to 7.
-#            11) Use single data split during all GA search.
 
 library(boot)
 library(caret)
@@ -34,7 +33,7 @@ kMax <- 7
 gaMaxIter <- 20
 nBits <- 16
 wlCVFolds <- 5
-wlCVRepeats <- 2
+wlCVRepeats <- 1
 enCVFolds <- 10
 enCVRepeats <- 10
 
@@ -90,10 +89,6 @@ searchModel <- function(symbol) {
   hist(securityData$diffPercent)
   cat(paste("Post filter days observations rows:", nrow(securityData)), "\n\n")
 
-  trainIndex <- createDataPartition(securityData$diffPercent, p = 0.80, list = FALSE)
-  securityDataTrain <- securityData[trainIndex,]
-  securityDataValidate <- securityData[-trainIndex,]
-
   prepareDailyAspects <- function(pxSelect, pySelect) {
     dailyAspectsGeneralizedCount <- dailyAspectsGeneralizedCount(
       dailyAspects = dailyAspectsRows,
@@ -114,7 +109,7 @@ searchModel <- function(symbol) {
     return(dailyAspects)
   }
 
-  modelTrain <- function(securityDataTrain, securityDataValidate, pxSelect, pySelect) {
+  modelTrain <- function(pxSelect, pySelect) {
     cat("Using PX:", pxSelect, "- PY:", pySelect, "\n")
 
     if (count(pxSelect) == 0) {
@@ -126,16 +121,14 @@ searchModel <- function(symbol) {
     }
 
     dailyAspects <- prepareDailyAspects(pxSelect, pySelect)
-    aspectViewTrain <- merge(
-      securityDataTrain[, c('Date', 'diffPercent', 'Actbin', 'Eff')],
+    aspectView <- merge(
+      securityData[, c('Date', 'diffPercent', 'Actbin', 'Eff')],
       dailyAspects, by = "Date"
     )
 
-    aspectViewValidate <- merge(
-      securityDataValidate[, c('Date', 'diffPercent', 'Actbin', 'Eff')],
-      dailyAspects, by = "Date"
-    )
-
+    trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.80, list = FALSE)
+    aspectViewTrain <- aspectView[trainIndex,]
+    aspectViewValidate <- aspectView[-trainIndex,]
     useFeatures <- names(dailyAspects)[-1]
     selectCols <- c('diffPercent', useFeatures)
     #cat("Selected cols:", selectCols, "\n")
@@ -179,9 +172,7 @@ searchModel <- function(symbol) {
 
   findRelevantFeatures <- function(solution) {
     params <- parseSolutionParameters(solution)
-    fitModel <- modelTrain(
-      securityDataTrain, securityDataValidate, params$pxSelect, params$pySelect
-    )
+    fitModel <- modelTrain(params$pxSelect, params$pySelect)
 
     #return(fitModel$results$RMSE)
     #return(fitModel$results$MAE)
@@ -194,9 +185,7 @@ searchModel <- function(symbol) {
     securityDataTrain <- securityData[trainIndex,]
     securityDataValidate <- securityData[-trainIndex,]
 
-    fitModel <- modelTrain(
-      securityDataTrain, securityDataValidate, params$pxSelect, params$pySelect
-    )
+    fitModel <- modelTrain(params$pxSelect, params$pySelect)
 
     return(fitModel)
   }
@@ -324,7 +313,6 @@ searchModel <- function(symbol) {
     predictedclass = aspectViewTest$EffPred
   ) %>% caret::confusionMatrix()
   print(testResult)
-  #saveRDS(topModel, paste("./models/", symbol, "_logistic_ensamble", ".rds", sep = ""))
 
   # Full data set prediction.
   dailyAspects$DiffPred1 <- predict(fitModel1, dailyAspects, type = "raw")
