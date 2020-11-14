@@ -32,7 +32,7 @@ orbLimit <- 4
 kMax <- 7
 gaPopSize <- 100
 gaMaxIter <- 20
-nBits <- 16
+nBits <- 13
 wlCVFolds <- 5
 wlCVRepeats <- 1
 enCVFolds <- 5
@@ -50,12 +50,12 @@ pySelectAll <- c(
   'VE',
   'SU',
   'MA',
-  'CE',
-  'VS',
+  #'CE',
+  #'VS',
   'JU',
   'SA',
   #'NN',
-  'CH',
+  #'CH',
   'UR',
   'NE',
   'PL'
