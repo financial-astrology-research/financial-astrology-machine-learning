@@ -31,7 +31,7 @@ trainDataEndDate <- as.Date("2020-08-15")
 testDataStartDate <- as.Date("2020-09-01")
 orbLimit <- 4
 kMax <- 7
-gaMaxIter <- 10
+gaMaxIter <- 20
 nBits <- 16
 wlCVFolds <- 5
 wlCVRepeats <- 2
