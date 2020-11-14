@@ -271,7 +271,8 @@ topModel <- train(
     allowParallel = T,
     trim = F
   ),
-  tuneLength = 3
+  tuneLength = 3,
+  verbose = F
 )
 
 topModel %>% summary()
