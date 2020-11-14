@@ -31,7 +31,7 @@ testDataStartDate <- as.Date("2020-09-01")
 orbLimit <- 4
 kMax <- 7
 gaPopSize <- 200
-gaMaxIter <- 30
+gaMaxIter <- 20
 nBits <- 13
 wlCVFolds <- 5
 wlCVRepeats <- 1
@@ -222,7 +222,7 @@ searchModel <- function(symbol) {
     selection = gabin_rwSelection, mutation = gabin_raMutation,
     crossover = gabin_spCrossover, population = gabin_Population,
     elitism = base::max(1, round(gaPopSize * 0.3)),
-    pmutation = 0.5, pcrossover = 0.2,
+    pmutation = 0.4, pcrossover = 0.3,
     parallel = F, monitor = gaMonitor, keepBest = T
   )
 
