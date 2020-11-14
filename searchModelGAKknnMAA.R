@@ -10,7 +10,7 @@
 #             6) Fit 5 weak learners for diff percent change.
 #             7) Ensamble weak learnets to fit for Actbin to predict categorical (buy / sell) signal.
 #             8) Optimize weak learners for RMSE.
-#             9) GA feature selection popSize = 100 and iter = 20.
+#             9) GA feature selection popSize = 50 and iter = 20.
 #            10) KKNN K param set to 7.
 
 library(boot)
@@ -31,7 +31,7 @@ testDataStartDate <- as.Date("2020-09-01")
 orbLimit <- 4
 kMax <- 7
 gaPopSize <- 50
-gaMaxIter <- 5
+gaMaxIter <- 20
 nBits <- 13
 wlCVFolds <- 5
 wlCVRepeats <- 1
