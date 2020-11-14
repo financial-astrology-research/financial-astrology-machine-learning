@@ -2,8 +2,8 @@
 #             with GA feature selection that maximize Rsquared on train data to fit for
 #             daily price percent change estimation.
 # Purpose   : Based on ModelLD this model has some variations:
-#             1) Planets MO, ME, VE, SU fast planets applying to all slow planets and asteroids except NN.
-#             2) CV folds to 5 with 1 repeats.
+#             1) Planets MO, ME, VE, SU fast planets applying to all slow planets.
+#             2) CV folds to 5 with 1 repeats for weak learners, folds to 5 with 5 repeats for ensamble.
 #             3) Split to 80/20 proportion.
 #             4) Validate fit using Actbin daily price change (buy / sell) instead of Effect
 #             5) GA feature detection that fit to maximize Rsquared train data.
@@ -30,12 +30,13 @@ trainDataEndDate <- as.Date("2020-08-15")
 testDataStartDate <- as.Date("2020-09-01")
 orbLimit <- 4
 kMax <- 7
-gaMaxIter <- 10
+gaPopSize <- 100
+gaMaxIter <- 20
 nBits <- 16
 wlCVFolds <- 5
 wlCVRepeats <- 1
-enCVFolds <- 10
-enCVRepeats <- 10
+enCVFolds <- 5
+enCVRepeats <- 5
 
 pxSelectAll <- c(
   'MO',
@@ -213,7 +214,7 @@ searchModel <- function(symbol) {
       'NEY',
       'PLY'
     ),
-    popSize = 100, maxiter = gaMaxIter, run = 20,
+    popSize = gaPopSize, maxiter = gaMaxIter, run = 20,
     selection = gabin_rwSelection, mutation = gabin_raMutation,
     crossover = gabin_spCrossover, population = gabin_Population,
     parallel = F, monitor = gaMonitor, keepBest = T
