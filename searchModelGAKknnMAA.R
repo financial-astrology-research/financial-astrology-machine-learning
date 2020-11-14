@@ -31,7 +31,7 @@ testDataStartDate <- as.Date("2020-09-01")
 orbLimit <- 4
 kMax <- 7
 gaPopSize <- 100
-gaMaxIter <- 20
+gaMaxIter <- 5
 nBits <- 13
 wlCVFolds <- 5
 wlCVRepeats <- 1
@@ -205,11 +205,8 @@ searchModel <- function(symbol) {
       'VEY',
       'SUY',
       'MAY',
-      'CEY',
-      'VSY',
       'JUY',
       'SAY',
-      'CHY',
       'URY',
       'NEY',
       'PLY'
