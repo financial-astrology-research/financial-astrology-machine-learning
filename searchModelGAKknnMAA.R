@@ -291,7 +291,7 @@ searchModel <- function(symbol) {
   # Validate data predictions.
   aspectViewValidate$EffPred <- predict(topModel, aspectViewValidate, type = "raw")
 
-  cat(symbol, "MODEL VALIDATE RESULTS:\n")
+  cat(symbol, "MODEL VALIDATE RESULT:\n")
   table(
     actual = aspectViewValidate$Actbin,
     predicted = aspectViewValidate$EffPred
@@ -318,7 +318,7 @@ searchModel <- function(symbol) {
   # Final ensamble prediction.
   aspectViewTest$EffPred <- predict(topModel, aspectViewTest, type = "raw")
 
-  cat(symbol, "MODEL TEST RESULTS:\n")
+  cat(symbol, "MODEL TEST RESULT:\n")
   testResult <- table(
     actualclass = aspectViewTest$Actbin,
     predictedclass = aspectViewTest$EffPred
@@ -356,8 +356,8 @@ searchModel <- function(symbol) {
 listFilePath <- npath(paste("~/Sites/own/astro-trading/hisdata/symbols/working.csv", sep=""))
 symbolsList <- read.csv(listFilePath, header=F, stringsAsFactors=F)
 testResults <- lapply(symbolsList$V1, searchModel)
-cat("\nMODEL TEST RESULTS:\n")
 
+cat("\nMODEL SEARCH SUMMARY:\n\n")
 for(idx in 1:count(testResults)) {
   cat(testResults[[idx]]$symbol, "TEST RESULT:\n")
   print(testResults[[idx]]$results)
