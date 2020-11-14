@@ -117,7 +117,7 @@ searchModel <- function(symbol) {
       return(NULL)
     }
 
-    if (count(pySelect) <= 1) {
+    if (count(pySelect) <= 2) {
       return(NULL)
     }
 
