@@ -112,6 +112,10 @@ modelTrain <- function(pxSelect, pySelect) {
     pxSelect <- pxSelectAll
   }
 
+  if (count(pySelect) == 0) {
+    pySelect <- pySelectAll
+  }
+
   dailyAspects <- prepareDailyAspects(pxSelect, pySelect)
   aspectView <- merge(
     securityData[, c('Date', 'diffPercent', 'Actbin', 'Eff')],
