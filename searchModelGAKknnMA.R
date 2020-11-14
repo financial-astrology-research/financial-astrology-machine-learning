@@ -177,9 +177,7 @@ findRelevantFeatures <- function(solution) {
 }
 
 solutionModelTrain <- function(params) {
-  cat("Using PX:", params$pxSelect, "- PY: ", params$pySelect, "\n")
   fitModel <- modelTrain(params$pxSelect, params$pySelect)
-  cat("Fit Rsquared:", fitModel$results$Rsquared, "\n\n")
 
   return(fitModel)
 }
@@ -212,10 +210,9 @@ gar <- ga(
   parallel = F, monitor = gaMonitor, keepBest = T
 )
 
+cat("\n")
 summary(gar)
 plot(gar)
-cat("Best GA solution:\n")
-print(gar@solution)
 
 params <- parseSolutionParameters(gar@solution)
 fitModel1 <- solutionModelTrain(params)
