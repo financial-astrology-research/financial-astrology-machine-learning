@@ -31,7 +31,7 @@ trainDataEndDate <- as.Date("2020-08-15")
 testDataStartDate <- as.Date("2020-09-01")
 orbLimit <- 4
 kMax <- 7
-gaMaxIter <- 20
+gaMaxIter <- 10
 nBits <- 16
 wlCVFolds <- 5
 wlCVRepeats <- 2
@@ -282,6 +282,7 @@ searchModel <- function(symbol) {
   # Validate data predictions.
   aspectViewValidate$EffPred <- predict(topModel, aspectViewValidate, type = "raw")
 
+  cat(symbol, "MODEL VALIDATE RESULTS:\n")
   table(
     actual = aspectViewValidate$Actbin,
     predicted = aspectViewValidate$EffPred
@@ -308,7 +309,7 @@ searchModel <- function(symbol) {
   # Final ensamble prediction.
   aspectViewTest$EffPred <- predict(topModel, aspectViewTest, type = "raw")
 
-  cat(symbol, "MODEL RESULTS:\n")
+  cat(symbol, "MODEL TEST RESULTS:\n")
   testResult <- table(
     actualclass = aspectViewTest$Actbin,
     predictedclass = aspectViewTest$EffPred
