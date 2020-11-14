@@ -8,7 +8,7 @@ source("analysis.r")
 symbolTest <- "ZRX-USD"
 securityDataTest <- mainOpenSecurity(
   symbolTest, 2, 4,
-  "%Y-%m-%d", "2020-01-01"
+  "%Y-%m-%d", "2020-01-01", "2020-09-30"
 )
 #basePath <- "~/Sites/own/trading-signal-processing/csv_indicators/"
 #basePath <- "~/Desktop/"
