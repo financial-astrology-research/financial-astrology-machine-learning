@@ -125,8 +125,7 @@ modelTrain <- function(pxSelect, pySelect) {
 
   useFeatures <- names(dailyAspects)[-1]
   selectCols <- c('diffPercent', useFeatures)
-  cat("Selected cols:", selectCols, "\n")
-
+  #cat("Selected cols:", selectCols, "\n")
   trainIndex <- createDataPartition(aspectView$diffPercent, p = 0.80, list = FALSE)
   aspectViewTrain <- aspectView[trainIndex,]
   aspectViewValidate <- aspectView[-trainIndex,]
@@ -305,6 +304,7 @@ aspectViewTest$DiffPred5 <- predict(fitModel5, aspectViewTest, type = "raw")
 # Final ensamble prediction.
 aspectViewTest$EffPred <- predict(topModel, aspectViewTest, type = "raw")
 
+cat(symbol, "MODEL RESULTS:\n")
 table(
   actualclass = aspectViewTest$Actbin,
   predictedclass = aspectViewTest$EffPred
