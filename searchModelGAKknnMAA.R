@@ -30,7 +30,7 @@ trainDataEndDate <- as.Date("2020-08-15")
 testDataStartDate <- as.Date("2020-09-01")
 orbLimit <- 4
 kMax <- 7
-gaPopSize <- 200
+gaPopSize <- 100
 gaMaxIter <- 20
 nBits <- 13
 wlCVFolds <- 5
@@ -179,7 +179,7 @@ searchModel <- function(symbol) {
 
     # Invalid GA parameters that failed fit, penalize with high negative value.
     if (is.null(fitModel)) {
-      return(-100)
+      return(-1)
     }
 
     #return(fitModel$results$RMSE)
