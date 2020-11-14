@@ -112,7 +112,7 @@ modelTrain <- function(pxSelect, pySelect) {
     pxSelect <- pxSelectAll
   }
 
-  if (count(pySelect) == 0) {
+  if (count(pySelect) < 3) {
     pySelect <- pySelectAll
   }
 
