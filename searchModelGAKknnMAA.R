@@ -118,7 +118,7 @@ searchModel <- function(symbol) {
       return(NULL)
     }
 
-    if (count(pySelect) <= 2) {
+    if (count(pySelect) <= 3) {
       cat("Invalid pySelect params\n\n")
       return(NULL)
     }
@@ -220,9 +220,9 @@ searchModel <- function(symbol) {
     ),
     popSize = gaPopSize, maxiter = gaMaxIter, run = gaMaxIter,
     selection = gabin_rwSelection, mutation = gabin_raMutation,
-    crossover = gabin_uCrossover, population = gabin_Population,
+    crossover = gabin_spCrossover, population = gabin_Population,
     elitism = base::max(1, round(gaPopSize * 0.3)),
-    pmutation = 0.3, pcrossover = 0.5,
+    pmutation = 0.5, pcrossover = 0.2,
     parallel = F, monitor = gaMonitor, keepBest = T
   )
 
