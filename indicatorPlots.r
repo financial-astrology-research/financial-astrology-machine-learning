@@ -1506,7 +1506,7 @@ dailyCombPlanetAspectsFactorsTableLDC <- function(orbLimit = 2, aspectFilter = c
   # Convert numeric aspects to categorical (factors).
   dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
   # Categorize applicative / separative aspects.
-  dailyAspects <- dailyAspects[p.x != "MO", aspect := as.character(paste(aspect, "-",  round(orb), sep = ""))]
+  dailyAspects <- dailyAspects[p.x != "MO", aspect := as.character(paste(aspect, "-", round(orb), sep = ""))]
 
   # Arrange aspects factors as table wide format.
   dailyAspectsWide <- dcast(
@@ -1524,7 +1524,13 @@ dailyCombPlanetAspectsFactorsTableLDC <- function(orbLimit = 2, aspectFilter = c
 }
 
 dailyAspectsGeneralizedCount <- function(
-  dailyAspects = NULL, orbLimit = 2, pxSelect = c(), pySelect = c(), aspectFilter = c(), binFlag = F
+  dailyAspects = NULL,
+  orbLimit = 2,
+  pxSelect = c(),
+  pySelect = c(),
+  aspectSelect = c(),
+  aspectFilter = c(),
+  binFlag = F
 ) {
   if (is.null(dailyAspects)) {
     idCols <- c('Date', 'Hour')
@@ -1537,6 +1543,7 @@ dailyAspectsGeneralizedCount <- function(
   dailyAspects$filter <- F
   dailyAspects[p.x %ni% pxSelect, filter := T]
   dailyAspects[p.y %ni% pySelect, filter := T]
+  dailyAspects[aspect %ni% aspectSelect, filter := T]
   dailyAspects[aspect %in% aspectFilter, filter := T]
   dailyAspects <- dailyAspects[filter != T,]
 
@@ -1664,7 +1671,13 @@ dailyAspectsGeneralizedEnergySum <- function(orbLimit = 2, pxSelect = c(), pySel
 
 # Count total aspects per planet Y (receiver).
 dailyPlanetYActivationCount <- function(
-  dailyAspects = NULL, orbLimit = 2, pxSelect = c(), pySelect = c(), aspectFilter = c(), binFlag = F
+  dailyAspects = NULL,
+  orbLimit = 2,
+  pxSelect = c(),
+  pySelect = c(),
+  aspectSelect = c(),
+  aspectFilter = c(),
+  binFlag = F
 ) {
   if (is.null(dailyAspects)) {
     idCols <- c('Date', 'Hour')
@@ -1678,6 +1691,7 @@ dailyPlanetYActivationCount <- function(
   dailyAspects$filter <- F
   dailyAspects[p.x %ni% pxSelect, filter := T]
   dailyAspects[p.y %ni% pySelect, filter := T]
+  dailyAspects[aspect %ni% aspectSelect, filter := T]
   dailyAspects[aspect %in% aspectFilter, filter := T]
   dailyAspects <- dailyAspects[filter != T,]
 
@@ -1907,8 +1921,8 @@ dailyFastPlanetsRetrograde <- function() {
     'Date',
     'MESL',
     'VESL'
-    #'SUSL',
-    #'MOSL'
+        #'SUSL',
+        #'MOSL'
   )
 
   return(dailyPlanetsSpeed[, ..selCols])
@@ -1929,8 +1943,8 @@ dailySlowPlanetsRetrograde <- function() {
     'JUSL',
     'SASL',
     'URSL'
-      #'NESL'
-      #'PLSL'
+          #'NESL'
+          #'PLSL'
   )
 
   return(dailyPlanetsSpeed[, ..selCols])

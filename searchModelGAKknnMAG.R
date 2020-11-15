@@ -63,7 +63,7 @@ pySelectAll <- c(
   'PL'
 )
 
-aspectFilterAll <- c(
+aspectSelectAll <- c(
   0,
   30,
   45,
@@ -105,13 +105,13 @@ searchModel <- function(symbol) {
   hist(securityData$diffPercent)
   cat(paste("Post filter days observations rows:", nrow(securityData)), "\n\n")
 
-  prepareDailyAspects <- function(pxSelect, pySelect, aspectFilter) {
+  prepareDailyAspects <- function(pxSelect, pySelect, aspectSelect) {
     dailyAspectsGeneralizedCount <- dailyAspectsGeneralizedCount(
       dailyAspects = dailyAspectsRows,
       orbLimit = orbLimit,
       pxSelect = pxSelect,
       pySelect = pySelect,
-      aspectFilter = aspectFilter
+      aspectSelect = aspectSelect
     )
 
     if (is.null(dailyAspectsGeneralizedCount)) {
@@ -123,7 +123,7 @@ searchModel <- function(symbol) {
       orbLimit = orbLimit,
       pxSelect = pxSelect,
       pySelect = pySelect,
-      aspectFilter = aspectFilter
+      aspectSelect = aspectSelect
     )
 
     if (is.null(dailyPlanetYActivationCount)) {
@@ -136,9 +136,9 @@ searchModel <- function(symbol) {
   }
 
   modelTrain <- function(params) {
-    c(pxSelect, pySelect, aspectFilter) %<-% params
-    cat("Using PX:", pxSelect, "- PY:", pySelect, "- ASP:", aspectFilter, "\n")
-    dailyAspects <- prepareDailyAspects(pxSelect, pySelect, aspectFilter)
+    c(pxSelect, pySelect, aspectSelect) %<-% params
+    cat("Using PX:", pxSelect, "- PY:", pySelect, "- ASP:", aspectSelect, "\n")
+    dailyAspects <- prepareDailyAspects(pxSelect, pySelect, aspectSelect)
 
     if (is.null(dailyAspects)) {
       cat("Skip solution, invalid GA solution params\n\n")
@@ -187,12 +187,12 @@ searchModel <- function(symbol) {
   parseSolutionParameters <- function(solution) {
     pxSelect <- pxSelectAll[solution[1:4] == 1]
     pySelect <- pySelectAll[solution[5:15] == 1]
-    aspectFilter <- aspectFilterAll[solution[16:nBits] == 1]
+    aspectSelect <- aspectSelectAll[solution[16:nBits] == 1]
 
     return(list(
       pxSelect = pxSelect,
       pySelect = pySelect,
-      aspectFilter = aspectFilter
+      aspectSelect = aspectSelect
     ))
   }
 
@@ -282,7 +282,7 @@ searchModel <- function(symbol) {
   fitModel5 <- solutionModelTrain(params)
   fitModel5 %>% varImp() %>% print()
 
-  dailyAspects <- prepareDailyAspects(params$pxSelect, params$pySelect, params$aspectFilter)
+  dailyAspects <- prepareDailyAspects(params$pxSelect, params$pySelect, params$aspectSelect)
   aspectView <- merge(
     securityData[, c('Date', 'diffPercent', 'Actbin', 'Eff')],
     dailyAspects, by = "Date"
