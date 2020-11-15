@@ -211,8 +211,6 @@ searchModel <- function(symbol) {
   }
 
   solutionModelTrain <- function(params) {
-    # Different partition for each weak learner train
-    trainIndex <- createDataPartition(securityData$diffPercent, p = 0.80, list = FALSE)
     fitModel <- modelTrain(params)
 
     if (is.null(fitModel)) {
