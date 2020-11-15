@@ -1847,18 +1847,32 @@ dailyPlanetYAspectMeanOrb <- function(orbLimit = 2, pxSelect = c(), pySelect = c
 }
 
 # Count total aspects per planet combination.
-dailyAspectsPlanetCombGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), pySelect = c(), aspectFilter = c()) {
-  idCols <- c('Date', 'Hour')
-  setModernMixAspectsSet1()
-  setPlanetsMOMEVESUMACEVSJUNNSAURCHNEPL()
-  hourlyPlanets <<- openHourlyPlanets('planets_12', clear = F)
-  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+dailyAspectsPlanetCombGeneralizedCount <- function(
+  dailyAspects = NULL,
+  orbLimit = 2,
+  pxSelect = c(),
+  pySelect = c(),
+  aspectSelect = c(),
+  aspectFilter = c()
+) {
+  if (is.null(dailyAspects)) {
+    idCols <- c('Date', 'Hour')
+    setModernMixAspectsSet1()
+    setPlanetsMOMEVESUMACEVSJUNNSAURCHNEPL()
+    hourlyPlanets <<- openHourlyPlanets('planets_12', clear = F)
+    dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+  }
 
   dailyAspects$filter <- F
   dailyAspects[p.x %ni% pxSelect, filter := T]
   dailyAspects[p.y %ni% pySelect, filter := T]
+  dailyAspects[aspect %ni% aspectSelect, filter := T]
   dailyAspects[aspect %in% aspectFilter, filter := T]
   dailyAspects <- dailyAspects[filter != T,]
+
+  if (nrow(dailyAspects) == 0) {
+    return(NULL)
+  }
 
   # Convert numeric aspects to categorical (factors).
   dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
@@ -1936,8 +1950,8 @@ dailyFastPlanetsRetrograde <- function() {
     'Date',
     'MESL',
     'VESL'
-            #'SUSL',
-            #'MOSL'
+                #'SUSL',
+                #'MOSL'
   )
 
   return(dailyPlanetsSpeed[, ..selCols])
@@ -1958,8 +1972,8 @@ dailySlowPlanetsRetrograde <- function() {
     'JUSL',
     'SASL',
     'URSL'
-              #'NESL'
-              #'PLSL'
+                  #'NESL'
+                  #'PLSL'
   )
 
   return(dailyPlanetsSpeed[, ..selCols])
