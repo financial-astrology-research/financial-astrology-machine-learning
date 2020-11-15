@@ -1540,6 +1540,10 @@ dailyAspectsGeneralizedCount <- function(
   dailyAspects[aspect %in% aspectFilter, filter := T]
   dailyAspects <- dailyAspects[filter != T,]
 
+  if (nrow(dailyAspects) == 0) {
+    return(NULL)
+  }
+
   # Convert numeric aspects to categorical (factors).
   dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
   # Arrange aspects factors as table wide format.
@@ -1676,6 +1680,10 @@ dailyPlanetYActivationCount <- function(
   dailyAspects[p.y %ni% pySelect, filter := T]
   dailyAspects[aspect %in% aspectFilter, filter := T]
   dailyAspects <- dailyAspects[filter != T,]
+
+  if (nrow(dailyAspects) == 0) {
+    return(NULL)
+  }
 
   # Convert numeric aspects to categorical (factors).
   dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]

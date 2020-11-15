@@ -12,7 +12,7 @@
 #             8) Optimize weak learners for RMSE.
 #             9) GA feature selection popSize = 50 and iter = 20.
 #            10) KKNN K param set to 7.
-#            11) Include aspects options to GA feature selection.
+#            11) Include aspects options into GA feature selection.
 
 library(boot)
 library(zeallot)
