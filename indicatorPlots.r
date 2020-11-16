@@ -2026,18 +2026,34 @@ dailyPlanetXAspectsGeneralizedCount <- function(
   return(dailyAspectsCount)
 }
 
-dailyPlanetYAspectsGeneralizedCount <- function(orbLimit = 2, pxSelect = c(), pySelect = c(), binFlag = F) {
-  idCols <- c('Date', 'Hour')
-  setModernMixAspectsSet1()
-  #setPlanetsMOMEVESUMAJUNNSAURNEPL()
-  setPlanetsMOMEVESUMACEVSJUNNSAURCHNEPL()
-  hourlyPlanets <<- openHourlyPlanets('planets_12', clear = F)
-  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+dailyPlanetYAspectsGeneralizedCount <- function(
+  dailyAspects = NULL,
+  orbLimit = 2,
+  pxSelect = c(),
+  pySelect = c(),
+  aspectSelect = c(),
+  aspectFilter = c(),
+  binFlag = F
+) {
+  if (is.null(dailyAspects)) {
+    idCols <- c('Date', 'Hour')
+    setModernMixAspectsSet1()
+    #setPlanetsMOMEVESUMAJUNNSAURNEPL()
+    setPlanetsMOMEVESUMACEVSJUNNSAURCHNEPL()
+    hourlyPlanets <<- openHourlyPlanets('planets_12', clear = F)
+    dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+  }
 
   dailyAspects$filter <- F
   dailyAspects[p.x %ni% pxSelect, filter := T]
   dailyAspects[p.y %ni% pySelect, filter := T]
+  dailyAspects[aspect %ni% aspectSelect, filter := T]
+  dailyAspects[aspect %in% aspectFilter, filter := T]
   dailyAspects <- dailyAspects[filter != T,]
+
+  if (nrow(dailyAspects) == 0) {
+    return(NULL)
+  }
 
   # Arrange aspects factors as table wide format.
   dailyAspectsCount <- dcast(
