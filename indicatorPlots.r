@@ -2,6 +2,7 @@ library(grid)
 library(cowplot)
 library(dismo)
 library(paramtest)
+library(purrr)
 source("./analysis.r")
 todayDate <- as.Date(Sys.Date())
 
@@ -449,7 +450,11 @@ dailyAspectsAddEnergy <- function(dailyAspects, speedDecay = 0.6) {
   return(dailyAspects)
 }
 
-dailyAspectsAddEnergy2 <- function(dailyAspects, speedDecay = 0.6, aspectsEnergyCustom) {
+dailyAspectsAddEnergy2 <- function(dailyAspects, aspectsEnergyCustom = NULL) {
+  if (is.null(aspectsEnergyCustom)) {
+    aspectsEnergyCustom <- aspectsEnergy
+  }
+
   aspectsEnergyIndex <- matrix(
     aspectsEnergyCustom, nrow = 1, ncol = length(aspectsEnergyCustom),
     byrow = T, dimnames = list(c('energy'), aspects)
@@ -1640,19 +1645,34 @@ dailyAspectsGeneralizedOrbsMean <- function(orbLimit = 2, pxSelect = c(), pySele
   return(dailyAspectsOrbsMean)
 }
 
-dailyAspectsGeneralizedEnergySum <- function(orbLimit = 2, pxSelect = c(), pySelect = c(), aspectFilter = c()) {
-  idCols <- c('Date', 'Hour')
-  setModernMixAspectsSet1()
-  setPlanetsMOMEVESUMAJUNNSAURNEPL()
-  hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
-  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
-  dailyAspects <- dailyAspectsAddEnergy(dailyAspects, 0.59)
+dailyAspectsGeneralizedEnergySum <- function(
+  dailyAspects = NULL,
+  orbLimit = 2,
+  pxSelect = c(),
+  pySelect = c(),
+  aspectSelect = c(),
+  aspectFilter = c(),
+  energyFunction = partial(dailyAspectsAddEnergy, speedDecay = 0.59)
+) {
+  if (is.null(dailyAspects)) {
+    idCols <- c('Date', 'Hour')
+    setModernMixAspectsSet1()
+    setPlanetsMOMEVESUMAJUNNSAURNEPL()
+    hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+    dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+  }
 
+  dailyAspects <- energyFunction(dailyAspects)
   dailyAspects$filter <- F
   dailyAspects[p.x %ni% pxSelect, filter := T]
   dailyAspects[p.y %ni% pySelect, filter := T]
+  dailyAspects[aspect %ni% aspectSelect, filter := T]
   dailyAspects[aspect %in% aspectFilter, filter := T]
   dailyAspects <- dailyAspects[filter != T,]
+
+  if (nrow(dailyAspects) == 0) {
+    return(NULL)
+  }
 
   # Convert numeric aspects to categorical (factors).
   dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
