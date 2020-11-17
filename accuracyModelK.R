@@ -460,6 +460,7 @@ source("analysis.r")
 #indicatorFile <- "ZRX-USD-predict-kknnLDR-ensamble" # A: 65, 20 / P: 48, 13
 
 testPredictAccuracy <- function(predictFilename) {
+  cat("Processing: ", predictFilename, "\n")
   filenameParts <- unlist(strsplit(predictFilename, "-"))
   symbolTest <- paste(filenameParts[1], filenameParts[2], sep = "-")
   startDate <- as.Date(format(Sys.Date() - 210, "%Y-%m-01"))
