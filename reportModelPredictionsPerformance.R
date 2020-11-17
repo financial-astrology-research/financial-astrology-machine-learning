@@ -51,13 +51,13 @@ testPredictAccuracy <- function(predictFilename) {
         Acc6m = descriptives6m$mean[1],
         Acc3m = descriptives3m$mean[1],
         Acc1m = descriptives1m$mean[1],
-        AccSD6m = descriptives6m$mean[1],
-        AccSD3m = descriptives3m$mean[1],
+        AccSD6m = descriptives6m$sd[1],
+        AccSD3m = descriptives3m$sd[1],
         Prev6m = descriptives6m$mean[2],
         Prev3m = descriptives3m$mean[2],
         Prev1m = descriptives1m$mean[2],
-        PrevSD6m = descriptives6m$mean[2],
-        PrevSD3m = descriptives3m$mean[2]
+        PrevSD6m = descriptives6m$sd[2],
+        PrevSD3m = descriptives3m$sd[2]
     )
   )
 }
@@ -67,7 +67,8 @@ testPredictAccuracy <- function(predictFilename) {
 basePath <- "~/Desktop/ModelsPred/"
 predictFiles <- list.files(basePath, pattern = "*.csv")
 testResults <- setDT(rbindlist(lapply(predictFiles, testPredictAccuracy)))
-modelsPredictSummaryFilename <- paste("~/Desktop/", "models-predict-performance-summary", ".csv", sep = "")
+reportDate <- format(Sys.Date(), "%Y-%m-%d")
+modelsPredictSummaryFilename <- paste("~/Desktop/", "models-predict-performance-", reportDate, ".csv", sep = "")
 
 fwrite(testResults, modelsPredictSummaryFilename)
 cat("Models summary exported to:", modelsPredictSummaryFilename, "\n")
