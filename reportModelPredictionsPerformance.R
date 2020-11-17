@@ -1,5 +1,4 @@
 # Title     : Models predictions accuracy performance / stability CSV report.
-
 rm(list = ls())
 library(caret)
 library(psych)
@@ -15,9 +14,9 @@ testPredictAccuracy <- function(predictFilename) {
     "%Y-%m-%d", startDate
   )
 
-  dailyIndicator <- fread(
-    paste(basePath, predictFilename, sep = "")
-  )
+  predictPath <- paste(basePath, predictFilename, sep = "")
+  predictFileInfo <- file.info(predictPath)
+  dailyIndicator <- fread(predictPath)
 
   dailyIndicator[, Date := as.Date(Date)]
   dailyIndicator[, YearMonth := format(Date, "%Y-%m")]
@@ -48,6 +47,7 @@ testPredictAccuracy <- function(predictFilename) {
   return(
     data.table(
         PredictFile = predictFilename,
+        Created = predictFileInfo$ctime,
         Acc6m = descriptives6m$mean[1],
         Acc3m = descriptives3m$mean[1],
         Acc1m = descriptives1m$mean[1],
