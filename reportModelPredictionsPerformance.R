@@ -43,7 +43,7 @@ testPredictAccuracy <- function(predictFilename) {
   accuracyTest <- dailyIndicator[, calculateAccuracy(.SD), by = "YearMonth"]
   descriptives6m <- round(describe(head(accuracyTest[, c('Accuracy', 'Prevalence')], 6)), 3)
   descriptives3m <- round(describe(tail(accuracyTest[, c('Accuracy', 'Prevalence')], 3)), 3)
-  descriptives1m <- round(describe(head(accuracyTest[, c('Accuracy', 'Prevalence')], 1)), 3)
+  descriptives1m <- round(describe(tail(accuracyTest[, c('Accuracy', 'Prevalence')], 1)), 3)
 
   return(
     data.table(
@@ -53,13 +53,11 @@ testPredictAccuracy <- function(predictFilename) {
         Acc1m = descriptives1m$mean[1],
         AccSD6m = descriptives6m$mean[1],
         AccSD3m = descriptives3m$mean[1],
-        AccSD1m = descriptives1m$mean[1],
         Prev6m = descriptives6m$mean[2],
         Prev3m = descriptives3m$mean[2],
         Prev1m = descriptives1m$mean[2],
         PrevSD6m = descriptives6m$mean[2],
-        PrevSD3m = descriptives3m$mean[2],
-        PrevSD1m = descriptives1m$mean[2]
+        PrevSD3m = descriptives3m$mean[2]
     )
   )
 }
