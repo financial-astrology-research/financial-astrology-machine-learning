@@ -523,5 +523,7 @@ testPredictAccuracy <- function(predictFilename) {
 basePath <- "~/Desktop/ModelsPred/"
 predictFiles <- list.files(basePath, pattern = "*.csv")
 testResults <- setDT(rbindlist(lapply(predictFiles, testPredictAccuracy)))
+modelsPredictSummaryFilename <- paste("~/Desktop/", "models-predict-performance-summary", ".csv", sep = "")
 
-print(testResults)
+fwrite(testResults, modelsPredictSummaryFilename)
+cat("Models summary exported to:", modelsPredictSummaryFilename, "\n")
