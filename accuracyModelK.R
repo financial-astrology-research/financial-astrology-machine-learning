@@ -5,6 +5,17 @@ library(caret)
 library(psych)
 source("analysis.r")
 
+symbolTest <- "ZRX-USD"
+securityDataTest <- mainOpenSecurity(
+  symbolTest, 2, 4,
+  "%Y-%m-%d", "2020-01-01", "2020-09-30"
+)
+#basePath <- "~/Sites/own/trading-signal-processing/csv_indicators/"
+#basePath <- "~/Desktop/"
+basePath <- "~/Desktop/ModelsPred/"
+
+symbolNormalized <- str_replace(symbolTest, "-", "")
+
 # NOTE:
 # (**) represent the best models that performed well during Oct, Nov (partial) 2020
 # (***) represent the best performing production models until Nov 13, 2020.
@@ -352,7 +363,7 @@ source("analysis.r")
 #indicatorFile <- "LTC-USD-predict-kknnLDDC-ensamble" # A: 67, 11 / P: 55, 11 (Best)
 #indicatorFile <- "LTC-USD-predict-kknnLDDD-ensamble" # A: 63, 14 / P: 50, 13
 #indicatorFile <- "LTC-USD-predict-kknnLDDE-ensamble" # A: 63, 14 / P: 54, 11
-#indicatorFile <- "LTC-USD-predict-kknnLDDF-ensamble" # A: 66, 12 / P: 52, 10 (Best) ***
+#indicatorFile <- "LTC-USD-predict-kknnLDDF-ensamble" # A: 66, 12 / P: 52, 10 (Best) **
 #indicatorFile <- "LTC-USD-predict-kknnLDE-ensamble" # A: 68, 13 / P: 53, 13
 #indicatorFile <- "LTC-USD-predict-kknnLDF-ensamble" # A: 67, 13 / P: 45, 14
 #indicatorFile <- "LTC-USD-predict-kknnLDH-ensamble" # A: 64, 15 / P: 51, 11
@@ -459,71 +470,27 @@ source("analysis.r")
 #indicatorFile <- "ZRX-USD-predict-kknnLDQA-ensamble" # A: 70, 13 / P: 49, 15
 #indicatorFile <- "ZRX-USD-predict-kknnLDR-ensamble" # A: 65, 20 / P: 48, 13
 
-testPredictAccuracy <- function(predictFilename) {
-  cat("Processing: ", predictFilename, "\n")
-  filenameParts <- unlist(strsplit(predictFilename, "-"))
-  symbolTest <- paste(filenameParts[1], filenameParts[2], sep = "-")
-  startDate <- as.Date(format(Sys.Date() - 210, "%Y-%m-01"))
-  securityDataTest <- mainOpenSecurity(
-    symbolTest, 2, 4,
-    "%Y-%m-%d", startDate
-  )
+dailyIndicator <- fread(
+  paste(basePath, indicatorFile, ".csv", sep = "")
+)
+dailyIndicator[, Date := as.Date(Date)]
+dailyIndicator[, YearMonth := format(Date, "%Y-%m")]
+dailyIndicator <- merge(securityDataTest[, c('Date', 'Mid', 'diffPercent', 'Eff', 'Actbin')], dailyIndicator, by = "Date")
 
-  dailyIndicator <- fread(
-    paste(basePath, predictFilename, sep = "")
-  )
+calculateAccuracy <- function(monthlyData) {
+  categoryLevels = c("buy", "sell")
+  confusionData <- table(
+    actualclass = factor(monthlyData$Actbin, levels = categoryLevels),
+    predictedclass = factor(monthlyData$EffPred, levels = categoryLevels)
+  ) %>% caret::confusionMatrix()
 
-  dailyIndicator[, Date := as.Date(Date)]
-  dailyIndicator[, YearMonth := format(Date, "%Y-%m")]
-  dailyIndicator <- merge(
-    securityDataTest[, c('Date', 'Mid', 'diffPercent', 'Eff', 'Actbin')],
-    dailyIndicator,
-    by = "Date"
-  )
+  accuracy <- confusionData$overall['Accuracy']
+  prevalence <- confusionData$byClass['Prevalence']
 
-  calculateAccuracy <- function(monthlyData) {
-    categoryLevels = c("buy", "sell")
-    confusionData <- table(
-      actualclass = factor(monthlyData$Actbin, levels = categoryLevels),
-      predictedclass = factor(monthlyData$EffPred, levels = categoryLevels)
-    ) %>% caret::confusionMatrix()
-
-    accuracy <- confusionData$overall['Accuracy']
-    prevalence <- confusionData$byClass['Prevalence']
-
-    list(Accuracy = accuracy, Prevalence = prevalence)
-  }
-
-  accuracyTest <- dailyIndicator[, calculateAccuracy(.SD), by = "YearMonth"]
-  descriptives6m <- round(describe(head(accuracyTest[, c('Accuracy', 'Prevalence')], 6)), 3)
-  descriptives3m <- round(describe(tail(accuracyTest[, c('Accuracy', 'Prevalence')], 3)), 3)
-  descriptives1m <- round(describe(head(accuracyTest[, c('Accuracy', 'Prevalence')], 1)), 3)
-
-  return(
-    data.table(
-        PredictFile = predictFilename,
-        Acc6m = descriptives6m$mean[1],
-        Acc3m = descriptives3m$mean[1],
-        Acc1m = descriptives1m$mean[1],
-        AccSD6m = descriptives6m$mean[1],
-        AccSD3m = descriptives3m$mean[1],
-        AccSD1m = descriptives1m$mean[1],
-        Prev6m = descriptives6m$mean[2],
-        Prev3m = descriptives3m$mean[2],
-        Prev1m = descriptives1m$mean[2],
-        PrevSD6m = descriptives6m$mean[2],
-        PrevSD3m = descriptives3m$mean[2],
-        PrevSD1m = descriptives1m$mean[2]
-    )
-  )
+  list(Accuracy = accuracy, Prevalence = prevalence)
 }
 
-#basePath <- "~/Sites/own/trading-signal-processing/csv_indicators/"
-#basePath <- "~/Desktop/"
-basePath <- "~/Desktop/ModelsPred/"
-predictFiles <- list.files(basePath, pattern = "*.csv")
-testResults <- setDT(rbindlist(lapply(predictFiles, testPredictAccuracy)))
-modelsPredictSummaryFilename <- paste("~/Desktop/", "models-predict-performance-summary", ".csv", sep = "")
-
-fwrite(testResults, modelsPredictSummaryFilename)
-cat("Models summary exported to:", modelsPredictSummaryFilename, "\n")
+cat("\n", symbolTest, "montly predictions performacne test:", "\n")
+accuracyTest <- dailyIndicator[, calculateAccuracy(.SD), by = "YearMonth"]
+print(accuracyTest)
+describe(accuracyTest[, c('Accuracy', 'Prevalence')])
