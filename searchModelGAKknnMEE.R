@@ -6,7 +6,7 @@
 #             2) CV folds to 5 with 1 repeats for weak learners, folds to 10 with 10 repeats for ensamble.
 #             3) Split to 80/20 proportion.
 #             4) Validate fit using Actbin daily price change (buy / sell) instead of Effect
-#             5) GA feature detection that fit to minimize Rsquared train data.
+#             5) GA feature detection that fit to maximize Rsquared train data.
 #             6) Fit 5 weak learners for diff percent change.
 #             7) Ensamble weak learnets to fit for Actbin to predict categorical (buy / sell) signal.
 #             8) Optimize weak learners for RMSE.
@@ -33,7 +33,7 @@ orbLimit <- 4
 kMax <- 7
 gaPopSize <- 100
 gaMaxIter <- 20
-nBits <- 4
+gaParamsNum <- 4
 wlCVFolds <- 5
 wlCVRepeats <- 1
 enCVFolds <- 10
@@ -208,12 +208,13 @@ searchModel <- function(symbol) {
 
   cat("\nProcessing GA features selection\n")
   gar <- ga(
-    "binary",
+    "real-valued",
     fitness = findRelevantFeatures,
-    nBits = nBits,
+    lower = rep(0, gaParamsNum),
+    upper = rep(1, gaParamsNum),
     popSize = gaPopSize, maxiter = gaMaxIter, run = gaMaxIter,
-    selection = gabin_rwSelection, mutation = gabin_raMutation,
-    crossover = gabin_spCrossover, population = gabin_Population,
+    selection = gaint_rwSelection, mutation = gaint_raMutation,
+    crossover = gaint_spCrossover, population = gaint_Population,
     elitism = base::max(1, round(gaPopSize * 0.3)),
     pmutation = 0.4, pcrossover = 0.3,
     parallel = F, monitor = gaMonitor, keepBest = T
