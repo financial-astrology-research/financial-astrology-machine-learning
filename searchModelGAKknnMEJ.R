@@ -2,7 +2,7 @@
 #             with GA feature selection that maximize Rsquared on train data to fit for
 #             daily price percent change estimation.
 # Purpose   : Predict daily traiding signal action category (buy / sell) from estimated daily price change.
-#             1) Planets MO, ME, VE, SU fast planets applying to all slow planets, VS and NN.
+#             1) Planets MO, ME, VE, SU fast planets applying to all slow planets.
 #             2) CV folds to 5 with 2 repeats for weak learners, folds to 10 with 10 repeats for ensamble.
 #             3) Split to 80/20 proportion.
 #             4) Validate fit using Actbin daily price change (buy / sell) instead of Effect
@@ -24,7 +24,7 @@ library(ModelMetrics)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "ensamble-gakknn-MEI"
+modelId <- "ensamble-gakknn-MEJ"
 zdiffPercentCut <- 2
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
@@ -54,10 +54,10 @@ pySelectAll <- c(
   'SU',
   'MA',
   #'CE',
-  'VS',
+  #'VS',
   'JU',
   'SA',
-  'NN',
+  #'NN',
   #'CH',
   'UR',
   'NE',
@@ -215,7 +215,7 @@ searchModel <- function(symbol) {
     "real-valued",
     fitness = findRelevantFeatures,
     lower = rep(0, 14),
-    upper = c(rep(1, 4), rep(5, 10)),
+    upper = c(rep(1, 4), rep(4, 10)),
     popSize = gaPopSize, maxiter = gaMaxIter, run = gaMaxIter,
     selection = gaint_rwSelection, mutation = gaint_raMutation,
     crossover = gaint_spCrossover, population = gaint_Population,
