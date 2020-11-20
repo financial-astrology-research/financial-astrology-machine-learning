@@ -1360,12 +1360,21 @@ prepareHourlyAspectsModelLC <- function() {
   return(dailyAspectsPlanetCumulativeEnergyWide)
 }
 
-dailyCombPlanetAspectsFactorsTable <- function(orbLimit = 2, aspectFilter = c(), pxSelect = c(), pySelect = c()) {
-  idCols <- c('Date', 'Hour')
-  setClassicAspectsSet8()
-  setPlanetsMOMEVESUMAJUNNSAURNEPL()
-  hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
-  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+dailyCombPlanetAspectsFactorsTable <- function(
+  dailyAspects = NULL,
+  orbLimit = 2,
+  pxSelect = c(),
+  pySelect = c(),
+  aspectFilter = c(),
+  aspectSelect = c()
+) {
+  if (is.null(dailyAspects)) {
+    idCols <- c('Date', 'Hour')
+    setClassicAspectsSet8()
+    setPlanetsMOMEVESUMAJUNNSAURNEPL()
+    hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+    dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+  }
 
   # Filter minor MO aspects that can overlap multiples to same target planet
   # in the same day and should not be significant in effect.
@@ -1373,10 +1382,15 @@ dailyCombPlanetAspectsFactorsTable <- function(orbLimit = 2, aspectFilter = c(),
   dailyAspects <- dailyAspects[p.x == "MO" & aspect == 30, filter := T]
   dailyAspects <- dailyAspects[p.x == "MO" & aspect == 45, filter := T]
   dailyAspects <- dailyAspects[p.x == "MO" & aspect == 135, filter := T]
-  dailyAspects <- dailyAspects[aspect %in% aspectFilter, filter := T]
   dailyAspects[p.x %ni% pxSelect, filter := T]
   dailyAspects[p.y %ni% pySelect, filter := T]
+  dailyAspects <- dailyAspects[aspect %ni% aspectSelect, filter := T]
+  dailyAspects <- dailyAspects[aspect %in% aspectFilter, filter := T]
   dailyAspects <- dailyAspects[filter != T,]
+
+  if (nrow(dailyAspects) == 0) {
+    return(NULL)
+  }
 
   # Convert numeric aspects to categorical (factors).
   dailyAspects <- dailyAspects[, aspect := paste("a", aspect, sep = "")]
