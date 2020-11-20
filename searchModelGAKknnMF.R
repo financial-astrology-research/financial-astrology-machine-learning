@@ -76,7 +76,7 @@ aspectSelectAll <- c(
 )
 
 idCols <- c('Date', 'Hour')
-setModernMixAspectsSet1()
+setClassicAspectsSet8()
 setPlanetsMOMEVESUMACEVSJUNNSAURCHNEPL()
 hourlyPlanets <<- openHourlyPlanets('planets_12', clear = F)
 dailyAspectsRows <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
