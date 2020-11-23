@@ -5,10 +5,10 @@ library(caret)
 library(psych)
 source("analysis.r")
 
-symbolTest <- "ZRX-USD"
+symbolTest <- "ADA-USD"
 securityDataTest <- mainOpenSecurity(
   symbolTest, 2, 4,
-  "%Y-%m-%d", "2020-01-01", "2020-09-30"
+  "%Y-%m-%d", "2020-01-01"
 )
 #basePath <- "~/Sites/own/trading-signal-processing/csv_indicators/"
 #basePath <- "~/Desktop/"
@@ -30,7 +30,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "ADA-USD-predict-kknnLDAC-ensamble" # A: 67, 10 / P: 52, 17
 #indicatorFile <- "ADA-USD-predict-kknnLDAD-ensamble" # A: 67, 11 / P: 51, 21
 #indicatorFile <- "ADA-USD-predict-kknnLDAE-ensamble" # A: 69, 11 / P: 52, 17
-#indicatorFile <- "ADA-USD-predict-kknnLDAF-ensamble" # A: 70, 13 / P: 50, 13 (Best) ***
+indicatorFile <- "ADA-USD-predict-kknnLDAF-ensamble" # A: 70, 13 / P: 50, 13 (Best) ***
 #indicatorFile <- "ADA-USD-predict-kknnLDAG-ensamble" # A: 70, 10 / P: 57, 19
 #indicatorFile <- "ADA-USD-predict-kknnLDAH-ensamble" # A: 64, 14 / P: 48, 19
 #indicatorFile <- "ADA-USD-predict-kknnLDB-ensamble" # A: 66, 15 / P: 49, 20
