@@ -47,7 +47,7 @@ testPredictAccuracy <- function(predictFilename) {
   return(
     data.table(
         PredictFile = predictFilename,
-        Created = predictFileInfo$ctime,
+        Created = predictFileInfo$mtime,
         Acc6m = descriptives6m$mean[1],
         Acc3m = descriptives3m$mean[1],
         Acc1m = descriptives1m$mean[1],
