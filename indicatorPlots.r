@@ -1897,7 +1897,7 @@ dailyPlanetYAspectMeanOrb <- function(
 
   # Convert numeric aspects to categorical (factors).
   dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
-  dailyAspects <- dailyAspects[, p.y := as.character(paste(p.y, "D", sep = ""))]
+  dailyAspects <- dailyAspects[, p.y := as.character(paste(p.y, "YD", sep = ""))]
   # Arrange mean orb as table wide format.
   dailyAspectsOrb <- dcast(
     dailyAspects,
