@@ -1506,7 +1506,6 @@ dailyCombPlanetAspectsFactorsTableLDB <- function(orbLimit = 2, aspectFilter = c
   return(dailyAspectsWide)
 }
 
-
 dailyCombPlanetAspectsFactorsTableLDC <- function(orbLimit = 2, aspectFilter = c(), pxSelect = c(), pySelect = c()) {
   idCols <- c('Date', 'Hour')
   setClassicAspectsSet8()
@@ -1717,6 +1716,50 @@ dailyAspectsGeneralizedEnergySum <- function(
   setDT(dailyAspectsEnergySum)
 
   return(dailyAspectsEnergySum)
+}
+
+# Aspects energy per planet combination.
+dailyPlanetYActivationEnergy <- function(
+  dailyAspects = NULL,
+  orbLimit = 2,
+  pxSelect = c(),
+  pySelect = c(),
+  aspectSelect = c(),
+  energyFunction = partial(dailyAspectsAddEnergy, speedDecay = 0.59)
+) {
+  if (is.null(dailyAspects)) {
+    idCols <- c('Date', 'Hour')
+    setClassicAspectsSet8()
+    setPlanetsMOMEVESUMAJUNNSAURNEPL()
+    hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+    dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+  }
+
+  dailyAspects <- energyFunction(dailyAspects)
+  dailyAspects$filter <- F
+  dailyAspects[p.x %ni% pxSelect, filter := T]
+  dailyAspects[p.y %ni% pySelect, filter := T]
+  dailyAspects[aspect %ni% aspectSelect, filter := T]
+  dailyAspects <- dailyAspects[filter != T,]
+
+  if (nrow(dailyAspects) == 0) {
+    return(NULL)
+  }
+
+  # Convert numeric aspects to categorical (factors).
+  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
+  dailyAspects <- dailyAspects[, p.y := as.character(paste(p.y, "YE", sep = ""))]
+  # Arrange aspects factors as table wide format.
+  dailyAspectsEnergy <- dcast(
+    dailyAspects,
+    Date ~ p.y,
+    fun.aggregate = sum,
+    value.var = "ennow",
+    fill = 0
+  )
+  setDT(dailyAspectsEnergy)
+
+  return(dailyAspectsEnergy)
 }
 
 # Count total aspects per planet Y (receiver).
