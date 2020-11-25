@@ -437,9 +437,13 @@ dailyAspectsAddAspectsCumulativeEnergy <- function(dailyAspects) {
   return(dailyAspects)
 }
 
-dailyAspectsAddEnergy <- function(dailyAspects, speedDecay = 0.6) {
+dailyAspectsAddEnergy <- function(dailyAspects, speedDecay = 0.6, aspectsEnergyCustom = NULL) {
+  if (is.null(aspectsEnergyCustom)) {
+    aspectsEnergyCustom <- aspectsEnergy
+  }
+
   aspectsEnergyIndex <- matrix(
-    aspectsEnergy, nrow = 1, ncol = length(aspectsEnergy),
+    aspectsEnergyCustom, nrow = 1, ncol = length(aspectsEnergyCustom),
     byrow = T, dimnames = list(c('energy'), aspects)
   )
 
@@ -479,23 +483,6 @@ dailyAspectsAddEnergy3 <- function(dailyAspects, speedDecay = 0.6) {
   dailyAspects[, ennow := energyDecay(enmax, orb, speedDecay) *
     (1 - sp.x) *
     (1 - sp.y)]
-
-  return(dailyAspects)
-}
-
-dailyAspectsAddEnergy4 <- function(dailyAspects, speedDecay = 0.6, aspectsEnergyCustom = NULL) {
-  if (is.null(aspectsEnergyCustom)) {
-    aspectsEnergyCustom <- aspectsEnergy
-  }
-
-  aspectsEnergyIndex <- matrix(
-    aspectsEnergyCustom, nrow = 1, ncol = length(aspectsEnergyCustom),
-    byrow = T, dimnames = list(c('energy'), aspects)
-  )
-
-  # Calculate max and proportional energy.
-  dailyAspects[, enmax := aspectsEnergyIndex['energy', as.character(aspect)]]
-  dailyAspects[, ennow := energyDecay(enmax, orb, speedDecay)]
 
   return(dailyAspects)
 }

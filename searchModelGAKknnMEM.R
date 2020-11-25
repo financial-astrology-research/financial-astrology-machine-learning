@@ -114,7 +114,7 @@ searchModel <- function(symbol) {
       pxSelect = pxSelect,
       pySelect = pySelect,
       aspectSelect = aspectSelect,
-      energyFunction = partial(dailyAspectsAddEnergy4, speedDecay = 0.59, aspectsEnergyCustom = aspectsEnergy)
+      energyFunction = partial(dailyAspectsAddEnergy, speedDecay = 0.59, aspectsEnergyCustom = aspectsEnergy)
     )
 
     if (is.null(dailyAspects)) {
