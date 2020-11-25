@@ -1955,13 +1955,32 @@ dailyAspectsPlanetCombGeneralizedCount <- function(
 }
 
 # Aspects energy per planet combination.
-dailyAspectsPlanetCombGeneralizedEnergy <- function(orbLimit = 2) {
-  idCols <- c('Date', 'Hour')
-  setClassicAspectsSet8()
-  setPlanetsMOMEVESUMAJUNNSAURNEPL()
-  hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
-  dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
-  dailyAspects <- dailyAspectsAddEnergy(dailyAspects, 0.59)
+dailyAspectsPlanetCombGeneralizedEnergy <- function(
+  dailyAspects = NULL,
+  orbLimit = 2,
+  pxSelect = c(),
+  pySelect = c(),
+  aspectSelect = c(),
+  energyFunction = partial(dailyAspectsAddEnergy, speedDecay = 0.59)
+) {
+  if (is.null(dailyAspects)) {
+    idCols <- c('Date', 'Hour')
+    setClassicAspectsSet8()
+    setPlanetsMOMEVESUMAJUNNSAURNEPL()
+    hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+    dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+  }
+
+  dailyAspects <- energyFunction(dailyAspects)
+  dailyAspects$filter <- F
+  dailyAspects[p.x %ni% pxSelect, filter := T]
+  dailyAspects[p.y %ni% pySelect, filter := T]
+  dailyAspects[aspect %ni% aspectSelect, filter := T]
+  dailyAspects <- dailyAspects[filter != T,]
+
+  if (nrow(dailyAspects) == 0) {
+    return(NULL)
+  }
 
   # Convert numeric aspects to categorical (factors).
   dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
