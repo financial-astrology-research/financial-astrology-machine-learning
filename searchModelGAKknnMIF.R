@@ -10,9 +10,10 @@
 #             6) Fit 5 weak learners for diff percent change.
 #             7) Ensamble weak learnets to fit for Actbin to predict categorical (buy / sell) signal.
 #             8) Optimize weak learners for RMSE.
-#             9) GA feature selection popSize = 50 and iter = 10.
+#             9) GA feature selection popSize = 100 and iter = 10.
 #            10) Fit using multi train sample mean metric penalized by standard deviation.
 #            11) Aspect energy without orb decay.
+#            11) GA solution aspect energy search within 0-4 interval.
 
 library(boot)
 library(zeallot)
@@ -23,11 +24,7 @@ library(ModelMetrics)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-# TODO: Create MIF model using aspect energy with decay and GA optimization.
-# TODO: Create MIG model using aspect energy without decay and GA optimization.
-# TODO: Create MIH model using best aspect energy with pxSelect GA optimization.
-
-modelId <- "ensamble-gakknn-MID"
+modelId <- "ensamble-gakknn-MIF"
 zdiffPercentCut <- 2
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
@@ -36,9 +33,9 @@ trainDataEndDate <- as.Date("2020-08-15")
 testDataStartDate <- as.Date("2020-09-01")
 orbLimit <- 4
 kMax <- 7
-gaPopSize <- 50
+gaPopSize <- 100
 gaMaxIter <- 10
-nBits <- 13
+gaParamsNum <- 22
 wlCVFolds <- 5
 wlCVRepeats <- 1
 enCVFolds <- 10
@@ -72,7 +69,6 @@ aspectSelectAll <- c(
   45,
   60,
   90,
-  103,
   120,
   135,
   150,
@@ -108,7 +104,7 @@ searchModel <- function(symbol) {
   hist(securityData$diffPercent)
   cat(paste("Post filter days observations rows:", nrow(securityData)), "\n\n")
 
-  prepareDailyAspects <- function(pxSelect, pySelect, aspectSelect) {
+  prepareDailyAspects <- function(pxSelect, pySelect, aspectSelect, aspectsEnergy) {
     dailyAspectsGeneralizedCount <- dailyAspectsGeneralizedCount(
       dailyAspects = dailyAspectsRows,
       orbLimit = orbLimit,
@@ -127,7 +123,7 @@ searchModel <- function(symbol) {
       pxSelect = pxSelect,
       pySelect = pySelect,
       aspectSelect = aspectSelect,
-      energyFunction = dailyAspectsAddEnergy2
+      energyFunction = partial(dailyAspectsAddEnergy2, aspectsEnergyCustom = aspectsEnergy)
     )
 
     if (is.null(dailyPlanetYActivationEnergy)) {
@@ -140,8 +136,8 @@ searchModel <- function(symbol) {
   }
 
   prepareModelData <- function(params) {
-    c(pxSelect, pySelect, aspectSelect) %<-% params
-    dailyAspects <- prepareDailyAspects(pxSelect, pySelect, aspectSelect)
+    c(pxSelect, pySelect, aspectSelect, aspectsEnergy) %<-% params
+    dailyAspects <- prepareDailyAspects(pxSelect, pySelect, aspectSelect, aspectsEnergy)
 
     if (is.null(dailyAspects)) {
       return(NULL)
@@ -168,8 +164,8 @@ searchModel <- function(symbol) {
   }
 
   modelTrain <- function(params) {
-    c(pxSelect, pySelect, aspectSelect) %<-% params
-    cat("Using PX:", pxSelect, "- PY:", pySelect, "- ASP:", aspectSelect, "\n")
+    c(pxSelect, pySelect, aspectSelect, aspectsEnergy) %<-% params
+    cat("Using PX:", pxSelect, "- PY:", pySelect, "- ASP:", aspectsEnergy, "\n")
     modelData <- prepareModelData(params)
 
     if (is.null(modelData)) {
@@ -195,13 +191,15 @@ searchModel <- function(symbol) {
 
   parseSolutionParameters <- function(solution) {
     pxSelect <- pxSelectAll
-    pySelect <- pySelectAll[solution[1:nBits] == 1]
+    pySelect <- pySelectAll[solution[1:13] == 1]
     aspectSelect <- aspectSelectAll
+    aspectsEnergy <- solution[14:gaParamsNum]
 
     return(list(
       pxSelect = pxSelect,
       pySelect = pySelect,
-      aspectSelect = aspectSelect
+      aspectSelect = aspectSelect,
+      aspectsEnergy = aspectsEnergy
     ))
   }
 
@@ -244,12 +242,13 @@ searchModel <- function(symbol) {
 
   cat("\nProcessing GA features selection\n")
   gar <- ga(
-    "binary",
+    "real-valued",
     fitness = findRelevantFeatures,
-    nBits = nBits,
+    lower = rep(0, gaParamsNum),
+    upper = c(rep(1, 13), rep(4, gaParamsNum-13)),
     popSize = gaPopSize, maxiter = gaMaxIter, run = gaMaxIter,
-    selection = gabin_rwSelection, mutation = gabin_raMutation,
-    crossover = gabin_spCrossover, population = gabin_Population,
+    selection = gaint_rwSelection, mutation = gaint_raMutation,
+    crossover = gaint_spCrossover, population = gaint_Population,
     elitism = base::max(1, round(gaPopSize * 0.3)),
     pmutation = 0.4, pcrossover = 0.3,
     parallel = F, monitor = gaMonitor, keepBest = T
@@ -271,7 +270,9 @@ searchModel <- function(symbol) {
   fitModel5 <- solutionModelTrain(params)
   #fitModel5 %>% varImp() %>% print()
 
-  dailyAspects <- prepareDailyAspects(params$pxSelect, params$pySelect, params$aspectSelect)
+  c(pxSelect, pySelect, aspectSelect, aspectsEnergy) %<-% params
+  dailyAspects <- prepareDailyAspects(pxSelect, pySelect, aspectSelect, aspectsEnergy)
+
   aspectView <- merge(
     securityData[, c('Date', 'diffPercent', 'Actbin', 'Eff')],
     dailyAspects, by = "Date"
