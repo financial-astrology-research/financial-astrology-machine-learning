@@ -43,11 +43,14 @@ testPredictAccuracy <- function(predictFilename) {
   descriptives6m <- round(describe(head(accuracyTest[, c('Accuracy', 'Prevalence')], 6)), 3)
   descriptives3m <- round(describe(tail(accuracyTest[, c('Accuracy', 'Prevalence')], 3)), 3)
   descriptives1m <- round(describe(tail(accuracyTest[, c('Accuracy', 'Prevalence')], 1)), 3)
+  createDate <- predictFileInfo$mtime
+  prodDays <- as.numeric(difftime(Sys.Date(), as.Date(createDate), units = "days"))
 
   return(
     data.table(
         PredictFile = predictFilename,
-        Created = predictFileInfo$mtime,
+        Created = createDate,
+        ProdDays = prodDays,
         Acc6m = descriptives6m$mean[1],
         Acc3m = descriptives3m$mean[1],
         Acc1m = descriptives1m$mean[1],
