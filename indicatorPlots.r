@@ -2202,3 +2202,61 @@ dailyPlanetYAspectsGeneralizedCount <- function(
 
   return(dailyAspectsCount)
 }
+
+dailyAspectsAddPolarity <- function(dailyAspects, aspectsPolarity) {
+  aspectsPolarityIndex <- matrix(
+    aspectsPolarity, nrow = 1, ncol = length(aspectsPolarity),
+    byrow = T, dimnames = list(c('polarity'), aspects)
+  )
+
+  dailyAspects[, poldir := aspectsPolarityIndex['polarity', as.character(aspect)]]
+  dailyAspects[poldir == 0, polarity := "neg"]
+  dailyAspects[poldir == 1, polarity := "pos"]
+
+  return(dailyAspects)
+}
+
+# PlanetY aspect activation count by polarity.
+dailyPlanetYActivationPolarityCount <- function(
+  dailyAspects = NULL,
+  orbLimit = 2,
+  pxSelect = c(),
+  pySelect = c(),
+  aspectSelect = c(),
+  polarityFunction = dailyAspectsAddPolarity
+) {
+  if (is.null(dailyAspects)) {
+    idCols <- c('Date', 'Hour')
+    setClassicAspectsSet8()
+    setPlanetsMOMEVESUMAJUNNSAURNEPL()
+    hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+    dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+  }
+
+  dailyAspects <- polarityFunction(dailyAspects)
+  dailyAspects$filter <- F
+  dailyAspects[p.x %ni% pxSelect, filter := T]
+  dailyAspects[p.y %ni% pySelect, filter := T]
+  dailyAspects[aspect %ni% aspectSelect, filter := T]
+  dailyAspects <- dailyAspects[filter != T,]
+
+  if (nrow(dailyAspects) == 0) {
+    return(NULL)
+  }
+
+  # Convert numeric aspects to categorical (factors).
+  dailyAspects <- dailyAspects[, aspect := as.character(paste("a", aspect, sep = ""))]
+  dailyAspects <- dailyAspects[, p.y := as.character(paste(p.y, "Y", sep = ""))]
+
+  # Arrange aspects factors as table wide format.
+  dailyAspectsCount <- dcast(
+    dailyAspects,
+    Date ~ p.y + polarity,
+    fun.aggregate = SIT::count,
+    value.var = "polarity",
+    fill = 0
+  )
+  setDT(dailyAspectsCount)
+
+  return(dailyAspectsCount)
+}
