@@ -10,7 +10,7 @@
 #             6) Fit 5 weak learners for diff percent change.
 #             7) Ensamble weak learnets to fit for Actbin to predict categorical (buy / sell) signal.
 #             8) Optimize weak learners for RMSE.
-#             9) GA feature selection popSize = 100 and iter = 10.
+#             9) GA feature selection popSize = 50 and iter = 10.
 #            10) Fit using multi train sample mean metric penalized by standard deviation.
 #            12) GA solution aspect polarity search for count split.
 
@@ -32,7 +32,7 @@ trainDataEndDate <- as.Date("2020-08-15")
 testDataStartDate <- as.Date("2020-09-01")
 orbLimit <- 4
 kMax <- 7
-gaPopSize <- 100
+gaPopSize <- 50
 gaMaxIter <- 10
 gaParamsNum <- 22
 wlCVFolds <- 5
