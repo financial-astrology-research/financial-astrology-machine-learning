@@ -48,6 +48,7 @@ with(securityData, table(Actbin, HLCMomEff))
 with(securityData, table(Actbin, HLMomEff))
 with(securityData, table(Actbin, OxHLEff))
 with(securityData, table(Actbin, OxHLCEff))
+# TODO: Try to use diffHxL for regression and HxLEff for ensamble classification.
 with(securityData, table(Actbin, HxLEff))
 cat("\n")
 
