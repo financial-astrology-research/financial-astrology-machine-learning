@@ -24,7 +24,7 @@ library(ModelMetrics)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "ensamble-gakknn-MIHDA"
+modelId <- "ensamble-gakknn-MIHDB"
 zdiffPercentCut <- 2
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
@@ -42,7 +42,6 @@ enCVFolds <- 10
 enCVRepeats <- 10
 
 pxSelectAll <- c(
-  'MO',
   'ME',
   'VE',
   'SU'
