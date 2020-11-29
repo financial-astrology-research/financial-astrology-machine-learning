@@ -295,9 +295,13 @@ mainOpenSecurity <- function(securityfile, mapricefs = 20, mapricesl = 50, datef
 
   security <- security[!is.na(val)]
   security[, Eff := cut(val, c(-10000, 0, 10000), labels = c('down', 'up'), right = FALSE)]
-  security[, HLCEff := cut(HLCMom, c(-10000, 0, 10000), labels = c('down', 'up'), right = FALSE)]
-  security[, HLEff := cut(HLMom, c(-10000, 0, 10000), labels = c('down', 'up'), right = FALSE)]
+  security[, Eff2 := cut(val, c(-10000, 0, 10000), labels = c('sell', 'buy'), right = FALSE)]
+  security[, HLCMomEff := cut(HLCMom, c(-10000, 0, 10000), labels = c('sell', 'buy'), right = FALSE)]
+  security[, HLMomEff := cut(HLMom, c(-10000, 0, 10000), labels = c('sell', 'buy'), right = FALSE)]
   security[, Actbin := cut(diffPercent, c(-10000, 0, 10000), labels = c('sell', 'buy'), right = FALSE)]
+  security[, OxHLEff := cut(diffOxHL, c(-10000, 0, 10000), labels = c('sell', 'buy'), right = FALSE)]
+  security[, OxHLCEff := cut(diffOxHLC, c(-10000, 0, 10000), labels = c('sell', 'buy'), right = FALSE)]
+  security[, HxLEff := cut(diffHxL, c(-10000, 0, 10000), labels = c('sell', 'buy'), right = FALSE)]
 
   # Take data starting from sdate
   security <- security[Date >= sdate & Date <= edate,]
