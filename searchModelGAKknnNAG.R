@@ -93,7 +93,6 @@ searchModel <- function(symbol) {
     "%Y-%m-%d", trainDataStartDate, trainDataEndDate
   )
 
-  # Filter the extreme outliers.
   hist(securityData$diffHxL)
 
   prepareDailyAspects <- function(pxSelect, pySelect, aspectSelect) {
