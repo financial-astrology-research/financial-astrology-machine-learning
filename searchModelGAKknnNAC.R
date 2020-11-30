@@ -30,7 +30,7 @@ trainDataStartDate <- as.Date("2010-01-01")
 trainDataEndDate <- as.Date("2020-08-15")
 testDataStartDate <- as.Date("2020-09-01")
 orbLimit <- 2
-kMax <- 5
+kMax <- 7
 gaPopSize <- 50
 gaMaxIter <- 10
 gaParamsNum <- 9

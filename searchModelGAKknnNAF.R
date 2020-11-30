@@ -28,7 +28,7 @@ maPriceSlPeriod <- 3
 trainDataStartDate <- as.Date("2010-01-01")
 trainDataEndDate <- as.Date("2020-08-15")
 testDataStartDate <- as.Date("2020-09-01")
-orbLimit <- 2
+orbLimit <- 4
 kMax <- 5
 gaPopSize <- 50
 gaMaxIter <- 10
