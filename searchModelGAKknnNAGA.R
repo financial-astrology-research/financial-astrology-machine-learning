@@ -24,7 +24,7 @@ library(ModelMetrics)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "ensamble-gakknn-NAG"
+modelId <- "ensamble-gakknn-NAGA"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
 trainDataStartDate <- as.Date("2010-01-01")
