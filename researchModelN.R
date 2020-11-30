@@ -32,8 +32,18 @@ with(securityData, plot(Date, diffPercent))
 with(securityData, plot(Date, difflogOHLC))
 
 # HL true directional difference with real price and log price.
+zscoreCut <- 2.5
 with(securityData, plot(Date, diffHxL))
+with(securityData[abs(zdiffHxL) <= zscoreCut], plot(Date, diffHxL))
 with(securityData, plot(Date, difflogHxL))
+with(securityData, plot(Date, diffsqHxL))
+with(securityData[abs(zdifflogHxL) <= zscoreCut], plot(Date, difflogHxL))
+with(securityData, hist(diffHxL))
+with(securityData, hist(difflogHxL))
+with(securityData, hist(diffsqHxL))
+# Filter outliers to compare histograms.
+with(securityData[abs(zdiffHxL) <= zscoreCut], hist(diffHxL))
+with(securityData[abs(zdifflogHxL) <= zscoreCut], hist(difflogHxL))
 
 cat("Compare fast/slow MAs change VS OHLC today change effects\n\n")
 with(securityData, table(Eff2, HLCMomEff))

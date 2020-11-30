@@ -274,7 +274,6 @@ mainOpenSecurity <- function(securityfile, mapricefs = 20, mapricesl = 50, datef
   security[, diffPercent := Delt(Mid, k = 1)]
   security[, difflogOHLC := Delt(Mid, k = 1, type = "log")]
   security[, diffOxHL := Delt(Open, HLMid, k = 0)]
-  security[, diffsqOxHL := Delt(sqrt(Open), sqrt(HLMid), k = 0)]
   security[, difflogOxHL := Delt(Open, HLMid, k = 0, type = "log")]
   security[, diffOxHLC := Delt(Open, HLCMid, k = 0)]
   security[, difflogOxHLC := Delt(Open, HLCMid, k = 0, type = "log")]
@@ -282,6 +281,8 @@ mainOpenSecurity <- function(securityfile, mapricefs = 20, mapricesl = 50, datef
   # Calculate the daily HL change range.
   security[diffOxHL > 0, diffHxL := Delt(Low, High, k = 0)]
   security[diffOxHL <= 0, diffHxL := Delt(High, Low, k = 0)]
+  security[diffOxHL > 0, diffsqHxL := Delt(sqrt(Low), sqrt(High), k = 0)]
+  security[diffOxHL <= 0, diffsqHxL := Delt(sqrt(High), sqrt(Low), k = 0)]
   security[diffOxHL > 0, difflogHxL := Delt(Low, High, k = 0, type = "log")]
   security[diffOxHL <= 0, difflogHxL := Delt(High, Low, k = 0, type = "log")]
 
