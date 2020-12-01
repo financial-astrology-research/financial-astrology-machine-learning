@@ -12,6 +12,7 @@
 #             8) Optimize weak learners for RMSE.
 #             9) GA feature selection popSize = 50 and iter = 10.
 #            10) Fit using multi train sample mean metric penalized by standard deviation.
+#            11) GA search pxSelect and pySelect optimal solution.
 
 library(boot)
 library(zeallot)
@@ -22,7 +23,7 @@ library(ModelMetrics)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "ensamble-gakknn-NBA"
+modelId <- "ensamble-gakknn-NBC"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
 trainDataStartDate <- as.Date("2010-01-01")
@@ -32,7 +33,7 @@ orbLimit <- 2
 kMax <- 7
 gaPopSize <- 50
 gaMaxIter <- 10
-gaParamsNum <- 9
+gaParamsNum <- 13
 wlCVFolds <- 5
 wlCVRepeats <- 1
 enCVFolds <- 10
@@ -165,8 +166,8 @@ searchModel <- function(symbol) {
   }
 
   parseSolutionParameters <- function(solution) {
-    pxSelect <- pxSelectAll
-    pySelect <- pySelectAll[solution[1:gaParamsNum] == 1]
+    pxSelect <- pxSelectAll[solution[1:4] == 1]
+    pySelect <- pySelectAll[solution[5:gaParamsNum] == 1]
     aspectSelect <- aspectSelectAll
 
     return(list(

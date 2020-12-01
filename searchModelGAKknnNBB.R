@@ -2,7 +2,7 @@
 #             with GA feature selection that maximize Rsquared on train data to fit for
 #             difflogHxL price change estimation.
 # Purpose   : Predict daily traiding signal action category (buy / sell) from estimated daily price change.
-#             1) Planets MO, ME, VE fast planets applying to all planets.
+#             1) Planets MO, ME, VE, SU fast planets applying to all planets.
 #             2) CV folds to 5 with 1 repeats for weak learners, folds to 10 with 10 repeats for ensamble.
 #             3) Split to 80/20 proportion.
 #             4) Validate fit using HxLEff daily price change (buy / sell) instead of Effect
@@ -12,6 +12,7 @@
 #             8) Optimize weak learners for RMSE.
 #             9) GA feature selection popSize = 50 and iter = 10.
 #            10) Fit using multi train sample mean metric penalized by standard deviation.
+#            11) GA search pxSelect optimal solution.
 
 library(boot)
 library(zeallot)
