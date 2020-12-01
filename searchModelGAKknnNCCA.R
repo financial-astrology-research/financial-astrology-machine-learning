@@ -24,7 +24,7 @@ library(ModelMetrics)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "ensamble-gakknn-NCC"
+modelId <- "ensamble-gakknn-NCCA"
 zscoreCut <- 2
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
@@ -45,7 +45,10 @@ pxSelectAll <- c(
   'MO',
   'ME',
   'VE',
-  'SU'
+  'SU',
+  'MA',
+  'JU',
+  'SA'
 )
 
 pySelectAll <- c(
