@@ -65,6 +65,8 @@ testPredictAccuracy <- function(predictFilename) {
   )
 }
 
+getMySymbolsData("working")
+
 #basePath <- "~/Sites/own/trading-signal-processing/csv_indicators/"
 #basePath <- "~/Desktop/"
 basePath <- "~/Desktop/ModelsPred/"
