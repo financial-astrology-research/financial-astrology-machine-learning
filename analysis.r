@@ -295,6 +295,7 @@ mainOpenSecurity <- function(securityfile, mapricefs = 20, mapricesl = 50, datef
   security[, zdiffHxL := scale(diffHxL, center = T)]
   security[, zdiffHxL2 := scale(diffHxL2, center = T)]
   security[, zdifflogHxL := scale(difflogHxL, center = T)]
+  security[, zdiffsqHxL := scale(diffsqHxL, center = T)]
   security[, zdiffOxHL := scale(diffOxHL, center = T)]
   security[, zdifflogOxHL := scale(difflogOxHL, center = T)]
   security[, zdiffOxHLC := scale(diffOxHLC, center = T)]
