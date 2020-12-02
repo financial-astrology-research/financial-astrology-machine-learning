@@ -117,7 +117,8 @@ searchModel <- function(symbol) {
       dailyAspects = dailyAspectsRows,
       orbLimit = orbLimit,
       pxSelect = pxSelect,
-      pySelect = pySelect
+      pySelect = pySelect,
+      aspectSelect = aspectSelect
     )
 
     if (is.null(dailyPlanetYActivationCount)) {
