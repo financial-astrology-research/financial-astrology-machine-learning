@@ -36,12 +36,21 @@ testPredictAccuracy <- function(predictFilename) {
     accuracy <- confusionData$overall['Accuracy']
     prevalence <- confusionData$byClass['Prevalence']
 
-    list(Accuracy = accuracy, Prevalence = prevalence)
+    list(
+      N = nrow(monthlyData),
+      Accuracy = accuracy,
+      Prevalence = prevalence
+    )
   }
 
   accuracyTest <- dailyIndicator[, calculateAccuracy(.SD), by = "YearMonth"]
+  # Filter months that don't have at least 10 observations yet.
+  accuracyTest <- accuracyTest[N >= 10]
+
+  # Calculate descriptive statistics for Accuracy / Prevalence.
   descriptives6m <- round(describe(head(accuracyTest[, c('Accuracy', 'Prevalence')], 6)), 3)
   descriptives3m <- round(describe(tail(accuracyTest[, c('Accuracy', 'Prevalence')], 3)), 3)
+  descriptives2m <- round(describe(tail(accuracyTest[, c('Accuracy', 'Prevalence')], 2)), 3)
   descriptives1m <- round(describe(tail(accuracyTest[, c('Accuracy', 'Prevalence')], 1)), 3)
   createDate <- predictFileInfo$mtime
   prodDays <- as.numeric(difftime(Sys.Date(), as.Date(createDate), units = "days"))
@@ -53,11 +62,13 @@ testPredictAccuracy <- function(predictFilename) {
         ProdDays = prodDays,
         Acc6m = descriptives6m$mean[1],
         Acc3m = descriptives3m$mean[1],
+        Acc2m = descriptives2m$mean[1],
         Acc1m = descriptives1m$mean[1],
         AccSD6m = descriptives6m$sd[1],
         AccSD3m = descriptives3m$sd[1],
         Prev6m = descriptives6m$mean[2],
         Prev3m = descriptives3m$mean[2],
+        Prev2m = descriptives2m$mean[2],
         Prev1m = descriptives1m$mean[2],
         PrevSD6m = descriptives6m$sd[2],
         PrevSD3m = descriptives3m$sd[2]
