@@ -14,7 +14,7 @@ library(arm)
 library(glmulti)
 source("./indicatorPlots.r")
 
-symbol <- "LINK-USD"
+symbol <- "BAT-USD"
 securityData <- mainOpenSecurity(
   symbol, 2, 4, "%Y-%m-%d",
   "2010-01-01", "2020-09-30"
@@ -42,7 +42,7 @@ with(securityData, plot(Date, difflogOHLC))
 with(securityData, qqPlot(difflogOHLC))
 
 # HL true directional difference with real price and log price.
-zscoreCut <- 2.5
+zscoreCut <- 2
 with(securityData, plot(Date, diffHxL))
 with(securityData, qqPlot(diffHxL))
 with(securityData[abs(zdiffHxL) <= zscoreCut], plot(Date, diffHxL))
@@ -60,9 +60,13 @@ with(securityData, hist(diffsqHxL))
 # Filter outliers to compare histograms.
 with(securityData[abs(zdiffHxL) <= zscoreCut], hist(diffHxL))
 with(securityData[abs(zdifflogHxL) <= zscoreCut], hist(difflogHxL))
+with(securityData[abs(zdifflogHLMASxF) <= zscoreCut], hist(difflogHLMASxF))
+with(securityData[abs(zdifflogHLMASxF) <= zscoreCut], qqPlot(difflogHLMASxF))
+with(securityData[abs(zdifflogHLCMASxF) <= zscoreCut], hist(difflogHLCMASxF))
+with(securityData[abs(zdifflogHLCMASxF) <= zscoreCut], qqPlot(difflogHLCMASxF))
 with(securityData, qqPlot(diffHxL2))
 with(securityData[abs(zdiffHxL2) <= zscoreCut], qqPlot(diffHxL2))
-#with(securityData[abs(zdiffHxL2) <= zscoreCut], hist(diffHxL2))
+with(securityData[abs(zdiffHxL2) <= zscoreCut], hist(diffHxL2))
 
 cat("Compare fast/slow MAs change VS OHLC today change effects\n\n")
 with(securityData, table(Eff2, HLCMomEff))

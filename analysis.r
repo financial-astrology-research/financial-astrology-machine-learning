@@ -278,23 +278,25 @@ mainOpenSecurity <- function(securityfile, mapricefs = 20, mapricesl = 50, datef
   security[, difflogOxHL := Delt(Open, HLMid, k = 0, type = "log")]
   security[, diffOxHLC := Delt(Open, HLCMid, k = 0)]
   security[, difflogOxHLC := Delt(Open, HLCMid, k = 0, type = "log")]
+  security[, difflogHLMASxF := Delt(HLMAS, HLMAF, k = 0, type = "log")]
+  security[, difflogHLCMASxF := Delt(HLCMAS, HLCMAF, k = 0, type = "log")]
 
   # Calculate the daily HL change range.
   security[diffOxHL > 0, diffHxL := Delt(Low, High, k = 0)]
   security[diffOxHL <= 0, diffHxL := Delt(High, Low, k = 0)]
-  dirMultiplier <- with(security, ifelse(difflogOxHL > 0, 1 + difflogOxHL, -1 + difflogOxHL))
-  #dirMultiplier <- with(security, ifelse(difflogOxHL > 0, 1 + (difflogOxHL ^ 3), -1 + (difflogOxHL ^ 3)))
-  security[, diffHxL2 := Delt(Low, High, k = 0, type = "log") * dirMultiplier]
   security[diffOxHL > 0, diffsqHxL := Delt(sqrt(Low), sqrt(High), k = 0)]
   security[diffOxHL <= 0, diffsqHxL := Delt(sqrt(High), sqrt(Low), k = 0)]
   security[diffOxHL > 0, difflogHxL := Delt(Low, High, k = 0, type = "log")]
   security[diffOxHL <= 0, difflogHxL := Delt(High, Low, k = 0, type = "log")]
+  security[, diffHxL2 := SMA(difflogHxL, 3)]
 
   # Calculate absulute daily change and zscores.
   security[, zdiffPercent := scale(diffPercent, center = T)]
   security[, zdiffHxL := scale(diffHxL, center = T)]
   security[, zdiffHxL2 := scale(diffHxL2, center = T)]
   security[, zdifflogHxL := scale(difflogHxL, center = T)]
+  security[, zdifflogHLMASxF := scale(difflogHLMASxF, center = T)]
+  security[, zdifflogHLCMASxF := scale(difflogHLCMASxF, center = T)]
   security[, zdiffsqHxL := scale(diffsqHxL, center = T)]
   security[, zdiffOxHL := scale(diffOxHL, center = T)]
   security[, zdifflogOxHL := scale(difflogOxHL, center = T)]
@@ -308,6 +310,7 @@ mainOpenSecurity <- function(securityfile, mapricefs = 20, mapricesl = 50, datef
   }
 
   security <- security[!is.na(val)]
+  security <- security[!is.na(diffHxL2)]
   security[, Eff := cut(val, c(-10000, 0, 10000), labels = c('down', 'up'), right = FALSE)]
   security[, Eff2 := cut(val, c(-10000, 0, 10000), labels = c('sell', 'buy'), right = FALSE)]
   security[, HLCMomEff := cut(HLCMom, c(-10000, 0, 10000), labels = c('sell', 'buy'), right = FALSE)]
