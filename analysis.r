@@ -288,12 +288,12 @@ mainOpenSecurity <- function(securityfile, mapricefs = 20, mapricesl = 50, datef
   security[diffOxHL <= 0, diffsqHxL := Delt(sqrt(High), sqrt(Low), k = 0)]
   security[diffOxHL > 0, difflogHxL := Delt(Low, High, k = 0, type = "log")]
   security[diffOxHL <= 0, difflogHxL := Delt(High, Low, k = 0, type = "log")]
-  security[, diffHxL2 := SMA(difflogHxL, 3)]
+  security[, difflogHxL2 := SMA(difflogHxL, 3)]
 
   # Calculate absulute daily change and zscores.
   security[, zdiffPercent := scale(diffPercent, center = T)]
   security[, zdiffHxL := scale(diffHxL, center = T)]
-  security[, zdiffHxL2 := scale(diffHxL2, center = T)]
+  security[, zdifflogHxL2 := scale(difflogHxL2, center = T)]
   security[, zdifflogHxL := scale(difflogHxL, center = T)]
   security[, zdifflogHLMASxF := scale(difflogHLMASxF, center = T)]
   security[, zdifflogHLCMASxF := scale(difflogHLCMASxF, center = T)]
@@ -310,7 +310,7 @@ mainOpenSecurity <- function(securityfile, mapricefs = 20, mapricesl = 50, datef
   }
 
   security <- security[!is.na(val)]
-  security <- security[!is.na(diffHxL2)]
+  security <- security[!is.na(difflogHxL2)]
   security[, Eff := cut(val, c(-10000, 0, 10000), labels = c('down', 'up'), right = FALSE)]
   security[, Eff2 := cut(val, c(-10000, 0, 10000), labels = c('sell', 'buy'), right = FALSE)]
   security[, HLCMomEff := cut(HLCMom, c(-10000, 0, 10000), labels = c('sell', 'buy'), right = FALSE)]
