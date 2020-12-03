@@ -1,18 +1,18 @@
 # Title     : Daily generalized aspects count + PX/PY comb activation count data KNN regression model
 #             with GA feature selection that maximize Rsquared on train data to fit for
-#             difflogOxHL price change estimation.
+#             difflogHxL2 price change estimation.
 # Purpose   : Predict daily traiding signal action category (buy / sell) from estimated daily price change.
-#             1) Planets ME, VE, SU fast planets applying to all planets and VS.
+#             1) Planets MO, ME, VE fast planets applying to all planets and VS.
 #             2) CV folds to 5 with 1 repeats for weak learners, folds to 10 with 10 repeats for ensamble.
 #             3) Split to 80/20 proportion.
 #             4) Validate fit using HxLEff daily price change (buy / sell) instead of Effect
 #             5) GA feature detection that fit to maximize Rsquared train data.
-#             6) Fit 5 weak learners for difflogOxHL change.
+#             6) Fit 5 weak learners for difflogHxL2 change.
 #             7) Ensamble weak learnets to fit for HxLEff to predict categorical (buy / sell) signal.
 #             8) Optimize weak learners for RMSE.
 #             9) GA feature selection popSize = 50 and iter = 10.
 #            10) Fit using multi train sample mean metric penalized by standard deviation.
-#            11) Perform difflogOxHL zscore outliers drop.
+#            11) Perform difflogHxL2 zscore outliers drop.
 
 library(boot)
 library(zeallot)
@@ -23,7 +23,7 @@ library(ModelMetrics)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "ensamble-gakknn-PBB"
+modelId <- "ensamble-gakknn-PCA"
 zscoreCut <- 2
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
@@ -31,7 +31,7 @@ trainDataStartDate <- as.Date("2010-01-01")
 trainDataEndDate <- as.Date("2020-08-15")
 testDataStartDate <- as.Date("2020-09-01")
 orbLimit <- 2
-kMax <- 8
+kMax <- 6
 gaPopSize <- 50
 gaMaxIter <- 10
 gaParamsNum <- 10
@@ -41,6 +41,7 @@ enCVFolds <- 10
 enCVRepeats <- 10
 
 pxSelectAll <- c(
+  'MO',
   'ME',
   'VE',
   'SU'
@@ -96,8 +97,8 @@ searchModel <- function(symbol) {
 
   # Filter the extreme outliers.
   cat(paste("Original days observations rows:", nrow(securityData)), "\n")
-  securityData <- securityData[abs(zdifflogOxHL) <= zscoreCut]
-  hist(securityData$difflogOxHL)
+  securityData <- securityData[abs(zdifflogHxL2) <= zscoreCut]
+  hist(securityData$difflogHxL2)
   cat(paste("Post filter days observations rows:", nrow(securityData)), "\n\n")
 
   prepareDailyAspects <- function(pxSelect, pySelect, aspectSelect) {
@@ -139,15 +140,15 @@ searchModel <- function(symbol) {
     }
 
     aspectView <- merge(
-      securityData[, c('Date', 'difflogOxHL', 'HxLEff')],
+      securityData[, c('Date', 'difflogHxL2', 'HxLEff')],
       dailyAspects, by = "Date"
     )
 
-    trainIndex <- createDataPartition(aspectView$difflogOxHL, p = 0.80, list = FALSE)
+    trainIndex <- createDataPartition(aspectView$difflogHxL2, p = 0.80, list = FALSE)
     aspectViewTrain <- aspectView[trainIndex,]
     aspectViewValidate <- aspectView[-trainIndex,]
     useFeatures <- names(dailyAspects)[-1]
-    selectCols <- c('difflogOxHL', useFeatures)
+    selectCols <- c('difflogHxL2', useFeatures)
     #cat("Selected cols:", selectCols, "\n")
 
     return(
@@ -169,7 +170,7 @@ searchModel <- function(symbol) {
     }
 
     fitModel <- train(
-      formula(difflogOxHL ~ .),
+      formula(difflogHxL2 ~ .),
       data = modelData$train,
       method = "kknn",
       metric = "RMSE",
@@ -210,9 +211,9 @@ searchModel <- function(symbol) {
       # Validate data predictions with different train partitions.
       modelData <- prepareModelData(params)
       validateDiffPercentPred <- predict(fitModel, modelData$validate, type = "raw")
-      validateMAE <- mae(modelData$validate$difflogOxHL, validateDiffPercentPred)
-      validateRMSE <- rmse(modelData$validate$difflogOxHL, validateDiffPercentPred)
-      validateR2 <- cor(modelData$validate$difflogOxHL, validateDiffPercentPred)^2
+      validateMAE <- mae(modelData$validate$difflogHxL2, validateDiffPercentPred)
+      validateRMSE <- rmse(modelData$validate$difflogHxL2, validateDiffPercentPred)
+      validateR2 <- cor(modelData$validate$difflogHxL2, validateDiffPercentPred)^2
       cat("Validate", i, "MAE:", validateMAE, "RMSE:", validateRMSE, "R2:", validateR2, "\n")
       allFitMetrics <- c(allFitMetrics, validateR2)
     }
@@ -266,7 +267,7 @@ searchModel <- function(symbol) {
   dailyAspects <- prepareDailyAspects(pxSelect, pySelect, aspectSelect)
 
   aspectView <- merge(
-    securityData[, c('Date', 'difflogOxHL', 'HxLEff')],
+    securityData[, c('Date', 'difflogHxL2', 'HxLEff')],
     dailyAspects, by = "Date"
   )
 
