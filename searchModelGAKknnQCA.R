@@ -1,13 +1,13 @@
 # Title     : Daily generalized aspects count + PX activation + PY activation count data KNN regression model
 #             with GA feature selection that maximize Rsquared on train data to fit for
-#             diflogHxLBuy price change estimation.
+#             difflogHxLBuy price change estimation.
 # Purpose   : Predict daily traiding signal action category (buy / sell) from estimated daily price change.
 #             1) Planets MO, ME, VE, SU fast planets applying to all planets and VS, NN.
 #             2) CV folds to 5 with 1 repeats for weak learners, folds to 10 with 10 repeats for ensamble.
 #             3) Split to 80/20 proportion.
 #             4) Validate fit using HxLEff daily price change (buy / sell) instead of Effect
 #             5) GA feature detection that fit to maximize Rsquared train data.
-#             6) Fit 5 weak learners for diflogHxLBuy change.
+#             6) Fit 5 weak learners for difflogHxLBuy change.
 #             7) Ensamble weak learnets to fit for HxLEff to predict categorical (buy / sell) signal.
 #             8) Optimize weak learners for RMSE.
 #             9) GA feature selection popSize = 50 and iter = 10.
@@ -146,15 +146,15 @@ searchModel <- function(symbol) {
     }
 
     aspectView <- merge(
-      securityData[, c('Date', 'diflogHxLBuy', 'HxLEff')],
+      securityData[, c('Date', 'difflogHxLBuy', 'HxLEff')],
       dailyAspects, by = "Date"
     )
 
-    trainIndex <- createDataPartition(aspectView$diflogHxLBuy, p = 0.80, list = FALSE)
+    trainIndex <- createDataPartition(aspectView$difflogHxLBuy, p = 0.80, list = FALSE)
     aspectViewTrain <- aspectView[trainIndex,]
     aspectViewValidate <- aspectView[-trainIndex,]
     useFeatures <- names(dailyAspects)[-1]
-    selectCols <- c('diflogHxLBuy', useFeatures)
+    selectCols <- c('difflogHxLBuy', useFeatures)
     #cat("Selected cols:", selectCols, "\n")
 
     return(
@@ -176,7 +176,7 @@ searchModel <- function(symbol) {
     }
 
     fitModel <- train(
-      formula(diflogHxLBuy ~ .),
+      formula(difflogHxLBuy ~ .),
       data = modelData$train,
       method = "kknn",
       metric = "RMSE",
@@ -217,9 +217,9 @@ searchModel <- function(symbol) {
       # Validate data predictions with different train partitions.
       modelData <- prepareModelData(params)
       validateDiffPercentPred <- predict(fitModel, modelData$validate, type = "raw")
-      validateMAE <- mae(modelData$validate$diflogHxLBuy, validateDiffPercentPred)
-      validateRMSE <- rmse(modelData$validate$diflogHxLBuy, validateDiffPercentPred)
-      validateR2 <- cor(modelData$validate$diflogHxLBuy, validateDiffPercentPred)^2
+      validateMAE <- mae(modelData$validate$difflogHxLBuy, validateDiffPercentPred)
+      validateRMSE <- rmse(modelData$validate$difflogHxLBuy, validateDiffPercentPred)
+      validateR2 <- cor(modelData$validate$difflogHxLBuy, validateDiffPercentPred)^2
       cat("Validate", i, "MAE:", validateMAE, "RMSE:", validateRMSE, "R2:", validateR2, "\n")
       allFitMetrics <- c(allFitMetrics, validateR2)
     }
@@ -273,7 +273,7 @@ searchModel <- function(symbol) {
   dailyAspects <- prepareDailyAspects(pxSelect, pySelect, aspectSelect)
 
   aspectView <- merge(
-    securityData[, c('Date', 'diflogHxLBuy', 'HxLEff')],
+    securityData[, c('Date', 'difflogHxLBuy', 'HxLEff')],
     dailyAspects, by = "Date"
   )
 
