@@ -67,6 +67,7 @@ with(securityData[abs(zdifflogHLCMASxF) <= zscoreCut], qqPlot(difflogHLCMASxF))
 with(securityData, qqPlot(difflogHxL2))
 with(securityData[abs(zdifflogHxL2) <= zscoreCut], qqPlot(difflogHxL2))
 with(securityData[abs(zdifflogHxL2) <= zscoreCut], hist(difflogHxL2))
+with(securityData, hist(difflogHxLBuy))
 
 cat("Compare fast/slow MAs change VS OHLC today change effects\n\n")
 with(securityData, table(Eff2, HLCMomEff))

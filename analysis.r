@@ -289,6 +289,7 @@ mainOpenSecurity <- function(securityfile, mapricefs = 20, mapricesl = 50, datef
   security[diffOxHL > 0, difflogHxL := Delt(Low, High, k = 0, type = "log")]
   security[diffOxHL <= 0, difflogHxL := Delt(High, Low, k = 0, type = "log")]
   security[, difflogHxL2 := SMA(difflogHxL, 3)]
+  security[, difflogHxLBuy := ifelse(difflogHxL > 0, 1, 0)]
 
   # Calculate absulute daily change and zscores.
   security[, zdiffPercent := scale(diffPercent, center = T)]
