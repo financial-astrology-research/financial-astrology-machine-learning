@@ -2,7 +2,7 @@
 #             with GA feature selection that maximize Rsquared on train data to fit for
 #             diflogHxLBuy price change estimation.
 # Purpose   : Predict daily traiding signal action category (buy / sell) from estimated daily price change.
-#             1) Planets MO, ME, VE fast planets applying to all planets and VS, NN.
+#             1) Planets MO, ME, VE, SU fast planets applying to all planets and VS, NN.
 #             2) CV folds to 5 with 1 repeats for weak learners, folds to 10 with 10 repeats for ensamble.
 #             3) Split to 80/20 proportion.
 #             4) Validate fit using HxLEff daily price change (buy / sell) instead of Effect
@@ -22,7 +22,7 @@ library(ModelMetrics)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "ensamble-gakknn-QC"
+modelId <- "ensamble-gakknn-QCA"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
 trainDataStartDate <- as.Date("2010-01-01")
@@ -41,7 +41,8 @@ enCVRepeats <- 10
 pxSelectAll <- c(
   'MO',
   'ME',
-  'VE'
+  'VE',
+  'SU'
 )
 
 pySelectAll <- c(
