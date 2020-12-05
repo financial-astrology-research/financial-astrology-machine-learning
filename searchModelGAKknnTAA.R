@@ -23,7 +23,7 @@ library(ModelMetrics)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "ensamble-gakknn-TA"
+modelId <- "ensamble-gakknn-TAA"
 zscoreCut <- 2
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
@@ -43,7 +43,8 @@ enCVRepeats <- 10
 pxSelectAll <- c(
   'MO',
   'ME',
-  'VE'
+  'VE',
+  'SU'
 )
 
 pySelectAll <- c(
