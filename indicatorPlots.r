@@ -487,6 +487,20 @@ dailyAspectsAddEnergy3 <- function(dailyAspects, speedDecay = 0.6) {
   return(dailyAspects)
 }
 
+dailyAspectsAddEnergyWeightWithDecay <- function(dailyAspects, speedDecay = 0.6, aspectWeight) {
+  energyConstant <- 2
+  aspectWeightIndex <- matrix(
+    aspectWeight, nrow = 1, ncol = length(aspectWeight),
+    byrow = T, dimnames = list(c('weight'), aspects)
+  )
+
+  # Calculate max and proportional energy.
+  dailyAspects[, enmax := energyConstant * aspectWeightIndex['weight', as.character(aspect)]]
+  dailyAspects[, ennow := energyDecay(enmax, orb, speedDecay)]
+
+  return(dailyAspects)
+}
+
 dailyAspectsAddCumulativeEnergy <- function(dailyAspects) {
   # Merge daily security prices with aspects.
   # dailyAspectsPriceResearch <- merge(dailyAspects, securityTrain[, c('Date', 'diffPercent')], by = c('Date'))
