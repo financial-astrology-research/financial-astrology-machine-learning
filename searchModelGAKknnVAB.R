@@ -251,7 +251,7 @@ searchModel <- function(symbol) {
   fitModel5 <- solutionModelTrain(params)
   #fitModel5 %>% varImp() %>% print()
 
-  c(pxSelect, pySelect, aspectSelect) %<-% params
+  c(pxSelect, pySelect, aspectSelect, aspectWeight) %<-% params
   dailyAspects <- prepareDailyAspects(pxSelect, pySelect, aspectSelect, aspectWeight)
 
   aspectView <- merge(
