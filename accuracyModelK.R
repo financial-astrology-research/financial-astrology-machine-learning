@@ -5,7 +5,7 @@ library(caret)
 library(psych)
 source("analysis.r")
 
-symbolTest <- "ADA-USD"
+symbolTest <- "ZRX-USD"
 securityDataTest <- mainOpenSecurity(
   symbolTest, 2, 4,
   "%Y-%m-%d", "2020-01-01"
@@ -469,6 +469,7 @@ indicatorFile <- "ADA-USD-predict-kknnLDAF-ensamble" # A: 70, 13 / P: 50, 13 (Be
 #indicatorFile <- "ZRX-USD-predict-kknnLDQ-ensamble" # A: 73, 11 / P: 46, 12 (Best)
 #indicatorFile <- "ZRX-USD-predict-kknnLDQA-ensamble" # A: 70, 13 / P: 49, 15
 #indicatorFile <- "ZRX-USD-predict-kknnLDR-ensamble" # A: 65, 20 / P: 48, 13
+indicatorFile <- "ZRX-USD-predict-ensamble-gakknn-MAA"
 
 dailyIndicator <- fread(
   paste(basePath, indicatorFile, ".csv", sep = "")
