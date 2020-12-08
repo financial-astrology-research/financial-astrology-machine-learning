@@ -57,21 +57,23 @@ testPredictAccuracy <- function(predictFilename) {
 
   return(
     data.table(
-        PredictFile = predictFilename,
-        Created = createDate,
-        ProdDays = prodDays,
-        Acc6m = descriptives6m$mean[1],
-        Acc3m = descriptives3m$mean[1],
-        Acc2m = descriptives2m$mean[1],
-        Acc1m = descriptives1m$mean[1],
-        AccSD6m = descriptives6m$sd[1],
-        AccSD3m = descriptives3m$sd[1],
-        Prev6m = descriptives6m$mean[2],
-        Prev3m = descriptives3m$mean[2],
-        Prev2m = descriptives2m$mean[2],
-        Prev1m = descriptives1m$mean[2],
-        PrevSD6m = descriptives6m$sd[2],
-        PrevSD3m = descriptives3m$sd[2]
+      PredictFile = predictFilename,
+      Created = createDate,
+      ProdDays = prodDays,
+      Acc6m = descriptives6m$mean[1],
+      Acc3m = descriptives3m$mean[1],
+      Acc2m = descriptives2m$mean[1],
+      Acc1m = descriptives1m$mean[1],
+      AccSD6m = descriptives6m$sd[1],
+      AccSD3m = descriptives3m$sd[1],
+      AccSD2m = descriptives2m$sd[1],
+      Prev6m = descriptives6m$mean[2],
+      Prev3m = descriptives3m$mean[2],
+      Prev2m = descriptives2m$mean[2],
+      Prev1m = descriptives1m$mean[2],
+      PrevSD6m = descriptives6m$sd[2],
+      PrevSD3m = descriptives3m$sd[2],
+      PrevSD2m = descriptives2m$sd[2]
     )
   )
 }
