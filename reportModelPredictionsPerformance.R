@@ -57,6 +57,7 @@ testPredictAccuracy <- function(predictFilename) {
 
   reportData <- data.table(
     PredictFile = predictFilename,
+    Symbol = symbolTest,
     Created = createDate,
     ProdDays = prodDays,
     Acc6m = descriptives6m$mean[1],
