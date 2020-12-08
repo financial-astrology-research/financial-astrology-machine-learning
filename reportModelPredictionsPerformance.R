@@ -55,27 +55,32 @@ testPredictAccuracy <- function(predictFilename) {
   createDate <- predictFileInfo$mtime
   prodDays <- as.numeric(difftime(Sys.Date(), as.Date(createDate), units = "days"))
 
-  return(
-    data.table(
-      PredictFile = predictFilename,
-      Created = createDate,
-      ProdDays = prodDays,
-      Acc6m = descriptives6m$mean[1],
-      Acc3m = descriptives3m$mean[1],
-      Acc2m = descriptives2m$mean[1],
-      Acc1m = descriptives1m$mean[1],
-      AccSD6m = descriptives6m$sd[1],
-      AccSD3m = descriptives3m$sd[1],
-      AccSD2m = descriptives2m$sd[1],
-      Prev6m = descriptives6m$mean[2],
-      Prev3m = descriptives3m$mean[2],
-      Prev2m = descriptives2m$mean[2],
-      Prev1m = descriptives1m$mean[2],
-      PrevSD6m = descriptives6m$sd[2],
-      PrevSD3m = descriptives3m$sd[2],
-      PrevSD2m = descriptives2m$sd[2]
-    )
+  reportData <- data.table(
+    PredictFile = predictFilename,
+    Created = createDate,
+    ProdDays = prodDays,
+    Acc6m = descriptives6m$mean[1],
+    Acc3m = descriptives3m$mean[1],
+    Acc2m = descriptives2m$mean[1],
+    Acc1m = descriptives1m$mean[1],
+    AccSD6m = descriptives6m$sd[1],
+    AccSD3m = descriptives3m$sd[1],
+    AccSD2m = descriptives2m$sd[1],
+    Prev6m = descriptives6m$mean[2],
+    Prev3m = descriptives3m$mean[2],
+    Prev2m = descriptives2m$mean[2],
+    Prev1m = descriptives1m$mean[2],
+    PrevSD6m = descriptives6m$sd[2],
+    PrevSD3m = descriptives3m$sd[2],
+    PrevSD2m = descriptives2m$sd[2]
   )
+
+  reportData$Rank <- with(
+    reportData,
+    ((Acc3m / (1 + AccSD3m)) * 1 + (Acc2m / (1 + AccSD2m)) * 2 + Acc1m * 3) / 6
+  )
+
+  return(reportData)
 }
 
 getMySymbolsData("working")
