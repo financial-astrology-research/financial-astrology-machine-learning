@@ -44,8 +44,8 @@ testPredictAccuracy <- function(predictFilename) {
   }
 
   accuracyTest <- dailyIndicator[, calculateAccuracy(.SD), by = "YearMonth"]
-  # Filter months that don't have at least 10 observations yet.
-  accuracyTest <- accuracyTest[N >= 10]
+  # Filter months that don't have at least N observations yet.
+  accuracyTest <- accuracyTest[N >= 7]
 
   # Calculate descriptive statistics for Accuracy / Prevalence.
   descriptives6m <- round(describe(head(accuracyTest[, c('Accuracy', 'Prevalence')], 6)), 3)
