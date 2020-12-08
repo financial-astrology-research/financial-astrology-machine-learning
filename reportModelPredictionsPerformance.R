@@ -78,7 +78,7 @@ testPredictAccuracy <- function(predictFilename) {
 
   reportData$Rank <- with(
     reportData,
-    ((Acc3m / (1 + AccSD3m)) * 1 + (Acc2m / (1 + AccSD2m)) * 2 + Acc1m * 3) / 6
+    ((Acc3m / (1 + AccSD3m) ^ 2) + (Acc2m / (1 + AccSD2m) ^ 2) * 2 + Acc1m * 3) / 6
   )
 
   return(reportData)
