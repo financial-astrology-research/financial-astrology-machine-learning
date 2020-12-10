@@ -20,9 +20,22 @@ preparePredictionCSV <- function(predictFilename) {
 
   exportCols <- c('Date', 'EffPred')
   fwrite(predictionTable[, ..exportCols], targetFilePath)
+  cat(symbolId, "predictions exported to:", targetFilePath, "\n")
 
-  return(targetFilePath)
+  return(predictionTable[, ..exportCols])
 }
 
-productionFiles <- lapply(predictionsList$filename, preparePredictionCSV)
-cat("Production prediction files export completed:\n", unlist(productionFiles))
+# Calculate a daily buy/sell signal count index for all symbols.
+allSymbolsPredictions <- setDT(rbindlist(lapply(predictionsList$filename, preparePredictionCSV)))
+allSymbolsSignalIndex <- dcast(
+  allSymbolsPredictions,
+  Date ~ EffPred,
+  fun.aggregate = SIT::count,
+  value.var = "EffPred",
+  fill = 0
+)
+setDT(allSymbolsSignalIndex)
+
+indexFilePath <- paste(targetDirectory, "ml-signals-index.csv", sep = "/")
+cat("Daily signals count index exported to:", indexFilePath)
+fwrite(allSymbolsSignalIndex, indexFilePath)
