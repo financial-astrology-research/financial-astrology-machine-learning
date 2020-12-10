@@ -27,22 +27,31 @@ preparePredictionCSV <- function(predictFilename) {
 
 # Calculate a daily buy/sell signal count index for all symbols.
 allSymbolsPredictions <- setDT(rbindlist(lapply(predictionsList$filename, preparePredictionCSV)))
-allSymbolsSignalIndex <- dcast(
-  allSymbolsPredictions,
-  Date ~ EffPred,
-  fun.aggregate = SIT::count,
-  value.var = "EffPred",
-  fill = 0
-)
-setDT(allSymbolsSignalIndex)
+allSymbolsPredictions[, Date := as.Date(Date)]
+allSymbolsPredictions[, YearMonth := format(Date, "%Y-%m")]
+allSymbolsPredictions[, YearWeek := format(Date, "%Y-%V")]
 
-# Calculate index signal based on the majority of all symbols signals side.
-allSymbolsSignalIndex[,
-  Action := ifelse(buy > sell, "buy",
-    ifelse(buy == sell, "neutral", "sell")
+computeAllSymbolsIndex <- function(byFormula, indexName) {
+  allSymbolsIndex <- dcast(
+    allSymbolsPredictions,
+    byFormula,
+    fun.aggregate = SIT::count,
+    value.var = "EffPred",
+    fill = 0
   )
-]
+  setDT(allSymbolsIndex)
 
-indexFilePath <- paste(targetDirectory, "ml-signals-index.csv", sep = "/")
-cat("Daily signals count index exported to:", indexFilePath)
-fwrite(allSymbolsSignalIndex, indexFilePath)
+  # Calculate index signal based on the majority of all symbols signals side.
+  allSymbolsIndex[,
+    Action := ifelse(buy > sell, "buy", ifelse(buy == sell, "neutral", "sell"))
+  ]
+
+  targetFile <- paste("ml-all", indexName, "index.csv", sep = "-")
+  indexFilePath <- paste(targetDirectory, targetFile, sep = "/")
+  cat("Signals count index exported to:", indexFilePath, "\n")
+  fwrite(allSymbolsIndex, indexFilePath)
+}
+
+computeAllSymbolsIndex("Date ~ EffPred", "daily")
+computeAllSymbolsIndex("YearWeek ~ EffPred", "weekly")
+computeAllSymbolsIndex("YearMonth ~ EffPred", "monthly")
