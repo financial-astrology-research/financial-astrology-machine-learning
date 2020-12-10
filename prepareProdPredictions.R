@@ -36,6 +36,13 @@ allSymbolsSignalIndex <- dcast(
 )
 setDT(allSymbolsSignalIndex)
 
+# Calculate index signal based on the majority of all symbols signals side.
+allSymbolsSignalIndex[,
+  Action := ifelse(buy > sell, "buy",
+    ifelse(buy == sell, "neutral", "sell")
+  )
+]
+
 indexFilePath <- paste(targetDirectory, "ml-signals-index.csv", sep = "/")
 cat("Daily signals count index exported to:", indexFilePath)
 fwrite(allSymbolsSignalIndex, indexFilePath)
