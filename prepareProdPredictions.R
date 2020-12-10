@@ -12,7 +12,7 @@ predictionsList <- fread(selectionFile)
 preparePredictionCSV <- function(predictFilename) {
   cat("Processing: ", predictFilename, "\n")
   filenameParts <- unlist(strsplit(predictFilename, "-"))
-  symbolId <- paste(filenameParts[1], filenameParts[2], sep = "")
+  symbolId <- paste(filenameParts[1], filenameParts[2], "T", sep = "")
   sourceFilePath <- paste(sourceDirectory, predictFilename, sep = "/")
   predictionTable <- fread(sourceFilePath)
   targetFilename <- paste("ml", symbolId, "daily.csv", sep = "-")
