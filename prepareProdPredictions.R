@@ -80,8 +80,8 @@ prepareConsensusPredictionCSV <- function(predictFilename) {
   consensusIndicator <- merge(symbolIndicator, indexIndicator[, c('Date', 'Action')], by = "Date")
   setnames(consensusIndicator, c("Date", "SymbolAction", "IndexAction"))
 
-  # Rely on index signal when symbol signal differs from index indicator.
-  consensusIndicator[SymbolAction != IndexAction, EffPred := IndexAction]
+  # Hold when symbol indicator signal differs from index indicator.
+  consensusIndicator[SymbolAction != IndexAction, EffPred := "hold"]
   consensusIndicator[SymbolAction == IndexAction | SymbolAction == "neutral", EffPred := SymbolAction]
   consensusTargetFilePath <- getConsensusTargetFilePath(symbolId)
   fwrite(consensusIndicator[, ..exportCols], consensusTargetFilePath)
