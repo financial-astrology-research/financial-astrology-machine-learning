@@ -5,10 +5,10 @@ library(caret)
 library(psych)
 source("analysis.r")
 
-symbolTest <- "LINK-USD"
+symbolTest <- readline("Enter Yahoo Finance Symbol ID:")
 securityDataTest <- mainOpenSecurity(
   symbolTest, 2, 4,
-  "%Y-%m-%d", "2020-01-01"
+  "%Y-%m-%d", "2020-12-15"
 )
 #basePath <- "~/Sites/own/trading-signal-processing/csv_indicators/"
 #basePath <- "~/Desktop/"
@@ -473,7 +473,8 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "ZRX-USD-predict-kknnLDR-ensamble" # A: 65, 20 / P: 48, 13
 #indicatorFile <- "ZRX-USD-predict-ensamble-gakknn-MAA"
 
-indicatorFile <- "ml-LINKUSDT-daily-consensus"
+symbolId <- paste0(str_replace(symbolTest, "-", ""), "T")
+indicatorFile <- paste("ml", symbolId, "daily-consensus", sep = "-")
 #indicatorFile <- "ml-LINKUSDT-daily"
 
 dailyIndicator <- fread(
