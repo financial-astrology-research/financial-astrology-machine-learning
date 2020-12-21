@@ -68,7 +68,6 @@ setClassicAspectsSet7 <- function() {
   defpolarities <<- c(2, 1, 0, 1, 0, 1, 0, 0)
 }
 
-# Limit orbs to 2 degrees which is the max strength.
 setClassicAspectsSet8 <- function() {
   aspects <<- c(0, 30, 45, 60, 90, 120, 135, 150, 180)
   aspectsEnergy <<- c(3, 3, 3, 3, 3, 3, 3, 3, 3)
