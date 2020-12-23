@@ -13,10 +13,10 @@
 #             9) GA feature selection popSize = 50 and iter = 10.
 #            10) Fit using multi train sample mean metric penalized by standard deviation.
 #            11) Perform difflogHxL zscore outliers drop.
-#            13) Increase default aspects orb limit to 3.
-#            12) Use minor aspects - 30 within 2 degree orb only.
+#            12) Increase default aspects orb limit to 3.
 #            13) New aspects set were all aspects orbs are calculated with 6 degrees orb
-#                and filtered to 3 (major) and 2 (minor) for this model.
+#                and filtered to 3 (major), 2 (medium), 1 (minor) for this model.
+#            14) Minor aspects set: 45, Medium: 135/150, Major: 0/30/60/90/120/180
 
 library(boot)
 library(zeallot)
@@ -27,7 +27,7 @@ library(ModelMetrics)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "ensamble-gakknn-VACGBB"
+modelId <- "ensamble-gakknn-VACGBC"
 zscoreCut <- 2
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
@@ -83,7 +83,9 @@ hourlyPlanets <<- openHourlyPlanets('planets_12', clear = F)
 dailyAspectsRows <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
 # Filter minor aspects with orb greater than 2 degree.
 dailyAspectsRows$filter <- F
-dailyAspectsRows[aspect %in% c(45, 135) & orb > 2, filter := T]
+dailyAspectsRows[aspect %in% c(45) & orb > 1, filter := T]
+dailyAspectsRows[aspect %in% c(135, 150) & orb > 2, filter := T]
+dailyAspectsRows[aspect %in% c(0, 30, 60, 90, 120, 180) & orb > 3, filter := T]
 dailyAspectsRows <- dailyAspectsRows[filter != T,]
 
 control <- trainControl(
