@@ -14,6 +14,9 @@
 #            10) Fit using multi train sample mean metric penalized by standard deviation.
 #            11) Aspect energy without orb decay.
 #            12) GA solution aspect energy search within 0-4 interval.
+#            13) New aspects set were all aspects orbs are calculated with 6 degrees orb
+#                and filtered to 4 (major), 2 (minor) for this model.
+#            14) Minor aspects set: 135/150/180, Major: 0/30/45/60/90/120
 
 library(boot)
 library(zeallot)
@@ -24,14 +27,14 @@ library(ModelMetrics)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "ensamble-gakknn-MIFC"
+modelId <- "ensamble-gakknn-MIFCA"
 zdiffPercentCut <- 2
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
 trainDataStartDate <- as.Date("2010-01-01")
 trainDataEndDate <- as.Date("2020-08-15")
 testDataStartDate <- as.Date("2020-09-01")
-orbLimit <- 4
+orbLimit <- 6
 kMax <- 7
 gaPopSize <- 100
 gaMaxIter <- 10
@@ -78,10 +81,15 @@ aspectSelectAll <- c(
 )
 
 idCols <- c('Date', 'Hour')
-setClassicAspectsSet8()
+setClassicAspectsSet10()
 setPlanetsMOMEVESUMACEVSJUNNSAURCHNEPL()
 hourlyPlanets <<- openHourlyPlanets('planets_12', clear = F)
 dailyAspectsRows <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+# Filter minor aspects with orb greater than 2 degree.
+dailyAspectsRows$filter <- F
+dailyAspectsRows[aspect %in% c(135, 150, 180) & orb > 2, filter := T]
+dailyAspectsRows[aspect %in% c(0, 30, 45, 60, 90, 120) & orb > 4, filter := T]
+dailyAspectsRows <- dailyAspectsRows[filter != T,]
 
 control <- trainControl(
   method = "repeatedcv",
