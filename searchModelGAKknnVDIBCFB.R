@@ -2,7 +2,7 @@
 #             with GA feature selection that maximize Rsquared on train data to fit for
 #             difflogHxL price change estimation.
 # Purpose   : Predict daily traiding signal action category (buy / sell) from estimated daily price change.
-#             1) Planets ME, VE, SU, MA, JU planets applying to all planets, asteroids and NN.
+#             1) Planets ME, VE, SU, MA planets applying to all planets, asteroids and NN.
 #             2) CV folds to 5 with 1 repeats for weak learners, folds to 10 with 10 repeats for ensamble.
 #             3) Split to 80/20 proportion.
 #             4) Validate fit using Actbin daily price change (buy / sell) instead of Effect
@@ -26,7 +26,7 @@ library(ModelMetrics)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "ensamble-gakknn-VDIBCFA"
+modelId <- "ensamble-gakknn-VDIBCFB"
 zscoreCut <- 2
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
@@ -47,8 +47,7 @@ pxSelectAll <- c(
   'ME',
   'VE',
   'SU',
-  'MA',
-  'JU'
+  'MA'
 )
 
 aspectSelectAll <- c(
