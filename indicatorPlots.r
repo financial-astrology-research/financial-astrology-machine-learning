@@ -2369,7 +2369,7 @@ dailyPlanetYActivationPolarityCount <- function(
 }
 
 # Filter daily aspects rows within custom orb per aspect.
-filterAspectsWithCustomOrb <- function(dailyAspects, customAspectsOrb = NULL) {
+selectAspectsWithCustomOrb <- function(dailyAspects, customAspectsOrb = NULL) {
   if (is.null(customAspectsOrb)) {
     customAspectsOrb <- deforbs
   }
@@ -2387,9 +2387,17 @@ filterAspectsWithCustomOrb <- function(dailyAspects, customAspectsOrb = NULL) {
   return(dailyAspects)
 }
 
-filterSeparativeAspectsWithCustomOrb <- function (dailyAspects, customOrb = 1) {
+selectSeparativeAspectsWithCustomOrb <- function (dailyAspects, customOrb = 1) {
   dailyAspects$filter <- F
   dailyAspects[type == 'S' & orb > customOrb, filter := T]
+  dailyAspects <- dailyAspects[filter != T,]
+
+  return(dailyAspects)
+}
+
+selectPlanetXAspects <- function (dailyAspects, px, aspectsSelect = c()) {
+  dailyAspects$filter <- F
+  dailyAspects[p.x == px & aspect %in% aspectsSelect]
   dailyAspects <- dailyAspects[filter != T,]
 
   return(dailyAspects)
