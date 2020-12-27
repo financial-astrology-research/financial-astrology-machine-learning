@@ -85,8 +85,8 @@ hourlyPlanets <<- openHourlyPlanets('planets_12', clear = F)
 dailyAspectsRows <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
 # Filter aspects with custom orb cut based on aspect level.
 customAspectsOrbs <- c(4, 2, 2, 2, 4, 2, 4, 2, 4)
-dailyAspectsRows <- filterAspectsWithCustomOrb(dailyAspectsRows, customAspectsOrbs)
-dailyAspectsRows <- filterSeparativeAspectsWithCustomOrb(dailyAspectsRows, 1)
+dailyAspectsRows <- selectAspectsWithCustomOrb(dailyAspectsRows, customAspectsOrbs)
+dailyAspectsRows <- selectSeparativeAspectsWithCustomOrb(dailyAspectsRows, 1)
 
 control <- trainControl(
   method = "repeatedcv",
