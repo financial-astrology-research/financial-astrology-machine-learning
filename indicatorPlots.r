@@ -2367,3 +2367,30 @@ dailyPlanetYActivationPolarityCount <- function(
 
   return(dailyAspectsCount)
 }
+
+# Filter daily aspects rows within custom orb per aspect.
+filterAspectsWithCustomOrb <- function(dailyAspects, customAspectsOrb = NULL) {
+  if (is.null(customAspectsOrb)) {
+    customAspectsOrb <- deforbs
+  }
+
+  aspectOrbsIndex <- matrix(
+    customAspectsOrb, nrow = 1, ncol = length(customAspectsOrb),
+    byrow = T, dimnames = list(c('orb'), aspects)
+  )
+
+  # Calculate max and proportional energy.
+  dailyAspects$filter <- F
+  dailyAspects[orb > aspectOrbsIndex['orb', as.character(aspect)], filter := T]
+  dailyAspects <- dailyAspects[filter != T,]
+
+  return(dailyAspects)
+}
+
+filterSeparativeAspectsWithCustomOrb <- function (dailyAspects, customOrb = 1) {
+  dailyAspects$filter <- F
+  dailyAspects[type == 'S' & orb > customOrb, filter := T]
+  dailyAspects <- dailyAspects[filter != T,]
+
+  return(dailyAspects)
+}
