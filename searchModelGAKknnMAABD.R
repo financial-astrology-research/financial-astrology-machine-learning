@@ -2,7 +2,7 @@
 #             with GA feature selection that maximize Rsquared on train data to fit for
 #             daily price percent change estimation.
 # Purpose   : Based on ModelLD this model has some variations:
-#             1) Planets MO, ME, VE, SU fast planets applying to all slow planets.
+#             1) Planets MO, ME, VE, SU, MA fast planets applying to all slow planets.
 #             2) CV folds to 5 with 1 repeats for weak learners, folds to 5 with 5 repeats for ensamble.
 #             3) Split to 80/20 proportion.
 #             4) Validate fit using Actbin daily price change (buy / sell) instead of Effect
@@ -13,7 +13,7 @@
 #             9) GA feature selection popSize = 100 and iter = 10.
 #            10) KKNN K param set to 7.
 #            11) Fit using multi train sample mean metric penalized by standard deviation.
-#            12) GA search orb limit 1-4 degrees.
+#            12) GA search orb limit 2-4 degrees.
 
 library(boot)
 library(caret)
@@ -24,7 +24,7 @@ library(zeallot)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "ensamble-gakknn-MAABB"
+modelId <- "ensamble-gakknn-MAABD"
 zdiffPercentCut <- 2
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
@@ -34,7 +34,7 @@ testDataStartDate <- as.Date("2020-09-01")
 kMax <- 7
 gaPopSize <- 100
 gaMaxIter <- 10
-gaParamsNum <- 14
+gaParamsNum <- 15
 wlCVFolds <- 5
 wlCVRepeats <- 1
 enCVFolds <- 5
@@ -44,7 +44,8 @@ pxSelectAll <- c(
   'MO',
   'ME',
   'VE',
-  'SU'
+  'SU',
+  'MA'
 )
 
 pySelectAll <- c(
@@ -219,7 +220,7 @@ searchModel <- function(symbol) {
   gar <- ga(
     "real-valued",
     fitness = findRelevantFeatures,
-    lower = c(1, rep(0, gaParamsNum-1)),
+    lower = c(2, rep(0, gaParamsNum-1)),
     upper = c(4, rep(1, gaParamsNum-1)),
     popSize = gaPopSize, maxiter = gaMaxIter, run = gaMaxIter,
     selection = gaint_rwSelection, mutation = gaint_raMutation,
