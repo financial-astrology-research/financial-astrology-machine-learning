@@ -585,8 +585,8 @@ dailyAspectsAddEnergyWeightWithDecay5 <- function(
   dailyAspects[,
     enweight :=
       aspectWeightIndex['weight', as.character(aspect)] *
-      planetWeightIndex['weight', p.x] *
-      planetWeightIndex['weight', p.y]
+        planetWeightIndex['weight', p.x] *
+        planetWeightIndex['weight', p.y]
   ]
   dailyAspects[, enmax := energyConstant * enweight]
   dailyAspects[, ennow := energyDecay(enmax, orb, speedDecay)]
@@ -2387,7 +2387,7 @@ selectAspectsWithCustomOrb <- function(dailyAspects, customAspectsOrb = NULL) {
   return(dailyAspects)
 }
 
-selectSeparativeAspectsWithCustomOrb <- function (dailyAspects, customOrb = 1) {
+selectSeparativeAspectsWithCustomOrb <- function(dailyAspects, customOrb = 1) {
   dailyAspects$filter <- F
   dailyAspects[type == 'S' & orb > customOrb, filter := T]
   dailyAspects <- dailyAspects[filter != T,]
@@ -2395,10 +2395,46 @@ selectSeparativeAspectsWithCustomOrb <- function (dailyAspects, customOrb = 1) {
   return(dailyAspects)
 }
 
-selectPlanetXAspects <- function (dailyAspects, px, aspectsSelect = c()) {
+selectPlanetXAspects <- function(dailyAspects, px, aspectsSelect = c()) {
   dailyAspects$filter <- F
   dailyAspects[p.x == px & aspect %in% aspectsSelect]
   dailyAspects <- dailyAspects[filter != T,]
+
+  return(dailyAspects)
+}
+
+prepareDailyAspectsCountPlanetYActivationCount <- function(
+  dailyAspectsRows,
+  orbLimit,
+  pxSelect,
+  pySelect,
+  aspectSelect
+) {
+  dailyAspectsGeneralizedCount <- dailyAspectsGeneralizedCount(
+    dailyAspects = dailyAspectsRows,
+    orbLimit = orbLimit,
+    pxSelect = pxSelect,
+    pySelect = pySelect,
+    aspectSelect = aspectSelect
+  )
+
+  if (is.null(dailyAspectsGeneralizedCount)) {
+    return(NULL)
+  }
+
+  dailyPlanetYActivationCount <- dailyPlanetYActivationCount(
+    dailyAspects = dailyAspectsRows,
+    orbLimit = orbLimit,
+    pxSelect = pxSelect,
+    pySelect = pySelect,
+    aspectSelect = aspectSelect
+  )
+
+  if (is.null(dailyPlanetYActivationCount)) {
+    return(NULL)
+  }
+
+  dailyAspects <- merge(dailyAspectsGeneralizedCount, dailyPlanetYActivationCount, date = "Date")
 
   return(dailyAspects)
 }
