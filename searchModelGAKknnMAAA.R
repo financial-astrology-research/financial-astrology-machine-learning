@@ -235,19 +235,10 @@ searchModel <- function(symbol) {
 
   params <- parseSolutionParameters(gar@solution)
   fitModel1 <- solutionModelTrain(params)
-  fitModel1 %>% varImp() %>% print()
-
   fitModel2 <- solutionModelTrain(params)
-  fitModel2 %>% varImp() %>% print()
-
   fitModel3 <- solutionModelTrain(params)
-  fitModel3 %>% varImp() %>% print()
-
   fitModel4 <- solutionModelTrain(params)
-  fitModel4 %>% varImp() %>% print()
-
   fitModel5 <- solutionModelTrain(params)
-  fitModel5 %>% varImp() %>% print()
 
   c(pxSelect, pySelect) %<-% params
   dailyAspects <- prepareDailyAspectsCountPlanetYActivationCount(
