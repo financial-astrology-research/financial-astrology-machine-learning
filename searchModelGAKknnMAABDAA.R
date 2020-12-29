@@ -24,7 +24,7 @@ library(zeallot)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "ensamble-gakknn-MAABDB"
+modelId <- "ensamble-gakknn-MAABDAA"
 zdiffPercentCut <- 2
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
@@ -164,9 +164,11 @@ searchModel <- function(symbol) {
   }
 
   parseSolutionParameters <- function(solution) {
+    pxLength <- length(pxSelectAll)
+    pyLength <- length(pySelectAll)
     orbLimit <- solution[1]
-    pxSelect <- pxSelectAll[solution[2:5] == 1]
-    pySelect <- pySelectAll[solution[6:gaParamsNum] == 1]
+    pxSelect <- pxSelectAll[solution[2:pxLength] == 1]
+    pySelect <- pySelectAll[solution[pxLength+1:pyLength] == 1]
 
     return(list(
       pxSelect = pxSelect,
