@@ -15,7 +15,7 @@
 #            11) GA search orb limit 2-4 degrees.
 #            12) Z diff percent cut to 3.
 #            13) Remove pxSelect from GA search.
-#            14) Hidden1 3 neurons.
+#            14) Hidden1 5 neurons.
 
 library(boot)
 library(caret)
@@ -25,7 +25,7 @@ library(zeallot)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "ensamble-ga-monmlp3-MAABBAAB"
+modelId <- "ensamble-ga-monmlp5-MAABBAAB"
 zdiffPercentCut <- 3
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
@@ -152,7 +152,7 @@ searchModel <- function(symbol) {
       metric = "RMSE",
       trControl = control,
       tuneGrid = expand.grid(
-        hidden1 = 3,
+        hidden1 = 5,
         n.ensemble = 1
       ),
       silent = T
