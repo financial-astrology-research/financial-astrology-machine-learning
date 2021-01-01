@@ -87,7 +87,7 @@ control <- trainControl(
   number = wlCVFolds,
   repeats = wlCVRepeats,
   savePredictions = "all",
-  verboseIter = T,
+  verboseIter = F,
   allowParallel = T,
   trim = F
 )
