@@ -1,4 +1,4 @@
-# Title     : Daily generalized aspects / planet Y activation count gam regression model
+# Title     : Daily generalized aspects / planet Y activation count gaussprRadial regression model
 #             with GA feature selection that maximize Rsquared on train data to fit for
 #             daily price percent change estimation.
 # Purpose   : Based on ModelLD this model has some variations:
@@ -25,7 +25,7 @@ source("./analysis.r")
 source("./indicatorPlots.r")
 
 # TODO: Continue train from this model.
-modelId <- "ensamble-ga-gam-MAABBAAB"
+modelId <- "ensamble-ga-gaussprRadial-MAABBAAB"
 zdiffPercentCut <- 3
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
@@ -88,7 +88,7 @@ control <- trainControl(
   number = wlCVFolds,
   repeats = wlCVRepeats,
   savePredictions = "all",
-  verboseIter = F,
+  verboseIter = T,
   allowParallel = T,
   trim = F
 )
@@ -148,7 +148,7 @@ searchModel <- function(symbol) {
     fitModel <- train(
       formula(diffPercent ~ .),
       data = modelData$train,
-      method = "gam",
+      method = "gaussprRadial",
       metric = "RMSE",
       trControl = control,
       tuneLength = 2
