@@ -24,7 +24,6 @@ library(zeallot)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-# TODO: Continue train from this model.
 modelId <- "ensamble-ga-gaussprRadial-MAABBAAB"
 zdiffPercentCut <- 3
 maPriceFsPeriod <- 2

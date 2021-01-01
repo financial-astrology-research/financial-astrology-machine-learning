@@ -1,4 +1,4 @@
-# Title     : Daily generalized aspects / planet Y activation count gaussprPoly regression model
+# Title     : Daily generalized aspects / planet Y activation count gaussprLinear regression model
 #             with GA feature selection that maximize Rsquared on train data to fit for
 #             daily price percent change estimation.
 # Purpose   : Based on ModelLD this model has some variations:
@@ -24,7 +24,7 @@ library(zeallot)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "ensamble-ga-gaussprPoly-MAABBAAB"
+modelId <- "ensamble-ga-gaussprLinear-MAABBAAB"
 zdiffPercentCut <- 3
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
@@ -147,7 +147,7 @@ searchModel <- function(symbol) {
     fitModel <- train(
       formula(diffPercent ~ .),
       data = modelData$train,
-      method = "gaussprPoly",
+      method = "gaussprLinear",
       metric = "RMSE",
       trControl = control,
       tuneLength = 2
