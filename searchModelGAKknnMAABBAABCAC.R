@@ -16,6 +16,7 @@
 #            12) GA search orb limit 2-3 degrees.
 #            13) Z diff percent cut to 3.
 #            14) Remove pxSelect from GA search.
+#            15) GA fit validate repeats to 10.
 
 library(boot)
 library(caret)
@@ -26,7 +27,7 @@ library(zeallot)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "ensamble-gakknn-MAABBAABCAB"
+modelId <- "ensamble-gakknn-MAABBAABCAC"
 zdiffPercentCut <- 3
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
@@ -37,6 +38,7 @@ kMax <- 7
 gaPopSize <- 50
 gaMaxIter <- 10
 gaParamsNum <- 8
+gaFitValidateRepeats <- 10
 wlCVFolds <- 5
 wlCVRepeats <- 10
 enCVFolds <- 5
@@ -177,7 +179,7 @@ searchModel <- function(symbol) {
 
   testModelFit <- function(fitModel, params) {
     allFitMetrics <- c()
-    for (i in 1:5) {
+    for (i in 1:gaFitValidateRepeats) {
       # Validate data predictions with different train partitions.
       modelData <- prepareModelData(params)
       validateDiffPercentPred <- predict(fitModel, modelData$validate, type = "raw")
