@@ -39,8 +39,8 @@ wlCVFolds <- 5
 wlCVRepeats <- 5
 enCVFolds <- 5
 enCVRepeats <- 10
-orbLimit <- 5
-sepOrbLimit <- 5
+orbLimit <- 6
+sepOrbLimit <- 6
 fitRepeats <- 50
 
 pxSelectAll <- c(

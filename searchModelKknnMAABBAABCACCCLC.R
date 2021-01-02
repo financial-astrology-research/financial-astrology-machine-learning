@@ -16,7 +16,7 @@
 #            12) Fit validate repeats to 10.
 #            13) Orb limit to 6.
 #            14) Separative orb limit to 6
-#            15) Modern aspect set 5 (all aspects orb to 4, except a0 orb to 6).
+#            15) Modern aspect set 6 (all aspects orb to 4, except a0 orb to 6, a120 to 5).
 
 library(boot)
 library(caret)
@@ -27,7 +27,7 @@ library(zeallot)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "ensamble-kknn-MAABBAABCACCCLB"
+modelId <- "ensamble-kknn-MAABBAABCACCCLC"
 zdiffPercentCut <- 3
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
@@ -82,7 +82,7 @@ aspectsSelectAll <- c(
 )
 
 idCols <- c('Date', 'Hour')
-setModernMixAspectsSet5()
+setModernMixAspectsSet6()
 setPlanetsMOMEVESUMACEVSJUNNSAURCHNEPL()
 hourlyPlanets <<- openHourlyPlanets('planets_12', clear = F)
 dailyAspectsRows <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
