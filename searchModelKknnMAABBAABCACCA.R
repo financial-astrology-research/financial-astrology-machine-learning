@@ -3,7 +3,7 @@
 #             daily price percent change estimation.
 # Purpose   : Based on ModelLD this model has some variations:
 #             1) Planets MO, ME, VE, SU fast planets applying to all planets except ME, SU.
-#             2) CV folds to 5 with 10 repeats for weak learners, folds to 5 with 10 repeats for ensamble.
+#             2) CV folds to 5 with 5 repeats for weak learners, folds to 5 with 10 repeats for ensamble.
 #             3) Split to 80/20 proportion.
 #             4) Validate fit using Actbin daily price change (buy / sell) instead of Effect
 #             5) Repeated train fit to 50 using Rsquared metric.
@@ -24,7 +24,7 @@ library(zeallot)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "ensamble-kknn-MAABBAABCACC"
+modelId <- "ensamble-kknn-MAABBAABCACCA"
 zdiffPercentCut <- 3
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
@@ -34,7 +34,7 @@ testDataStartDate <- as.Date("2020-09-01")
 kMax <- 7
 fitValidateRepeats <- 10
 wlCVFolds <- 5
-wlCVRepeats <- 10
+wlCVRepeats <- 5
 enCVFolds <- 5
 enCVRepeats <- 10
 orbLimit <- 4
