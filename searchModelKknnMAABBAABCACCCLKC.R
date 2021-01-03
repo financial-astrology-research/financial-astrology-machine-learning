@@ -17,7 +17,7 @@
 #            13) Orb limit to 5.
 #            14) Separative orb limit to 5.
 #            15) Add MO, VE, SU, MA max/min norm declination features to model data.
-#            16) Add ME, VE max/min norm speed features to model data.
+#            16) Add ME, SU max/min norm speed features to model data.
 
 library(boot)
 library(caret)
@@ -28,7 +28,7 @@ library(zeallot)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "ensamble-kknn-MAABBAABCACCCLKB"
+modelId <- "ensamble-kknn-MAABBAABCACCCLKC"
 zdiffPercentCut <- 3
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
@@ -91,7 +91,7 @@ pDecSelect <- c(
 
 pSpeedSelect <- c(
   'ME',
-  'VE'
+  'SU'
 )
 
 idCols <- c('Date', 'Hour')
