@@ -2167,21 +2167,29 @@ dailyPlanetsDeclinationTablePrepare <- function(hourlyPlanets = NULL, pSelect = 
   return(dailyPlanetsDeclination)
 }
 
-dailyPlanetsSpeed <- function() {
-  idCols <- c('Date', 'Hour')
-  setModernMixAspectsSet1()
-  setPlanetsMOMEVESUMAJUNNSAURNEPL()
-  hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+dailyPlanetsSpeedTablePrepare <- function(hourlyPlanets = NULL, pSelect = NULL) {
+  if (is.null(hourlyPlanets)) {
+    idCols <- c('Date', 'Hour')
+    setModernMixAspectsSet1()
+    setPlanetsMOMEVESUMAJUNNSAURNEPL()
+    hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+  }
+
+  selectCols <- planetsSpCols
+  if (!is.null(pSelect)) {
+    selectCols <- paste0(pSelect, "SP")
+  }
+
   dailyPlanetsSpeed <- hourlyPlanets[,
     lapply(.SD, function(x) round(mean(x), 3)),
-    by = Date, .SDcols = planetsSpCols
+    by = Date, .SDcols = selectCols
   ]
 
   return(dailyPlanetsSpeed)
 }
 
 dailyFastPlanetsRetrograde <- function() {
-  dailyPlanetsSpeed <- dailyPlanetsSpeed()
+  dailyPlanetsSpeed <- dailyPlanetsSpeedTablePrepare()
   dailyPlanetsSpeed[, MESL := ifelse(MESP <= 0.25, 1, 0)]
   dailyPlanetsSpeed[, VESL := ifelse(VESP <= 0.25, 1, 0)]
   dailyPlanetsSpeed[, SUSL := ifelse(SUSP <= 0.25, 1, 0)]
@@ -2197,7 +2205,7 @@ dailyFastPlanetsRetrograde <- function() {
 }
 
 dailySlowPlanetsRetrograde <- function() {
-  dailyPlanetsSpeed <- dailyPlanetsSpeed()
+  dailyPlanetsSpeed <- dailyPlanetsSpeedTablePrepare()
   dailyPlanetsSpeed[, MASL := ifelse(MASP <= 0.25, 1, 0)]
   dailyPlanetsSpeed[, JUSL := ifelse(JUSP <= 0.25, 1, 0)]
   dailyPlanetsSpeed[, SASL := ifelse(SASP <= 0.25, 1, 0)]
