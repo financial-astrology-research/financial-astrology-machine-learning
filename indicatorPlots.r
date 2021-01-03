@@ -2146,14 +2146,20 @@ dailyAspectsPlanetCombGeneralizedEnergy <- function(
   return(dailyAspectsEnergy)
 }
 
-dailyPlanetsDeclination <- function() {
+dailyPlanetsDeclination <- function(pSelect = NULL) {
   idCols <- c('Date', 'Hour')
   setModernMixAspectsSet1()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+
+  selectCols <- planetsDecCols
+  if (!is.null(pSelect)) {
+    selectCols <- paste0(pSelect, "DEC")
+  }
+
   dailyPlanetsDeclination <- hourlyPlanets[,
     lapply(.SD, function(x) mean(x)),
-    by = Date, .SDcols = planetsDecCols
+    by = Date, .SDcols = selectCols
   ]
 
   return(dailyPlanetsDeclination)
