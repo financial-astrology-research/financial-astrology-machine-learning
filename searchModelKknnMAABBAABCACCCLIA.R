@@ -153,7 +153,11 @@ searchModel <- function(symbol) {
   }
 
   modelTrain <- function() {
-    cat("Using PX:", pxSelectAll, "- PY:", pySelectAll, "- AORB: ", orbLimit, "- SORB: ", sepOrbLimit, "\n")
+    cat(
+      "Using PX:", pxSelectAll, "- PY:", pySelectAll, "- PDEC",
+      pDecSelect, "- AORB: ", orbLimit, "- SORB: ", sepOrbLimit, "\n"
+    )
+
     modelData <- prepareModelData()
     if (is.null(modelData)) {
       cat("Skip solution, invalid solution params\n\n")
