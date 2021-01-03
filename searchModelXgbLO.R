@@ -83,7 +83,7 @@ dailyAspectsPlanetYOrb <- dailyPlanetYAspectMeanOrb(
 )
 
 dailyPlanetSpeed <- dailyPlanetsSpeed()
-dailyPlanetDeclination <- dailyPlanetsDeclination()
+dailyPlanetDeclination <- dailyPlanetsDeclinationTablePrepare()
 
 dailyAspects <- dailyAspectsCount
 dailyAspects <- merge(dailyAspects, dailyAspectsPlanetYCount, by = c('Date'))

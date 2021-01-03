@@ -91,6 +91,7 @@ setModernMixAspectsSet1()
 setPlanetsMOMEVESUMACEVSJUNNSAURCHNEPL()
 hourlyPlanets <<- openHourlyPlanets('planets_12', clear = F)
 dailyAspectsRows <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+dailyPlanetsDeclination <- dailyPlanetsDeclinationTablePrepare(hourlyPlanets = hourlyPlanets, pSelect = pDecSelect)
 
 control <- trainControl(
   method = "repeatedcv",
@@ -121,7 +122,6 @@ searchModel <- function(symbol) {
       dailyAspectsRowsIter, orbLimit, pxSelectAll, pySelectAll, aspectsSelectAll
     )
 
-    dailyPlanetsDeclination <- dailyPlanetsDeclination(pDecSelect)
     dailyAspects <- merge(dailyAspects, dailyPlanetsDeclination, by = "Date")
 
     return(dailyAspects)
