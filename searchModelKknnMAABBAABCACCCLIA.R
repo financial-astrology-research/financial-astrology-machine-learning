@@ -154,8 +154,8 @@ searchModel <- function(symbol) {
 
   modelTrain <- function() {
     cat(
-      "Using PX:", pxSelectAll, "- PY:", pySelectAll, "- PDEC",
-      pDecSelect, "- AORB: ", orbLimit, "- SORB: ", sepOrbLimit, "\n"
+      "Using", modelId, "PX:", pxSelectAll, "- PY:", pySelectAll, "- PDEC:",
+      pDecSelect, "- AORB:", orbLimit, "- SORB:", sepOrbLimit, "\n"
     )
 
     modelData <- prepareModelData()
