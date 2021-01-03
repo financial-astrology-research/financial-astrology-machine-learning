@@ -10,7 +10,7 @@
 #             6) Fit 5 weak learners for diff percent change.
 #             7) Ensamble weak learnets to fit for Actbin to predict categorical (buy / sell) signal.
 #             8) Optimize weak learners for RMSE.
-#             9) KKNN K param set to 9.
+#             9) KKNN K param set to 10.
 #            10) Fit using multi train sample mean metric penalized by standard deviation.
 #            11) Z diff percent cut to 3.
 #            12) Fit validate repeats to 10.
@@ -26,14 +26,14 @@ library(zeallot)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "ensamble-kknn-MAABBAABCACCCLG"
+modelId <- "ensamble-kknn-MAABBAABCACCCLH"
 zdiffPercentCut <- 3
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
 trainDataStartDate <- as.Date("2010-01-01")
 trainDataEndDate <- as.Date("2020-08-15")
 testDataStartDate <- as.Date("2020-09-01")
-kMax <- 9
+kMax <- 10
 fitValidateRepeats <- 10
 wlCVFolds <- 5
 wlCVRepeats <- 5
