@@ -7,9 +7,46 @@ library(psych)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-dailyAspects <- dailyCombPlanetAspectsFactorsTable()
-
 symbol <- "LINK-USD"
+orbLimit <- 4
+pxSelect <- c(
+  'MO',
+  'ME',
+  'VE'
+)
+
+pySelect <- c(
+  'ME',
+  'VE',
+  'SU',
+  'MA',
+  'JU',
+  'SA',
+  #'NN',
+  'UR',
+  'NE',
+  'PL'
+)
+
+aspectSelect <- c(
+  0,
+  30,
+  45,
+  60,
+  90,
+  120,
+  135,
+  150,
+  180
+)
+
+dailyAspects <- dailyCombPlanetAspectsFactorsTable(
+  pxSelect = pxSelect,
+  pySelect = pySelect,
+  aspectSelect = aspectSelect,
+  orbLimit = orbLimit
+)
+
 securityData <- mainOpenSecurity(
   symbol, 2, 4, "%Y-%m-%d",
   "2010-01-01", "2020-06-30"
