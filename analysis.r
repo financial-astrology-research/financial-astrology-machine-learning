@@ -115,9 +115,6 @@ execfunc <- function(name, args) {
   return(func(args))
 }
 
-npath <- function(path) {
-  normalizePath(path.expand(path))
-}
 
 normalizeDistance <- function(x) {
   x[x > 180] <- abs(x[x > 180] - 360)

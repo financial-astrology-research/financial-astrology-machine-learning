@@ -7,12 +7,16 @@ library(psych)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "LINK-USD"
+symbol <- "BTC-USD"
 orbLimit <- 4
 pxSelect <- c(
   'MO',
   'ME',
-  'VE'
+  'VE',
+  'SU',
+  'MA',
+  'JU',
+  'SA'
 )
 
 pySelect <- c(
@@ -40,7 +44,14 @@ aspectSelect <- c(
   180
 )
 
+idCols <- c('Date', 'Hour')
+setClassicAspectsSet8()
+setPlanetsMOMEVESUMAJUNNSAURNEPL()
+hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+dailyAspectsRows <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+
 dailyAspects <- dailyCombPlanetAspectsFactorsTable(
+  dailyAspects = dailyAspectsRows,
   pxSelect = pxSelect,
   pySelect = pySelect,
   aspectSelect = aspectSelect,
