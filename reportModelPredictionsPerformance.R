@@ -1,5 +1,6 @@
 # Title     : Models predictions accuracy performance / stability CSV report.
 rm(list = ls())
+library(magrittr)
 library(caret)
 library(psych)
 source("analysis.r")
@@ -91,6 +92,15 @@ getMySymbolsData("working")
 basePath <- "~/Desktop/ModelsPred/"
 predictFiles <- list.files(basePath, pattern = "*.csv")
 testResults <- setDT(rbindlist(lapply(predictFiles, testPredictAccuracy)))
+
+# Remove models predictions with low rank (poor accuracy / stability).
+worstPredictFiles <- testResults[Rank <= 0.5]$PredictFile
+if (count(worstPredictFiles) > 0) {
+  deleteResults <- worstPredictFiles %>%
+    paste0(basePath, .) %>%
+    file.remove()
+}
+
 reportDate <- format(Sys.Date(), "%Y-%m-%d")
 modelsPredictSummaryFilename <- paste("~/Desktop/", "models-predict-performance-", reportDate, ".csv", sep = "")
 
