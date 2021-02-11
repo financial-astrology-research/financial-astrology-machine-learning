@@ -28,6 +28,10 @@ source("./includes/topnsigaspmod.r")
 source("./includes/aspectsets.r")
 source("./includes/planetsets.r")
 
+npath <- function(path) {
+  normalizePath(path.expand(path))
+}
+
 # Build a data table unique vector by taking first and last rows plus nrows and ncols
 # faster for performance to build the unique cache key
 dataTableUniqueVector <- function(DT) {

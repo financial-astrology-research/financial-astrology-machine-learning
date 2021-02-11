@@ -724,7 +724,7 @@ dailyHourlyAspectsTablePrepare <- function(hourlyPlanets, idCols, orbLimit = NUL
   hourlyAspects[, origin := substr(origin, 1, 4)]
   setkey(hourlyAspects, 'Date', 'Hour')
 
-  hourlyAspects <- dailyAspectsAddOrbs(hourlyAspects, hourlyPlanetsRange, idCols)
+  hourlyAspects <<- dailyAspectsAddOrbs(hourlyAspects, hourlyPlanetsRange, idCols)
 
   if (!is.null(orbLimit)) {
     hourlyAspects <- hourlyAspects[orb <= orbLimit,]
