@@ -2,7 +2,7 @@ library(psych)
 library(magrittr)
 source("./indicatorPlots.r")
 
-symbol <- "EOS-USD"
+symbol <- "BTC-USD"
 securityData <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
 
 # Experiment grid search with different aspects energy factors.
@@ -27,9 +27,6 @@ dailyAspectsPrice[, result := cut(diffPercent, c(-100, 0, 100), c("down", "up"))
 #dailyAspects[, apos := a60.x + a60.y + a120.x + a120.y]
 #dailyAspects[, apos := a60.t + a60.t + a120.t + a120.t]
 #dailyAspects[, aneg := a90.t + a90.t + a150.t + a150.t]
-dailyAspectsPrice[, apos := a30.t + a60.t + a120.t]
-dailyAspectsPrice[, aneg := a45.t + a90.t + a135.t]
-dailyAspectsPrice[, adiff := apos - aneg]
 # dailyAspects[, adiff := apos - aneg]
 # dailyAspects[, apos2 := apos]
 # dailyAspects[adiff > 0, apos2 := apos + a0 + a180 + a150]
@@ -76,18 +73,6 @@ ggplot(data = dailyAspectsPrice[p.x %in% c('MO', 'JU', 'NN', 'SA', 'UR', 'NE', '
   geom_point(aes(y = spn.x, x = diffPercent), color = "gray") +
   stat_ellipse(aes(y = spn.x, x = diffPercent), type = "norm", color = "yellow") +
   facet_grid(aspect ~ origin, scales = "free") +
-  theme_black()
-
-# Price diff to pos/neg momentum.
-ggplot(data = dailyAspectsPrice[p.x %ni% c('MO', 'ME', 'NN', 'SA', 'UR', 'NE', 'PL'),]) +
-  geom_point(aes(y = aneg, x = diffPercent, alpha = 0.5), color = "gray") +
-  stat_ellipse(aes(y = aneg, x = diffPercent, alpha = 0.5), type = "norm", color = "yellow") +
-  geom_point(aes(y = apos, x = diffPercent, alpha = 0.5), color = "pink") +
-  stat_ellipse(aes(y = apos, x = diffPercent, alpha = 0.5), type = "norm", color = "pink") +
-  scale_x_continuous(limits = c(-10, 10)) +
-  facet_grid(aspect ~ origin, scales = "free_y") +
-  #scale_y_continuous(limits=c(0, 1)) +
-  #geom_smooth(orientation="y") +
   theme_black()
 
 dailyAspectsFast <- dailyAspectsPrice[
