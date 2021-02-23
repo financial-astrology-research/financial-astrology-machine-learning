@@ -119,11 +119,21 @@ execfunc <- function(name, args) {
   return(func(args))
 }
 
-
 normalizeDistance <- function(x) {
   x[x > 180] <- abs(x[x > 180] - 360)
   x[x < -180] <- abs(x[x < -180] + 360)
   return(abs(x))
+}
+
+distanceHarmonic <- function(x, harmonic) {
+  amplitude <- 360 / harmonic
+  rate <- 1 / amplitude
+  y <- amplitude * cos(pi * rate * x)
+  return(y)
+}
+
+normalizeDistance360 <- function(x) {
+  x %% 360
 }
 
 # calculate the proportional energy of aspect based on the distance
@@ -194,14 +204,15 @@ mainOpenPlanets <- function(planetsfile, selectColNames, cusorbs, calcasps = T) 
   # Only calculate transit aspects if needed
   if (calcasps) {
     # calculate longitudinal differences
-    for (curcol in planetsCombLon) {
+    planetsCombLonDis <- paste0(planetsCombLon, 'DIS')
+    for (curcol in planetsCombLonDis) {
       col1 <- paste(substr(curcol, 1, 2), 'LON', sep = '')
       col2 <- paste(substr(curcol, 3, 4), 'LON', sep = '')
       planets[, c(curcol) := get(col1) - get(col2)]
     }
 
     # Normalize to 180 degrees range
-    planets[, c(planetsCombLon) := lapply(.SD, normalizeDistance), .SDcols = planetsCombLon]
+    planets[, c(planetsCombLon) := lapply(.SD, normalizeDistance), .SDcols = planetsCombLonDis]
 
     # calculate aspects for max orbs
     orbsmatrix <- matrix(cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
@@ -1251,91 +1262,6 @@ buildSignificantLongitudes <- function(planets, security, degsplit, tsdate, teda
   }
 
   return(freq)
-}
-
-calculatePointsPlanetsAspects <- function(points.planets, fwide = F) {
-  loncols <- colnames(points.planets)
-  loncols <- loncols[grep('^..LON$', loncols)]
-
-  # build colnames based on the existing planets
-  planetsLonDisCols <- str_replace(loncols, 'LON', 'DIS')
-  planetsLonAspCols <- str_replace(loncols, 'LON', 'ASP')
-  planetsLonOrbCols <- str_replace(loncols, 'LON', 'ORB')
-
-  # Calculate lon / planets distance
-  for (curcol in planetsLonDisCols) {
-    planetcol <- paste(substr(curcol, 1, 2), 'LON', sep = '')
-    points.planets[, c(curcol) := lon - get(planetcol)]
-  }
-
-  # Normalize to 180 degrees range
-  points.planets[, c(planetsLonDisCols) := lapply(.SD, normalizeDistance), .SDcols = planetsLonDisCols]
-
-  # Calculate the points.planets & orbs
-  orbsmatrix <- matrix(deforbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
-  points.planets[, c(planetsLonAspCols) := lapply(.SD, calculateAspects, cusorbs = orbsmatrix), .SDcols = planetsLonDisCols]
-  points.planets[, c(planetsLonOrbCols) := lapply(.SD, calculateAspectOrbs, cusorbs = orbsmatrix), .SDcols = planetsLonDisCols]
-  #siglons[Date == as.Date('2014-05-21'), c('Date', 'lon', planetsLonAspCols), with=F]
-
-  # Format wide all the significant point points.planets
-  if (fwide) {
-    points.planets.wide <- data.table(Date = unique(points.planets$Date))
-    for (curcol in unique(points.planets$lon)) {
-      points.planets.cur <- points.planets[lon == curcol, c('Date', planetsLonDisCols, planetsLonAspCols, planetsLonOrbCols), with = F]
-      curcolnames <- paste(c(planetsLonDisCols, planetsLonAspCols, planetsLonOrbCols), '.', curcol, sep = '')
-      setnames(points.planets.cur, c('Date', curcolnames))
-      points.planets.wide <- merge(points.planets.wide, points.planets.cur, by = c('Date'))
-    }
-    points.planets <- points.planets.wide
-  }
-
-  return(points.planets)
-}
-
-# Build the natal positions table for a given symbol
-buildNatalLongitudes <- function(symbol, clear = F) {
-  ckey <- list(as.character(c('buildNatalLongitudes', symbol)))
-  natal.symbol <- secureLoadCache(key = ckey)
-
-  if (is.null(natal.symbol) || clear) {
-    # open the stocks incorporation date planets positions
-    natalfile <- npath(paste("~/trading/charts/stocksinc.tsv", sep = ""))
-    natal <- fread(natalfile, sep = "\t", na.strings = "", verbose = F)
-    loncols <- colnames(natal)
-    loncols <- loncols[grep('^..LON$', loncols)]
-    natal.long <- melt(natal, id.var = c('Symbol'), measure.var = loncols)
-    natal.symbol <- natal.long[Symbol == symbol,]
-    setnames(natal.symbol, c('Symbol', 'variable', 'lon'))
-
-    saveCache(natal.symbol, key = ckey)
-    cat("Set buildNatalLongitudes cache\n")
-  }
-
-  return(natal.symbol)
-}
-
-# Calculate transits to natal position (symbol incorporation chart) aspects
-# Usage: buildNatalLongitudeAspects('AXP', planets)
-buildNatalLongitudeAspects <- function(symbol, planets, fwide = F, clear = F) {
-  planetskey <- dataTableUniqueVector(planets)
-  ckey <- list(as.character(c('buildNatalLongitudeAspects', symbol, planetskey, fwide)))
-  planets.natal.aspsday <- secureLoadCache(key = ckey)
-
-  if (is.null(planets.natal.aspsday) || clear) {
-    # build natal positions
-    natal.symbol <- buildNatalLongitudes(symbol)
-    # extract only the planets longitudes
-    planets <- planets[, c('Date', 'wday', planetsLonCols), with = F]
-    # cartesian join
-    natal.symbol.planets <- CJDT(natal.symbol, planets)
-    # calculate aspects
-    planets.natal.aspsday <- calculatePointsPlanetsAspects(natal.symbol.planets, fwide)
-
-    saveCache(planets.natal.aspsday, key = ckey)
-    cat("Set buildNatalLongitudeAspects cache\n")
-  }
-
-  return(planets.natal.aspsday)
 }
 
 # Calculate aspects for the significant longitude points and cache
