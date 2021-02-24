@@ -166,6 +166,14 @@ setModernAspectsSet5 <- function() {
   defpolarities <<- c(2, 1, 0, 1, 0, 1, 0, 1, 0)
 }
 
+setModernAspectsSet6 <- function() {
+  # aspects <<- c(0, 30, 45, 52, 60, 72, 90, 103, 120, 135, 144, 150, 180)
+  aspects <<- c(0, 30, 45, 51, 60, 72, 90, 103, 120, 135, 144, 150, 180)
+  aspectsEnergy <<- rep(2, length(aspects))
+  deforbs <<- c(3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3)
+  defpolarities <<- c(2, 1, 0, 1, 0, 1, 0, 1, 0)
+}
+
 setMajorsAspectsSet <- function() {
   aspects <<- c(0, 45, 60, 90, 120, 135, 180)
   aspectsEnergy <<- c(1, 1, 1, 2, 1, 1, 1)
