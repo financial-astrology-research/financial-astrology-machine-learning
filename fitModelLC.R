@@ -15,7 +15,7 @@ source("./indicatorPlots.r")
 
 dailyAspectPlanetCumulativeEnergy <- prepareHourlyAspectsModelLC()
 
-symbol <- "LINK-USD"
+symbol <- "BTC-USD"
 securityData <- mainOpenSecurity(
   symbol, 14, 28, "%Y-%m-%d",
   "2010-01-01", "2020-06-30"
@@ -102,7 +102,7 @@ aspectViewValidate$diffPredictSmooth <- SMA(aspectViewValidate$diffPredict, 3)
 ggplot(data = aspectViewValidate[Date >= Sys.Date() - 80,]) +
   geom_line(aes(x = Date, y = diffPredictSmooth), colour = "black", alpha = 0.7) +
   scale_x_date(date_breaks = "7 days", date_labels = "%Y-%m-%d") +
-  theme(axis.text.x = element_text(angle = 90, size = 10), axis.title.x = element_blank(), axis.title.y = element_blank())
+  theme(axis.text.x = element_text(angle = 90, size = 12), axis.title.x = element_blank(), axis.title.y = element_blank())
 aspectViewValidate <- merge(securityDataTest[, c('Date', 'zdiffPercent')], aspectViewValidate, by = "Date")
 aspectViewValidate[, c('Date', 'zdiffPercent', 'diffPredict')]
 plot(aspectViewValidate$zdiffPercent, aspectViewValidate$diffPredict)
