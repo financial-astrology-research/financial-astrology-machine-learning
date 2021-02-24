@@ -128,8 +128,8 @@ normalizeDistance <- function(x) {
 distanceHarmonic <- function(x, harmonic) {
   amplitude <- 360 / harmonic
   rate <- 1 / amplitude
-  y <- amplitude * cos(pi * rate * x)
-  return(y)
+  -cos(pi * rate * x)
+  #y <- amplitude * -cos(pi * rate * x)
 }
 
 normalizeDistance360 <- function(x) {
