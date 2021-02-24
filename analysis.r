@@ -132,6 +132,10 @@ distanceHarmonic <- function(x, harmonic) {
   #y <- amplitude * -cos(pi * rate * x)
 }
 
+distanceHarmonicAbs <- function(x, harmonic) {
+  abs(distanceHarmonic(x, harmonic))
+}
+
 normalizeDistance360 <- function(x) {
   x %% 360
 }
