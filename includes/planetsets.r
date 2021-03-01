@@ -126,6 +126,12 @@ setPlanetsSUMOMEVEMACEJUNNSNSAURNEPL <- function() {
   buildPlanetsColsNames(planetsBaseCols)
 }
 
+setPlanetsAll <- function() {
+  planetsBaseCols <<- c('MO', 'ME', 'VE', 'SU', 'MA', 'VS', 'JN', 'CE', 'PA', 'JU', 'NN', 'SN', 'SA', 'CH', 'UR', 'PH', 'NE', 'PL')
+  planetsMajors <<- c('UR', 'NE', 'PL')
+  buildPlanetsColsNames(planetsBaseCols)
+}
+
 # By default use the classical astrology planets
 setPlanetsSUMOMEVEMAJUNNSA()
 buildPlanetsColsNames(planetsBaseCols)
