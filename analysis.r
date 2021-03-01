@@ -219,6 +219,25 @@ mainOpenPlanets <- function(planetsfile, selectColNames, cusorbs, calcasps = T) 
     planets[, c(planetsCombLon) := lapply(.SD, normalizeDistance), .SDcols = planetsCombLonDis]
     planets[, c(planetsCombLonDis) := lapply(.SD, normalizeDistance360), .SDcols = planetsCombLonDis]
 
+    # Calculate angular distance harmonic waves.
+    planetsCombLonH2 <- paste0(planetsCombLon, 'H2')
+    planets[,
+      c(planetsCombLonH2) :=
+        lapply(.SD, function(x) distanceHarmonic(x,  2)), .SDcols = planetsCombLonDis
+    ]
+
+    planetsCombLonH3 <- paste0(planetsCombLon, 'H3')
+    planets[,
+      c(planetsCombLonH3) :=
+        lapply(.SD, function(x) distanceHarmonic(x,  3)), .SDcols = planetsCombLonDis
+    ]
+
+    planetsCombLonH4 <- paste0(planetsCombLon, 'H4')
+    planets[,
+      c(planetsCombLonH4) :=
+        lapply(.SD, function(x) distanceHarmonic(x,  4)), .SDcols = planetsCombLonDis
+    ]
+
     # calculate aspects for max orbs
     orbsmatrix <- matrix(cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))
     planets <- processPlanetsAspects(planets, orbsmatrix)
