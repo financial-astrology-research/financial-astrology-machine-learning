@@ -10,8 +10,10 @@
 
 library(boot)
 library(caret)
-library(psych)
 library(gbm)
+library(plyr)
+library(psych)
+
 source("./analysis.r")
 source("./indicatorPlots.r")
 
