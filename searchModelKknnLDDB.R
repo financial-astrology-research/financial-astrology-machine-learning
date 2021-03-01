@@ -39,8 +39,6 @@ pySelect <- c(
   'PL'
 )
 
-aspectFilter <- c()
-
 dailyAspectsCount <- dailyAspectsGeneralizedCount(
   orbLimit = orbLimit,
   pxSelect = pxSelect,

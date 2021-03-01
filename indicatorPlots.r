@@ -1592,13 +1592,41 @@ dailyCombPlanetAspectsFactorsTableLDC <- function(orbLimit = 2, aspectFilter = c
   return(dailyAspectsWide)
 }
 
+dailyAspectsFilter <- function(
+  dailyAspects,
+  pxSelect = NULL,
+  pySelect = NULL,
+  aspectSelect = NULL,
+  aspectFilter = NULL
+) {
+  dailyAspects$filter <- F
+
+  if (!is.null(pxSelect)) {
+    dailyAspects[p.x %ni% pxSelect, filter := T]
+  }
+
+  if (!is.null(pySelect)) {
+    dailyAspects[p.y %ni% pySelect, filter := T]
+  }
+
+  if (!is.null(aspectSelect)) {
+    dailyAspects[aspect %ni% aspectSelect, filter := T]
+  }
+
+  if (!is.null(aspectFilter)) {
+    dailyAspects[aspect %in% aspectFilter, filter := T]
+  }
+
+  dailyAspects[filter != T,]
+}
+
 dailyAspectsGeneralizedCount <- function(
   dailyAspects = NULL,
   orbLimit = 2,
-  pxSelect = c(),
-  pySelect = c(),
-  aspectSelect = c(),
-  aspectFilter = c(),
+  pxSelect = NULL,
+  pySelect = NULL,
+  aspectSelect = NULL,
+  aspectFilter = NULL,
   binFlag = F
 ) {
   if (is.null(dailyAspects)) {
@@ -1609,12 +1637,13 @@ dailyAspectsGeneralizedCount <- function(
     dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
   }
 
-  dailyAspects$filter <- F
-  dailyAspects[p.x %ni% pxSelect, filter := T]
-  dailyAspects[p.y %ni% pySelect, filter := T]
-  dailyAspects[aspect %ni% aspectSelect, filter := T]
-  dailyAspects[aspect %in% aspectFilter, filter := T]
-  dailyAspects <- dailyAspects[filter != T,]
+  dailyAspects <- dailyAspectsFilter(
+    dailyAspects,
+    pxSelect = pxSelect,
+    pySelect = pySelect,
+    aspectSelect = aspectSelect,
+    aspectFilter = aspectFilter
+  )
 
   if (nrow(dailyAspects) == 0) {
     return(NULL)
@@ -1813,10 +1842,10 @@ dailyPlanetYActivationEnergy <- function(
 dailyPlanetYActivationCount <- function(
   dailyAspects = NULL,
   orbLimit = 2,
-  pxSelect = c(),
-  pySelect = c(),
-  aspectSelect = c(),
-  aspectFilter = c(),
+  pxSelect = NULL,
+  pySelect = NULL,
+  aspectSelect = NULL,
+  aspectFilter = NULL,
   binFlag = F
 ) {
   if (is.null(dailyAspects)) {
@@ -1828,12 +1857,13 @@ dailyPlanetYActivationCount <- function(
     dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
   }
 
-  dailyAspects$filter <- F
-  dailyAspects[p.x %ni% pxSelect, filter := T]
-  dailyAspects[p.y %ni% pySelect, filter := T]
-  dailyAspects[aspect %ni% aspectSelect, filter := T]
-  dailyAspects[aspect %in% aspectFilter, filter := T]
-  dailyAspects <- dailyAspects[filter != T,]
+  dailyAspects <- dailyAspectsFilter(
+    dailyAspects,
+    pxSelect = pxSelect,
+    pySelect = pySelect,
+    aspectSelect = aspectSelect,
+    aspectFilter = aspectFilter
+  )
 
   if (nrow(dailyAspects) == 0) {
     return(NULL)
