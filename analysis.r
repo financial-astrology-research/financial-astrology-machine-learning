@@ -137,7 +137,7 @@ distanceHarmonicAbs <- function(x, harmonic) {
 }
 
 normalizeDistance360 <- function(x) {
-  x %% 360
+  abs(x %% 360)
 }
 
 # calculate the proportional energy of aspect based on the distance
@@ -217,6 +217,7 @@ mainOpenPlanets <- function(planetsfile, selectColNames, cusorbs, calcasps = T) 
 
     # Normalize to 180 degrees range
     planets[, c(planetsCombLon) := lapply(.SD, normalizeDistance), .SDcols = planetsCombLonDis]
+    planets[, c(planetsCombLonDis) := lapply(.SD, normalizeDistance360), .SDcols = planetsCombLonDis]
 
     # calculate aspects for max orbs
     orbsmatrix <- matrix(cusorbs, nrow = 1, ncol = length(aspects), byrow = TRUE, dimnames = list('orbs', aspects))

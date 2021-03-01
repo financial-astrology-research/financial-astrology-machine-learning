@@ -1,4 +1,4 @@
-# Title     : Daily planets half (180) longitude distance.
+# Title     : Daily planets absolute (360) longitude distance.
 #             1) Planets MO, ME, VE, SU fast planets applying to all slow planets, NN, SN and asteroids.
 #             2) CV folds to 5 with 5 repeats.
 #             3) Validate fit using Actbin daily price change (buy / sell) instead of Effect
@@ -11,7 +11,7 @@
 #            10) Use SULON to allow model detect Sun zodiac position.
 
 # CONCLUSION:
-# 1) Planets longitude distance performs better than aspects / planets activation count.
+# 1) Planets absolute longitude distance overfits and performs worst than half normalize distance.
 
 library(boot)
 library(caret)
@@ -24,7 +24,7 @@ library(psych)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "kknnLDDBD"
+modelId <- "kknnLDDBE"
 symbol <- "ADA-USD"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
@@ -63,11 +63,11 @@ memoOpenHourlyPlanets <- memoise(openHourlyPlanets)
 hourlyPlanets <- memoOpenHourlyPlanets('planets_12')
 columnNames <- colnames(hourlyPlanets)
 planetPairsPattern <- expand.grid(pxSelect, pySelect) %>%
-  with(paste0('^', Var1, Var2, 'LON$')) %>%
+  with(paste0('^', Var1, Var2, 'LONDIS$')) %>%
   str_flatten(collapse = "|")
 selectColumns <- c(
   columnNames[grep(planetPairsPattern, columnNames)],
-  'SULON'
+  'MOLON', 'SULON'
 )
 dailyAspects <- hourlyPlanets[, lapply(.SD, mean), .SDcols = selectColumns, by = 'Date']
 
