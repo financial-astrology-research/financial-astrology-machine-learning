@@ -11,6 +11,7 @@
 #            10) Use SULON to allow model detect Sun zodiac position.
 
 # CONCLUSION:
+# 1) Seems that harmonics greater than 7, don't provides much predictive power.
 
 library(boot)
 library(caret)
@@ -80,7 +81,7 @@ planetsCombLonH4 <- paste0(planetsCombLon, 'H4')
 planetsCombLonDis <- paste0(planetsCombLon, 'DIS')
 hourlyPlanets[,
   c(planetsCombLonH4) :=
-    lapply(.SD, function(x) distanceHarmonicAbs(x,  4)), .SDcols = planetsCombLonDis
+    lapply(.SD, function(x) distanceHarmonic(x,  4)), .SDcols = planetsCombLonDis
 ]
 
 planetsCombLonH5 <- paste0(planetsCombLon, 'H5')
@@ -108,31 +109,31 @@ hourlyPlanets[,
     lapply(.SD, function(x) distanceHarmonicAbs(x,  8)), .SDcols = planetsCombLonDis
 ]
 
-planetsCombLonH9 <- paste0(planetsCombLon, 'H9')
-hourlyPlanets[,
-  c(planetsCombLonH9) :=
-    lapply(.SD, function(x) distanceHarmonicAbs(x,  9)), .SDcols = planetsCombLonDis
-]
-
-# Keep pos/neg range for better result.
-planetsCombLonH10 <- paste0(planetsCombLon, 'H10')
-hourlyPlanets[,
-  c(planetsCombLonH10) :=
-    lapply(.SD, function(x) distanceHarmonic(x,  10)), .SDcols = planetsCombLonDis
-]
-
-# Keep pos/neg range for better result.
-planetsCombLonH11 <- paste0(planetsCombLon, 'H11')
-hourlyPlanets[,
-  c(planetsCombLonH11) :=
-    lapply(.SD, function(x) distanceHarmonic(x,  11)), .SDcols = planetsCombLonDis
-]
-
-planetsCombLonH12 <- paste0(planetsCombLon, 'H12')
-hourlyPlanets[,
-  c(planetsCombLonH12) :=
-    lapply(.SD, function(x) distanceHarmonicAbs(x,  12)), .SDcols = planetsCombLonDis
-]
+#planetsCombLonH9 <- paste0(planetsCombLon, 'H9')
+#hourlyPlanets[,
+#  c(planetsCombLonH9) :=
+#    lapply(.SD, function(x) distanceHarmonicAbs(x,  9)), .SDcols = planetsCombLonDis
+#]
+#
+## Keep pos/neg range for better result.
+#planetsCombLonH10 <- paste0(planetsCombLon, 'H10')
+#hourlyPlanets[,
+#  c(planetsCombLonH10) :=
+#    lapply(.SD, function(x) distanceHarmonic(x,  10)), .SDcols = planetsCombLonDis
+#]
+#
+## Keep pos/neg range for better result.
+#planetsCombLonH11 <- paste0(planetsCombLon, 'H11')
+#hourlyPlanets[,
+#  c(planetsCombLonH11) :=
+#    lapply(.SD, function(x) distanceHarmonic(x,  11)), .SDcols = planetsCombLonDis
+#]
+#
+#planetsCombLonH12 <- paste0(planetsCombLon, 'H12')
+#hourlyPlanets[,
+#  c(planetsCombLonH12) :=
+#    lapply(.SD, function(x) distanceHarmonicAbs(x,  12)), .SDcols = planetsCombLonDis
+#]
 
 # Longitude harmonics.
 planetsLonH2 <- paste0(planetsLonCols, 'H2')
@@ -144,16 +145,42 @@ hourlyPlanets[,
 planetsLonH3 <- paste0(planetsLonCols, 'H3')
 hourlyPlanets[,
   c(planetsLonH3) :=
-    lapply(.SD, function(x) distanceHarmonic(x,  3)), .SDcols = planetsLonCols
+    lapply(.SD, function(x) distanceHarmonicAbs(x,  3)), .SDcols = planetsLonCols
 ]
 
+planetsLonH4 <- paste0(planetsLonCols, 'H4')
+hourlyPlanets[,
+  c(planetsLonH4) :=
+    lapply(.SD, function(x) distanceHarmonic(x,  4)), .SDcols = planetsLonCols
+]
+
+planetsLonH5 <- paste0(planetsLonCols, 'H5')
+hourlyPlanets[,
+  c(planetsLonH5) :=
+    lapply(.SD, function(x) distanceHarmonic(x,  5)), .SDcols = planetsLonCols
+]
+
+planetsLonH6 <- paste0(planetsLonCols, 'H6')
+hourlyPlanets[,
+  c(planetsLonH6) :=
+    lapply(.SD, function(x) distanceHarmonic(x,  6)), .SDcols = planetsLonCols
+]
+
+planetsLonH7 <- paste0(planetsLonCols, 'H7')
+hourlyPlanets[,
+  c(planetsLonH7) :=
+    lapply(.SD, function(x) distanceHarmonic(x,  7)), .SDcols = planetsLonCols
+]
+
+harmonicNo <- 7
 columnNames <- colnames(hourlyPlanets)
 planetPairsPattern <- expand.grid(pxSelect, pySelect) %>%
-  with(paste0('^', Var1, Var2, 'LONH11$')) %>%
+  with(paste0('^', Var1, Var2, 'LONH', harmonicNo, '$')) %>%
   str_flatten(collapse = "|")
-selectColumns <- c(
-  columnNames[grep(planetPairsPattern, columnNames)]
-)
+#selectColumns <- c(columnNames[grep(planetPairsPattern, columnNames)])
+selectColumns <- columnNames[
+  grep(str_flatten(paste0('^', pxSelect, 'LONH', harmonicNo, '$'), "|"), columnNames)
+]
 dailyAspects <- hourlyPlanets[, lapply(.SD, mean), .SDcols = selectColumns, by = 'Date']
 
 control <- trainControl(
