@@ -25,12 +25,12 @@ source("./analysis.r")
 source("./indicatorPlots.r")
 
 modelId <- "kknnLDDBF"
-symbol <- "BTC-USD"
+symbol <- "BAT-USD"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
 
 pxSelect <- c(
-  #'MO',
+  'MO',
   'ME',
   'VE',
   'SU'
@@ -42,7 +42,7 @@ pySelect <- c(
   'SU',
   'MA',
   #'VS',
-  #'CE',
+  'CE',
   #'JN',
   #'PA',
   'JU',
@@ -63,80 +63,20 @@ memoOpenHourlyPlanets <- memoise(openHourlyPlanets)
 hourlyPlanets <- memoOpenHourlyPlanets('planets_12')
 
 # Angular harmonics.
-planetsCombLonH2 <- paste0(planetsCombLon, 'H2')
+combinedAngularHarmonic <- function(x) {
+    distanceHarmonic(x, 4) *
+    distanceHarmonic(x, 6) *
+    distanceHarmonic(x, 8)
+}
+
 planetsCombLonDis <- paste0(planetsCombLon, 'DIS')
+planetsCombLonH0 <- paste0(planetsCombLon, 'H0')
 hourlyPlanets[,
-  c(planetsCombLonH2) :=
-    lapply(.SD, function(x) distanceHarmonic(x, 2)), .SDcols = planetsCombLonDis
+  c(planetsCombLonH0) :=
+    lapply(.SD, combinedAngularHarmonic), .SDcols = planetsCombLonDis
 ]
-
-planetsCombLonH3 <- paste0(planetsCombLon, 'H3')
-planetsCombLonDis <- paste0(planetsCombLon, 'DIS')
-hourlyPlanets[,
-  c(planetsCombLonH3) :=
-    lapply(.SD, function(x) distanceHarmonicAbs(x, 3)), .SDcols = planetsCombLonDis
-]
-
-planetsCombLonH4 <- paste0(planetsCombLon, 'H4')
-planetsCombLonDis <- paste0(planetsCombLon, 'DIS')
-hourlyPlanets[,
-  c(planetsCombLonH4) :=
-    lapply(.SD, function(x) distanceHarmonic(x, 4)), .SDcols = planetsCombLonDis
-]
-
-planetsCombLonH5 <- paste0(planetsCombLon, 'H5')
-hourlyPlanets[,
-  c(planetsCombLonH5) :=
-    lapply(.SD, function(x) distanceHarmonicAbs(x, 5)), .SDcols = planetsCombLonDis
-]
-
-# Keep pos/neg range for better result.
-planetsCombLonH6 <- paste0(planetsCombLon, 'H6')
-hourlyPlanets[,
-  c(planetsCombLonH6) :=
-    lapply(.SD, function(x) distanceHarmonic(x, 6)), .SDcols = planetsCombLonDis
-]
-
-planetsCombLonH7 <- paste0(planetsCombLon, 'H7')
-hourlyPlanets[,
-  c(planetsCombLonH7) :=
-    lapply(.SD, function(x) distanceHarmonicAbs(x, 7)), .SDcols = planetsCombLonDis
-]
-
-planetsCombLonH8 <- paste0(planetsCombLon, 'H8')
-hourlyPlanets[,
-  c(planetsCombLonH8) :=
-    lapply(.SD, function(x) distanceHarmonicAbs(x, 8)), .SDcols = planetsCombLonDis
-]
-
-#planetsCombLonH9 <- paste0(planetsCombLon, 'H9')
-#hourlyPlanets[,
-#  c(planetsCombLonH9) :=
-#    lapply(.SD, function(x) distanceHarmonicAbs(x,  9)), .SDcols = planetsCombLonDis
-#]
-#
-## Keep pos/neg range for better result.
-#planetsCombLonH10 <- paste0(planetsCombLon, 'H10')
-#hourlyPlanets[,
-#  c(planetsCombLonH10) :=
-#    lapply(.SD, function(x) distanceHarmonic(x,  10)), .SDcols = planetsCombLonDis
-#]
-#
-## Keep pos/neg range for better result.
-#planetsCombLonH11 <- paste0(planetsCombLon, 'H11')
-#hourlyPlanets[,
-#  c(planetsCombLonH11) :=
-#    lapply(.SD, function(x) distanceHarmonic(x,  11)), .SDcols = planetsCombLonDis
-#]
-#
-#planetsCombLonH12 <- paste0(planetsCombLon, 'H12')
-#hourlyPlanets[,
-#  c(planetsCombLonH12) :=
-#    lapply(.SD, function(x) distanceHarmonicAbs(x,  12)), .SDcols = planetsCombLonDis
-#]
 
 combinedLongitudeHarmonic <- function(x) {
-  distanceHarmonicAbs(x, 2) *
     distanceHarmonic(x, 4) *
     distanceHarmonicAbs(x, 6)
 }
@@ -147,18 +87,18 @@ hourlyPlanets[,
     lapply(.SD, combinedLongitudeHarmonic), .SDcols = planetsLonCols
 ]
 
-harmonicNo <- 3
 columnNames <- colnames(hourlyPlanets)
 planetPairsPattern <- expand.grid(pxSelect, pySelect) %>%
-  with(paste0('^', Var1, Var2, 'LONH', harmonicNo, '$')) %>%
+  with(paste0('^', Var1, Var2, 'LONH0', '$')) %>%
   str_flatten(collapse = "|")
-#selectColumns <- c(columnNames[grep(planetPairsPattern, columnNames)])
-selectColumns <- columnNames[grep(str_flatten(paste0('^', pxSelect, 'LONH0', '$'), "|"), columnNames)]
+aspectsHarmonicColumns <- c(columnNames[grep(planetPairsPattern, columnNames)])
+longitudeHarmonicsColumns <- columnNames[grep(str_flatten(paste0('^', c('ME', 'VE', 'SU'), 'LONH0', '$'), "|"), columnNames)]
+selectColumns <- c(aspectsHarmonicColumns, longitudeHarmonicsColumns)
 dailyAspects <- hourlyPlanets[, lapply(.SD, mean), .SDcols = selectColumns, by = 'Date']
 
 control <- trainControl(
   method = "repeatedcv",
-  number = 5,
+  number = 10,
   repeats = 5,
   savePredictions = "all",
   classProbs = T,
@@ -207,7 +147,7 @@ modelTrain <- function(method, useFeatures, maPriceFsPeriod, maPriceSlPeriod, mo
     metric = "Kappa",
     trControl = control,
     tuneGrid = expand.grid(
-      kmax = 12,
+      kmax = 11,
       distance = 2,
       kernel = "optimal"
     )
