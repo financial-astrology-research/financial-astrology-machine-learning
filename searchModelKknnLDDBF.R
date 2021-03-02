@@ -30,7 +30,7 @@ maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
 
 pxSelect <- c(
-  'MO',
+  #'MO',
   'ME',
   'VE',
   'SU'
@@ -67,46 +67,46 @@ planetsCombLonH2 <- paste0(planetsCombLon, 'H2')
 planetsCombLonDis <- paste0(planetsCombLon, 'DIS')
 hourlyPlanets[,
   c(planetsCombLonH2) :=
-    lapply(.SD, function(x) distanceHarmonic(x,  2)), .SDcols = planetsCombLonDis
+    lapply(.SD, function(x) distanceHarmonic(x, 2)), .SDcols = planetsCombLonDis
 ]
 
 planetsCombLonH3 <- paste0(planetsCombLon, 'H3')
 planetsCombLonDis <- paste0(planetsCombLon, 'DIS')
 hourlyPlanets[,
   c(planetsCombLonH3) :=
-    lapply(.SD, function(x) distanceHarmonicAbs(x,  3)), .SDcols = planetsCombLonDis
+    lapply(.SD, function(x) distanceHarmonicAbs(x, 3)), .SDcols = planetsCombLonDis
 ]
 
 planetsCombLonH4 <- paste0(planetsCombLon, 'H4')
 planetsCombLonDis <- paste0(planetsCombLon, 'DIS')
 hourlyPlanets[,
   c(planetsCombLonH4) :=
-    lapply(.SD, function(x) distanceHarmonic(x,  4)), .SDcols = planetsCombLonDis
+    lapply(.SD, function(x) distanceHarmonic(x, 4)), .SDcols = planetsCombLonDis
 ]
 
 planetsCombLonH5 <- paste0(planetsCombLon, 'H5')
 hourlyPlanets[,
   c(planetsCombLonH5) :=
-    lapply(.SD, function(x) distanceHarmonicAbs(x,  5)), .SDcols = planetsCombLonDis
+    lapply(.SD, function(x) distanceHarmonicAbs(x, 5)), .SDcols = planetsCombLonDis
 ]
 
 # Keep pos/neg range for better result.
 planetsCombLonH6 <- paste0(planetsCombLon, 'H6')
 hourlyPlanets[,
   c(planetsCombLonH6) :=
-    lapply(.SD, function(x) distanceHarmonic(x,  6)), .SDcols = planetsCombLonDis
+    lapply(.SD, function(x) distanceHarmonic(x, 6)), .SDcols = planetsCombLonDis
 ]
 
 planetsCombLonH7 <- paste0(planetsCombLon, 'H7')
 hourlyPlanets[,
   c(planetsCombLonH7) :=
-    lapply(.SD, function(x) distanceHarmonicAbs(x,  7)), .SDcols = planetsCombLonDis
+    lapply(.SD, function(x) distanceHarmonicAbs(x, 7)), .SDcols = planetsCombLonDis
 ]
 
 planetsCombLonH8 <- paste0(planetsCombLon, 'H8')
 hourlyPlanets[,
   c(planetsCombLonH8) :=
-    lapply(.SD, function(x) distanceHarmonicAbs(x,  8)), .SDcols = planetsCombLonDis
+    lapply(.SD, function(x) distanceHarmonicAbs(x, 8)), .SDcols = planetsCombLonDis
 ]
 
 #planetsCombLonH9 <- paste0(planetsCombLon, 'H9')
@@ -135,52 +135,25 @@ hourlyPlanets[,
 #    lapply(.SD, function(x) distanceHarmonicAbs(x,  12)), .SDcols = planetsCombLonDis
 #]
 
-# Longitude harmonics.
-planetsLonH2 <- paste0(planetsLonCols, 'H2')
+combinedLongitudeHarmonic <- function(x) {
+  distanceHarmonicAbs(x, 2) *
+    distanceHarmonic(x, 4) *
+    distanceHarmonicAbs(x, 6)
+}
+
+planetsLonH0 <- paste0(planetsLonCols, 'H0')
 hourlyPlanets[,
-  c(planetsLonH2) :=
-    lapply(.SD, function(x) distanceHarmonic(x,  2)), .SDcols = planetsLonCols
+  c(planetsLonH0) :=
+    lapply(.SD, combinedLongitudeHarmonic), .SDcols = planetsLonCols
 ]
 
-planetsLonH3 <- paste0(planetsLonCols, 'H3')
-hourlyPlanets[,
-  c(planetsLonH3) :=
-    lapply(.SD, function(x) distanceHarmonicAbs(x,  3)), .SDcols = planetsLonCols
-]
-
-planetsLonH4 <- paste0(planetsLonCols, 'H4')
-hourlyPlanets[,
-  c(planetsLonH4) :=
-    lapply(.SD, function(x) distanceHarmonic(x,  4)), .SDcols = planetsLonCols
-]
-
-planetsLonH5 <- paste0(planetsLonCols, 'H5')
-hourlyPlanets[,
-  c(planetsLonH5) :=
-    lapply(.SD, function(x) distanceHarmonic(x,  5)), .SDcols = planetsLonCols
-]
-
-planetsLonH6 <- paste0(planetsLonCols, 'H6')
-hourlyPlanets[,
-  c(planetsLonH6) :=
-    lapply(.SD, function(x) distanceHarmonic(x,  6)), .SDcols = planetsLonCols
-]
-
-planetsLonH7 <- paste0(planetsLonCols, 'H7')
-hourlyPlanets[,
-  c(planetsLonH7) :=
-    lapply(.SD, function(x) distanceHarmonic(x,  7)), .SDcols = planetsLonCols
-]
-
-harmonicNo <- 7
+harmonicNo <- 3
 columnNames <- colnames(hourlyPlanets)
 planetPairsPattern <- expand.grid(pxSelect, pySelect) %>%
   with(paste0('^', Var1, Var2, 'LONH', harmonicNo, '$')) %>%
   str_flatten(collapse = "|")
 #selectColumns <- c(columnNames[grep(planetPairsPattern, columnNames)])
-selectColumns <- columnNames[
-  grep(str_flatten(paste0('^', pxSelect, 'LONH', harmonicNo, '$'), "|"), columnNames)
-]
+selectColumns <- columnNames[grep(str_flatten(paste0('^', pxSelect, 'LONH0', '$'), "|"), columnNames)]
 dailyAspects <- hourlyPlanets[, lapply(.SD, mean), .SDcols = selectColumns, by = 'Date']
 
 control <- trainControl(
