@@ -1,14 +1,14 @@
-# Title     : Daily planets longitude distance harmonic 2.
-#             1) Planets MO, ME, VE, SU fast planets applying to all slow planets, NN, SN and asteroids.
-#             2) CV folds to 5 with 5 repeats.
+# Title     : Daily planets angular and longitude harmonics.
+#             1) Planets MO, ME, VE, SU fast planets applying to all slow planets, NN, SN and CE.
+#             2) CV folds to 10 with 5 repeats.
 #             3) Validate fit using Actbin daily price change (buy / sell) instead of Effect
 #             4) Fit based on MA(2, 3) effect to smooth price variations.
 #             5) Data split 80/20 proportion.
 #             6) Optimize weak learners and ensamble for Kappa.
 #             7) Fit weak learners for MA trend and ensamble for Actbin to generalize for daily change.
 #             8) Use setModernAspectsSet3 aspects that include Kepler angles.
-#             9) Use harmonics with NN/SN and asteroids CE, JN, CH, PH.
-#            10) Use SULON to allow model detect Sun zodiac position.
+#             9) Use harmonics with NN/SN and asteroids CE.
+#            10) Use MO/ME/VE/SU longitude harmonics to allow model detect zodiac energy.
 
 # CONCLUSION:
 # 1) Seems that harmonics greater than 7, don't provides much predictive power.
