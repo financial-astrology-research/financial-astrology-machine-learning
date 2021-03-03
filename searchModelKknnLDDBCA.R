@@ -1,19 +1,20 @@
 # Title     : Daily (natal chart) generalized aspects and planets activation count KKNN ensamble model.
-#             1) Planets MO, ME, VE, SU fast planets applying to all slow planets and VS asteroids.
-#             2) CV folds to 5 with 5 repeats.
+#             1) Planets MO, ME, VE, SU fast planets applying to all natal planets and moon nodes.
+#             2) CV folds to 10 with 5 repeats.
 #             3) Validate fit using Actbin daily price change (buy / sell) instead of Effect
 #             4) Fit based on MA(2, 3) effect to smooth price variations.
 #             5) Data split 80/20 proportion.
 #             6) Optimize weak learners and ensamble for Kappa.
 #             7) Fit weak learners for MA trend and ensamble for Actbin to generalize for daily change.
-#             8) Orb to 1 degrees.
+#             8) Orb to 2 degrees.
 #             9) Add MO to pxSelect.
-#             10) Use major/minor and Kepler aspects.
-#             11) Use aspects with asteroids VS.
-#             12) Use natal chart aspects.
+#             10) Use major aspects only.
+#             11) Use natal chart aspects.
 
 # CONCLUSION:
-# 1) Natal chart transits aspects for ADA produced a 58% daily predictions accuracy.
+# 1) Natal chart transits aspects for ADA produced a 56%, BNB a 58% daily predictions accuracy.
+# 2) Using transits minor aspects reduce the model accuracy less than 50%.
+# 3) Some assets like BTC or BAT don't seems to fit natal chart model, perhaps birth date is not accurate.
 
 library(boot)
 library(caret)
@@ -28,7 +29,7 @@ modelId <- "kknnLDDBCA"
 symbol <- "ADA-USD"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
-orbLimit <- 1
+orbLimit <- 2
 
 pxSelect <- c(
   'MO',
@@ -42,7 +43,7 @@ pySelect <- c(
   'VE',
   'SU',
   'MA',
-  'VS',
+  #'VS',
   #'CE',
   #'JN',
   'JU',
@@ -53,6 +54,16 @@ pySelect <- c(
   #'CH',
   'NE',
   'PL'
+)
+
+aspectSelect <- c(
+  0,
+  30,
+  60,
+  90,
+  120,
+  150,
+  180
 )
 
 idCols <- c('Date', 'Hour')
@@ -69,14 +80,16 @@ dailyAspectsCount <- dailyAspectsGeneralizedCount(
   dailyAspects = dailyAspects,
   orbLimit = orbLimit,
   pxSelect = pxSelect,
-  pySelect = pySelect
+  pySelect = pySelect,
+  aspectSelect = aspectSelect
 )
 
 dailyAspectsPlanetYCount <- dailyPlanetYActivationCount(
   dailyAspects = dailyAspects,
   orbLimit = orbLimit,
   pxSelect = pxSelect,
-  pySelect = pySelect
+  pySelect = pySelect,
+  aspectSelect = aspectSelect
 )
 
 dailyAspects <- merge(dailyAspectsCount, dailyAspectsPlanetYCount, by = "Date")
