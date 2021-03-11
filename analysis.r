@@ -1798,3 +1798,10 @@ theme_black = function(base_size = 12, base_family = "") {
 normalize <- function(x) {
   return(round((x - min(x)) / (max(x) - min(x)), 4))
 }
+
+symbolSignalExport <- function(signalData, symbolID) {
+  signalsPathFile <- paste0("./", symbolID, '-signals-flat.txt')
+  fileHandler <- file(signalsPathFile)
+  writeLines(signalData, fileHandler)
+  close(fileHandler)
+}

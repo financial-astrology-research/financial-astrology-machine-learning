@@ -10,6 +10,8 @@ library(rattle)
 library(gvlma)
 library(arm)
 library(glmulti)
+library(stringr)
+
 source("./analysis.r")
 source("./indicatorPlots.r")
 
@@ -21,7 +23,11 @@ prepareHourlyAspectsModelLF <- function() {
   hourlyPlanets <- openHourlyPlanets('planets_12', clear = F)
   dailyAspects <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols)
   # Filter aspects within 2 degrees of orb for cumulative aspects count.
-  dailyAspects <- dailyAspects[p.x %ni% c('MO') & orb <= 4,]
+  #dailyAspects$filter <- F
+  #dailyAspects <- dailyAspects[p.x %in% c('MO', 'ME'), filter := T]
+  #dailyAspects <- dailyAspects[orb >= 4, filter := T]
+  #dailyAspects <- dailyAspects[filter == F,]
+  dailyAspects <- dailyAspects[p.x %ni% c('MO', 'ME') & orb <= 4,]
   dailyAspects <- dailyAspectsAddEnergy(dailyAspects, 0.59)
   dailyPlanetAspectsCumulativeEnergy <- dailyPlanetAspectsCumulativeEnergyTable(dailyAspects)
 
@@ -109,11 +115,19 @@ modelFit %>% coefplot()
 securityDataTest <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2020-07-01")
 aspectViewValidate <- dailyAspectPlanetCumulativeEnergy[, ..selectCols]
 aspectViewValidate$diffPredict <- predict(modelFit, aspectViewValidate)
-aspectViewValidate$diffPredictSmooth <- SMA(aspectViewValidate$diffPredict, 3)
+aspectViewValidate$diffPredictSmooth <- aspectViewValidate$diffPredict
+signalString <- aspectViewValidate[Date >= as.Date("2018-01-01")]$diffPredict %>%
+  normalize() %>%
+  round(digits = 2) %>%
+  str_flatten(collapse = ",")
+signalData <- paste0(str_replace(symbol, '-USD', ''), ' = "', signalString, '"')
+symbolSignalExport(signalData, symbol)
+
 # Dsiplay projected prediction in chart
-ggplot(data = aspectViewValidate[Date >= Sys.Date() - 80,]) +
+ggplot(data = aspectViewValidate[Date >= Sys.Date() - 150,]) +
   geom_line(aes(x = Date, y = diffPredictSmooth), colour = "black", alpha = 0.7) +
-  scale_x_date(date_breaks = "7 days", date_labels = "%Y-%m-%d") +
+  scale_x_date(date_breaks = "2 days", date_labels = "%Y-%m-%d") +
+  labs(title = paste(symbol, "planets energy index v2LF")) +
   theme(axis.text.x = element_text(angle = 90, size = 12), axis.title.x = element_blank(), axis.title.y = element_blank())
 aspectViewValidate <- merge(securityDataTest[, c('Date', 'zdiffPercent')], aspectViewValidate, by = "Date")
 aspectViewValidate[, c('Date', 'zdiffPercent', 'diffPredict')]
@@ -122,3 +136,5 @@ cor(aspectViewValidate$zdiffPercent, aspectViewValidate$diffPredict) %>% print()
 with(aspectViewValidate, mean((zdiffPercent - diffPredict)^2)) %>% sqrt()
 #plot(aspectViewValidate$a180_SU, type = "l")
 #fwrite(aspectView, paste("~/Desktop/", symbol, "cumenergy.csv", sep = "-"))
+
+# bj+L.JET6;u9XI
