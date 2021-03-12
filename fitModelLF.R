@@ -45,6 +45,7 @@ prepareHourlyAspectsModelLF <- function() {
 dailyAspectPlanetCumulativeEnergy <- prepareHourlyAspectsModelLF()
 
 trainModel <- function(symbol) {
+  cat("Training", symbol, "model\n")
   securityData <- mainOpenSecurity(
     symbol, 14, 28, "%Y-%m-%d",
     "2010-01-01", "2020-06-30"
@@ -138,7 +139,9 @@ trainModel <- function(symbol) {
   with(aspectViewValidate, mean((zdiffPercent - diffPredict)^2)) %>% sqrt()
   #plot(aspectViewValidate$a180_SU, type = "l")
   #fwrite(aspectView, paste("~/Desktop/", symbol, "cumenergy.csv", sep = "-"))
+  return(signalData)
 }
 
-symbol <- "BAT-USD"
-trainModel(symbol)
+listFilePath <- npath(paste("~/Sites/own/astro-trading/hisdata/symbols/working.csv", sep = ""))
+symbolsList <- read.csv(listFilePath, header = F, stringsAsFactors = F)
+allSignals <- lapply(symbolsList$V1, trainModel)
