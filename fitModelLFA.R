@@ -1,7 +1,12 @@
-# Title     : Planets aspects energy index with varitions:
+# Title     : Planets aspects energy index explored varitions:
 #             1) No smoothing
-#             2) Includes ME in px planets.
-# Created by: pablocc
+#             2) ME in px planets (not much difference).
+#             3) ME, asteroids and SN (sometimes align better, others worst, CE, VS and CH seems relevant).
+#             4) Minor aspects: quintile, septile (enhance some turning points transitions).
+#             5) Slower energy decay speed: 0.5 (not much difference).
+#             6) Faster energy decay speed: 0.7 (not much difference).
+#             7) Reduced orb to 2 degrees
+#             8) Modern aspect set7 with quintile, septile and orbs according to harmonics.
 
 library(caret)
 library(magrittr)
@@ -20,7 +25,8 @@ modelId <- "LFA"
 
 prepareHourlyAspectsModelLF <- function() {
   idCols <- c('Date', 'Hour')
-  setClassicAspectsSet6()
+  #setClassicAspectsSet6()
+  setModernAspectsSet7()
   setPlanetsMOMEVESUMAJUNNSAURNEPL()
   #setPlanetsMOMEVESUMACEVSJUNNSAURCHNEPL()
   hourlyPlanets <- openHourlyPlanets('planets_12', clear = F)
@@ -30,8 +36,8 @@ prepareHourlyAspectsModelLF <- function() {
   #dailyAspects <- dailyAspects[p.x %in% c('MO', 'ME'), filter := T]
   #dailyAspects <- dailyAspects[orb >= 4, filter := T]
   #dailyAspects <- dailyAspects[filter == F,]
-  dailyAspects <- dailyAspects[p.x %ni% c('MO') & orb <= 4,]
-  dailyAspects <- dailyAspectsAddEnergy(dailyAspects, 0.59)
+  dailyAspects <- dailyApects[p.x %ni% c('MO'),]
+  dailyAspects <- dailyAspectsAddEnergy(dailyAspects, 0.6)
   dailyPlanetAspectsCumulativeEnergy <- dailyPlanetAspectsCumulativeEnergyTable(dailyAspects)
 
   aspCols <- paste("a", aspects, sep = "")
