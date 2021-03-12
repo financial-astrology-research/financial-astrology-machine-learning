@@ -1,13 +1,6 @@
 # Title     : Planets aspects energy index explored varitions:
-#             1) No smoothing
-#             2) ME in px planets (not much difference).
-#             3) ME, asteroids and SN (sometimes align better, others worst, CE, VS and CH seems relevant).
-#             4) Minor aspects: quintile, septile (enhance some turning points transitions).
-#             5) Slower energy decay speed: 0.5 (not much difference).
-#             6) Faster energy decay speed: 0.7 (not much difference).
-#             7) Reduced orb to 2 degrees
-#             8) Modern aspect set7 with quintile, septile and orbs according to harmonics.
-#             8) Modern aspect set7 with quintile, septile and orbs according to harmonics.
+#             1) Model LFA with KKNN regression.
+#             2) Use all features with correlation of 0.02 or more.
 
 library(caret)
 library(magrittr)
@@ -37,7 +30,7 @@ prepareHourlyAspectsModelLF <- function() {
   #dailyAspects <- dailyAspects[p.x %in% c('MO', 'ME'), filter := T]
   #dailyAspects <- dailyAspects[orb >= 4, filter := T]
   #dailyAspects <- dailyAspects[filter == F,]
-  dailyAspects <- dailyApects[p.x %ni% c('MO'),]
+  dailyAspects <- dailyAspects[p.x %ni% c('MO'),]
   dailyAspects <- dailyAspectsAddEnergy(dailyAspects, 0.6)
   dailyPlanetAspectsCumulativeEnergy <- dailyPlanetAspectsCumulativeEnergyTable(dailyAspects)
 
@@ -81,52 +74,47 @@ trainModel <- function(symbol) {
   print(finalCorrelations)
 
   buyVarNames <- names(
-    finalCorrelations[finalCorrelations > 0.03 & finalCorrelations < 0.9]
+    finalCorrelations[finalCorrelations > 0.02 & finalCorrelations < 0.9]
   )
 
   sellVarNames <- names(
-    finalCorrelations[finalCorrelations < -0.03]
+    finalCorrelations[finalCorrelations < -0.02]
   )
 
-  varCorrelations <- aspectView[, -c('Date')] %>%
-    cor() %>%
-    round(digits = 2)
-  finalCorrelations <- sort(varCorrelations[, 1])
-  print(finalCorrelations)
+  selectFeatures <- c(buyVarNames, sellVarNames)
+  selectColsTrain <- unique(c("zdiffPercent", selectFeatures))
+  cat("Selected features: ", selectColsTrain, "\n")
 
-  totalCols <- count(finalCorrelations)
-  selectCols <- unique(c(
-    "Date", names(finalCorrelations)[c(seq(1, 15), seq(totalCols - 15, totalCols - 1))]
-  ))
-
-  modelSearch <- glmulti(
-    y = "zdiffPercent",
-    xr = selectCols[-1],
-    data = aspectView,
-    #exclude=c("sp.y", "sp.x", "dc.x", "dc.y"),
-    #minsize = 15,
-    level = 1, marginality = F, intercept = T, crit = "aicc",
-    method = "g", plotty = F,
-    popsize = 200
-    #mutrate = 0.01, sexrate = 0.1, imm = 0.1,
+  control <- trainControl(
+    method = "repeatedcv",
+    number = 10,
+    repeats = 5,
+    savePredictions = "all",
+    verboseIter = T,
+    allowParallel = T,
+    trim = F
   )
 
-  plot(modelSearch, type = "s")
-  print(modelSearch@objects[[1]]$formula)
-
-  # Review the best fit.
-  modelFit <- lm(
-    modelSearch@objects[[1]]$formula,
-    data = aspectView
+  modelFit <- train(
+    formula(zdiffPercent ~ .),
+    data = aspectView[, ..selectColsTrain],
+    method = "kknn",
+    metric = "Rsquared",
+    trControl = control,
+    tuneGrid = expand.grid(
+      kmax = 7,
+      distance = 2,
+      kernel = "optimal"
+    )
   )
 
+  modelFit %>% print()
   modelFit %>% summary() %>% print()
-  modelFit %>% plot()
-  modelFit %>% coefplot()
 
   # Validate with reserved data.
   securityDataTest <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2020-07-01")
-  aspectViewValidate <- dailyAspectPlanetCumulativeEnergy[, ..selectCols]
+  selectColsValidate <- unique(c("Date", selectFeatures))
+  aspectViewValidate <- dailyAspectPlanetCumulativeEnergy[, ..selectColsValidate]
   aspectViewValidate$diffPredict <- predict(modelFit, aspectViewValidate)
   aspectViewValidate$diffPredictSmooth <- aspectViewValidate$diffPredict
   aspectViewValidate[, Signal := round(normalize(diffPredict * 100) * 100)]
