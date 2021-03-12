@@ -1,6 +1,5 @@
-# Title     : Planets aspects energy index including ME.
+# Title     : Planets aspects energy index without smoothing.
 # Created by: pablocc
-# Created on: 28/09/2020
 
 library(caret)
 library(magrittr)
@@ -127,11 +126,12 @@ trainModel <- function(symbol) {
   symbolSignalExport(signalData, symbol)
 
   # Dsiplay projected prediction in chart
-  ggplot(data = aspectViewValidate[Date >= Sys.Date() - 150,]) +
+  energyPlot <- ggplot(data = aspectViewValidate[Date >= Sys.Date() - 150,]) +
     geom_line(aes(x = Date, y = diffPredictSmooth), colour = "black", alpha = 0.7) +
     scale_x_date(date_breaks = "2 days", date_labels = "%Y-%m-%d") +
     labs(title = paste(symbol, "planets energy index v2LF")) +
     theme(axis.text.x = element_text(angle = 90, size = 12), axis.title.x = element_blank(), axis.title.y = element_blank())
+  print(energyPlot)
   aspectViewValidate <- merge(securityDataTest[, c('Date', 'zdiffPercent')], aspectViewValidate, by = "Date")
   aspectViewValidate[, c('Date', 'zdiffPercent', 'diffPredict')]
   plot(aspectViewValidate$zdiffPercent, aspectViewValidate$diffPredict)
