@@ -1,0 +1,146 @@
+ADA-USD-predict-kknnLDAG-ensamble.csv = 0.47
+ADA-USD-predict-ensamble-gakknn-SA.csv = 0.51
+ADA-USD-predict-kknnLDAE-ensamble.csv = 0.51
+ADA-USD-predict-ensamble-gakknn-SAC.csv = 0.51
+ADA-USD-predict-ensamble-gakknn-RAB.csv = 0.49
+ADA-USD-predict-ensamble-gakknn-VACH.csv = 0.50
+ADA-USD-predict-ensamble-gakknn-MIHF.csv = 0.53
+ADA-USD-predict-ensamble-gakknn-VFA.csv = 0.53
+ADA-USD-predict-ensamble-gakknn-MAABDAC.csv = 0.47
+BAT-USD-predict-ensamble-gakknn-RBC.csv = 0.47
+BAT-USD-predict-ensamble-gakknn-MEM.csv = 0.52
+BAT-USD-predict-ensamble-gakknn-MBA.csv = 0.50
+BAT-USD-predict-ensamble-gakknn-NBCA.csv = 0.47
+BAT-USD-predict-ensamble-gakknn-MCD.csv = 0.50
+BAT-USD-predict-ensamble-gakknn-NDA.csv = 0.48
+BAT-USD-predict-ensamble-gakknn-MIB.csv = 0.55
+BAT-USD-predict-ensamble-gakknn-TBC.csv = 0.48
+BAT-USD-predict-ensamble-gakknn-VACGBFCE.csv = 0.53
+BAT-USD-predict-ensamble-gakknn-VDJ.csv = 0.49
+BAT-USD-predict-ensamble-gakknn-MI.csv = 0.47
+BAT-USD-predict-ensamble-gakknn-MFC.csv = 0.51
+BAT-USD-predict-ensamble-gakknn-MID.csv = 0.46
+BAT-USD-predict-ensamble-gakknn-VD.csv = 0.48
+BAT-USD-predict-ensamble-gakknn-NBC.csv = 0.55
+BAT-USD-predict-ensamble-gakknn-MIHDA.csv = 0.52
+BAT-USD-predict-ensamble-gakknn-VDIBCC.csv = 0.53
+BAT-USD-predict-ensamble-gakknn-NEB.csv = 0.50
+BAT-USD-predict-ensamble-gakknn-SAC.csv = 0.47
+BAT-USD-predict-ensamble-gakknn-VDIDC.csv = 0.54
+BAT-USD-predict-ensamble-gakknn-VACGBF.csv =
+BAT-USD-predict-ensamble-gakknn-NDC.csv =
+BAT-USD-predict-ensamble-gakknn-VFB.csv =
+BAT-USD-predict-ensamble-gakknn-NBA.csv =
+BNB-USD-predict-ensamble-gakknn-MIHDA.csv
+BNB-USD-predict-ensamble-gakknn-VACGBFA.csv
+BNB-USD-predict-ensamble-gakknn-VACGBFCG.csv
+BNB-USD-predict-ensamble-gakknn-VACGD.csv
+BNB-USD-predict-ensamble-gakknn-VACGBB.csv
+BNB-USD-predict-ensamble-gakknn-VACGBA.csv
+BNB-USD-predict-ensamble-gakknn-MIFB.csv
+BNB-USD-predict-ensamble-gakknn-MIBA.csv
+BNB-USD-predict-ensamble-gakknn-VACGBFCI.csv
+BNB-USD-predict-ensamble-gakknn-VACGBD.csv
+BNB-USD-predict-ensamble-gakknn-VACGBFCH.csv
+BNB-USD-predict-ensamble-gakknn-VACGBFCK.csv
+BNB-USD-predict-ensamble-gakknn-VACF.csv
+BNB-USD-predict-ensamble-gakknn-VACGBFCF.csv
+BNB-USD-predict-ensamble-gakknn-VDIC.csv
+BNB-USD-predict-ensamble-gakknn-VDIDE.csv
+BNB-USD-predict-ensamble-gakknn-MFY.csv
+BNB-USD-predict-ensamble-gakknn-MFP.csv
+BNB-USD-predict-ensamble-gakknn-VACGBFCB.csv
+BNB-USD-predict-ensamble-gakknn-VACGG.csv
+BNB-USD-predict-ensamble-gakknn-MIDD.csv
+BNB-USD-predict-ensamble-gakknn-MCD.csv
+BNB-USD-predict-ensamble-gakknn-VDIDCA.csv
+BNB-USD-predict-ensamble-gakknn-VACGF.csv
+BNB-USD-predict-ensamble-gakknn-MFL.csv
+BNB-USD-predict-ensamble-gakknn-VDIBCA.csv
+BNB-USD-predict-ensamble-gakknn-VACGBFCJ.csv
+BNB-USD-predict-ensamble-gakknn-VAC.csv
+BTC-USD-predict-ensamble-gakknn-MEA.csv
+BTC-USD-predict-ensamble-gakknn-UADBA.csv
+BTC-USD-predict-ensamble-gakknn-MFH.csv
+BTC-USD-predict-kknnLDN-ensamble.csv
+BTC-USD-predict-ensamble-gakknn-MAABDAF.csv
+BTC-USD-predict-xgblinearLJ-ensamble.csv
+BTC-USD-predict-ensamble-gakknn-VEC.csv
+BTC-USD-predict-ensamble-gakknn-MFU.csv
+BTC-USD-predict-ensamble-gakknn-MFP.csv
+BTC-USD-predict-kknnLDDC-ensamble.csv
+BTC-USD-predict-ensamble-gakknn-VACGBFC.csv
+BTC-USD-predict-ensamble-gakknn-UBD.csv
+BTC-USD-predict-ensamble-gakknn-VG.csv
+BTC-USD-predict-ensamble-gakknn-VCB.csv
+BTC-USD-predict-ensamble-gakknn-VFG.csv
+DASH-USD-predict-ensamble-gakknn-NEB.csv
+DASH-USD-predict-ensamble-gakknn-MFL.csv
+DASH-USD-predict-ensamble-gakknn-QC.csv
+DASH-USD-predict-ensamble-gakknn-MFT.csv
+DASH-USD-predict-ensamble-gakknn-MEO.csv
+DASH-USD-predict-ensamble-gakknn-MFB.csv
+DASH-USD-predict-ensamble-gakknn-UADAE.csv
+DASH-USD-predict-ensamble-gakknn-MEP.csv
+DASH-USD-predict-ensamble-gakknn-SAB.csv
+DASH-USD-predict-ensamble-gakknn-MF.csv
+DASH-USD-predict-ensamble-gakknn-UADCB.csv
+EOS-USD-predict-ensamble-gakknn-MIDC.csv
+EOS-USD-predict-ensamble-gakknn-MAF.csv
+EOS-USD-predict-ensamble-gakknn-MFH.csv
+EOS-USD-predict-ensamble-gakknn-QAB.csv
+EOS-USD-predict-ensamble-gakknn-MIFC.csv
+EOS-USD-predict-ensamble-gakknn-RAB.csv
+EOS-USD-predict-ensamble-gakknn-VDIBCFB.csv
+EOS-USD-predict-ensamble-gakknn-MDD.csv
+EOS-USD-predict-ensamble-gakknn-MD.csv
+EOS-USD-predict-kknnLDE-ensamble.csv
+EOS-USD-predict-ensamble-gakknn-MAE.csv
+LINK-USD-predict-ensamble-gakknn-VACE.csv
+LINK-USD-predict-ensamble-gakknn-MIHE.csv
+LINK-USD-predict-ensamble-gakknn-VACGF.csv
+LINK-USD-predict-ensamble-gakknn-VGG.csv
+LINK-USD-predict-ensamble-gakknn-NAF.csv
+LINK-USD-predict-ensamble-gakknn-VACGC.csv
+LINK-USD-predict-ensamble-gakknn-VACGBG.csv
+LINK-USD-predict-ensamble-gakknn-VACGE.csv
+LINK-USD-predict-ensamble-gakknn-VACGBFCC.csv
+LINK-USD-predict-ensamble-gakknn-VACGBFB.csv
+LINK-USD-predict-ensamble-gakknn-VACGB.csv
+LINK-USD-predict-ensamble-gakknn-VACGA.csv
+LINK-USD-predict-ensamble-gakknn-VACGBFCB.csv
+LINK-USD-predict-ensamble-gakknn-VFB.csv
+LINK-USD-predict-ensamble-gakknn-MIFCD.csv
+LTC-USD-predict-ensamble-gakknn-MFM.csv
+LTC-USD-predict-ensamble-gakknn-VDM.csv
+LTC-USD-predict-ensamble-gakknn-VEC.csv
+LTC-USD-predict-ensamble-gakknn-MIBA.csv
+LTC-USD-predict-ensamble-gakknn-MAB.csv
+LTC-USD-predict-ensamble-gakknn-UAB.csv
+LTC-USD-predict-ensamble-gakknn-MD.csv
+LTC-USD-predict-ensamble-gakknn-MIFCB.csv
+LTC-USD-predict-ensamble-gakknn-MFJ.csv
+ZEC-USD-predict-ensamble-gakknn-MIHDC.csv
+ZEC-USD-predict-ensamble-gakknn-NBC.csv
+ZEC-USD-predict-ensamble-gakknn-NAD.csv
+ZEC-USD-predict-ensamble-gakknn-MAABDAC.csv
+ZEC-USD-predict-ensamble-gakknn-NBCA.csv
+ZEC-USD-predict-ensamble-gakknn-MFN.csv
+ZEC-USD-predict-ensamble-gakknn-MFJ.csv
+ZEC-USD-predict-ensamble-gakknn-RBA.csv
+ZEC-USD-predict-ensamble-gakknn-NBA.csv
+ZEC-USD-predict-ensamble-gakknn-MICA.csv
+ZEC-USD-predict-ensamble-gakknn-UBB.csv
+ZEC-USD-predict-ensamble-gakknn-MFO.csv
+ZRX-USD-predict-ensamble-gakknn-NAD.csv
+ZRX-USD-predict-ensamble-gakknn-PABF.csv
+ZRX-USD-predict-ensamble-gakknn-TAC.csv
+ZRX-USD-predict-kknnLDF-ensamble.csv
+ZRX-USD-predict-ensamble-gakknn-VACGBFCH.csv
+ZRX-USD-predict-ensamble-gakknn-VACGBG.csv
+ZRX-USD-predict-ensamble-gakknn-MEG.csv
+ZRX-USD-predict-ensamble-gakknn-SA.csv
+ZRX-USD-predict-ensamble-gakknn-VDIDA.csv
+ZRX-USD-predict-ensamble-gakknn-MEH.csv
+ZRX-USD-predict-ensamble-gakknn-MEL.csv
+ZRX-USD-predict-ensamble-gakknn-MFB.csv
