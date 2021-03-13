@@ -19,6 +19,7 @@
 library(boot)
 library(caret)
 library(psych)
+library(plyr)
 library(gbm)
 source("./analysis.r")
 source("./indicatorPlots.r")
