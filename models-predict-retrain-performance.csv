@@ -27,29 +27,29 @@ BAT-USD-predict-ensamble-gakknn-VDIBCC.csv = 0.53
 BAT-USD-predict-ensamble-gakknn-NEB.csv = 0.50
 BAT-USD-predict-ensamble-gakknn-SAC.csv = 0.47
 BAT-USD-predict-ensamble-gakknn-VDIDC.csv = 0.54
-BAT-USD-predict-ensamble-gakknn-VACGBF.csv =
-BAT-USD-predict-ensamble-gakknn-NDC.csv =
-BAT-USD-predict-ensamble-gakknn-VFB.csv =
-BAT-USD-predict-ensamble-gakknn-NBA.csv =
-BNB-USD-predict-ensamble-gakknn-MIHDA.csv
-BNB-USD-predict-ensamble-gakknn-VACGBFA.csv
-BNB-USD-predict-ensamble-gakknn-VACGBFCG.csv
-BNB-USD-predict-ensamble-gakknn-VACGD.csv
-BNB-USD-predict-ensamble-gakknn-VACGBB.csv
-BNB-USD-predict-ensamble-gakknn-VACGBA.csv
-BNB-USD-predict-ensamble-gakknn-MIFB.csv
-BNB-USD-predict-ensamble-gakknn-MIBA.csv
-BNB-USD-predict-ensamble-gakknn-VACGBFCI.csv
-BNB-USD-predict-ensamble-gakknn-VACGBD.csv
-BNB-USD-predict-ensamble-gakknn-VACGBFCH.csv
-BNB-USD-predict-ensamble-gakknn-VACGBFCK.csv
-BNB-USD-predict-ensamble-gakknn-VACF.csv
-BNB-USD-predict-ensamble-gakknn-VACGBFCF.csv
-BNB-USD-predict-ensamble-gakknn-VDIC.csv
-BNB-USD-predict-ensamble-gakknn-VDIDE.csv
-BNB-USD-predict-ensamble-gakknn-MFY.csv
-BNB-USD-predict-ensamble-gakknn-MFP.csv
-BNB-USD-predict-ensamble-gakknn-VACGBFCB.csv
+BAT-USD-predict-ensamble-gakknn-VACGBF.csv = 0.50
+BAT-USD-predict-ensamble-gakknn-NDC.csv = 0.51
+BAT-USD-predict-ensamble-gakknn-VFB.csv = 0.45
+BAT-USD-predict-ensamble-gakknn-NBA.csv = 0.51
+BNB-USD-predict-ensamble-gakknn-MIHDA.csv = 0.53
+BNB-USD-predict-ensamble-gakknn-VACGBFA.csv = 0.54
+BNB-USD-predict-ensamble-gakknn-VACGBFCG.csv = 0.54
+BNB-USD-predict-ensamble-gakknn-VACGD.csv = 0.53
+BNB-USD-predict-ensamble-gakknn-VACGBB.csv = 0.53
+BNB-USD-predict-ensamble-gakknn-VACGBA.csv = 0.53
+BNB-USD-predict-ensamble-gakknn-MIFB.csv = 0.57
+BNB-USD-predict-ensamble-gakknn-MIBA.csv = 0.54
+BNB-USD-predict-ensamble-gakknn-VACGBFCI.csv = 0.58
+BNB-USD-predict-ensamble-gakknn-VACGBD.csv = 0.54
+BNB-USD-predict-ensamble-gakknn-VACGBFCH.csv = 0.54
+BNB-USD-predict-ensamble-gakknn-VACGBFCK.csv = 0.56
+BNB-USD-predict-ensamble-gakknn-VACF.csv = 0.58
+BNB-USD-predict-ensamble-gakknn-VACGBFCF.csv = 0.56
+BNB-USD-predict-ensamble-gakknn-VDIC.csv = 0.55
+BNB-USD-predict-ensamble-gakknn-VDIDE.csv = 0.51
+BNB-USD-predict-ensamble-gakknn-MFY.csv = 0.52
+BNB-USD-predict-ensamble-gakknn-MFP.csv = 0.44
+BNB-USD-predict-ensamble-gakknn-VACGBFCB.csv = 0.55
 BNB-USD-predict-ensamble-gakknn-VACGG.csv
 BNB-USD-predict-ensamble-gakknn-MIDD.csv
 BNB-USD-predict-ensamble-gakknn-MCD.csv
