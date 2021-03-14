@@ -1,6 +1,7 @@
 # Title     : Search XGB linear model using daily aspects (modern mixed) factors table.
 # Created by: pablocc
 # Created on: 22/10/2020
+# TODO: Try to create energy index from this model.
 
 library(boot)
 library(caret)
@@ -9,7 +10,7 @@ library(plyr)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "EOS-USD"
+symbol <- "BTC-USD"
 aspectFilter <- c()
 pxSelect <- c(
   #'MO',
