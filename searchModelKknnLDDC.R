@@ -10,12 +10,13 @@
 
 library(boot)
 library(caret)
+library(plyr)
 library(psych)
 library(gbm)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "ADA-USD"
+symbol <- "BTC-USD"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
 orbLimit <- 4
