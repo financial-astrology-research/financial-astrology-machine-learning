@@ -59,21 +59,21 @@ BNB-USD-predict-ensamble-gakknn-MFL.csv = 0.55
 BNB-USD-predict-ensamble-gakknn-VDIBCA.csv = 0.49
 BNB-USD-predict-ensamble-gakknn-VACGBFCJ.csv = 0.55
 BNB-USD-predict-ensamble-gakknn-VAC.csv = 0.56
-BTC-USD-predict-ensamble-gakknn-MEA.csv
-BTC-USD-predict-ensamble-gakknn-UADBA.csv
-BTC-USD-predict-ensamble-gakknn-MFH.csv
-BTC-USD-predict-kknnLDN-ensamble.csv
-BTC-USD-predict-ensamble-gakknn-MAABDAF.csv
-BTC-USD-predict-xgblinearLJ-ensamble.csv
-BTC-USD-predict-ensamble-gakknn-VEC.csv
-BTC-USD-predict-ensamble-gakknn-MFU.csv
-BTC-USD-predict-ensamble-gakknn-MFP.csv
-BTC-USD-predict-kknnLDDC-ensamble.csv
-BTC-USD-predict-ensamble-gakknn-VACGBFC.csv
-BTC-USD-predict-ensamble-gakknn-UBD.csv
-BTC-USD-predict-ensamble-gakknn-VG.csv
-BTC-USD-predict-ensamble-gakknn-VCB.csv
-BTC-USD-predict-ensamble-gakknn-VFG.csv
+BTC-USD-predict-ensamble-gakknn-MEA.csv = 0.52
+BTC-USD-predict-ensamble-gakknn-UADBA.csv = 0.48
+BTC-USD-predict-ensamble-gakknn-MFH.csv = 0.47
+BTC-USD-predict-kknnLDN-ensamble.csv (needs fix)
+BTC-USD-predict-ensamble-gakknn-MAABDAF.csv = 0.43
+BTC-USD-predict-xgblinearLJ-ensamble.csv = 0.51
+BTC-USD-predict-ensamble-gakknn-VEC.csv = 0.54
+BTC-USD-predict-ensamble-gakknn-MFU.csv = 0.54
+BTC-USD-predict-ensamble-gakknn-MFP.csv = 0.55
+BTC-USD-predict-kknnLDDC-ensamble.csv = 0.53
+BTC-USD-predict-ensamble-gakknn-VACGBFC.csv = 0.50
+BTC-USD-predict-ensamble-gakknn-UBD.csv = 0.50
+BTC-USD-predict-ensamble-gakknn-VG.csv = 0.47
+BTC-USD-predict-ensamble-gakknn-VCB.csv = 0.56
+BTC-USD-predict-ensamble-gakknn-VFG.csv = 0.56
 DASH-USD-predict-ensamble-gakknn-NEB.csv
 DASH-USD-predict-ensamble-gakknn-MFL.csv
 DASH-USD-predict-ensamble-gakknn-QC.csv
