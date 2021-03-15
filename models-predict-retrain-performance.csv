@@ -120,23 +120,23 @@ LTC-USD-predict-ensamble-gakknn-UAB.csv = 0.52
 LTC-USD-predict-ensamble-gakknn-MD.csv = 0.46
 LTC-USD-predict-ensamble-gakknn-MIFCB.csv = 0.53
 LTC-USD-predict-ensamble-gakknn-MFJ.csv = 0.46
-ZEC-USD-predict-ensamble-gakknn-MIHDC.csv
-ZEC-USD-predict-ensamble-gakknn-NBC.csv
-ZEC-USD-predict-ensamble-gakknn-NAD.csv
-ZEC-USD-predict-ensamble-gakknn-MAABDAC.csv
-ZEC-USD-predict-ensamble-gakknn-NBCA.csv
-ZEC-USD-predict-ensamble-gakknn-MFN.csv
-ZEC-USD-predict-ensamble-gakknn-MFJ.csv
-ZEC-USD-predict-ensamble-gakknn-RBA.csv
-ZEC-USD-predict-ensamble-gakknn-NBA.csv
-ZEC-USD-predict-ensamble-gakknn-MICA.csv
-ZEC-USD-predict-ensamble-gakknn-UBB.csv
-ZEC-USD-predict-ensamble-gakknn-MFO.csv
-ZRX-USD-predict-ensamble-gakknn-NAD.csv
-ZRX-USD-predict-ensamble-gakknn-PABF.csv
-ZRX-USD-predict-ensamble-gakknn-TAC.csv
-ZRX-USD-predict-kknnLDF-ensamble.csv
-ZRX-USD-predict-ensamble-gakknn-VACGBFCH.csv
+ZEC-USD-predict-ensamble-gakknn-MIHDC.csv = 0.50
+ZEC-USD-predict-ensamble-gakknn-NBC.csv = 0.54
+ZEC-USD-predict-ensamble-gakknn-NAD.csv = 0.47
+ZEC-USD-predict-ensamble-gakknn-MAABDAC.csv = 0.54
+ZEC-USD-predict-ensamble-gakknn-NBCA.csv = 0.55
+ZEC-USD-predict-ensamble-gakknn-MFN.csv = 0.57
+ZEC-USD-predict-ensamble-gakknn-MFJ.csv = 0.46
+ZEC-USD-predict-ensamble-gakknn-RBA.csv = 0.49
+ZEC-USD-predict-ensamble-gakknn-NBA.csv = 0.52
+ZEC-USD-predict-ensamble-gakknn-MICA.csv = 0.53
+ZEC-USD-predict-ensamble-gakknn-UBB.csv = 0.56
+ZEC-USD-predict-ensamble-gakknn-MFO.csv = 0.54
+ZRX-USD-predict-ensamble-gakknn-NAD.csv =
+ZRX-USD-predict-ensamble-gakknn-PABF.csv =
+ZRX-USD-predict-ensamble-gakknn-TAC.csv =
+ZRX-USD-predict-kknnLDF-ensamble.csv =
+ZRX-USD-predict-ensamble-gakknn-VACGBFCH.csv =
 ZRX-USD-predict-ensamble-gakknn-VACGBG.csv
 ZRX-USD-predict-ensamble-gakknn-MEG.csv
 ZRX-USD-predict-ensamble-gakknn-SA.csv
