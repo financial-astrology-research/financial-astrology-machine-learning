@@ -96,21 +96,21 @@ EOS-USD-predict-ensamble-gakknn-MDD.csv = 0.49
 EOS-USD-predict-ensamble-gakknn-MD.csv = 0.45
 EOS-USD-predict-kknnLDE-ensamble.csv (needs fix)
 EOS-USD-predict-ensamble-gakknn-MAE.csv = 0.47
-LINK-USD-predict-ensamble-gakknn-VACE.csv
-LINK-USD-predict-ensamble-gakknn-MIHE.csv
-LINK-USD-predict-ensamble-gakknn-VACGF.csv
-LINK-USD-predict-ensamble-gakknn-VGG.csv
-LINK-USD-predict-ensamble-gakknn-NAF.csv
-LINK-USD-predict-ensamble-gakknn-VACGC.csv
-LINK-USD-predict-ensamble-gakknn-VACGBG.csv
-LINK-USD-predict-ensamble-gakknn-VACGE.csv
-LINK-USD-predict-ensamble-gakknn-VACGBFCC.csv
-LINK-USD-predict-ensamble-gakknn-VACGBFB.csv
-LINK-USD-predict-ensamble-gakknn-VACGB.csv
-LINK-USD-predict-ensamble-gakknn-VACGA.csv
-LINK-USD-predict-ensamble-gakknn-VACGBFCB.csv
-LINK-USD-predict-ensamble-gakknn-VFB.csv
-LINK-USD-predict-ensamble-gakknn-MIFCD.csv
+LINK-USD-predict-ensamble-gakknn-VACE.csv = 0.55
+LINK-USD-predict-ensamble-gakknn-MIHE.csv = 0.52
+LINK-USD-predict-ensamble-gakknn-VACGF.csv = 0.57
+LINK-USD-predict-ensamble-gakknn-VGG.csv = 0.51
+LINK-USD-predict-ensamble-gakknn-NAF.csv = 0.47
+LINK-USD-predict-ensamble-gakknn-VACGC.csv = 0.58
+LINK-USD-predict-ensamble-gakknn-VACGBG.csv = 0.49
+LINK-USD-predict-ensamble-gakknn-VACGE.csv = 0.56
+LINK-USD-predict-ensamble-gakknn-VACGBFCC.csv = 0.57
+LINK-USD-predict-ensamble-gakknn-VACGBFB.csv = 0.56
+LINK-USD-predict-ensamble-gakknn-VACGB.csv = 0.56
+LINK-USD-predict-ensamble-gakknn-VACGA.csv = 0.53
+LINK-USD-predict-ensamble-gakknn-VACGBFCB.csv = 0.53
+LINK-USD-predict-ensamble-gakknn-VFB.csv = 0.51
+LINK-USD-predict-ensamble-gakknn-MIFCD.csv = 0.48
 LTC-USD-predict-ensamble-gakknn-MFM.csv
 LTC-USD-predict-ensamble-gakknn-VDM.csv
 LTC-USD-predict-ensamble-gakknn-VEC.csv
