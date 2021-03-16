@@ -13,6 +13,8 @@
 # CONCLUSION:
 # 1) Seems that harmonics greater than 7, don't provides much predictive power.
 
+# TODO: Use this model to as a new experiments generation.
+
 library(boot)
 library(caret)
 library(gbm)
@@ -33,7 +35,8 @@ pxSelect <- c(
   'MO',
   'ME',
   'VE',
-  'SU'
+  'SU',
+  'MA'
 )
 
 pySelect <- c(

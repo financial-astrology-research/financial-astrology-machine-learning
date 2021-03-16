@@ -18,6 +18,8 @@
 #            14) Separative orb limit to 5.
 #            15) Add MO, VE, SU, MA max/min norm declination features to model data.
 
+# TODO: Train all CCCL* variations for all assets.
+
 library(boot)
 library(caret)
 library(psych)

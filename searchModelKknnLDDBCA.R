@@ -35,7 +35,8 @@ pxSelect <- c(
   'MO',
   'ME',
   'VE',
-  'SU'
+  'SU',
+  'MA'
 )
 
 pySelect <- c(
@@ -69,7 +70,7 @@ aspectSelect <- c(
 idCols <- c('Date', 'Hour')
 setModernAspectsSet3()
 setPlanetsAll()
-dailyAspects <- fread("./dplanets/ADA_natal_transits.csv")
+dailyAspects <- fread("./dplanets/DASH_natal_transits.csv")
 dailyAspects <- dailyAspects[minOrb <= orbLimit,]
 dailyAspects[, aspect := str_replace(aspect, 'a', '')]
 dailyAspects[, Date := as.Date(Date)]

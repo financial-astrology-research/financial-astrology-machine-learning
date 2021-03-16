@@ -13,6 +13,8 @@
 # CONCLUSION:
 # 1) Planets absolute longitude distance overfits and performs worst than half normalize distance.
 
+# TODO: Use as the root of new experimental models generation.
+
 library(boot)
 library(caret)
 library(gbm)

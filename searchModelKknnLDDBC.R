@@ -19,6 +19,8 @@
 #    from major aspects.
 # 2) Adding CE/CH increase accuracy 3%.
 
+# TODO: Use as the root of new experimental models generation.
+
 library(boot)
 library(caret)
 library(gbm)

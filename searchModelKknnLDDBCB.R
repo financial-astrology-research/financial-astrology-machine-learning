@@ -15,6 +15,7 @@
 # 1) ADA reach 61% accuracy with natal transits + mundane aspects.
 # 2) BNB cannot exceed 53% accuracy.
 
+# TODO: Use as the root of new experimental models generation.
 library(boot)
 library(caret)
 library(gbm)
@@ -34,7 +35,8 @@ pxSelect <- c(
   'MO',
   'ME',
   'VE',
-  'SU'
+  'SU',
+  'MA'
 )
 
 pySelect <- c(
@@ -86,7 +88,7 @@ dailyAspectsPlanetYCount <- dailyPlanetYActivationCount(
 )
 
 dailyAspects <- merge(dailyAspectsCount, dailyAspectsPlanetYCount, by = "Date")
-dailyTransits <- fread("./dplanets/ADA_natal_transits.csv")
+dailyTransits <- fread("./dplanets/DASH_natal_transits.csv")
 dailyTransits <- dailyTransits[minOrb <= orbLimit,]
 dailyTransits[, aspect := str_replace(aspect, 'a', '')]
 dailyTransits[, Date := as.Date(Date)]
