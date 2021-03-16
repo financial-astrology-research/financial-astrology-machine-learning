@@ -132,15 +132,15 @@ ZEC-USD-predict-ensamble-gakknn-NBA.csv = 0.52
 ZEC-USD-predict-ensamble-gakknn-MICA.csv = 0.53
 ZEC-USD-predict-ensamble-gakknn-UBB.csv = 0.56
 ZEC-USD-predict-ensamble-gakknn-MFO.csv = 0.54
-ZRX-USD-predict-ensamble-gakknn-NAD.csv =
-ZRX-USD-predict-ensamble-gakknn-PABF.csv =
-ZRX-USD-predict-ensamble-gakknn-TAC.csv =
-ZRX-USD-predict-kknnLDF-ensamble.csv =
-ZRX-USD-predict-ensamble-gakknn-VACGBFCH.csv =
-ZRX-USD-predict-ensamble-gakknn-VACGBG.csv
-ZRX-USD-predict-ensamble-gakknn-MEG.csv
-ZRX-USD-predict-ensamble-gakknn-SA.csv
-ZRX-USD-predict-ensamble-gakknn-VDIDA.csv
-ZRX-USD-predict-ensamble-gakknn-MEH.csv
-ZRX-USD-predict-ensamble-gakknn-MEL.csv
-ZRX-USD-predict-ensamble-gakknn-MFB.csv
+ZRX-USD-predict-ensamble-gakknn-NAD.csv = 0.46
+ZRX-USD-predict-ensamble-gakknn-PABF.csv = 0.56
+ZRX-USD-predict-ensamble-gakknn-TAC.csv = 0.46
+ZRX-USD-predict-kknnLDF-ensamble.csv = 0.47
+ZRX-USD-predict-ensamble-gakknn-VACGBFCH.csv = 0.54
+ZRX-USD-predict-ensamble-gakknn-VACGBG.csv = 0.54
+ZRX-USD-predict-ensamble-gakknn-MEG.csv = 0.49
+ZRX-USD-predict-ensamble-gakknn-SA.csv = 0.50
+ZRX-USD-predict-ensamble-gakknn-VDIDA.csv = 0.52
+ZRX-USD-predict-ensamble-gakknn-MEH.csv = 0.54
+ZRX-USD-predict-ensamble-gakknn-MEL.csv = 0.53
+ZRX-USD-predict-ensamble-gakknn-MFB.csv = 0.51
