@@ -12,6 +12,7 @@
 
 library(boot)
 library(caret)
+library(plyr)
 library(psych)
 library(gbm)
 source("./analysis.r")
@@ -54,7 +55,7 @@ dailyAspectsPlanetYCount <- dailyPlanetYActivationCount(
   pySelect = pySelect
 )
 
-dailyPlanetsSpeed <- dailyPlanetsSpeed()
+dailyPlanetsSpeed <- dailyPlanetsSpeedTablePrepare()
 #dailyPlanetsDeclination <- dailyPlanetsDeclination()
 dailyAspects <- merge(dailyAspectsCount, dailyAspectsPlanetYCount, by = "Date")
 dailyAspects <- merge(dailyAspects, dailyPlanetsSpeed[, c('Date', 'VESP', 'MASP', 'JUSP')], by = "Date")

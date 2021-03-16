@@ -20,12 +20,13 @@
 
 library(boot)
 library(caret)
+library(plyr)
 library(psych)
 library(gbm)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-symbol <- "ADA-USD"
+symbol <- "ZRX-USD"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 4
 featureImportanceCut <- 5
