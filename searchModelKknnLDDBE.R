@@ -25,7 +25,7 @@ source("./analysis.r")
 source("./indicatorPlots.r")
 
 modelId <- "kknnLDDBE"
-symbol <- "ADA-USD"
+symbol <- "DASH-USD"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
 

@@ -25,7 +25,7 @@ source("./analysis.r")
 source("./indicatorPlots.r")
 
 modelId <- "kknnLDDBG"
-symbol <- "BAT-USD"
+symbol <- "DASH-USD"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
 
@@ -90,7 +90,7 @@ dailyPlanets <- hourlyPlanets[, lapply(.SD, mean), .SDcols = selectColumns, by =
 
 # Aggregate angular harmonics by pY (receiver) planets.
 for (pID in pySelect) {
-  planetHarmonicsColumns <- aspectsHarmonicColumns[grep(paste0('..', pID, 'LONH0'), aspectsHarmonicColumns)]
+  planetHarmonicsColumns <- selectColumns[grep(paste0('..', pID, 'LONH0'), selectColumns)]
   aggregatedColumn <- paste0(pID, 'W')
   dailyPlanets[, c(aggregatedColumn) := aggregateAngularHarmonics(.SD), .SDcols = planetHarmonicsColumns, by = "Date"]
 }
