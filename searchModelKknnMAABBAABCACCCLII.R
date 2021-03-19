@@ -18,6 +18,8 @@
 #            14) Separative orb limit to 5.
 #            15) Add SA max/min norm declination features to model data.
 
+# TODO: This models seems stable across all assets would be interesting to branch new generation from it.
+
 library(boot)
 library(caret)
 library(psych)
@@ -326,7 +328,7 @@ searchModel <- function(symbol) {
 
   aspectsCols <- names(aspectView)[-seq(2, 4)]
   exportCols <- c(aspectsCols, "EffPred")
-  fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-", modelId, ".csv", sep = ""))
+  fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/ModelsPred/", symbol, "-predict-", modelId, ".csv", sep = ""))
 
   return(
     list(symbol = symbol, results = testResult)

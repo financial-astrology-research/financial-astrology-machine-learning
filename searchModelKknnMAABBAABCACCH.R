@@ -15,6 +15,8 @@
 #            11) Z diff percent cut to 3.
 #            12) Fit validate repeats to 10.
 
+# TODO: Looks promising, use as root model for new generation.
+
 library(boot)
 library(caret)
 library(psych)
@@ -312,7 +314,7 @@ searchModel <- function(symbol) {
 
   aspectsCols <- names(aspectView)[-seq(2, 4)]
   exportCols <- c(aspectsCols, "EffPred")
-  fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-", modelId, ".csv", sep = ""))
+  fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/ModelsPred/", symbol, "-predict-", modelId, ".csv", sep = ""))
 
   return(
     list(symbol = symbol, results = testResult)
