@@ -492,7 +492,7 @@ calculateAccuracy <- function(monthlyData) {
   accuracy <- confusionData$overall['Accuracy']
   prevalence <- confusionData$byClass['Prevalence']
 
-  list(Accuracy = accuracy, Prevalence = prevalence)
+  list(Accuracy = accuracy, Prevalence = prevalence, N = nrow(monthlyData))
 }
 
 cat("\n", symbolTest, "montly predictions performacne test:", "\n")
