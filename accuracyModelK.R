@@ -8,14 +8,12 @@ source("analysis.r")
 symbolTest <- readline("Enter Yahoo Finance Symbol ID:")
 securityDataTest <- mainOpenSecurity(
   symbolTest, 2, 4,
-  "%Y-%m-%d", "2020-12-15"
+  "%Y-%m-%d", "2020-11-01"
 )
 #basePath <- "~/Sites/own/trading-signal-processing/csv_indicators/"
 #basePath <- "~/Desktop/"
 #basePath <- "~/Desktop/ModelsPred/"
-basePath <- "~/Desktop/ModelsProd/"
-
-symbolNormalized <- str_replace(symbolTest, "-", "")
+basePath <- "~/Sites/own/financial-astrology-stats/machine_learning/signals_index/"
 
 # NOTE:
 # (**) represent the best models that performed well during Oct, Nov (partial) 2020
@@ -473,8 +471,7 @@ symbolNormalized <- str_replace(symbolTest, "-", "")
 #indicatorFile <- "ZRX-USD-predict-kknnLDR-ensamble" # A: 65, 20 / P: 48, 13
 #indicatorFile <- "ZRX-USD-predict-ensamble-gakknn-MAA"
 
-symbolId <- paste0(str_replace(symbolTest, "-", ""), "T")
-indicatorFile <- paste("ml", symbolId, "daily-consensus", sep = "-")
+indicatorFile <- paste("ml", symbolTest, "daily-index", sep = "-")
 #indicatorFile <- "ml-LINKUSDT-daily"
 
 dailyIndicator <- fread(
@@ -482,14 +479,14 @@ dailyIndicator <- fread(
 )
 dailyIndicator[, Date := as.Date(Date)]
 dailyIndicator[, YearMonth := format(Date, "%Y-%m")]
-dailyIndicator <- merge(securityDataTest[, c('Date', 'Mid', 'diffPercent', 'Eff', 'Actbin')], dailyIndicator, by = "Date")
-dailyIndicator <- dailyIndicator[EffPred != "neutral",]
+dailyIndicator <- merge(securityDataTest[, c('Date', 'Mid', 'diffPercent', 'Eff2', 'Actbin')], dailyIndicator, by = "Date")
+dailyIndicator <- dailyIndicator[Action != "neutral",]
 
 calculateAccuracy <- function(monthlyData) {
   categoryLevels = c("buy", "sell")
   confusionData <- table(
     actualclass = factor(monthlyData$Actbin, levels = categoryLevels),
-    predictedclass = factor(monthlyData$EffPred, levels = categoryLevels)
+    predictedclass = factor(monthlyData$Action, levels = categoryLevels)
   ) %>% caret::confusionMatrix()
 
   accuracy <- confusionData$overall['Accuracy']
