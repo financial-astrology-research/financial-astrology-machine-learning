@@ -8,7 +8,7 @@
 #             7) Fit weak learners for MA trend and ensamble for Actbin to generalize for daily change.
 #             8) Use setModernAspectsSet3 aspects that include Kepler angles.
 #             9) Use harmonics with NN/SN and asteroids CE.
-#            10) Use ME/VE/SU/MA/CE/VS longitude harmonic 4 to allow model detect zodiac energy.
+#            10) Use ME/VE/SU/MA/CE/VS longitude harmonic 8 to allow model detect zodiac energy.
 
 library(boot)
 library(caret)
@@ -21,7 +21,7 @@ library(psych)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "kknnLDDBFC"
+modelId <- "kknnLDDBFCA"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 4
 
@@ -83,7 +83,7 @@ hourlyPlanets[,
 ]
 
 combinedLongitudeHarmonic <- function(x) {
-  distanceHarmonic(x, 4)
+  distanceHarmonic(x, 8)
 }
 
 planetsLonH0 <- paste0(planetsLonCols, 'H0')
