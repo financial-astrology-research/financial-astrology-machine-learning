@@ -8,7 +8,7 @@
 #             7) Fit weak learners for MA trend and ensamble for Actbin to generalize for daily change.
 #             8) Use setModernAspectsSet3 aspects that include Kepler angles.
 #             9) Use distance with NN/SN and asteroids CE, JN, CH, PH.
-#            10) Use SULON to allow model detect Sun zodiac position.
+#            10) Use MO, ME, VE, SU longitude features to allow model detect energy quality.
 
 # CONCLUSION:
 # 1) Planets longitude distance performs better than aspects / planets activation count.
@@ -24,7 +24,7 @@ library(psych)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "kknnLDDBD"
+modelId <- "kknnLDDBDC"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
 
@@ -55,6 +55,13 @@ pySelect <- c(
   'PL'
 )
 
+pLonSelect <- c(
+  'MO',
+  'ME',
+  'VE',
+  'SU'
+)
+
 idCols <- c('Date', 'Hour')
 setModernAspectsSet3()
 setPlanetsAll()
@@ -66,7 +73,7 @@ planetPairsPattern <- expand.grid(pxSelect, pySelect) %>%
   str_flatten(collapse = "|")
 selectColumns <- c(
   columnNames[grep(planetPairsPattern, columnNames)],
-  'SULON'
+  paste0(pLonSelect, "LON")
 )
 dailyAspects <- hourlyPlanets[, lapply(.SD, mean), .SDcols = selectColumns, by = 'Date']
 
