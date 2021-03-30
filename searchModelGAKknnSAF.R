@@ -10,7 +10,7 @@
 #             6) Fit 5 weak learners for difflogHxL change.
 #             7) Ensamble weak learnets to fit for HxLEff to predict categorical (buy / sell) signal.
 #             8) Optimize weak learners for RMSE.
-#             9) GA feature selection popSize = 100 and iter = 20.
+#             9) GA feature selection popSize = 200 and iter = 40.
 #            10) Fit using multi train sample mean metric penalized by standard deviation.
 #            11) Perform difflogHxL zscore outliers drop.
 
@@ -23,7 +23,7 @@ library(ModelMetrics)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "ensamble-gakknn-SAE"
+modelId <- "ensamble-gakknn-SAF"
 zscoreCut <- 2
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
@@ -32,8 +32,8 @@ trainDataEndDate <- as.Date("2020-08-15")
 testDataStartDate <- as.Date("2020-09-01")
 orbLimit <- 2
 kMax <- 7
-gaPopSize <- 100
-gaMaxIter <- 20
+gaPopSize <- 200
+gaMaxIter <- 40
 gaParamsNum <- 10
 wlCVFolds <- 5
 wlCVRepeats <- 1
