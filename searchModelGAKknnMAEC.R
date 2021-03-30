@@ -2,7 +2,7 @@
 #             with GA feature selection that maximize Rsquared on train data to fit for
 #             daily price percent change estimation.
 # Purpose   : Based on ModelLD this model has some variations:
-#             1) Planets MO, ME, VE, SU, MA fast planets applying to all slow planets, VS and NN.
+#             1) Planets MO, ME, VE, SU, MA, VS, CE fast planets applying to all slow planets, VS and NN.
 #             2) CV folds to 5 with 1 repeats for weak learners, folds to 5 with 5 repeats for ensamble.
 #             3) Split to 80/20 proportion.
 #             4) Validate fit using Actbin daily price change (buy / sell) instead of Effect
@@ -349,7 +349,7 @@ searchModel <- function(symbol) {
 
   aspectsCols <- names(aspectView)[-seq(2, 4)]
   exportCols <- c(aspectsCols, "EffPred")
-  fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-", modelId, ".csv", sep = ""))
+  fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/ModelsPred/", symbol, "-predict-", modelId, ".csv", sep = ""))
 
   return(
     list(symbol=symbol, results=testResult)

@@ -2,7 +2,7 @@
 #             with GA feature selection that maximize Rsquared on train data to fit for
 #             daily price percent change estimation.
 # Purpose   : Based on ModelLD this model has some variations:
-#             1) Planets MO, ME, VE, SU, MA fast planets applying to all slow planets, VS and NN.
+#             1) Planets MO, ME, VE, SU, MA, VS, CE, JU fast planets applying to all slow planets, VS and NN.
 #             2) CV folds to 5 with 1 repeats for weak learners, folds to 5 with 5 repeats for ensamble.
 #             3) Split to 80/20 proportion.
 #             4) Validate fit using Actbin daily price change (buy / sell) instead of Effect
@@ -21,7 +21,7 @@ library(ModelMetrics)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "ensamble-gakknn-MAEA"
+modelId <- "ensamble-gakknn-MAED"
 zdiffPercentCut <- 2
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
@@ -43,7 +43,10 @@ pxSelectAll <- c(
   'ME',
   'VE',
   'SU',
-  'MA'
+  'MA',
+  'VS',
+  'CE',
+  'JU'
 )
 
 pySelectAll <- c(
