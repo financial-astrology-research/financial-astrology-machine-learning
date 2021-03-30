@@ -34,7 +34,7 @@ orbLimit <- 4
 kMax <- 5
 gaPopSize <- 50
 gaMaxIter <- 10
-nBits <- 15
+nBits <- 17
 wlCVFolds <- 5
 wlCVRepeats <- 1
 enCVFolds <- 10
