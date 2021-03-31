@@ -26,7 +26,7 @@ library(ModelMetrics)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "ensamble-gakknn-NAABCB"
+modelId <- "ensamble-gakknn-NAABCC"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
 trainDataStartDate <- as.Date("2010-01-01")
@@ -77,6 +77,7 @@ aspectSelectAll <- c(
 pLonSelect <- c(
   'MO',
   'ME',
+  'VE',
   'SU'
 )
 
