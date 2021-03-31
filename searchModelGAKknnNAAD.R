@@ -261,7 +261,7 @@ searchModel <- function(symbol) {
   dailyAspects <- prepareDailyAspects(pxSelect, pySelect, aspectSelect)
 
   aspectView <- merge(
-    securityData[, c('Date', 'diffHxL', 'HxLEff')],
+    securityData[, c('Date', 'HxLEff', 'Actbin')],
     dailyAspects, by = "Date"
   )
 
@@ -318,7 +318,7 @@ searchModel <- function(symbol) {
   )
 
   aspectViewTest <- merge(
-    securityDataTest[, c('Date', 'HxLEff')],
+    securityDataTest[, c('Date', 'Actbin')],
     dailyAspects,
     by = "Date"
   )
