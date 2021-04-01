@@ -16,7 +16,7 @@
 #            12) Include MO, SU longitude to allow energy type detection.
 #            13) Final accuracy using Actbin.
 #            14) Orb limit to 1.
-#            15) MOSU, MESU angular distance feature.
+#            15) MOSU, MESU, VESU angular distance feature.
 
 library(boot)
 library(zeallot)
@@ -27,7 +27,7 @@ library(ModelMetrics)
 source("./analysis.r")
 source("./indicatorPlots.r")
 
-modelId <- "ensamble-gakknn-NAABCAAA"
+modelId <- "ensamble-gakknn-NAABCAAB"
 maPriceFsPeriod <- 2
 maPriceSlPeriod <- 3
 trainDataStartDate <- as.Date("2010-01-01")
@@ -82,7 +82,8 @@ pLonSelect <- c(
 
 pDisSelect <- c(
   'MOSU',
-  'MESU'
+  'MESU',
+  'VESU'
 )
 
 idCols <- c('Date', 'Hour')
