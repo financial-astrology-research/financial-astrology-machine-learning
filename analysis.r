@@ -196,7 +196,7 @@ mainProcessPlanetsDegSplit <- function(planetsorig, degsplit) {
 
 mainOpenPlanets <- function(planetsfile, selectColNames, cusorbs, calcasps = T) {
   Date = DateMT4 = Year = NULL
-  planetsfile <- npath(paste("~/Sites/own/astro-trading/trading/dplanets/", planetsfile, ".tsv", sep = ""))
+  planetsfile <- npath(paste("./dplanets/", planetsfile, ".tsv", sep = ""))
   planets <- fread(planetsfile, sep = "\t", na.strings = "", verbose = F)
   planets[, Date := as.Date(planets$Date, format = "%Y-%m-%d")]
   planets <- planets[, selectColNames, with = F]
@@ -292,7 +292,7 @@ openHourlyPlanets <- function(planetsfile, cusorbs = deforbs, calcasps = T, clea
 }
 
 mainOpenSecurity <- function(securityfile, mapricefs = 20, mapricesl = 50, dateformat = "%Y-%m-%d", sdate = '1970-01-01', edate = Sys.Date()) {
-  filename <- npath(paste("~/Sites/own/astro-trading/trading/stocks/", securityfile, ".csv", sep = ''))
+  filename <- npath(paste("./stocks/", securityfile, ".csv", sep = ''))
   security <- fread(filename)
   security <- security[!is.na(Open)]
   security[, Date := as.Date(Date, format = dateformat)]
@@ -864,7 +864,7 @@ processGetSymbolFred <- function(symbol) {
 
 getMySymbolsData <- function(listfile) {
   #Load the list of ticker symbols from a csv, each row contains a ticker
-  listFilePath <- npath(paste("~/Sites/own/astro-trading/hisdata/symbols/", listfile, ".csv", sep = ""))
+  listFilePath <- npath(paste("./symbols/", listfile, ".csv", sep = ""))
   symbolsls <- read.csv(listFilePath, header = F, stringsAsFactors = F)
   res <- lapply(symbolsls$V1, processGetSymbol)
 }

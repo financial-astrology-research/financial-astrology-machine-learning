@@ -142,6 +142,6 @@ trainModel <- function(symbol) {
   return(signalData)
 }
 
-listFilePath <- npath(paste("~/Sites/own/astro-trading/hisdata/symbols/working.csv", sep = ""))
+listFilePath <- npath(paste("./symbols/working.csv", sep = ""))
 symbolsList <- read.csv(listFilePath, header = F, stringsAsFactors = F)
 allSignals <- lapply(symbolsList$V1, trainModel)

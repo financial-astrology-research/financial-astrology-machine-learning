@@ -136,11 +136,9 @@ trainModel <- function(symbol) {
   plot(aspectViewValidate$zdiffPercent, aspectViewValidate$diffPredict)
   cor(aspectViewValidate$zdiffPercent, aspectViewValidate$diffPredict) %>% print()
   with(aspectViewValidate, mean((zdiffPercent - diffPredict)^2)) %>% sqrt()
-  #plot(aspectViewValidate$a180_SU, type = "l")
-  #fwrite(aspectView, paste("~/Desktop/", symbol, "cumenergy.csv", sep = "-"))
   return(signalData)
 }
 
-listFilePath <- npath(paste("~/Sites/own/astro-trading/hisdata/symbols/working.csv", sep = ""))
+listFilePath <- npath(paste("./symbols/working.csv", sep = ""))
 symbolsList <- read.csv(listFilePath, header = F, stringsAsFactors = F)
 allSignals <- lapply(symbolsList$V1, trainModel)
