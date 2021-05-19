@@ -81,12 +81,12 @@ testPredictAccuracy <- function(predictFilename) {
 getMySymbolsData("working")
 
 #basePath <- "~/Sites/own/trading-signal-processing/csv_indicators/"
-#basePath <- "~/Desktop/"
-basePath <- "~/Desktop/ModelsPred/"
+#basePath <- "./predictions/"
+basePath <- "./predictions/"
 predictFiles <- list.files(basePath, pattern = "*.csv")
 testResults <- setDT(rbindlist(lapply(predictFiles, testPredictAccuracy)))
 reportDate <- format(Sys.Date(), "%Y-%m-%d")
-modelsPredictSummaryFilename <- paste("~/Desktop/", "models-predict-performance-hleff-", reportDate, ".csv", sep = "")
+modelsPredictSummaryFilename <- paste("./predictions/", "models-predict-performance-hleff-", reportDate, ".csv", sep = "")
 
 fwrite(testResults, modelsPredictSummaryFilename)
 cat("Models summary exported to:", modelsPredictSummaryFilename, "\n")

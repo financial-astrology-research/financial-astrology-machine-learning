@@ -211,4 +211,4 @@ dailyAspects[, EffUpP2 := format(EffUpP2, format="f", big.mark = ",", digits = 3
 dailyAspects[, EffUpP3 := format(EffUpP3, format="f", big.mark = ",", digits = 3)]
 
 exportCols <- c('Date', selectCols[-1], probCols, "EffPred")
-fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-glmLDB-ensamble", ".csv", sep = ""))
+fwrite(dailyAspects[, ..exportCols], paste("./predictions/", symbol, "-predict-glmLDB-ensamble", ".csv", sep = ""))

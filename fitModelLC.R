@@ -110,7 +110,7 @@ plot(aspectViewValidate$zdiffPercent, aspectViewValidate$diffPredict)
 cor(aspectViewValidate$zdiffPercent, aspectViewValidate$diffPredict) %>% print()
 with(aspectViewValidate, mean((zdiffPercent - diffPredict)^2)) %>% sqrt()
 #plot(aspectViewValidate$a180_SU, type = "l")
-#fwrite(aspectView, paste("~/Desktop/", symbol, "cumenergy.csv", sep = "-"))
+#fwrite(aspectView, paste("./predictions/", symbol, "cumenergy.csv", sep = "-"))
 
 # CONCLUSIONS:
 # - The individual planet/aspect variables correlate as high as +/- 0.10 with price diff.

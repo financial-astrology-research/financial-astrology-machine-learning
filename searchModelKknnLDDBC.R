@@ -289,7 +289,7 @@ searchModel <- function(symbol) {
   dailyAspects[, EffUpP5 := format(EffUpP5, format = "f", big.mark = ",", digits = 5)]
 
   exportCols <- c('Date', selectCols[-1], probCols, "EffPred")
-  fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/ModelsPred/", symbol, "-predict-", modelId, "-ensamble", ".csv", sep = ""))
+  fwrite(dailyAspects[, ..exportCols], paste("./predictions/", symbol, "-predict-", modelId, "-ensamble", ".csv", sep = ""))
 
   return(
     list(symbol = symbol, results = testResult)

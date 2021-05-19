@@ -309,4 +309,4 @@ dailyAspects[, EffUpP8 := format(EffUpP8, format = "f", big.mark = ",", digits =
 dailyAspects[, EffUpP9 := format(EffUpP9, format = "f", big.mark = ",", digits = 9)]
 
 exportCols <- c('Date', selectCols[-1], probCols, "EffPred")
-fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-kknnLDO-ensamble", ".csv", sep = ""))
+fwrite(dailyAspects[, ..exportCols], paste("./predictions/", symbol, "-predict-kknnLDO-ensamble", ".csv", sep = ""))

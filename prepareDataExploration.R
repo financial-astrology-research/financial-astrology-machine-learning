@@ -76,5 +76,5 @@ aspectView <- merge(
 
 fwrite(
   aspectView,
-  paste("~/Desktop/", symbol, "-planets-comb-aspects-factors-ma3-6-2orb.csv", sep = "")
+  paste("./predictions/", symbol, "-planets-comb-aspects-factors-ma3-6-2orb.csv", sep = "")
 )

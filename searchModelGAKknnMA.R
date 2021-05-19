@@ -328,7 +328,7 @@ searchModel <- function(symbol) {
 
   aspectsCols <- names(aspectView)[-seq(2, 4)]
   exportCols <- c(aspectsCols, "EffPred")
-  fwrite(dailyAspects[, ..exportCols], paste("~/Desktop/", symbol, "-predict-ensamble-gakknn-MA", ".csv", sep = ""))
+  fwrite(dailyAspects[, ..exportCols], paste("./predictions/", symbol, "-predict-ensamble-gakknn-MA", ".csv", sep = ""))
 
   return(
     list(symbol=symbol, results=testResult)

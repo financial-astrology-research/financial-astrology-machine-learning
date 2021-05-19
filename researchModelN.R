@@ -85,4 +85,4 @@ with(securityData, table(Actbin, OxHLCEff))
 with(securityData, table(Actbin, HxLEff))
 cat("\n")
 
-fwrite(securityData, paste("~/Desktop/", symbol, "-extended-daily-price", ".csv", sep = ""))
+fwrite(securityData, paste("./predictions/", symbol, "-extended-daily-price", ".csv", sep = ""))

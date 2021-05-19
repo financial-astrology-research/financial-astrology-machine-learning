@@ -192,7 +192,7 @@ testResult <- table(
   confusionMatrix()
 print(testResult)
 
-#fwrite(dailyAspects, paste("~/Desktop/", symbol, "-predict-xgblinearLO-ensamble", ".csv", sep = ""))
+#fwrite(dailyAspects, paste("./predictions/", symbol, "-predict-xgblinearLO-ensamble", ".csv", sep = ""))
 #saveRDS(fitModel, paste("./models/", symbol, "_xgb1", ".rds", sep=""))
 #fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-xgb3.csv", sep = "-"))
 ##

@@ -175,7 +175,7 @@ dailyAspects[, EffUpP2 := format(EffUpP2, format = "f", big.mark = ",", digits =
 dailyAspects[, EffUpP3 := format(EffUpP3, format = "f", big.mark = ",", digits = 3)]
 dailyAspects[, EffUpP4 := format(EffUpP4, format = "f", big.mark = ",", digits = 3)]
 
-fwrite(dailyAspects, paste("~/Desktop/", symbol, "-predict-xgblinearLF-ensamble", ".csv", sep = ""))
+fwrite(dailyAspects, paste("./predictions/", symbol, "-predict-xgblinearLF-ensamble", ".csv", sep = ""))
 
 #saveRDS(fitModel, paste("./models/", symbol, "_xgb1", ".rds", sep=""))
 #fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-xgb3.csv", sep = "-"))
