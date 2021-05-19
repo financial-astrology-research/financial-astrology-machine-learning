@@ -278,4 +278,4 @@ finalActbinPred <- predict(fitModel, dailyAspects, type = "raw")
 dailyAspects[, finalPred := finalActbinPred]
 
 #saveRDS(fitModel, paste("./models/", symbol, "_avnet4", ".rds", sep=""))
-fwrite(dailyAspects, paste("~/Desktop/ml", symbol, "daily-avnnet.csv", sep = "-"))
+fwrite(dailyAspects, paste("./predictions/ml", symbol, "daily-avnnet.csv", sep = "-"))

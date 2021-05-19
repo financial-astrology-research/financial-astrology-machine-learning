@@ -115,5 +115,5 @@ effect_p <- tree1 %>% predict(newdata = futureAspectsFeatures)
 futureAspectsFeatures$effect_p <- effect_p
 marketPrediction <- futureAspectsFeatures[, c('Date', "effect_p")]
 setnames(marketPrediction, c('Date', 'Action'))
-fwrite(marketPrediction[Date <= Sys.Date() + 60], paste("~/Desktop/ml", symbol, "daily.csv", sep = "-"))
+fwrite(marketPrediction[Date <= Sys.Date() + 60], paste("./predictions/ml", symbol, "daily.csv", sep = "-"))
 
