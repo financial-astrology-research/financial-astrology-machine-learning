@@ -712,7 +712,7 @@ dailyAspectsNameCols <- function(dailyAspects) {
 }
 
 dailyHourlyAspectsTablePrepare <- function(hourlyPlanets, idCols, orbLimit = NULL) {
-  hourlyPlanetsRange <- hourlyPlanets[Date >= as.Date("2017-01-01") & Date <= as.Date("2022-12-31")]
+  hourlyPlanetsRange <- hourlyPlanets[Date >= as.Date("2010-01-01") & Date <= as.Date("2022-12-31")]
   # Melt aspects.
   hourlyAspects <- melt(
     hourlyPlanetsRange, id.var = idCols,
