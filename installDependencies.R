@@ -13,6 +13,7 @@ packagesList <- c(
   'caret',
   'compiler',
   'data.table',
+  'e1071',
   'gbm',
   'ggplot2',
   'grid',
