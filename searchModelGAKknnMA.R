@@ -111,11 +111,11 @@ searchModel <- function(symbol) {
   modelTrain <- function(pxSelect, pySelect) {
     cat("Using PX:", pxSelect, "- PY:", pySelect, "\n")
 
-    if (count(pxSelect) == 0) {
+    if (length(pxSelect) == 0) {
       pxSelect <- pxSelectAll
     }
 
-    if (count(pySelect) < 3) {
+    if (length(pySelect) < 3) {
       pySelect <- pySelectAll
     }
 
@@ -340,7 +340,7 @@ symbolsList <- read.csv(listFilePath, header=F, stringsAsFactors=F)
 testResults <- lapply(symbolsList$V1, searchModel)
 cat("\nMODEL TEST RESULTS:\n")
 
-for(idx in 1:count(testResults)) {
+for(idx in 1:length(testResults)) {
   cat(testResults[[idx]]$symbol, "TEST RESULT:\n")
   print(testResults[[idx]]$results)
 }

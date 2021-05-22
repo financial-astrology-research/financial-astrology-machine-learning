@@ -391,7 +391,7 @@ symbolsList <- read.csv(listFilePath, header = F, stringsAsFactors = F)
 testResults <- lapply(symbolsList$V1, searchModel)
 
 cat("\nMODEL SEARCH SUMMARY:\n\n")
-for (idx in 1:count(testResults)) {
+for (idx in 1:length(testResults)) {
   cat(testResults[[idx]]$symbol, "TEST RESULT:\n")
   print(testResults[[idx]]$results)
 }

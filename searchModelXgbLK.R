@@ -52,7 +52,7 @@ securityData <- mainOpenSecurity(
 #dailyAspectsRaw <- dailyAspectsRaw[p.y %in% c("MA", "SA", "NE", "UR", "PL"),]
 ##dailyAspectsRaw <- dailyAspectsRaw[p.x %in% c("SU", "VE", "MA", "JU", "SA", "NE", "UR", "PL"),]
 ##dailyAspectsRaw <- dailyAspectsRaw[aspect %ni% c(30, 45, 103),]
-#dailyAspectsStats <- dailyAspectsRaw[, data.table(mean(orb), count(origin)), by=Date]
+#dailyAspectsStats <- dailyAspectsRaw[, data.table(mean(orb), length(origin)), by=Date]
 #dailyAspectsStatsPrice <- merge(
 #  securityData[, data.table(Date, abs(zdiffPercent))],
 #  dailyAspectsStats, by = "Date"

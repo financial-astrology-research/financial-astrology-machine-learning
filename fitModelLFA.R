@@ -94,7 +94,7 @@ trainModel <- function(symbol) {
   finalCorrelations <- sort(varCorrelations[, 1])
   print(finalCorrelations)
 
-  totalCols <- count(finalCorrelations)
+  totalCols <- length(finalCorrelations)
   selectCols <- unique(c(
     "Date", names(finalCorrelations)[c(seq(1, 15), seq(totalCols - 15, totalCols - 1))]
   ))
