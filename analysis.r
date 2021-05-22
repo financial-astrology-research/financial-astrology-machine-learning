@@ -19,6 +19,9 @@ startDate = as.Date("1970-01-01")
 maxretry <- 1
 `%ni%` <- Negate(`%in%`)
 
+# Allow to use max threads.
+setDTthreads(0)
+
 # models includes
 source("./includes/commonmod.r")
 source("./includes/daysigaspmod.r")

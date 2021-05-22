@@ -2,7 +2,6 @@ library(GA)
 library(parallel)
 library(doParallel)
 source("./indicatorPlots.r")
-setDTthreads(6)
 
 symbol <- "EOS-USD"
 securityData <- mainOpenSecurity(symbol, 14, 28, "%Y-%m-%d", "2010-01-01")
