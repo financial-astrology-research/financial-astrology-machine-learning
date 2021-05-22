@@ -15,6 +15,7 @@ packagesList <- c(
   'cowplot',
   'curl',
   'data.table',
+  'devtools',
   'gbm',
   'ggplot2',
   'grid',
@@ -34,6 +35,7 @@ install.packages(
   repos="http://cran.wustl.edu/"
 )
 
+devtools::install_github('systematicinvestor/SIT.date')
 # You need to have installed "libcurl-devel" in your OS.
 library(curl)
 curl_download('https://github.com/systematicinvestor/SIT/raw/master/SIT.tar.gz', 'sit',mode = 'wb',quiet=T)
