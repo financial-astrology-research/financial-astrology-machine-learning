@@ -26,6 +26,7 @@ packagesList <- c(
   'reshape2',
   'splus2R',
   'stringr',
+  'xgboost',
   'zeallot'
 )
 
