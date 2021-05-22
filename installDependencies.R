@@ -15,7 +15,6 @@ packagesList <- c(
   'cowplot',
   'curl',
   'data.table',
-  'devtools',
   'gbm',
   'ggplot2',
   'grid',
