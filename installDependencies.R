@@ -12,7 +12,6 @@ packagesList <- c(
   'boot',
   'caret',
   'compiler',
-  'cowplot',
   'data.table',
   'gbm',
   'ggplot2',

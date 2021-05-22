@@ -1,5 +1,4 @@
 library(grid)
-library(cowplot)
 library(paramtest)
 library(purrr)
 source("./analysis.r")
