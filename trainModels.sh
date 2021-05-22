@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
-MODFILES="*knnV*.R"
+MODSGEN=$1
+MODFILES="*knn$MODSGEN*.R"
+echo "Models match pattern: $MODFILES"
+echo
 
 trap "exit" INT
 # Get data needed for models training.
