@@ -16,6 +16,7 @@ packagesList <- c(
   'gbm',
   'ggplot2',
   'grid',
+  'kknn',
   'microbenchmark',
   'paramtest',
   'psych',
