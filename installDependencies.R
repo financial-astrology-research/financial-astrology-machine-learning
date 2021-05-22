@@ -13,7 +13,6 @@ packagesList <- c(
   'caret',
   'compiler',
   'cowplot',
-  'curl',
   'data.table',
   'gbm',
   'ggplot2',
