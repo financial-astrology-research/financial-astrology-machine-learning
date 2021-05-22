@@ -1,2 +1,4 @@
 stocks/*.csv
 predictions/*.csv
+dplanets/*.csv
+dplanets/*.tsv
