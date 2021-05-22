@@ -1,6 +1,5 @@
 library(GA)
 library(R.cache)
-library(SIT)
 library(compiler)
 library(data.table)
 library(ggplot2)

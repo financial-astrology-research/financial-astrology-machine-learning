@@ -1654,7 +1654,7 @@ dailyAspectsGeneralizedCount <- function(
   dailyAspectsCount <- dcast(
     dailyAspects,
     Date ~ aspect,
-    fun.aggregate = SIT::count,
+    fun.aggregate = length,
     value.var = "aspect",
     fill = 0
   )
@@ -1691,7 +1691,7 @@ dailyAspectsGeneralizedCountLDI <- function(orbLimit = 2, pxSelect = c(), pySele
   dailyAspectsCount <- dcast(
     dailyAspects,
     Date ~ aspect,
-    fun.aggregate = SIT::count,
+    fun.aggregate = length,
     value.var = "aspect",
     fill = 0
   )
@@ -1875,7 +1875,7 @@ dailyPlanetYActivationCount <- function(
   dailyAspectsCount <- dcast(
     dailyAspects,
     Date ~ p.y,
-    fun.aggregate = SIT::count,
+    fun.aggregate = length,
     value.var = "aspect",
     fill = 0
   )
@@ -1913,7 +1913,7 @@ dailyPlanetYActivationCountLDI <- function(orbLimit = 2, pxSelect = c(), pySelec
   dailyAspectsCount <- dcast(
     dailyAspects,
     Date ~ p.y,
-    fun.aggregate = SIT::count,
+    fun.aggregate = length,
     value.var = "aspect",
     fill = 0
   )
@@ -1967,7 +1967,7 @@ dailyPlanetXActivationCount <- function(
   dailyAspectsCount <- dcast(
     dailyAspects,
     Date ~ p.x,
-    fun.aggregate = SIT::count,
+    fun.aggregate = length,
     value.var = "aspect",
     fill = 0
   )
@@ -2063,7 +2063,7 @@ dailyAspectsPlanetCombGeneralizedCount <- function(
   dailyAspectsCount <- dcast(
     dailyAspects,
     Date ~ origin,
-    fun.aggregate = SIT::count,
+    fun.aggregate = length,
     value.var = "aspect",
     fill = 0
   )
@@ -2226,7 +2226,7 @@ dailyPlanetXAspectsGeneralizedCount <- function(
   dailyAspectsCount <- dcast(
     dailyAspects,
     Date ~ p.x + aspect,
-    fun.aggregate = SIT::count,
+    fun.aggregate = length,
     value.var = "aspect",
     fill = 0
   )
@@ -2277,7 +2277,7 @@ dailyPlanetYAspectsGeneralizedCount <- function(
   dailyAspectsCount <- dcast(
     dailyAspects,
     Date ~ p.y + aspect,
-    fun.aggregate = SIT::count,
+    fun.aggregate = length,
     value.var = "aspect",
     fill = 0
   )
@@ -2344,7 +2344,7 @@ dailyPlanetYActivationPolarityCount <- function(
   dailyAspectsCount <- dcast(
     dailyAspects,
     Date ~ p.y + polarity,
-    fun.aggregate = SIT::count,
+    fun.aggregate = length,
     value.var = "polarity",
     fill = 0
   )
