@@ -8,6 +8,7 @@ packagesList <- c(
   'GA',
   'ModelsMetrics',
   'R.cache',
+  'bit64',
   'boot',
   'caret',
   'compiler',
