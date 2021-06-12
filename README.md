@@ -1,7 +1,3 @@
-# Join Us at the Financial Astrology Research Group
-
-If you found this project inspiring and willing to get involved in the research, please avoid the hard way, the solo effort is very difficult to persists and progress is made slow. Join efforts with the great research team we built at Financial Astrology Research Group at Telegram: https://t.me/financial_astrology_stats
-
 # The Cosmic Energy Cycles Search
 
 When I was 14 years old visited the home of my parent's neighbour (her name is Esperanza), immediately my eyes couldn't stop to look around all mystical objects she had everywhere, from all those magical things, she took a metal bowl (indian) and start to move a wooden stick around it, a beautiful harmonious sound was produced, I was astonished. She explained that everything in the cosmos was vibrating, including our physical body, that all those vibrations are combining and interacting all the time, that all of us has a vibrational blueprint that is impregnated at our birth, we could find our energy purpose by looking at the position of the planets at the moment of our first breathing (the birth and origin). I was curious to know what stars could say about my life so very gently, she invited me to enter a room where she had a computer with an astrological software "Solar Fire" and dedicated some time to calculate my astrological natal chart and do a quick interpretation. I feel the match, whatever was contained in that wheel filled wih symbols I couldn't understand described very accurately my essential forces, my personality, interests, desires, familiar relationships and much more. From that moment an immense need of knowledge burned in me, my search to try to understand the manifestation of the cosmic energy started.
@@ -57,3 +53,7 @@ During all the years I have been researching this ancient knowledge the biggest 
 - To Tole (founder of Zignaly) that hired me to work at him startup and helped me to learn all I know about crypto-currencies trading.
 - To the book store saleswoman that helped me to discover the great astrology catalogue that was waiting for me at Donceles, Mexico City.
 - Finally, to the Financial Astrology Research community that keeps motivating and encouraging to keep researching, improving the models and sharing all the astrological knowledge that have accumulated through this long journey.
+
+# Join Us at the Financial Astrology Research Group
+
+If you found this project inspiring and willing to get involved in the research, please avoid the hard way, the solo effort is very difficult to persists and progress is made slow. Join efforts with the great research team we built at Financial Astrology Research Group at Telegram: https://t.me/financial_astrology_stats
