@@ -719,7 +719,7 @@ dailyHourlyAspectsTablePrepare <- function(hourlyPlanets, idCols, orbLimit = NUL
     value.factor = T, measure.var = planetsCombAsp, na.rm = T
   )
 
-  hourlyAspects[, origin := substr(origin, 1, 4)]
+  # hourlyAspects[, origin := substr(origin, 1, 4)]
   setkey(hourlyAspects, 'Date', 'Hour')
 
   hourlyAspects <- dailyAspectsAddOrbs(hourlyAspects, hourlyPlanetsRange, idCols)

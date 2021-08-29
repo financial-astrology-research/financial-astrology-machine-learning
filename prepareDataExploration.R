@@ -8,7 +8,7 @@ source("./analysis.r")
 source("./indicatorPlots.r")
 
 symbol <- "BTC-USD"
-orbLimit <- 4
+orbLimit <- 0
 pxSelect <- c(
   'MO',
   'ME',
@@ -48,33 +48,36 @@ idCols <- c('Date', 'Hour')
 setClassicAspectsSet8()
 setPlanetsMOMEVESUMAJUNNSAURNEPL()
 hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
-dailyAspectsRows <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+#dailyAspectsRows <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
+dailyPlanets <- hourlyPlanets[Hour == 12,]
 
-dailyAspects <- dailyCombPlanetAspectsFactorsTable(
-  dailyAspects = dailyAspectsRows,
-  pxSelect = pxSelect,
-  pySelect = pySelect,
-  aspectSelect = aspectSelect,
-  orbLimit = orbLimit
-)
+# dailyAspects <- dailyCombPlanetAspectsFactorsTable(
+#   dailyAspects = dailyAspectsRows,
+#   pxSelect = pxSelect,
+#   pySelect = pySelect,
+#   aspectSelect = aspectSelect,
+#   orbLimit = orbLimit
+# )
 
 securityData <- mainOpenSecurity(
-  symbol, 2, 4, "%Y-%m-%d",
-  "2010-01-01", "2020-06-30"
+  symbol, 2, 4, "%Y-%m-%d", "2010-01-01"
 )
 
-# Filter the extreme outliers.
-cat(paste("Original days rows: ", nrow(securityData)), "\n")
-securityData <- securityData[zdiffPercent < 3 & zdiffPercent > -3,]
-hist(securityData$zdiffPercent)
-cat(paste("Total days rows: ", nrow(securityData)), "\n")
-
+securityData[, prevMid := data.table::shift(Mid, 1)]
 aspectView <- merge(
   securityData,
-  dailyAspects, by = "Date"
+  dailyPlanets, by = "Date"
 )
 
-fwrite(
-  aspectView,
-  paste("./predictions/", symbol, "-planets-comb-aspects-factors-ma3-6-2orb.csv", sep = "")
-)
+selCols <- c('Date', 'SUMAANG', 'prevMid', 'Mid', 'midPriceDiff', 'PriceAction')
+keyAngles <- c(0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180)
+aspectView[, SUMAANG := ceiling(SUMALON)]
+aspectView[, midPriceDiff := round(Mid - prevMid, 2)]
+aspectView <- aspectView[, ..selCols]
+aspectViewResults <- aspectView[SUMAANG %in% keyAngles, ..selCols]
+
+
+# fwrite(
+#   aspectView,
+#   paste("./predictions/", symbol, "-planets-comb-aspects-factors-ma3-6-2orb.csv", sep = "")
+# )

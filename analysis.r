@@ -367,6 +367,7 @@ mainOpenSecurity <- function(securityfile, mapricefs = 20, mapricesl = 50, datef
   security[, HLCMomEff := cut(HLCMom, c(-10000, 0, 10000), labels = c('sell', 'buy'), right = FALSE)]
   security[, HLMomEff := cut(HLMom, c(-10000, 0, 10000), labels = c('sell', 'buy'), right = FALSE)]
   security[, Actbin := cut(diffPercent, c(-10000, 0, 10000), labels = c('sell', 'buy'), right = FALSE)]
+  security[, PriceAction := cut(diffPercent, c(-10000, 0, 10000), labels = c('bearish', 'bullish'), right = FALSE)]
   security[, OxHLEff := cut(diffOxHL, c(-10000, 0, 10000), labels = c('sell', 'buy'), right = FALSE)]
   security[, OxHLCEff := cut(diffOxHLC, c(-10000, 0, 10000), labels = c('sell', 'buy'), right = FALSE)]
   security[, HxLEff := cut(diffHxL, c(-10000, 0, 10000), labels = c('sell', 'buy'), right = FALSE)]
