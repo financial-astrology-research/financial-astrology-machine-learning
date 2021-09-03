@@ -58,23 +58,33 @@ dailyPlanets <- hourlyPlanets[Hour == 12,]
 #   aspectSelect = aspectSelect,
 #   orbLimit = orbLimit
 # )
+splitDigits <- function (number) {
+  as.numeric(strsplit(as.character(number), "")[[1]])
+}
+
+vortexNumber <- function(number) {
+  baseNumber <- as.character(number)
+  while(str_count(baseNumber) > 1) {
+    baseNumber <- sum(splitDigits(baseNumber))
+  }
+
+  return(round(baseNumber, 0))
+}
 
 securityData <- mainOpenSecurity(
   symbol, 2, 4, "%Y-%m-%d", "2010-01-01"
 )
 
-securityData[, prevMid := data.table::shift(Mid, 1)]
-aspectView <- merge(
-  securityData,
-  dailyPlanets, by = "Date"
-)
+securityData[, prevClose := data.table::shift(Close, 1)]
+securityData[, datePlain := format(Date, "%Y%m%d")]
+securityData[, dateNum := vortexNumber(datePlain), by=Date]
+securityData[, dateNum := paste0('n', dateNum)]
+securityData[, closePriceDiff := Close - prevClose]
+securityData[, PriceAction := cut(closePriceDiff, c(-10000, 0, 10000), labels =  c('bearish', 'bullish'))]
+aspectView <- securityData[!is.na(closePriceDiff),]
 
-selCols <- c('Date', 'SUMAANG', 'prevMid', 'Mid', 'midPriceDiff', 'PriceAction')
-keyAngles <- c(0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180)
-aspectView[, SUMAANG := ceiling(SUMALON)]
-aspectView[, midPriceDiff := round(Mid - prevMid, 2)]
+selCols <- c('Date', 'datePlain', 'dateNum', 'prevClose', 'Close', 'closePriceDiff', 'PriceAction')
 aspectView <- aspectView[, ..selCols]
-aspectViewResults <- aspectView[SUMAANG %in% keyAngles, ..selCols]
 
 
 # fwrite(
