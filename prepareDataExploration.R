@@ -47,7 +47,7 @@ aspectSelect <- c(
 idCols <- c('Date', 'Hour')
 setClassicAspectsSet8()
 setPlanetsMOMEVESUMAJUNNSAURNEPL()
-hourlyPlanets <<- openHourlyPlanets('planets_11', clear = F)
+hourlyPlanets <- openHourlyPlanets('planets_11', clear = F)
 #dailyAspectsRows <- dailyHourlyAspectsTablePrepare(hourlyPlanets, idCols, orbLimit)
 dailyPlanets <- hourlyPlanets[Hour == 12,]
 
@@ -75,17 +75,27 @@ securityData <- mainOpenSecurity(
   symbol, 2, 4, "%Y-%m-%d", "2010-01-01"
 )
 
-securityData[, prevClose := data.table::shift(Close, 1)]
-securityData[, datePlain := format(Date, "%Y%m%d")]
-securityData[, dateNum := vortexNumber(datePlain), by=Date]
-securityData[, dateNum := paste0('n', dateNum)]
-securityData[, closePriceDiff := Close - prevClose]
-securityData[, PriceAction := cut(closePriceDiff, c(-10000, 0, 10000), labels =  c('bearish', 'bullish'))]
-aspectView <- securityData[!is.na(closePriceDiff),]
+colNames <- colnames(dailyPlanets)
+harColNames <- colNames[grep(".*H[0-9]+$", colNames)]
+selAstroCols <- names
+securityData[, prevMid := data.table::shift(Mid, 1)]
+#securityData[, datePlain := format(Date, "%Y%m%d")]
+#securityData[, dateNum := vortexNumber(datePlain), by=Date]
+#securityData[, dateNum := paste0('n', dateNum)]
+securityData[, priceDiff := Mid - prevMid]
+securityData[, PriceAction := cut(priceDiff, c(-10000, 0, 10000), labels =  c('bearish', 'bullish'))]
+securityData <- securityData[!is.na(priceDiff),]
+selAstroCols <- c('Date', harColNames)
+selSecurityCols <- c('Date', 'Mid')
+aspectView <- merge(
+  securityData[, ..selSecurityCols],
+  dailyPlanets[, ..selAstroCols]
+)
 
-selCols <- c('Date', 'datePlain', 'dateNum', 'prevClose', 'Close', 'closePriceDiff', 'PriceAction')
-aspectView <- aspectView[, ..selCols]
-
+varCorrelations <- aspectView[, -c(1)] %>%
+  cor() %>%
+  round(digits = 2)
+finalCorrelations <- sort(varCorrelations[, 1])
 
 # fwrite(
 #   aspectView,
