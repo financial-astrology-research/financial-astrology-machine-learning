@@ -65,7 +65,7 @@ analyzeSecurity <- function(security) {
 
 dailyAspectsAddSpeed <- function(dailyAspects, dailyPlanets, idCols = c('Date')) {
   # Melt speeds.
-  dailySpeed <- melt(
+  dailySpeed <- data.table::melt(
     dailyPlanets, id.var = idCols, variable.name = 'origin',
     value.name = 'sp', measure.var = planetsSpCols
   )
@@ -91,7 +91,7 @@ dailyAspectsAddSpeed <- function(dailyAspects, dailyPlanets, idCols = c('Date'))
 
 dailyAspectsAddDeclination <- function(dailyAspects, dailyPlanets, idCols = c('Date')) {
   # Melt speeds.
-  dailyDeclination <- melt(
+  dailyDeclination <- data.table::melt(
     dailyPlanets, id.var = idCols, variable.name = 'origin',
     value.name = 'dc', measure.var = planetsDecCols
   )
@@ -124,15 +124,16 @@ hourlyAspectsDateAggregate <- function(hourlyAspects) {
 
 dailyAspectsAddOrbs <- function(dailyAspects, dailyPlanets, idCols = c('Date')) {
   # Melt orbs.
-  dailyAspectsOrbs <- melt(
+  dailyAspectsOrbs <- data.table::melt(
     dailyPlanets, id.var = idCols, variable.name = 'origin',
     value.name = 'orb', measure.var = planetsCombOrb
   )
 
   dailyAspectsOrbs[, orb := round(orb, 2)]
   dailyAspectsOrbs[, origin := substr(origin, 1, 4)]
+  dailyAspects[, origin := substr(origin, 1, 4)]
   # Join aspects & orbs.
-  dailyAspects <- merge(dailyAspects, dailyAspectsOrbs, by = c(idCols, 'origin'))
+  merge(dailyAspects, dailyAspectsOrbs, by = c(idCols, 'origin'))
 }
 
 dailyAspectsAddOrbsDir <- function(dailyAspects) {
@@ -144,7 +145,7 @@ dailyAspectsAddOrbsDir <- function(dailyAspects) {
 
 dailyAspectsAddLongitude <- function(dailyAspects, dailyPlanets, idCols = c('Date')) {
   # Melt longitudes.
-  dailyLongitudes <- melt(dailyPlanets, id.var = idCols, variable.name = 'origin',
+  dailyLongitudes <- data.table::melt(dailyPlanets, id.var = idCols, variable.name = 'origin',
                           value.name = 'lon', measure.var = planetsLonCols)
   # Aggregate by date.
   dailyLongitudes <- dailyLongitudes[, mean(lon), by = list(Date, origin)]
@@ -169,7 +170,7 @@ dailyAspectsAddLongitude <- function(dailyAspects, dailyPlanets, idCols = c('Dat
 
 dailyAspectsAddPlanetsActivation <- function(dailyAspects) {
   aspCols <- paste("a", aspects, sep = "")
-  dailyPlanetActivation <- melt(
+  dailyPlanetActivation <- data.table::melt(
     dailyAspects, id.var = c('Date', 'p.x'),
     variable.name = 'origin', measure.var = c('p.y')
   )
@@ -215,7 +216,7 @@ dailyAspectsAddPlanetsActivation <- function(dailyAspects) {
 
 dailyAspectsAddAspectsCount <- function(dailyAspects) {
   aspCols <- paste("a", aspects, sep = "")
-  dailyPlanetAspects <- melt(
+  dailyPlanetAspects <- data.table::melt(
     dailyAspects, id.var = c('Date', 'aspect'),
     variable.name = 'origin', measure.var = c('p.x', 'p.y')
   )
@@ -320,7 +321,7 @@ dailyAspectsAddAspectsCount <- function(dailyAspects) {
 
 dailyPlanetAspectsCumulativeEnergyTable <- function(dailyAspects) {
   aspCols <- paste("a", aspects, sep = "")
-  dailyPlanetAspects <- melt(
+  dailyPlanetAspects <- data.table::melt(
     dailyAspects, id.var = c('Date', 'p.x', 'p.y', 'aspect', 'orb', 'ennow'),
     variable.name = 'origin', measure.var = c('p.x', 'p.y')
   )
@@ -548,7 +549,7 @@ dailyAspectsAddCumulativeEnergy <- function(dailyAspects) {
   # dailyAspects <- merge(dailyAspects, aspectsEffect, by = c('origin', 'aspect', 'type'))
 
   # Melt involved planets current energy for body strength calculation.
-  dailyAspectsPlanetsEnergy <- melt(
+  dailyAspectsPlanetsEnergy <- data.table::melt(
     dailyAspects, id.var = c('Date', 'ennow'),
     variable.name = 'origin', value.name = 'planet',
     measure.var = c('p.x', 'p.y')
@@ -711,16 +712,16 @@ dailyAspectsNameCols <- function(dailyAspects) {
 }
 
 dailyHourlyAspectsTablePrepare <- function(hourlyPlanets, idCols, orbLimit = NULL) {
-  hourlyPlanetsRange <- hourlyPlanets[Date >= as.Date("2010-01-01") & Date <= as.Date("2022-12-31")]
+  hourlyPlanetsRange <- hourlyPlanets[Date >= as.Date("2018-01-01") & Date <= as.Date("2022-12-31")]
   # Melt aspects.
-  hourlyAspects <- melt(
+  hourlyAspects <- data.table::melt(
     hourlyPlanetsRange, id.var = idCols,
     variable.name = 'origin', value.name = 'aspect',
     value.factor = T, measure.var = planetsCombAsp, na.rm = T
   )
 
   # hourlyAspects[, origin := substr(origin, 1, 4)]
-  setkey(hourlyAspects, 'Date', 'Hour')
+  #setkey(hourlyAspects, 'Date', 'Hour')
 
   hourlyAspects <- dailyAspectsAddOrbs(hourlyAspects, hourlyPlanetsRange, idCols)
 
@@ -740,7 +741,7 @@ dailyHourlyAspectsTablePrepare <- function(hourlyPlanets, idCols, orbLimit = NUL
 dailyAspectsTablePrepare <- function(dailyPlanets) {
   dailyPlanetsRange <- dailyPlanets[Date >= as.Date("2015-01-01") & Date <= as.Date("2023-01-01")]
   # Melt aspects.
-  dailyAspects <- melt(dailyPlanetsRange, id.var = c('Date'), variable.name = 'origin',
+  dailyAspects <- data.table::melt(dailyPlanetsRange, id.var = c('Date'), variable.name = 'origin',
                        value.name = 'aspect', value.factor = T, measure.var = planetsCombAsp, na.rm = T)
   dailyAspects[, origin := substr(origin, 1, 4)]
 

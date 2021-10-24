@@ -302,7 +302,7 @@ openHourlyPlanets <- function(planetsfile, cusorbs = deforbs, calcasps = T, clea
     cat("Set openPlanets cache: ", cacheFile, "\n")
   }
 
-  return(planets)
+  planets[Date >= as.Date("2010-01-01") & Date <= as.Date("2022-12-31")]
 }
 
 mainOpenSecurity <- function(securityfile, mapricefs = 20, mapricesl = 50, dateformat = "%Y-%m-%d", sdate = '1970-01-01', edate = Sys.Date()) {
